@@ -88,6 +88,13 @@ if not os.path.isfile(package_definitions_folder + package_definitions_file_name
 objects_folder = project_folder + "\\PackageSources\\modelLib\\"
 # scene folder
 scene_folder = project_folder + "\\PackageSources\\scene\\"
+# backup folder
+backup_folder = project_folder + "\\backup\\clean_package_files"
+# backup fps_modelLib folder
+backup_modelLib_folder = backup_folder + "\\modelLib"
+# backup scene folder
+backup_scene_folder = backup_folder + "\\scene"
+
 
 ######################################################
 # colored print methods
@@ -172,6 +179,30 @@ def check_package_sources_configuration():
         raise ScriptError(error_msg + "The folder containing the textures of the scene (" + textures_folder + ") was not found. Please check the textures_folder value")
     pr_ok_green     ("textures_folder value              ")
         
+##################################################################
+# Backup the packageSources files before the optimisation process
+##################################################################      
+def backup_files():
+    os.chdir(objects_folder)
+    for file in glob.glob("*.*"):
+        file_name = os.path.basename(file)
+        if not os.path.isfile(backup_modelLib_folder + "\\" + file_name):
+            print("backup file ", file_name)
+            shutil.copyfile(file, backup_modelLib_folder + "\\" + file_name)
+            
+    os.chdir(textures_folder)
+    for file in glob.glob("*.*"):
+        file_name = os.path.basename(file)
+        if not os.path.isfile(backup_modelLib_folder + "\\texture\\" + file_name):
+            print("backup texture file ", file_name)
+            shutil.copyfile(file, backup_modelLib_folder + "\\texture\\" + file_name)
+            
+    os.chdir(scene_folder)
+    for file in glob.glob("*.*"):
+        file_name = os.path.basename(file)
+        if not os.path.isfile(backup_scene_folder + "\\" + file_name):
+            shutil.copyfile(file, backup_scene_folder + "\\" + file_name)
+        
 ######################################################
 # File manipulation methods
 ###################################################### 
@@ -207,7 +238,7 @@ def clean_linked_package_files(xml_file, xml_file_path):
             error_msg = "Error: " + file_path + " : " + e.strerror
             raise ScriptError(error_msg)
             
-        print("package file:", file_path, "removed")        
+        print("package file:", file_path, "removed")
                 
     os.chdir(textures_folder)
     for texture_file in glob.glob(xml_file + "_LOD*.*"):
@@ -227,8 +258,68 @@ def clean_linked_package_files(xml_file, xml_file_path):
         error_msg = "Error: " + xml_file_path + " : " + e.strerror
         raise ScriptError(error_msg)
         
-    print("scenery object xml file:", xml_file_path, "removed")  
+    print("scenery object xml file:", xml_file_path, "removed")
+
+##################################################################
+# Clean all package files for lods that do not exist
+##################################################################
+def clean_unused_lod_package_files():
+    os.chdir(objects_folder)
+    
+    for xml_file in glob.glob("*.xml"):
+        file_path = os.path.basename(xml_file)
+        file_name = os.path.splitext(xml_file)[0]
+        tree = ET.parse(xml_file)
+        root = tree.getroot()
+         
+        for gltf_file in glob.glob(file_name + "_LOD*.gltf"):
+            lod_found = False                    
+            gltf_file_path = os.path.basename(gltf_file)                    
+            gltf_file_name = os.path.splitext(gltf_file)[0]
             
+            for scenery_object in root.findall("./LODS/LOD[@ModelFile='" + gltf_file + "']"):
+                lod_found = True
+            
+            if not lod_found:
+                bin_file = gltf_file_name + ".bin"
+                bin_file_path = os.path.basename(bin_file)
+                
+                print("unused lod bin file:", bin_file)
+                        
+                try:
+                    os.remove(bin_file)
+                except OSError as e:
+                    error_msg = "Error: " + bin_file + " : " + e.strerror
+                    raise ScriptError(error_msg)
+                    
+                print("unused lod bin file:", bin_file, "removed")
+                
+                print("unused lod bin file:", gltf_file)
+                        
+                try:
+                    os.remove(gltf_file)
+                except OSError as e:
+                    error_msg = "Error: " + gltf_file + " : " + e.strerror
+                    raise ScriptError(error_msg)
+                    
+                print("unused lod gltf file:", gltf_file, "removed")
+                    
+                os.chdir(textures_folder)
+                for texture_file in glob.glob(gltf_file_name + ".*"):
+                    file_path = os.path.basename(texture_file)
+                
+                    print("unused lod bin file:", texture_file)
+                
+                    try:
+                        os.remove(file_path)
+                    except OSError as e:
+                        error_msg = "Error: " + file_path + " : " + e.strerror
+                        raise ScriptError(error_msg)
+                        
+                    print("unused lod texture file:", file_path, "removed")
+                    
+            os.chdir(objects_folder)    
+                     
 ##################################################################
 # Clean all unused package files
 ##################################################################  
@@ -300,18 +391,35 @@ try:
     textures_folder = objects_folder + "texture\\"  
         
     check_package_sources_configuration()
+
+    # create the backup folders
+    if not os.path.isdir(backup_folder):
+        os.mkdir(backup_folder)    
+    if not os.path.isdir(backup_scene_folder):
+        os.mkdir(backup_scene_folder)    
+    if not os.path.isdir(backup_modelLib_folder):
+        os.mkdir(backup_modelLib_folder)
+    if not os.path.isdir(backup_modelLib_folder + "\\texture"):
+        os.mkdir(backup_modelLib_folder + "\\texture")
     
     os.chdir(objects_folder)
  
     if not os.path.isdir(project_folder + "\\PackageSources\\modelLib") and not os.path.isdir(project_folder + "\\PackageSources\\" + project_name.lower() + "-modelLib"):
         print("The modelLib folder was not found for the projet", project_name, ". Please rename your modelLib folder like this:", project_folder + "\\PackageSources\\" + project_name.lower() + "-modelLib")
-    else:
+    else:    
+        print("-------------------------------------------------------------------------------")
+        print("--------------------------------- BACKUP FILES --------------------------------")
+        print("-------------------------------------------------------------------------------")
+
+        backup_files()
+    
         print("-------------------------------------------------------------------------------")
         print("----------------------------- CLEAN PACKAGE FILES -----------------------------")
         print("-------------------------------------------------------------------------------")
                 
         objects_tree = ET.parse(scene_folder + scene_file_name)
         clean_package_files(objects_tree)
+        clean_unused_lod_package_files()
         
         if build_package_enabled:
             build_package()
