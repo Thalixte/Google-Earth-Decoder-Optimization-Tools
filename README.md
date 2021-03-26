@@ -228,19 +228,19 @@ When the configuration is done, open the Blender system console Window (Window =
 
 8) compress_built_package script:
 
-7.2) Prerequisites:
+8.2) Prerequisites:
 
 This script uses the Compressonator tool from GPUOpen. You can download it here: https://github.com/GPUOpen-Tools/compressonator/releases/download/V4.1.5083/CompressonatorCLI_x64_4.1.5083.exe
 it only works on already built package. So be sure to have built your package correctly first. The package should be in the folder <path_to_projects\project_name\Packages> folder
 
 
-7.1) Presentation:
+8.1) Presentation:
 This script automatically compress DDS texture files from an already built package by applying the DXT1 compression. It can remove transparency component from the textures, but sinc Google Earth tiles do not use it, as far as i know, it is lossless.
 
-7.2) Installation:
+8.2) Installation:
 First, install the compressonator tool in the folder of your choice. Then, put the clean_package_files.py script in a folder of your choice.
 
-7.3) Configuration:
+8.3) Configuration:
 Change the following settings, according to your project:
 
 *   **projects_folder**: the parent folder that contains your sceneries
@@ -248,12 +248,12 @@ project_name: the name of your project
 *   **compressonatortool_folder**: the folder that contains the compressonator exe (compressonatorcli.exe) that convert and compress the DDS texture files of the packages. This exe shoud be in the <path_to_compressonator\bin\cli> folder
 *   **author_name**: the name of the author of the scenery
 
-7.4) Usage:
+8.4) Usage:
 Open Blender in administrator mode. 
 Go in the Scripting view, then click on the Open icon, and choose the clean_package_files python script.
 When the configuration is done, open the Blender system console Window (Window => Toggle System Console). Then, run the script.
 
-7.5) Process:
+8.5) Process:
 
 *   browse the built package for DDS files in the  folder
 *   convert all DDS files to temporary BMP files
