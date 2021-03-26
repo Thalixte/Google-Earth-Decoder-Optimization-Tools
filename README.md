@@ -50,7 +50,7 @@ Change the following settings, according to your project:
 *   **fspackagetool_folder:** the folder that contains the fspackagetool exe that builds the MSFS packages
 *   **target_lods**: an array representing the minsize values per LOD, starting from a minLod of 17 (from the less detailed lod to the most detailed)
 *   **project_file_name**: the name of the xml file that embeds the project definition (by default, project_name.xml or author_name+project_name.xml)
-*   **scene_file_name:** the name of the xml file that embeds the tile descriptions (by default, objects.xml)
+*   **scene_file_name**: the name of the xml file that embeds the tile descriptions (by default, objects.xml)
 *   **package_definitions_file_name**: the name of the xml file that embeds the package definitions (by default, project_name.xml or author_name+project_name.xml)
 *   **author_name:** the name of the author of the scenery
 *   **build_package_enabled:** enable the package compilation when the script has finished (default is True)
@@ -99,7 +99,7 @@ Change the following settings, according to your project:
 *   **node_js_folder**: the folder that contains the node js script that retrieves the Google Earth coords
 *   **fspackagetool_folder**: the folder that contains the fspackagetool exe that builds the MSFS packages
 *   **project_file_name**: the name of the xml file that embeds the project definition (by default, project_name.xml or author_name+project_name.xml)
-*   **scene_file_name: **the name of the xml file that embeds the tile descriptions (by default, objects.xml)
+*   **scene_file_name**: the name of the xml file that embeds the tile descriptions (by default, objects.xml)
 *   **package_definitions_file_name**: the name of the xml file that embeds the package definitions (by default, project_name.xml or author_name+project_name.xml)
 *   **author_name**: the name of the author of the scenery
 *   **build_package_enabled**: enable the package compilation when the script has finished (default is True)
@@ -136,7 +136,7 @@ Change the following settings, according to your project:
 *   **target_lods**: an array representing the minsize values per LOD, starting from a minLod of 17 (from the less detailed lod to the most detailed)
 *   **fspackagetool_folder**: the folder that contains the fspackagetool exe that builds the MSFS packages
 *   **project_file_name**: the name of the xml file that embeds the project definition (by default, project_name.xml or author_name+project_name.xml)
-*   **scene_file_name: **the name of the xml file that embeds the tile descriptions (by default, objects.xml)
+*   **scene_file_name**: the name of the xml file that embeds the tile descriptions (by default, objects.xml)
 *   **package_definitions_file_name**: the name of the xml file that embeds the package definitions (by default, project_name.xml or author_name+project_name.xml)
 *   **author_name**: the name of the author of the scenery
 *   **build_package_enabled**: enable the package compilation when the script has finished (default is True)
@@ -207,7 +207,7 @@ Change the following settings, according to your project:
 *   **project_name**: the name of your project
 *   **fspackagetool_folder**: the folder that contains the fspackagetool exe that builds the MSFS packages
 *   **project_file_name**: the name of the xml file that embeds the project definition (by default, project_name.xml or author_name+project_name.xml)
-*   **scene_file_name: **the name of the xml file that embeds the tile descriptions (by default, objects.xml)
+*   **scene_file_name**: the name of the xml file that embeds the tile descriptions (by default, objects.xml)
 *   **package_definitions_file_name**: the name of the xml file that embeds the package definitions (by default, project_name.xml or author_name+project_name.xml)
 *   **author_name**: the name of the author of the scenery
 *   **build_package_enabled**: enable the package compilation when the script has finished (default is True)
