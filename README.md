@@ -247,6 +247,7 @@ Change the following settings, according to your project:
 project_name: the name of your project
 *   **compressonatortool_folder**: the folder that contains the compressonator exe (compressonatorcli.exe) that convert and compress the DDS texture files of the packages. This exe shoud be in the <path_to_compressonator\bin\cli> folder
 *   **author_name**: the name of the author of the scenery
+*   **NB_PARALLEL_TASKS**: number of parallel instance of compressonator running at the same time. If you experiment issues running the script, try lowering this setting
 
 8.5) Usage:
 Open Blender in administrator mode. 
