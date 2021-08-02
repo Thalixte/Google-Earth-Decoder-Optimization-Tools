@@ -13,10 +13,13 @@ The scripts are intended to be used with a Google Earth Decoder min LOD of 17\. 
 
 2) Prerequisites:
 
-*   Blender 2.83 ([https://download.blender.org/release/Blender2.83/blender-2.83.9-windows64.msi](https://download.blender.org/release/Blender2.83/blender-2.83.9-windows64.msi)). **The blender version is important**
+*   Blender 2.83.16 ([https://www.blender.org/download/Blender2.83/blender-2.83.16-windows-x64.msi](https://www.blender.org/download/Blender2.83/blender-2.83.16-windows-x64.msi)). **The Blender version is IMPORTANT!**
 *   Node js ([https://nodejs.org/dist/v14.15.1/node-v14.15.1-x64.msi](https://nodejs.org/dist/v14.15.1/node-v14.15.1-x64.msi))
 *   Blender2MSFS Toolkit: [https://www.fsdeveloper.com/forum/resources/blender2msfs-toolkit.256/download](https://www.fsdeveloper.com/forum/resources/blender2msfs-toolkit.256/download)
-*   Lily texture Packer: [https://gumroad.com/l/DFExj](https://gumroad.com/l/DFExj)
+*   Lily texture Packer: [https://gumroad.com/l/DFExj](https://gumroad.com/l/DFExj) **IMPORTANT! Download version 1.1.x**
+
+Newer Blender versions than 2.83x are not going to work! 
+You need to install the version linked above, the LTS version from the Microsoft Store is not going to have enough permissions for the python scripts to work properly, do NOT install it as a Windows app!
 
 3) scenery_optimisation script:  
 
