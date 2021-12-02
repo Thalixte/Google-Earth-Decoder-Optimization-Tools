@@ -1,0 +1,39 @@
+<AssetPackage Name="author-dummy" Version="1.0.0">
+	<ItemSettings>
+		<ContentType>SCENERY</ContentType>
+		<Title>dummy</Title>
+		<Manufacturer/>
+		<Creator>Author</Creator>
+	</ItemSettings>
+	<Flags>
+		<VisibleInStore>false</VisibleInStore>
+		<CanBeReferenced>false</CanBeReferenced>
+	</Flags>
+	<AssetGroups>
+		<AssetGroup Name="ContentInfo">
+			<Type>Copy</Type>
+			<Flags>
+				<FSXCompatibility>false</FSXCompatibility>
+			</Flags>
+			<AssetDir>PackageDefinitions\author-dummy\ContentInfo</AssetDir>
+			<OutputDir>ContentInfo\author-dummy</OutputDir>
+		</AssetGroup>
+		<AssetGroup Name="dummymodellib">
+			<Type>ArtProj</Type>
+			<Flags>
+				<FSXCompatibility>false</FSXCompatibility>
+			</Flags>
+			<AssetDir>PackageSources\dummy-modelLib\</AssetDir>
+			<OutputDir>scenery/global/scenery\</OutputDir>
+		</AssetGroup>
+		<AssetGroup Name="dummyscene">
+			<Type>BGL</Type>
+			<Flags>
+				<FSXCompatibility>false</FSXCompatibility>
+			</Flags>
+			<AssetDir>PackageSources\scene\</AssetDir>
+			<OutputDir>scenery/world/scenery\</OutputDir>
+		</AssetGroup>
+	</AssetGroups>
+</AssetPackage>
+
