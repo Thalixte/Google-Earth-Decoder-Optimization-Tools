@@ -1,4 +1,4 @@
-from msfs_project.objects_xml import MsfsObjectXml
+from msfs_project.object_xml import MsfsObjectXml
 
 
 class MsfsObject:

@@ -5,9 +5,11 @@ from utils import Settings, check_configuration, ScriptError, \
     build_package, pr_bg_green, pr_bg_red, get_sources_path
 from msfs_project import MsfsProject, ObjectsXml
 
+BACKUP_ENABLED: False
+
 ##################################################################
 #                        Main process
-##################################################################   
+##################################################################
 
 settings = Settings(get_sources_path())
 
@@ -21,7 +23,7 @@ try:
     print("----------------------------- UPDATE TILES POSITION----------------------------")
     print("-------------------------------------------------------------------------------")
 
-    msfs_project.update_objects_position(settings)
+    msfs_project.clean()
 
     if settings.build_package_enabled:
         build_package(msfs_project, settings)

@@ -1,9 +1,9 @@
-from utils import Xml, settings
-from msfs_project.object_xml import MsfsObjectXml
+from utils import Xml
 
 
 class ObjectsXml(Xml):
-    GUID_TAG = "guid"
+    GUID_TAG = "name"
+    LIBRARY_OBJECTS_SEARCH_PATTERN = "./SceneryObject/LibraryObject"
     SCENERY_OBJECT_SEARCH_PATTERN = "./SceneryObject/LibraryObject[@name='"
     SCENERY_OBJECT_GROUP_SEARCH_PATTERN = "./Group/SceneryObject/LibraryObject[@name='"
 
@@ -14,6 +14,9 @@ class ObjectsXml(Xml):
         self.__update_tiles_pos(msfs_project, settings)
         self.__update_colliders_pos(msfs_project, settings)
         self.save()
+
+    def __retrieve_library_objects(self):
+        return self.root.findall(self.LIBRARY_OBJECTS_SEARCH_PATTERN)
 
     def __find_scenery_objects(self, guid):
         return self.root.findall(self.SCENERY_OBJECT_SEARCH_PATTERN + guid.upper() + self.PARENT_PATTERN_SUFFIX)

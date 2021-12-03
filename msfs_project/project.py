@@ -2,6 +2,7 @@ import shutil
 import os
 
 from constants import *
+from msfs_project.objects_xml import ObjectsXml
 from msfs_project.scene_object import MsfsSceneObject
 from msfs_project.collider import MsfsCollider
 from msfs_project.tile import MsfsTile
@@ -33,6 +34,7 @@ class MsfsProject:
     tiles: dict
     shapes: dict
     colliders: dict
+    objects_xml: ObjectsXml
 
     DUMMY_STRING = "dummy"
     AUTHOR_STRING = "author"
@@ -61,8 +63,15 @@ class MsfsProject:
         self.business_json_folder = os.path.join(self.package_definitions_folder, self.author_name.lower() + "-" + self.project_name.lower())
         self.content_info_folder = os.path.join(self.package_definitions_folder, self.business_json_folder, self.CONTENT_INFO_FOLDER)
         self.scene_objects_xml_file_path = os.path.join(self.scene_folder, self.SCENE_OBJECTS_FILE)
+        self.objects_xml = ObjectsXml(self.scene_folder, self.SCENE_OBJECTS_FILE)
 
         self.__initialize(sources_path)
+
+    def update_objects_position(self, settings):
+        self.objects_xml.update_objects_position(self, settings)
+
+    def clean(self):
+        print(self)
 
     def __initialize(self, sources_path):
         self.__init_structure(sources_path)

@@ -16,6 +16,7 @@ class Settings:
     sources_path: str
     lat_correction: float
     lon_correction: float
+    lods: list
 
     def __init__(self, sources_path=""):
         self.projects_path = ""
