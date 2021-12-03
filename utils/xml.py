@@ -10,6 +10,9 @@ class Xml:
     tree: object
     root: object
 
+    PATTERN_SUFFIX = "']"
+    PARENT_PATTERN_SUFFIX = PATTERN_SUFFIX + "/.."
+
     def __init__(self, file_folder, file_name):
         self.file_path = os.path.join(file_folder, file_name)
         self.file_name = file_name

@@ -1,14 +1,11 @@
 from utils import Xml, settings
-from msfs_project.tile_xml import TileXml
-from msfs_project.collider_xml import ColliderXml
+from msfs_project.object_xml import MsfsObjectXml
 
 
 class ObjectsXml(Xml):
     GUID_TAG = "guid"
     SCENERY_OBJECT_SEARCH_PATTERN = "./SceneryObject/LibraryObject[@name='"
     SCENERY_OBJECT_GROUP_SEARCH_PATTERN = "./Group/SceneryObject/LibraryObject[@name='"
-    PATTERN_SUFFIX = "']"
-    PARENT_PATTERN_SUFFIX = PATTERN_SUFFIX + "/.."
 
     def __init__(self, file_folder, file_name):
         super().__init__(file_folder, file_name)
@@ -25,22 +22,20 @@ class ObjectsXml(Xml):
         return self.root.findall(self.SCENERY_OBJECT_GROUP_SEARCH_PATTERN + guid.upper() + self.PARENT_PATTERN_SUFFIX)
 
     def __update_tiles_pos(self, msfs_project, settings):
-        for object_name, tile in msfs_project.tiles.items():
+        for guid, tile in msfs_project.tiles.items():
             print("-------------------------------------------------------------------------------")
-            print("xml tile: ", object_name)
-            xml_tile = TileXml(msfs_project.modelLib_folder, tile.definition_file)
+            print("xml tile: ", tile.name)
 
-            self.__update_scenery_object_pos(tile, self.__find_scenery_objects(xml_tile.guid.upper()), settings)
-            self.__update_scenery_object_pos(tile, self.__find_scenery_objects_in_group(xml_tile.guid.upper()), settings)
+            self.__update_scenery_object_pos(tile, self.__find_scenery_objects(guid.upper()), settings)
+            self.__update_scenery_object_pos(tile, self.__find_scenery_objects_in_group(guid.upper()), settings)
 
     def __update_colliders_pos(self, msfs_project, settings):
-        for object_name, collider in msfs_project.colliders.items():
+        for guid, collider in msfs_project.colliders.items():
             print("-------------------------------------------------------------------------------")
-            print("xml collider: ", object_name)
-            xml_collider = ColliderXml(msfs_project.modelLib_folder, collider.definition_file)
+            print("xml collider: ", collider.name)
 
-            self.__update_scenery_object_pos(collider, self.__find_scenery_objects(xml_collider.guid.upper()), settings)
-            self.__update_scenery_object_pos(collider, self.__find_scenery_objects_in_group(xml_collider.guid.upper()), settings)
+            self.__update_scenery_object_pos(collider, self.__find_scenery_objects(guid.upper()), settings)
+            self.__update_scenery_object_pos(collider, self.__find_scenery_objects_in_group(guid.upper()), settings)
 
     @staticmethod
     def __update_scenery_object_pos(tile, found_scenery_objects, settings):

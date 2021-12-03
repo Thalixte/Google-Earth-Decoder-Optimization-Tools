@@ -1,13 +1,12 @@
-from msfs_project.position import MsfsPosition
+from msfs_project.objects_xml import MsfsObjectXml
 
 
 class MsfsObject:
     name: str
     definition_file: str
-    pos: MsfsPosition
+    xml: MsfsObjectXml
 
-    def __init__(self, name, definition_file):
+    def __init__(self, path, name, definition_file):
         self.name = name
         self.definition_file = definition_file
-        self.pos = MsfsPosition(0, 0, 0)
-
+        self.xml = MsfsObjectXml(path, definition_file)

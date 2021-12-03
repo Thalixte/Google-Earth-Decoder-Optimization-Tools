@@ -2,9 +2,10 @@ import shutil
 import os
 
 from constants import *
+from msfs_project.scene_object import MsfsSceneObject
 from msfs_project.collider import MsfsCollider
 from msfs_project.tile import MsfsTile
-from msfs_project.object import MsfsObject
+from msfs_project.shape import MsfsShape
 from utils import replace_in_file, is_octant
 from pathlib import Path
 
@@ -140,17 +141,24 @@ class MsfsProject:
             replace_in_file(dest_file_path, self.AUTHOR_STRING, self.author_name.lower())
 
     def __retrieve_objects(self):
+        self.__retrieve_scene_objects()
+        self.__retrieve_shapes()
+
+    def __retrieve_scene_objects(self):
         for path in Path(self.modelLib_folder).rglob(XML_FILE_PATTERN):
             if not is_octant(path.stem):
-                self.objects[path.stem] = MsfsObject(path.stem, path.name)
+                msfs_scene_object = MsfsSceneObject(self.modelLib_folder, path.stem, path.name)
+                self.objects[msfs_scene_object.xml.guid] = msfs_scene_object
                 continue
 
             if self.COLLIDER_SUFFIX in path.stem:
-                self.colliders[path.stem] = MsfsCollider(path.stem, path.name)
+                msfs_collider = MsfsCollider(self.modelLib_folder, path.stem, path.name)
+                self.colliders[msfs_collider.xml.guid] = msfs_collider
                 continue
 
-            self.tiles[path.stem] = MsfsTile(path.stem, path.name)
+            msfs_tile = MsfsTile(self.modelLib_folder, path.stem, path.name)
+            self.tiles[msfs_tile.xml.guid] = msfs_tile
 
-
-
-
+    def __retrieve_shapes(self):
+        for path in Path(self.scene_folder).rglob(DBF_FILE_PATTERN):
+            self.shapes[path.stem] = MsfsShape(self.scene_folder, path.stem, path.stem + XML_FILE_EXT, path.name, path.stem + SHP_FILE_EXT, path.stem + SHX_FILE_EXT)
