@@ -10,6 +10,8 @@ from msfs_project.shape import MsfsShape
 from utils import replace_in_file, is_octant
 from pathlib import Path
 
+from utils.progress_bar import ProgressBar
+
 
 class MsfsProject:
     parent_path: str
@@ -154,20 +156,26 @@ class MsfsProject:
         self.__retrieve_shapes()
 
     def __retrieve_scene_objects(self):
-        for path in Path(self.modelLib_folder).rglob(XML_FILE_PATTERN):
+        pbar = ProgressBar(list(Path(self.modelLib_folder).rglob(XML_FILE_PATTERN)), title="Retrieve scenery objects", sleep=0.1)
+        for i, path in enumerate(pbar.iterable):
             if not is_octant(path.stem):
                 msfs_scene_object = MsfsSceneObject(self.modelLib_folder, path.stem, path.name)
                 self.objects[msfs_scene_object.xml.guid] = msfs_scene_object
+                pbar.update("%s" % path.name)
                 continue
 
             if self.COLLIDER_SUFFIX in path.stem:
                 msfs_collider = MsfsCollider(self.modelLib_folder, path.stem, path.name)
                 self.colliders[msfs_collider.xml.guid] = msfs_collider
+                pbar.update("%s" % path.name)
                 continue
 
             msfs_tile = MsfsTile(self.modelLib_folder, path.stem, path.name)
             self.tiles[msfs_tile.xml.guid] = msfs_tile
+            pbar.update("%s" % path.name)
 
     def __retrieve_shapes(self):
-        for path in Path(self.scene_folder).rglob(DBF_FILE_PATTERN):
+        pbar = ProgressBar(list(Path(self.scene_folder).rglob(DBF_FILE_PATTERN)), title="Retrieve shapes", sleep=0.1)
+        for i, path in enumerate(pbar.iterable):
             self.shapes[path.stem] = MsfsShape(self.scene_folder, path.stem, path.stem + XML_FILE_EXT, path.name, path.stem + SHP_FILE_EXT, path.stem + SHX_FILE_EXT)
+            pbar.update("%s" % path.name)

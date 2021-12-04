@@ -14,10 +14,10 @@ def check_configuration(settings, msfs_project):
 
     # check if the projects folder exists
     if not os.path.isdir(msfs_project.parent_path):
-        pr_ko_red("projects_path value              ")
+        pr_ko_red("projects_path value                ")
         raise ScriptError(
             error_msg + "The folder containing your projects (" + msfs_project.parent_path + ") was not found. Please check the projects_path value")
-    pr_ok_green("projects_path value              ")
+    pr_ok_green("projects_path value                ")
 
     # check the projects name
     if not os.path.isdir(msfs_project.project_folder):

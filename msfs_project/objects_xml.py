@@ -1,4 +1,5 @@
 from utils import Xml
+from utils.progress_bar import ProgressBar
 
 
 class ObjectsXml(Xml):
@@ -25,27 +26,33 @@ class ObjectsXml(Xml):
         return self.root.findall(self.SCENERY_OBJECT_GROUP_SEARCH_PATTERN + guid.upper() + self.PARENT_PATTERN_SUFFIX)
 
     def __update_tiles_pos(self, msfs_project, settings):
-        for guid, tile in msfs_project.tiles.items():
-            print("-------------------------------------------------------------------------------")
-            print("xml tile: ", tile.name)
+        pbar = ProgressBar(msfs_project.tiles.items(), title="update tiles positions", sleep=0.25)
+        for guid, tile in pbar.iterable:
+            # print("-------------------------------------------------------------------------------")
+            # print("xml tile: ", tile.name)
 
             self.__update_scenery_object_pos(tile, self.__find_scenery_objects(guid.upper()), settings)
             self.__update_scenery_object_pos(tile, self.__find_scenery_objects_in_group(guid.upper()), settings)
 
+            pbar.update("%s" % guid + " : " + tile.name)
+
     def __update_colliders_pos(self, msfs_project, settings):
+        pbar = ProgressBar(msfs_project.colliders.items(), title="update colliders positions", sleep=0.25)
         for guid, collider in msfs_project.colliders.items():
-            print("-------------------------------------------------------------------------------")
-            print("xml collider: ", collider.name)
+            # print("-------------------------------------------------------------------------------")
+            # print("xml collider: ", collider.name)
 
             self.__update_scenery_object_pos(collider, self.__find_scenery_objects(guid.upper()), settings)
             self.__update_scenery_object_pos(collider, self.__find_scenery_objects_in_group(guid.upper()), settings)
+
+            pbar.update("%s" % guid + " : " + collider.name)
 
     @staticmethod
     def __update_scenery_object_pos(tile, found_scenery_objects, settings):
         for scenery_object in found_scenery_objects:
             new_lat = tile.pos.lat + settings.lat_correction
             new_lon = tile.pos.lon + settings.lon_correction
-            print("new lat: ", new_lat)
-            print("new lon: ", new_lon)
+            # print("new lat: ", new_lat)
+            # print("new lon: ", new_lon)
             scenery_object.set("lat", str(new_lat))
             scenery_object.set("lon", str(new_lon))

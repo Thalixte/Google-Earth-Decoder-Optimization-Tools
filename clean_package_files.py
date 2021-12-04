@@ -1,4 +1,5 @@
 import os
+import site
 import sys
 import bpy
 
@@ -14,6 +15,8 @@ else:
 
 # Get scripts folder and add it to the search path for modules
 os.chdir(files_dir)
+
+sys.path.append(site.USER_SITE)
 
 if files_dir not in sys.path:
     sys.path.append(files_dir)

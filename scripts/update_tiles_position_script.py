@@ -3,7 +3,7 @@ import os
 from constants import *
 from utils import Settings, check_configuration, ScriptError, \
     build_package, pr_bg_green, pr_bg_red, get_sources_path
-from msfs_project import MsfsProject, ObjectsXml
+from msfs_project import MsfsProject
 
 ##################################################################
 #                        Main process

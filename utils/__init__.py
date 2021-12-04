@@ -7,3 +7,4 @@ from .script_errors import *
 from .settings import *
 from .xml import *
 from .folders import *
+from install_lib import *
