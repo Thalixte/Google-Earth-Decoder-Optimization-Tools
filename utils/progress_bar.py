@@ -39,7 +39,7 @@ class ProgressBar:
             description = " DONE"
         msg = "\r[{0}] {1}%: {2}".format("#" * block + "-" * (self.length - block), round(progress * 100, 2), description)
 
-        sys.stdout.write(msg.ljust(100))
+        sys.stdout.write(msg.ljust(140))
         sys.stdout.flush()
         time.sleep(self.sleep)
 
