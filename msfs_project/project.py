@@ -65,7 +65,8 @@ class MsfsProject:
         self.business_json_folder = os.path.join(self.package_definitions_folder, self.author_name.lower() + "-" + self.project_name.lower())
         self.content_info_folder = os.path.join(self.package_definitions_folder, self.business_json_folder, self.CONTENT_INFO_FOLDER)
         self.scene_objects_xml_file_path = os.path.join(self.scene_folder, self.SCENE_OBJECTS_FILE)
-        self.objects_xml = ObjectsXml(self.scene_folder, self.SCENE_OBJECTS_FILE)
+        if os.path.isfile(self.scene_objects_xml_file_path):
+            self.objects_xml = ObjectsXml(self.scene_folder, self.SCENE_OBJECTS_FILE)
 
         self.__initialize(sources_path)
 

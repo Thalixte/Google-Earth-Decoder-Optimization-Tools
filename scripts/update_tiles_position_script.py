@@ -1,8 +1,7 @@
 import os
 
 from constants import *
-from utils import Settings, check_configuration, ScriptError, \
-    build_package, pr_bg_green, pr_bg_red, get_sources_path
+from utils import Settings, check_configuration, ScriptError, build_package, pr_bg_green, pr_bg_red, get_sources_path
 from msfs_project import MsfsProject
 
 ##################################################################
@@ -26,7 +25,6 @@ try:
     if settings.build_package_enabled:
         build_package(msfs_project, settings)
 
-    print(EOL)
     pr_bg_green("Script correctly applied" + constants.CEND)
 
 except ScriptError as ex:
