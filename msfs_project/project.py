@@ -156,7 +156,7 @@ class MsfsProject:
         self.__retrieve_shapes()
 
     def __retrieve_scene_objects(self):
-        pbar = ProgressBar(list(Path(self.modelLib_folder).rglob(XML_FILE_PATTERN)), title="Retrieve scenery objects", sleep=0.1)
+        pbar = ProgressBar(list(Path(self.modelLib_folder).rglob(XML_FILE_PATTERN)), title="Retrieve scenery objects")
         for i, path in enumerate(pbar.iterable):
             if not is_octant(path.stem):
                 msfs_scene_object = MsfsSceneObject(self.modelLib_folder, path.stem, path.name)
@@ -175,7 +175,7 @@ class MsfsProject:
             pbar.update("%s" % path.name)
 
     def __retrieve_shapes(self):
-        pbar = ProgressBar(list(Path(self.scene_folder).rglob(DBF_FILE_PATTERN)), title="Retrieve shapes", sleep=0.1)
+        pbar = ProgressBar(list(Path(self.scene_folder).rglob(DBF_FILE_PATTERN)), title="Retrieve shapes")
         for i, path in enumerate(pbar.iterable):
             self.shapes[path.stem] = MsfsShape(self.scene_folder, path.stem, path.stem + XML_FILE_EXT, path.name, path.stem + SHP_FILE_EXT, path.stem + SHX_FILE_EXT)
             pbar.update("%s" % path.name)
