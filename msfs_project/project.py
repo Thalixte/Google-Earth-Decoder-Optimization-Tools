@@ -70,6 +70,7 @@ class MsfsProject:
         self.__initialize(sources_path)
 
     def update_objects_position(self, settings):
+        print(self)
         self.objects_xml.update_objects_position(self, settings)
 
     def clean(self):

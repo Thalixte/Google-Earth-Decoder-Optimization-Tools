@@ -55,7 +55,7 @@ class ObjectsXml(Xml):
             self.__update_scenery_object_pos(collider, self.__find_scenery_objects(guid), settings)
             self.__update_scenery_object_pos(collider, self.__find_scenery_objects_in_group(guid), settings)
 
-            pbar.update("%s" % guid + " : " + collider.name + " : new lat: " + str(collider.pos.lat + settings.lat_correction) + " : new lon: " + str(collider.pos.lon + settings.lon_correction))
+            pbar.update("%s" % collider.name + " : new lat: " + str(collider.pos.lat + settings.lat_correction) + " : new lon: " + str(collider.pos.lon + settings.lon_correction))
 
     @staticmethod
     def __update_scenery_object_pos(tile, found_scenery_objects, settings):
