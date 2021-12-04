@@ -76,6 +76,31 @@ class MsfsProject:
 
     def clean(self):
         print(self)
+        pop_tiles = []
+        for guid, tile in self.tiles.items():
+            if not self.objects_xml.find_scenery_objects(guid) and not self.objects_xml.find_scenery_objects_in_group(guid):
+                for lod in tile.lods:
+                    if os.path.isfile(os.path.join(tile.folder, lod.bin_file)):
+                        os.remove(os.path.join(tile.folder, lod.bin_file))
+                        print(os.path.join(tile.folder, lod.bin_file), "removed")
+                    if os.path.isfile(os.path.join(tile.folder, lod.model_file)):
+                        os.remove(os.path.join(tile.folder, lod.model_file))
+                        print(os.path.join(tile.folder, lod.model_file), "removed")
+                    for texture in lod.textures:
+                        if os.path.isfile(os.path.join(self.texture_folder, texture)):
+                            os.remove(os.path.join(self.texture_folder, texture))
+                            print(os.path.join(self.texture_folder, texture), "removed")
+                pop_tiles.append(guid)
+        for guid in pop_tiles:
+            self.tiles.pop(guid)
+
+        for guid, collider in self.colliders.items():
+            if not self.objects_xml.find_scenery_objects(guid) and not self.objects_xml.find_scenery_objects_in_group(guid):
+                self.tiles.pop(guid)
+        for guid, scene_object in self.objects.items():
+            if not self.objects_xml.find_scenery_objects(guid) and not self.objects_xml.find_scenery_objects_in_group(guid):
+                self.tiles.pop(guid)
+
 
     def __initialize(self, sources_path):
         self.__init_structure(sources_path)

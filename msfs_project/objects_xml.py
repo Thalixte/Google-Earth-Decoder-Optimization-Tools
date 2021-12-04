@@ -27,10 +27,10 @@ class ObjectsXml(Xml):
     def __retrieve_library_objects(self):
         return self.root.findall(self.LIBRARY_OBJECTS_SEARCH_PATTERN)
 
-    def __find_scenery_objects(self, guid):
+    def find_scenery_objects(self, guid):
         return self.root.findall(self.SCENERY_OBJECT_SEARCH_PATTERN + guid.upper() + self.PARENT_PATTERN_SUFFIX)
 
-    def __find_scenery_objects_in_group(self, guid):
+    def find_scenery_objects_in_group(self, guid):
         return self.root.findall(self.SCENERY_OBJECT_GROUP_SEARCH_PATTERN + guid.upper() + self.PARENT_PATTERN_SUFFIX)
 
     def __update_tiles_pos(self, msfs_project, settings):
@@ -39,9 +39,8 @@ class ObjectsXml(Xml):
 
         pbar = ProgressBar(msfs_project.tiles.items(), title="update tiles positions", sleep=0.000001)
         for guid, tile in pbar.iterable:
-
-            self.__update_scenery_object_pos(tile, self.__find_scenery_objects(guid), settings)
-            self.__update_scenery_object_pos(tile, self.__find_scenery_objects_in_group(guid), settings)
+            self.__update_scenery_object_pos(tile, self.find_scenery_objects(guid), settings)
+            self.__update_scenery_object_pos(tile, self.find_scenery_objects_in_group(guid), settings)
 
             pbar.update("%s" % tile.name + " : new lat: " + str(tile.pos.lat + settings.lat_correction) + " : new lon: " + str(tile.pos.lon + settings.lon_correction))
 
@@ -51,9 +50,8 @@ class ObjectsXml(Xml):
 
         pbar = ProgressBar(msfs_project.colliders.items(), title="update colliders positions", sleep=0.000001)
         for guid, collider in msfs_project.colliders.items():
-
-            self.__update_scenery_object_pos(collider, self.__find_scenery_objects(guid), settings)
-            self.__update_scenery_object_pos(collider, self.__find_scenery_objects_in_group(guid), settings)
+            self.__update_scenery_object_pos(collider, self.find_scenery_objects(guid), settings)
+            self.__update_scenery_object_pos(collider, self.find_scenery_objects_in_group(guid), settings)
 
             pbar.update("%s" % collider.name + " : new lat: " + str(collider.pos.lat + settings.lat_correction) + " : new lon: " + str(collider.pos.lon + settings.lon_correction))
 

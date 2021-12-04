@@ -1,5 +1,3 @@
-import os
-
 from constants import GLTF_FILE_EXT
 from msfs_project.object import MsfsObject
 from msfs_project.position import MsfsPosition
