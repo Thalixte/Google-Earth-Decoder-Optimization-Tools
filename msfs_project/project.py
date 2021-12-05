@@ -185,12 +185,15 @@ class MsfsProject:
                                                path.stem + SHP_FILE_EXT, path.stem + SHX_FILE_EXT)
             pbar.update("%s" % path.name)
 
-    def __clean_objects(self, objects):
+    def __clean_objects(self, objects: dict):
         pop_objects = []
         for guid, object in objects.items():
+            # first, check if the object is unused
             if not self.objects_xml.find_scenery_objects(guid) and not self.objects_xml.find_scenery_objects_in_group(guid):
+                # unused object, so remove the files related to it
                 object.remove_files()
                 pop_objects.append(guid)
+
         for guid in pop_objects:
             objects.pop(guid)
 

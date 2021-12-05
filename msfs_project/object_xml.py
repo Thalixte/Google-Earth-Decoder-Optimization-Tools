@@ -19,3 +19,7 @@ class MsfsObjectXml(Xml):
     def find_scenery_lods(self):
         return self.root.findall(self.SCENERY_OBJECT_LODS_SEARCH_PATTERN)
 
+    def find_scenery_lod_models(self, file_name):
+        return self.root.findall(self.SCENERY_OBJECT_LOD_MODEL_FILE_SEARCH_PATTERN + file_name + self.PATTERN_SUFFIX)
+
+
