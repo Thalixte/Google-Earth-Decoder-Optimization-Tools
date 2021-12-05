@@ -75,32 +75,9 @@ class MsfsProject:
         self.objects_xml.update_objects_position(self, settings)
 
     def clean(self):
-        print(self)
-        pop_tiles = []
-        for guid, tile in self.tiles.items():
-            if not self.objects_xml.find_scenery_objects(guid) and not self.objects_xml.find_scenery_objects_in_group(guid):
-                for lod in tile.lods:
-                    if os.path.isfile(os.path.join(tile.folder, lod.bin_file)):
-                        os.remove(os.path.join(tile.folder, lod.bin_file))
-                        print(os.path.join(tile.folder, lod.bin_file), "removed")
-                    if os.path.isfile(os.path.join(tile.folder, lod.model_file)):
-                        os.remove(os.path.join(tile.folder, lod.model_file))
-                        print(os.path.join(tile.folder, lod.model_file), "removed")
-                    for texture in lod.textures:
-                        if os.path.isfile(os.path.join(self.texture_folder, texture)):
-                            os.remove(os.path.join(self.texture_folder, texture))
-                            print(os.path.join(self.texture_folder, texture), "removed")
-                pop_tiles.append(guid)
-        for guid in pop_tiles:
-            self.tiles.pop(guid)
-
-        for guid, collider in self.colliders.items():
-            if not self.objects_xml.find_scenery_objects(guid) and not self.objects_xml.find_scenery_objects_in_group(guid):
-                self.tiles.pop(guid)
-        for guid, scene_object in self.objects.items():
-            if not self.objects_xml.find_scenery_objects(guid) and not self.objects_xml.find_scenery_objects_in_group(guid):
-                self.tiles.pop(guid)
-
+        self.__clean_objects(self.tiles)
+        self.__clean_objects(self.colliders)
+        self.__clean_objects(self.objects)
 
     def __initialize(self, sources_path):
         self.__init_structure(sources_path)
@@ -165,7 +142,7 @@ class MsfsProject:
         alt_project_definition_xml = self.author_name.lower() + "-" + project_definition_xml.lower()
 
         return os.path.isfile(os.path.join(self.project_folder, project_definition_xml)) \
-            or os.path.isfile(os.path.join(self.project_folder, alt_project_definition_xml))
+               or os.path.isfile(os.path.join(self.project_folder, alt_project_definition_xml))
 
     def __create_project_file(self, sources_path, src_file_relative_path, dest_file_path, replace_content=False):
         if not os.path.isfile(dest_file_path):
@@ -204,5 +181,16 @@ class MsfsProject:
     def __retrieve_shapes(self):
         pbar = ProgressBar(list(Path(self.scene_folder).rglob(DBF_FILE_PATTERN)), title="Retrieve shapes")
         for i, path in enumerate(pbar.iterable):
-            self.shapes[path.stem] = MsfsShape(self.scene_folder, path.stem, path.stem + XML_FILE_EXT, path.name, path.stem + SHP_FILE_EXT, path.stem + SHX_FILE_EXT)
+            self.shapes[path.stem] = MsfsShape(self.scene_folder, path.stem, path.stem + XML_FILE_EXT, path.name,
+                                               path.stem + SHP_FILE_EXT, path.stem + SHX_FILE_EXT)
             pbar.update("%s" % path.name)
+
+    def __clean_objects(self, objects):
+        pop_objects = []
+        for guid, object in objects.items():
+            if not self.objects_xml.find_scenery_objects(guid) and not self.objects_xml.find_scenery_objects_in_group(guid):
+                object.remove_files()
+                pop_objects.append(guid)
+        for guid in pop_objects:
+            objects.pop(guid)
+

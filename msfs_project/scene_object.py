@@ -13,6 +13,11 @@ class MsfsSceneObject(MsfsObject):
         self.pos = MsfsPosition(0, 0, 0)
         self.lods = self.__retrieve_lods()
 
+    def remove_files(self):
+        for lod in self.lods:
+            lod.remove_files()
+        self.remove_file()
+
     def __retrieve_lods(self):
         lods = []
         lods_definition = self.xml.find_scenery_lods()
