@@ -3,6 +3,7 @@ import os
 
 from msfs_project.binary import MsfsBinary
 from msfs_project.texture import MsfsTexture
+from utils import backup_file
 
 
 class MsfsLod:
@@ -27,11 +28,19 @@ class MsfsLod:
     def __retrieve_gltf_resources(self, folder):
         self.binaries = []
         self.textures = []
-        data = json.load(open(os.path.join(folder, self.model_file)))
-        for buffer in data[self.BUFFERS_TAG]:
-            self.binaries.append(MsfsBinary(self.folder, buffer[self.URI_TAG]))
-        for image in data[self.IMAGES_TAG]:
-            self.textures.append(MsfsTexture(os.path.join(self.folder, self.TEXTURE_FOLDER), image[self.URI_TAG], image[self.MIME_TYPE_TAG]))
+        if os.path.isfile(os.path.join(folder, self.model_file)):
+            data = json.load(open(os.path.join(folder, self.model_file)))
+            for buffer in data[self.BUFFERS_TAG]:
+                self.binaries.append(MsfsBinary(self.folder, buffer[self.URI_TAG]))
+            for image in data[self.IMAGES_TAG]:
+                self.textures.append(MsfsTexture(os.path.join(self.folder, self.TEXTURE_FOLDER), image[self.URI_TAG], image[self.MIME_TYPE_TAG]))
+
+    def backup_files(self, backup_path, dry_mode=False, pbar=None):
+        for binary in self.binaries:
+            binary.backup_file(backup_path, dry_mode=dry_mode, pbar=pbar)
+        for texture in self.textures:
+            texture.backup_file(backup_path, dry_mode=dry_mode, pbar=pbar)
+        self.backup_file(backup_path, dry_mode=dry_mode, pbar=pbar)
 
     def remove_files(self):
         for binary in self.binaries:
@@ -39,6 +48,10 @@ class MsfsLod:
         for texture in self.textures:
             texture.remove_file()
         self.remove_file()
+
+    def backup_file(self, backup_path, dry_mode=False, pbar=None):
+        backup_file(backup_path, self.folder, self.model_file, dry_mode=dry_mode, pbar=pbar)
+
 
     def remove_file(self):
         file_path = os.path.join(self.folder, self.model_file)

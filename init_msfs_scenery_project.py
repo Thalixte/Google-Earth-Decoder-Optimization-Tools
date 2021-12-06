@@ -39,8 +39,8 @@ if cwd not in sys.path:
 from utils import *
 from constants import *
 
-# clear the system console
-os.system(CLEAR_CONSOLE_CMD)
+# clear and open the system console
+open_console()
 
 # Specify the script to be included
 scriptFiles = ["init_msfs_scenery_project_script.py"]

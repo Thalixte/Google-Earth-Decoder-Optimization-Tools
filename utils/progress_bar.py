@@ -16,7 +16,7 @@ class ProgressBar:
     range: int
     idx: int
 
-    def __init__(self, iterable, title="", sleep=DEFAULT_SLEEP, length=PROGRESS_BAR_LENGTH):
+    def __init__(self, iterable, title=str(), sleep=DEFAULT_SLEEP, length=PROGRESS_BAR_LENGTH):
         self.iterable = iterable
         self.title = title
         self.sleep = sleep
@@ -27,11 +27,19 @@ class ProgressBar:
         else:
             self.range = len(list(iterable))
 
-        if title is not "":
-            sys.stdout.write(title + EOL)
+        self.display_title()
+
+    def display_title(self, title=str()):
+        if title is not str():
+            self.title = title
+        if self.title is not str():
+            sys.stdout.write(self.title + EOL)
             sys.stdout.flush()
 
     def update(self, description=""):
+        if self.range <= 0:
+            return
+
         self.idx += 1
         progress = self.idx / self.range
         block = int(round(self.length * progress))

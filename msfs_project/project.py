@@ -71,13 +71,21 @@ class MsfsProject:
         self.__initialize(sources_path)
 
     def update_objects_position(self, settings):
-        print(self)
         self.objects_xml.update_objects_position(self, settings)
 
     def clean(self):
         self.__clean_objects(self.tiles)
         self.__clean_objects(self.colliders)
         self.__clean_objects(self.objects)
+
+    def backup(self, backup_subfolder, all_files=True):
+        print(EOL)
+        backup_path = os.path.join(self.backup_folder, backup_subfolder)
+        if all_files:
+            self.__backup_objects(self.tiles, backup_path, "backup tiles")
+            self.__backup_objects(self.colliders, backup_path, "backup colliders")
+        self.__backup_objects(self.objects, backup_path, "backup scene objects")
+        self.__backup_objects(self.shapes, backup_path, "backup shapes")
 
     def __initialize(self, sources_path):
         self.__init_structure(sources_path)
@@ -185,6 +193,15 @@ class MsfsProject:
                                                path.stem + SHP_FILE_EXT, path.stem + SHX_FILE_EXT)
             pbar.update("%s" % path.name)
 
+    def __backup_objects(self, objects: dict, backup_path, pbar_title="backup files"):
+        pbar = ProgressBar(list())
+        for guid, object in objects.items():
+            object.backup_files(backup_path, dry_mode=True, pbar=pbar)
+        if pbar.range > 0:
+            pbar.display_title(pbar_title)
+            for guid, object in objects.items():
+                object.backup_files(backup_path, pbar=pbar)
+
     def __clean_objects(self, objects: dict):
         pop_objects = []
         for guid, object in objects.items():
@@ -193,6 +210,8 @@ class MsfsProject:
                 # unused object, so remove the files related to it
                 object.remove_files()
                 pop_objects.append(guid)
+            else:
+                object.clean_lods()
 
         for guid in pop_objects:
             objects.pop(guid)

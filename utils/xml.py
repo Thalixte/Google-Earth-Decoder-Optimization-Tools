@@ -5,8 +5,8 @@ from utils import pretty_print, line_prepender
 
 
 class Xml:
-    file_path: str
     file_name: str
+    file_path: str
     tree: object
     root: object
 
