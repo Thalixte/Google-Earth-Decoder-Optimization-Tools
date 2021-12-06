@@ -7,7 +7,7 @@ from msfs_project.scene_object import MsfsSceneObject
 from msfs_project.collider import MsfsCollider
 from msfs_project.tile import MsfsTile
 from msfs_project.shape import MsfsShape
-from utils import replace_in_file, is_octant
+from utils import replace_in_file, is_octant, backup_file
 from pathlib import Path
 
 from utils.progress_bar import ProgressBar
@@ -80,12 +80,33 @@ class MsfsProject:
 
     def backup(self, backup_subfolder, all_files=True):
         print(EOL)
-        backup_path = os.path.join(self.backup_folder, backup_subfolder)
+        self.backup_files(backup_subfolder)
         if all_files:
-            self.__backup_objects(self.tiles, backup_path, "backup tiles")
-            self.__backup_objects(self.colliders, backup_path, "backup colliders")
+            self.backup_tiles(backup_subfolder)
+            self.backup_colliders(backup_subfolder)
+        self.backup_scene_objects(backup_subfolder)
+        self.backup_shapes(backup_subfolder)
+
+    def backup_tiles(self, backup_subfolder):
+        backup_path = os.path.join(self.backup_folder, backup_subfolder)
+        self.__backup_objects(self.tiles, backup_path, "backup tiles")
+
+    def backup_colliders(self, backup_subfolder):
+        backup_path = os.path.join(self.backup_folder, backup_subfolder)
+        self.__backup_objects(self.colliders, backup_path, "backup colliders")
+
+    def backup_scene_objects(self, backup_subfolder):
+        backup_path = os.path.join(self.backup_folder, backup_subfolder)
         self.__backup_objects(self.objects, backup_path, "backup scene objects")
+
+    def backup_shapes(self, backup_subfolder):
+        backup_path = os.path.join(self.backup_folder, backup_subfolder)
         self.__backup_objects(self.shapes, backup_path, "backup shapes")
+
+    def backup_files(self, backup_subfolder):
+        backup_path = os.path.join(self.backup_folder, backup_subfolder)
+        pbar = ProgressBar([self.SCENE_OBJECTS_FILE], title="backup " + self.SCENE_OBJECTS_FILE)
+        backup_file(backup_path, self.scene_folder, self.SCENE_OBJECTS_FILE, pbar=pbar)
 
     def __initialize(self, sources_path):
         self.__init_structure(sources_path)
@@ -168,7 +189,7 @@ class MsfsProject:
         self.__retrieve_shapes()
 
     def __retrieve_scene_objects(self):
-        pbar = ProgressBar(list(Path(self.modelLib_folder).rglob(XML_FILE_PATTERN)), title="Retrieve scenery objects")
+        pbar = ProgressBar(list(Path(self.modelLib_folder).rglob(XML_FILE_PATTERN)), title="Retrieve project infos")
         for i, path in enumerate(pbar.iterable):
             if not is_octant(path.stem):
                 msfs_scene_object = MsfsSceneObject(self.modelLib_folder, path.stem, path.name)
@@ -189,8 +210,7 @@ class MsfsProject:
     def __retrieve_shapes(self):
         pbar = ProgressBar(list(Path(self.scene_folder).rglob(DBF_FILE_PATTERN)), title="Retrieve shapes")
         for i, path in enumerate(pbar.iterable):
-            self.shapes[path.stem] = MsfsShape(self.scene_folder, path.stem, path.stem + XML_FILE_EXT, path.name,
-                                               path.stem + SHP_FILE_EXT, path.stem + SHX_FILE_EXT)
+            self.shapes[path.stem] = MsfsShape(self.scene_folder, path.stem, path.stem + XML_FILE_EXT, path.name, path.stem + SHP_FILE_EXT, path.stem + SHX_FILE_EXT)
             pbar.update("%s" % path.name)
 
     def __backup_objects(self, objects: dict, backup_path, pbar_title="backup files"):
