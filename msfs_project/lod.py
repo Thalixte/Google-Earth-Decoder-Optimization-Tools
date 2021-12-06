@@ -33,7 +33,11 @@ class MsfsLod:
             for buffer in data[self.BUFFERS_TAG]:
                 self.binaries.append(MsfsBinary(self.folder, buffer[self.URI_TAG]))
             for image in data[self.IMAGES_TAG]:
-                self.textures.append(MsfsTexture(os.path.join(self.folder, self.TEXTURE_FOLDER), image[self.URI_TAG], image[self.MIME_TYPE_TAG]))
+                mime_type = str()
+                if self.MIME_TYPE_TAG in image.keys():
+                    mime_type = image[self.MIME_TYPE_TAG]
+                self.textures.append(MsfsTexture(os.path.join(self.folder, self.TEXTURE_FOLDER), image[self.URI_TAG], mime_type))
+
 
     def backup_files(self, backup_path, dry_mode=False, pbar=None):
         for binary in self.binaries:

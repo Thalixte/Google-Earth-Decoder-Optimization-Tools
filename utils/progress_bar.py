@@ -30,6 +30,9 @@ class ProgressBar:
         self.display_title()
 
     def display_title(self, title=str()):
+        if self.range <= 0:
+            return
+
         if title is not str():
             self.title = title
         if self.title is not str():

@@ -76,23 +76,3 @@ def maximize_console(lines=None):
             lines = max(min(lines, MAX_LINES), max_size.Y)
         subprocess.check_call("mode.com con cols={} lines={}".format(cols, lines))
         user32.ShowWindow(hwnd, SW_MAXIMIZE)
-
-
-def console_print(*args, **kwargs):
-    if bpy.context.screen:
-        for a in bpy.context.screen.areas:
-            if a.type == CONSOLE_TYPE:
-                c = {}
-                c["area"] = a
-                c["space_data"] = a.spaces.active
-                c["region"] = a.regions[-1]
-                c["window"] = context.window
-                c["screen"] = context.screen
-                s = " ".join([str(arg) for arg in args])
-                for line in s.split("\n"):
-                    bpy.ops.console.scrollback_append(c, text=line)
-
-
-def print(*args, **kwargs):
-    console_print(*args, **kwargs)  # to py consoles
-    __builtin__.print(*args, **kwargs)  # to system console

@@ -11,8 +11,9 @@ from pathlib import Path
 from constants import *
 from utils import check_configuration, ScriptError, build_package, pr_bg_green, pr_bg_red
 from msfs_project import MsfsProject
+from blender import clean_scene
 
-BACKUP_ENABLED = True
+BACKUP_ENABLED = False
 
 ##################################################################
 #                        Main process
@@ -25,25 +26,27 @@ try:
     check_configuration(settings, msfs_project)
 
     if BACKUP_ENABLED:
-        msfs_project.backup_files(Path(os.path.abspath(__file__)).stem)
+        msfs_project.backup(Path(os.path.abspath(__file__)).stem, False)
 
     print("-------------------------------------------------------------------------------")
-    print("---------------------------- UPDATE TILES POSITION ----------------------------")
+    print("------------------------------- OPTIMIZE SCENERY ------------------------------")
     print("-------------------------------------------------------------------------------")
 
-    msfs_project.update_objects_position(settings)
+    clean_scene()
+
+    # msfs_project.optimize()
 
     if settings.build_package_enabled:
         build_package(msfs_project, settings)
 
-    pr_bg_green("Script correctly applied" + constants.CEND)
+    pr_bg_green("Script correctly applied" + CEND)
 
 except ScriptError as ex:
-    error_report = str().join(ex.value)
+    error_report = "".join(ex.value)
     print(constants.EOL + error_report)
-    pr_bg_red("Script aborted" + constants.CEND)
+    pr_bg_red("Script aborted" + CEND)
 except RuntimeError as ex:
     print(constants.EOL + ex)
-    pr_bg_red("Script aborted" + constants.CEND)
+    pr_bg_red("Script aborted" + CEND)
 finally:
     os.chdir(os.path.dirname(__file__))

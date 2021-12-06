@@ -51,6 +51,7 @@ class MsfsProject:
     COLLIDER_SUFFIX = "_collider"
 
     def __init__(self, projects_path, project_name, author_name, sources_path):
+        print(EOL)
         self.parent_path = projects_path
         self.project_name = project_name
         self.author_name = author_name
@@ -71,12 +72,8 @@ class MsfsProject:
         self.__initialize(sources_path)
 
     def update_objects_position(self, settings):
+        print(EOL)
         self.objects_xml.update_objects_position(self, settings)
-
-    def clean(self):
-        self.__clean_objects(self.tiles)
-        self.__clean_objects(self.colliders)
-        self.__clean_objects(self.objects)
 
     def backup(self, backup_subfolder, all_files=True):
         print(EOL)
@@ -86,6 +83,15 @@ class MsfsProject:
             self.backup_colliders(backup_subfolder)
         self.backup_scene_objects(backup_subfolder)
         self.backup_shapes(backup_subfolder)
+
+    def clean(self):
+        print(EOL)
+        self.__clean_objects(self.tiles)
+        self.__clean_objects(self.colliders)
+        self.__clean_objects(self.objects)
+
+    def optimize(self):
+        print(EOL)
 
     def backup_tiles(self, backup_subfolder):
         backup_path = os.path.join(self.backup_folder, backup_subfolder)

@@ -18,30 +18,34 @@ class Settings:
     lon_correction: float
     lods: list
 
-    def __init__(self, sources_path=""):
-        self.projects_path = ""
-        self.project_name = ""
-        self.author_name = ""
-        self.node_js_folder = ""
-        self.fspackagetool_folder = ""
+    def __init__(self, sources_path=str()):
+        self.projects_path = str()
+        self.project_name = str()
+        self.author_name = str()
+        self.node_js_folder = str()
+        self.fspackagetool_folder = str()
         self.msfs_steam_version = "False"
         self.build_package_enabled = "False"
+        self.reload_modules = "False"
         self.sources_path = sources_path
         self.lat_correction = 0.0
         self.lon_correction = 0.0
 
         config = cp.ConfigParser()
-        config.read('optimisation_tools.ini', encoding=ENCODING)
+        config.read("optimization_tools.ini", encoding=ENCODING)
 
         for section_name in config.sections():
             for name, value in config.items(section_name):
-                setattr(self, name, value.replace('"', ''))
+                setattr(self, name, value.replace('"', str()))
 
         # check if the package is built at the end of the script
         self.msfs_steam_version = json.loads(self.msfs_steam_version.lower())
 
         # check if the package is built at the end of the script
         self.build_package_enabled = json.loads(self.build_package_enabled.lower())
+
+        # check if modules have to be reloaded (mostly for blender dev purpose)
+        self.reload_modules = json.loads(self.reload_modules.lower())
 
         # ensure to convert float settings values
         self.lat_correction = float(self.lat_correction)

@@ -1,14 +1,19 @@
+from utils import Settings, get_sources_path, reload_modules
+
+settings = Settings(get_sources_path())
+
+# reload modules if the option is enabled in the optimization_tools.ini file
+reload_modules(settings)
+
 import os
 
 from constants import *
-from utils import Settings, check_configuration, ScriptError, pr_bg_green, pr_bg_red, get_sources_path
+from utils import ScriptError, pr_bg_green, pr_bg_red
 from msfs_project import MsfsProject
 
 ##################################################################
 #                        Main process
 ##################################################################
-
-settings = Settings(get_sources_path())
 
 try:
     print("-------------------------------------------------------------------------------")

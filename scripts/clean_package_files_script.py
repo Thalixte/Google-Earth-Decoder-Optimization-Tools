@@ -1,17 +1,22 @@
-import os
-from pathlib import Path
+from utils import Settings, get_sources_path, reload_modules
 
+settings = Settings(get_sources_path())
+
+# reload modules if the option is enabled in the optimization_tools.ini file
+reload_modules(settings)
+
+import os
+
+from pathlib import Path
 from constants import *
-from utils import Settings, check_configuration, ScriptError, build_package, pr_bg_green, pr_bg_red, get_sources_path
+from utils import check_configuration, ScriptError, build_package, pr_bg_green, pr_bg_red
 from msfs_project import MsfsProject
 
-BACKUP_ENABLED: False
+BACKUP_ENABLED = True
 
 ##################################################################
 #                        Main process
 ##################################################################
-
-settings = Settings(get_sources_path())
 
 try:
     # instantiate the msfsProject and create the necessary resources if it does not exist
@@ -19,10 +24,11 @@ try:
 
     check_configuration(settings, msfs_project)
 
-    msfs_project.backup(Path(os.path.abspath(__file__)).stem)
+    if BACKUP_ENABLED:
+        msfs_project.backup(Path(os.path.abspath(__file__)).stem)
 
     print("-------------------------------------------------------------------------------")
-    print("----------------------------- UPDATE TILES POSITION----------------------------")
+    print("----------------------------- CLEAN PACKAGE FILES -----------------------------")
     print("-------------------------------------------------------------------------------")
 
     msfs_project.clean()
