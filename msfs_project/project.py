@@ -72,7 +72,7 @@ class MsfsProject:
             self.objects_xml = ObjectsXml(self.scene_folder, self.SCENE_OBJECTS_FILE)
         self.min_lod_level = 0
 
-        self.__initialize(sources_path, init=init)
+        self.__initialize(sources_path)
 
     def update_objects_position(self, settings):
         print(EOL)
@@ -121,12 +121,12 @@ class MsfsProject:
             pbar = ProgressBar([self.SCENE_OBJECTS_FILE], title="backup " + self.SCENE_OBJECTS_FILE)
             backup_file(backup_path, self.scene_folder, self.SCENE_OBJECTS_FILE, pbar=pbar)
 
-    def __initialize(self, sources_path, init=False):
-        self.__init_structure(sources_path, init=init)
+    def __initialize(self, sources_path):
+        self.__init_structure(sources_path)
         self.__init_components()
         self.__guess_min_lod_level()
 
-    def __init_structure(self, sources_path, init=False):
+    def __init_structure(self, sources_path):
         self.project_definition_xml = self.project_name + XML_FILE_EXT
         self.package_definitions_xml = self.author_name.lower() + "-" + self.project_definition_xml.lower()
         self.objects = dict()
@@ -142,7 +142,7 @@ class MsfsProject:
         # create the PackageSources folder if it does not exist
         os.makedirs(self.package_sources_folder, exist_ok=True)
         # rename modelLib folder if it exists
-        if not init and os.path.isdir(os.path.join(self.package_sources_folder, self.MODEL_LIB_FOLDER)):
+        if os.path.isdir(os.path.join(self.package_sources_folder, self.MODEL_LIB_FOLDER)):
             # change modelib folder to fix CTD issues (see
             # https://flightsim.to/blog/creators-guide-fix-ctd-issues-on-your-scenery/)
             os.rename(os.path.join(self.package_sources_folder, self.MODEL_LIB_FOLDER), self.modelLib_folder)
