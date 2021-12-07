@@ -1,8 +1,7 @@
 import configparser as cp
 import json
-import os
 
-from constants import ENCODING
+from constants import ENCODING, PNG_TEXTURE_FORMAT, INI_FILE
 
 
 class Settings:
@@ -14,6 +13,7 @@ class Settings:
     msfs_steam_version: str
     build_package_enabled: str
     sources_path: str
+    output_texture_format: str
     lat_correction: float
     lon_correction: float
     lods: list
@@ -28,11 +28,12 @@ class Settings:
         self.build_package_enabled = "False"
         self.reload_modules = "False"
         self.sources_path = sources_path
+        self.output_texture_format = PNG_TEXTURE_FORMAT
         self.lat_correction = 0.0
         self.lon_correction = 0.0
 
         config = cp.ConfigParser()
-        config.read("optimization_tools.ini", encoding=ENCODING)
+        config.read(INI_FILE, encoding=ENCODING)
 
         for section_name in config.sections():
             for name, value in config.items(section_name):
@@ -48,8 +49,8 @@ class Settings:
         self.reload_modules = json.loads(self.reload_modules.lower())
 
         # ensure to convert float settings values
-        self.lat_correction = float(self.lat_correction)
-        self.lon_correction = float(self.lon_correction)
+        self.lat_correction = float(str(self.lat_correction))
+        self.lon_correction = float(str(self.lon_correction))
 
     def __setattr__(self, attr, value):
         super().__setattr__(attr, value)

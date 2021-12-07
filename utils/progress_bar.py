@@ -2,7 +2,8 @@ import sys
 import time
 from types import GeneratorType
 
-from constants import EOL
+from constants import EOL, CRED, CORANGE, CGREEN, CEND
+from utils import print_title
 
 PROGRESS_BAR_LENGTH = 50
 DEFAULT_SLEEP = 0.0
@@ -16,16 +17,15 @@ class ProgressBar:
     range: int
     idx: int
 
+    PROGRESS_BAR_COLORS = {0: CRED, 0.25: CORANGE, 0.75: CGREEN}
+
     def __init__(self, iterable, title=str(), sleep=DEFAULT_SLEEP, length=PROGRESS_BAR_LENGTH):
         self.iterable = iterable
         self.title = title
         self.sleep = sleep
         self.length = length
         self.idx = 0
-        if type(iterable) is not GeneratorType:
-            self.range = len(iterable)
-        else:
-            self.range = len(list(iterable))
+        self.range = len(iterable) if type(iterable) is not GeneratorType else len(list(iterable))
 
         self.display_title()
 
@@ -36,23 +36,25 @@ class ProgressBar:
         if title is not str():
             self.title = title
         if self.title is not str():
-            sys.stdout.write(self.title + EOL)
-            sys.stdout.flush()
+            print_title(self.title)
 
-    def update(self, description=""):
+    def update(self, description=str()):
         if self.range <= 0:
             return
 
         self.idx += 1
         progress = self.idx / self.range
         block = int(round(self.length * progress))
-        if progress >= 1:
-            description = " DONE"
-        msg = "\r[{0}] {1}%: {2}".format("#" * block + "-" * (self.length - block), round(progress * 100, 2), description)
+        description = " DONE" if progress >= 1 else description
+        msg = "\r[{0}] {1}%: {2}".format("\u25A0" * block + "-" * (self.length - block), round(progress * 100, 2), description + self.__get_color(progress))
 
         sys.stdout.write(msg.ljust(140))
         sys.stdout.flush()
         time.sleep(self.sleep)
 
         if progress >= 1:
-            print(EOL)
+            print(CEND, EOL)
+
+    def __get_color(self, progress):
+        for step, color in self.PROGRESS_BAR_COLORS.items(): res = color if progress >= step else res
+        return res

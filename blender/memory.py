@@ -1,7 +1,7 @@
 import bpy
 
 
-def removeMeshFromMemory(passedName):
+def remove_mesh_from_memory(passedName):
     print("removeMeshFromMemory:[%s]." % passedName)
     # Extra test because this can crash Blender if not done correctly.
     result = False

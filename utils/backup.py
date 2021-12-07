@@ -4,8 +4,7 @@ import shutil
 
 def backup_file(backup_path, folder, file, dry_mode=False, pbar=None):
     file_path = os.path.join(folder, file)
-    root_path = os.path.commonpath([backup_path, folder])
-    backup_file_path = os.path.join(root_path, os.path.relpath(backup_path, root_path), os.path.relpath(file_path, root_path))
+    backup_file_path = get_backup_file_path(backup_path, folder, file)
     previous_path = str()
 
     if not dry_mode:
@@ -25,3 +24,9 @@ def backup_file(backup_path, folder, file, dry_mode=False, pbar=None):
                     pbar.range+=1
                 else:
                     pbar.update("%s" % file)
+
+
+def get_backup_file_path(backup_path, folder, file):
+    root_path = os.path.commonpath([backup_path, folder])
+    return os.path.join(root_path, os.path.relpath(backup_path, root_path), os.path.relpath(os.path.join(folder, file), root_path))
+

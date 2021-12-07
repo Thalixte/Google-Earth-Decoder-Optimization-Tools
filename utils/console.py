@@ -5,12 +5,9 @@ import ctypes
 import msvcrt
 import subprocess
 
-from bpy import context
 from ctypes import wintypes, windll
 
-import builtins as __builtin__
-
-from constants import CLEAR_CONSOLE_CMD
+from constants import CLEAR_CONSOLE_CMD, EOL, CEND
 
 KERNEL32_LIB = "kernel32"
 USER32_LIB = "user32"
@@ -20,6 +17,8 @@ SW_SHOW = 5
 MAX_LINES = 9999
 CONSOLE_CMD = "CONOUT$"
 CONSOLE_TYPE = "CONSOLE"
+TITLE_LENGTH = 100
+TITLE_FILL_CHAR = "-"
 
 kernel32 = ctypes.WinDLL(KERNEL32_LIB, use_last_error=True)
 user32 = ctypes.WinDLL(USER32_LIB, use_last_error=True)
@@ -70,9 +69,14 @@ def maximize_console(lines=None):
 
     hwnd = kernel32.GetConsoleWindow()
     if cols and hwnd:
-        if lines is None:
-            lines = max_size.Y
-        else:
-            lines = max(min(lines, MAX_LINES), max_size.Y)
+        lines = max_size.Y if lines is None else max(min(lines, MAX_LINES), max_size.Y)
         subprocess.check_call("mode.com con cols={} lines={}".format(cols, lines))
+        subprocess.check_call("mode.com con cp select=65001")
         user32.ShowWindow(hwnd, SW_MAXIMIZE)
+
+
+def print_title(title):
+    print(CEND, TITLE_FILL_CHAR*TITLE_LENGTH)
+    title = " " + title + " "
+    print(title.upper().center(TITLE_LENGTH, TITLE_FILL_CHAR))
+    print(TITLE_FILL_CHAR*TITLE_LENGTH, EOL)

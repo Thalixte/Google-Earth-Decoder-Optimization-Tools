@@ -1,4 +1,4 @@
-from utils import Settings, get_sources_path, reload_modules
+from utils import Settings, get_sources_path, reload_modules, print_title
 
 settings = Settings(get_sources_path())
 
@@ -16,9 +16,7 @@ from msfs_project import MsfsProject
 ##################################################################
 
 try:
-    print("-------------------------------------------------------------------------------")
-    print("----------------------------- INIT SCENERY PROJECT ----------------------------")
-    print("-------------------------------------------------------------------------------")
+    print_title("INIT SCENERY PROJECT")
 
     # instantiate the msfsProject and create the necessary resources if it does not exist
     msfs_project = MsfsProject(settings.projects_path, settings.project_name, settings.author_name, settings.sources_path)

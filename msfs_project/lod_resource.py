@@ -4,10 +4,12 @@ from utils import backup_file
 
 
 class MsfsLodResource:
+    model_file_path: str
     folder: str
     file: str
 
-    def __init__(self, folder, file):
+    def __init__(self, model_file_path, folder, file):
+        self.model_file_path = model_file_path
         self.folder = folder
         self.file = file
 

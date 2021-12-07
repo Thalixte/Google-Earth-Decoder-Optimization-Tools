@@ -7,7 +7,8 @@ from msfs_project.scene_object import MsfsSceneObject
 from msfs_project.collider import MsfsCollider
 from msfs_project.tile import MsfsTile
 from msfs_project.shape import MsfsShape
-from utils import replace_in_file, is_octant, backup_file
+from utils import replace_in_file, is_octant, backup_file, install_python_lib, ScriptError, print_title, \
+    get_backup_file_path
 from pathlib import Path
 
 from utils.progress_bar import ProgressBar
@@ -59,12 +60,15 @@ class MsfsProject:
         self.backup_folder = os.path.join(self.project_folder, self.BACKUP_FOLDER)
         self.package_definitions_folder = os.path.join(self.project_folder, self.PACKAGE_DEFINITIONS_FOLDER)
         self.package_sources_folder = os.path.join(self.project_folder, self.PACKAGE_SOURCES_FOLDER)
-        self.modelLib_folder = os.path.join(self.package_sources_folder, self.project_name.lower() + "-" + self.MODEL_LIB_FOLDER)
+        self.modelLib_folder = os.path.join(self.package_sources_folder,
+                                            self.project_name.lower() + "-" + self.MODEL_LIB_FOLDER)
         self.scene_folder = os.path.join(self.package_sources_folder, self.SCENE_FOLDER)
         self.texture_folder = os.path.join(self.modelLib_folder, self.TEXTURE_FOLDER)
         self.scene_folder = os.path.join(self.package_sources_folder, self.SCENE_FOLDER)
-        self.business_json_folder = os.path.join(self.package_definitions_folder, self.author_name.lower() + "-" + self.project_name.lower())
-        self.content_info_folder = os.path.join(self.package_definitions_folder, self.business_json_folder, self.CONTENT_INFO_FOLDER)
+        self.business_json_folder = os.path.join(self.package_definitions_folder,
+                                                 self.author_name.lower() + "-" + self.project_name.lower())
+        self.content_info_folder = os.path.join(self.package_definitions_folder, self.business_json_folder,
+                                                self.CONTENT_INFO_FOLDER)
         self.scene_objects_xml_file_path = os.path.join(self.scene_folder, self.SCENE_OBJECTS_FILE)
         if os.path.isfile(self.scene_objects_xml_file_path):
             self.objects_xml = ObjectsXml(self.scene_folder, self.SCENE_OBJECTS_FILE)
@@ -90,7 +94,10 @@ class MsfsProject:
         self.__clean_objects(self.colliders)
         self.__clean_objects(self.objects)
 
-    def optimize(self):
+    def optimize(self, settings):
+        dest_format = settings.output_texture_format
+        src_format = JPG_TEXTURE_FORMAT if dest_format == PNG_TEXTURE_FORMAT else PNG_TEXTURE_FORMAT
+        self.__convert_tiles_textures(src_format, dest_format)
         print(EOL)
 
     def backup_tiles(self, backup_subfolder):
@@ -111,8 +118,9 @@ class MsfsProject:
 
     def backup_files(self, backup_subfolder):
         backup_path = os.path.join(self.backup_folder, backup_subfolder)
-        pbar = ProgressBar([self.SCENE_OBJECTS_FILE], title="backup " + self.SCENE_OBJECTS_FILE)
-        backup_file(backup_path, self.scene_folder, self.SCENE_OBJECTS_FILE, pbar=pbar)
+        if not os.path.isfile(get_backup_file_path(backup_path, self.scene_folder, self.SCENE_OBJECTS_FILE)):
+            pbar = ProgressBar([self.SCENE_OBJECTS_FILE], title="backup " + self.SCENE_OBJECTS_FILE)
+            backup_file(backup_path, self.scene_folder, self.SCENE_OBJECTS_FILE, pbar=pbar)
 
     def __initialize(self, sources_path):
         self.__init_structure(sources_path)
@@ -216,7 +224,8 @@ class MsfsProject:
     def __retrieve_shapes(self):
         pbar = ProgressBar(list(Path(self.scene_folder).rglob(DBF_FILE_PATTERN)), title="Retrieve shapes")
         for i, path in enumerate(pbar.iterable):
-            self.shapes[path.stem] = MsfsShape(self.scene_folder, path.stem, path.stem + XML_FILE_EXT, path.name, path.stem + SHP_FILE_EXT, path.stem + SHX_FILE_EXT)
+            self.shapes[path.stem] = MsfsShape(self.scene_folder, path.stem, path.stem + XML_FILE_EXT, path.name,
+                                               path.stem + SHP_FILE_EXT, path.stem + SHX_FILE_EXT)
             pbar.update("%s" % path.name)
 
     def __backup_objects(self, objects: dict, backup_path, pbar_title="backup files"):
@@ -232,7 +241,8 @@ class MsfsProject:
         pop_objects = []
         for guid, object in objects.items():
             # first, check if the object is unused
-            if not self.objects_xml.find_scenery_objects(guid) and not self.objects_xml.find_scenery_objects_in_group(guid):
+            if not self.objects_xml.find_scenery_objects(guid) and not self.objects_xml.find_scenery_objects_in_group(
+                    guid):
                 # unused object, so remove the files related to it
                 object.remove_files()
                 pop_objects.append(guid)
@@ -242,3 +252,24 @@ class MsfsProject:
         for guid in pop_objects:
             objects.pop(guid)
 
+    def __retrieve_tiles_textures(self, extension):
+        textures = []
+        for guid, tile in self.tiles.items():
+            for lod in tile.lods: textures.extend([texture for texture in lod.textures if extension in texture.file])
+        return textures
+
+    def __convert_tiles_textures(self, src_format, dest_format):
+        textures = self.__retrieve_tiles_textures(src_format)
+
+        if textures:
+            print(src_format + " texture files detected in the tiles of the project! Try to install pip, then convert them")
+            print_title("INSTALL PILLOW")
+            install_python_lib("Pillow")
+
+            pbar = ProgressBar(textures, title="CONVERT " + src_format.upper() + " TEXTURE FILES TO " + dest_format.upper())
+            for texture in textures:
+                file = texture.file
+                if not texture.convert(src_format, dest_format):
+                    raise ScriptError(src_format + " texture files detected in " + self.texture_folder + "! Please convert them to " + dest_format + " format prior to launch the script, or remove them")
+                else:
+                    pbar.update("%s converted to %s" % (file, dest_format))

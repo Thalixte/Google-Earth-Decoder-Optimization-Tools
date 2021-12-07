@@ -1,4 +1,4 @@
-from utils import Settings, get_sources_path, reload_modules
+from utils import Settings, get_sources_path, reload_modules, print_title
 
 settings = Settings(get_sources_path())
 
@@ -28,13 +28,10 @@ try:
     if BACKUP_ENABLED:
         msfs_project.backup(Path(os.path.abspath(__file__)).stem, False)
 
-    print("-------------------------------------------------------------------------------")
-    print("------------------------------- OPTIMIZE SCENERY ------------------------------")
-    print("-------------------------------------------------------------------------------")
+    print_title("OPTIMIZE SCENERY")
 
     clean_scene()
-
-    # msfs_project.optimize()
+    msfs_project.optimize(settings)
 
     if settings.build_package_enabled:
         build_package(msfs_project, settings)

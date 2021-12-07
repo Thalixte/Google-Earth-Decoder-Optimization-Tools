@@ -1,5 +1,5 @@
 import bpy
-from blender.memory import removeMeshFromMemory
+from blender.memory import remove_mesh_from_memory
 from constants import EOL
 
 SELECT_ACTION = "SELECT"
@@ -31,7 +31,7 @@ def clean_scene():
 
     # Now cycles through the dangling datablocks and remove them.
     for me in bpy.data.meshes:
-        if not removeMeshFromMemory(me.name):
+        if not remove_mesh_from_memory(me.name):
             print("Unable to remove [%s]." % me.name)
 
     print(EOL, "3d scene cleaned", EOL)

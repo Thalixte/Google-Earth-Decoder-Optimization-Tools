@@ -1,4 +1,4 @@
-from utils import Settings, get_sources_path, reload_modules
+from utils import Settings, get_sources_path, reload_modules, print_title
 
 settings = Settings(get_sources_path())
 
@@ -26,10 +26,6 @@ try:
 
     if BACKUP_ENABLED:
         msfs_project.backup_files(Path(os.path.abspath(__file__)).stem)
-
-    print("-------------------------------------------------------------------------------")
-    print("---------------------------- UPDATE TILES POSITION ----------------------------")
-    print("-------------------------------------------------------------------------------")
 
     msfs_project.update_objects_position(settings)
 

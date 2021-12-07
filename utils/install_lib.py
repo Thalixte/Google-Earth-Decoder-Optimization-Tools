@@ -21,6 +21,7 @@ def install_python_lib(lib, install_pip=False):
     os_python_path = os.path.expandvars(R"%USERPROFILE%\AppData\Roaming\Python")
     python_missing_meg = "python interpreter not found on your system"
     error_msg = "pip and " + lib + " installation failed in blender lib folder. Please consider running this script as an administrator"
+    python_exe = os.path.join(sys.prefix, 'bin', 'python.exe')
 
     # python lib path fallback
     if bpy.app.binary_path_python is None:
@@ -41,13 +42,13 @@ def install_python_lib(lib, install_pip=False):
             # install or upgrade pip
             subprocess.check_call([sys.executable, "-m", "ensurepip"], shell=True)
             subprocess.check_call(
-                [sys.executable, "-m", PIP_LIB, "--disable-pip-version-check", "install", "--upgrade", PIP_LIB,
+                [python_exe, "-m", PIP_LIB, "--disable-pip-version-check", "install", "--upgrade", PIP_LIB,
                  "--user", "--no-warn-script-location"], shell=True)
             globals()[PIP_LIB] = import_module(PIP_LIB)
 
         # install required packages
-        subprocess.check_call(
-            [sys.executable, "-m", PIP_LIB, "--disable-pip-version-check", "install", "--upgrade", lib, "--user",
+        subprocess.run(
+            [python_exe, "-m", PIP_LIB, "--disable-pip-version-check", "install", "--upgrade", lib, "--user",
              "--no-warn-script-location"], shell=True)
     except:
         raise ScriptError(error_msg)
