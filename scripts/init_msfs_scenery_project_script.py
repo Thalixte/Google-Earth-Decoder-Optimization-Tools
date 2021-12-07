@@ -19,7 +19,7 @@ try:
     print_title("INIT SCENERY PROJECT")
 
     # instantiate the msfsProject and create the necessary resources if it does not exist
-    msfs_project = MsfsProject(settings.projects_path, settings.project_name, settings.author_name, settings.sources_path)
+    msfs_project = MsfsProject(settings.projects_path, settings.project_name, settings.author_name, settings.sources_path, init=True)
 
     pr_bg_green("Script correctly applied" + constants.CEND)
 

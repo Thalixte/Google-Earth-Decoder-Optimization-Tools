@@ -33,6 +33,7 @@ class MsfsProject:
     scene_objects_xml_file_path: str
     business_json_path: str
     thumbnail_picture_path: str
+    min_lod_level: int
     objects: dict
     tiles: dict
     shapes: dict
@@ -51,7 +52,7 @@ class MsfsProject:
     SCENE_OBJECTS_FILE = "objects" + XML_FILE_EXT
     COLLIDER_SUFFIX = "_collider"
 
-    def __init__(self, projects_path, project_name, author_name, sources_path):
+    def __init__(self, projects_path, project_name, author_name, sources_path, init=False):
         print(EOL)
         self.parent_path = projects_path
         self.project_name = project_name
@@ -60,20 +61,18 @@ class MsfsProject:
         self.backup_folder = os.path.join(self.project_folder, self.BACKUP_FOLDER)
         self.package_definitions_folder = os.path.join(self.project_folder, self.PACKAGE_DEFINITIONS_FOLDER)
         self.package_sources_folder = os.path.join(self.project_folder, self.PACKAGE_SOURCES_FOLDER)
-        self.modelLib_folder = os.path.join(self.package_sources_folder,
-                                            self.project_name.lower() + "-" + self.MODEL_LIB_FOLDER)
+        self.modelLib_folder = os.path.join(self.package_sources_folder, self.MODEL_LIB_FOLDER if init else self.project_name.lower() + "-" + self.MODEL_LIB_FOLDER)
         self.scene_folder = os.path.join(self.package_sources_folder, self.SCENE_FOLDER)
         self.texture_folder = os.path.join(self.modelLib_folder, self.TEXTURE_FOLDER)
         self.scene_folder = os.path.join(self.package_sources_folder, self.SCENE_FOLDER)
-        self.business_json_folder = os.path.join(self.package_definitions_folder,
-                                                 self.author_name.lower() + "-" + self.project_name.lower())
-        self.content_info_folder = os.path.join(self.package_definitions_folder, self.business_json_folder,
-                                                self.CONTENT_INFO_FOLDER)
+        self.business_json_folder = os.path.join(self.package_definitions_folder, self.author_name.lower() + "-" + self.project_name.lower())
+        self.content_info_folder = os.path.join(self.package_definitions_folder, self.business_json_folder, self.CONTENT_INFO_FOLDER)
         self.scene_objects_xml_file_path = os.path.join(self.scene_folder, self.SCENE_OBJECTS_FILE)
         if os.path.isfile(self.scene_objects_xml_file_path):
             self.objects_xml = ObjectsXml(self.scene_folder, self.SCENE_OBJECTS_FILE)
+        self.min_lod_level = 0
 
-        self.__initialize(sources_path)
+        self.__initialize(sources_path, init=init)
 
     def update_objects_position(self, settings):
         print(EOL)
@@ -122,11 +121,12 @@ class MsfsProject:
             pbar = ProgressBar([self.SCENE_OBJECTS_FILE], title="backup " + self.SCENE_OBJECTS_FILE)
             backup_file(backup_path, self.scene_folder, self.SCENE_OBJECTS_FILE, pbar=pbar)
 
-    def __initialize(self, sources_path):
-        self.__init_structure(sources_path)
+    def __initialize(self, sources_path, init=False):
+        self.__init_structure(sources_path, init=init)
         self.__init_components()
+        self.__guess_min_lod_level()
 
-    def __init_structure(self, sources_path):
+    def __init_structure(self, sources_path, init=False):
         self.project_definition_xml = self.project_name + XML_FILE_EXT
         self.package_definitions_xml = self.author_name.lower() + "-" + self.project_definition_xml.lower()
         self.objects = dict()
@@ -142,7 +142,7 @@ class MsfsProject:
         # create the PackageSources folder if it does not exist
         os.makedirs(self.package_sources_folder, exist_ok=True)
         # rename modelLib folder if it exists
-        if os.path.isdir(os.path.join(self.package_sources_folder, self.MODEL_LIB_FOLDER)):
+        if not init and os.path.isdir(os.path.join(self.package_sources_folder, self.MODEL_LIB_FOLDER)):
             # change modelib folder to fix CTD issues (see
             # https://flightsim.to/blog/creators-guide-fix-ctd-issues-on-your-scenery/)
             os.rename(os.path.join(self.package_sources_folder, self.MODEL_LIB_FOLDER), self.modelLib_folder)
@@ -273,3 +273,16 @@ class MsfsProject:
                     raise ScriptError(src_format + " texture files detected in " + self.texture_folder + "! Please convert them to " + dest_format + " format prior to launch the script, or remove them")
                 else:
                     pbar.update("%s converted to %s" % (file, dest_format))
+
+    def __guess_min_lod_level(self):
+        lod_stats = dict()
+        for guid, tile in self.tiles.items():
+            lod_level = len(tile.name)
+            lod_stats[lod_level] = lod_stats[lod_level] + 1 if lod_level in lod_stats else 0
+
+        if lod_stats:
+            max_res = max(lod_stats.values())
+
+            for lod_level, nb in lod_stats.items():
+                if nb == max_res: self.min_lod_level = lod_level
+
