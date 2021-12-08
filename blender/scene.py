@@ -34,4 +34,5 @@ def clean_scene():
         if not remove_mesh_from_memory(me.name):
             print("Unable to remove [%s]." % me.name)
 
-    print(EOL, "3d scene cleaned", EOL)
+    print(EOL)
+    print("3d scene cleaned", EOL)
