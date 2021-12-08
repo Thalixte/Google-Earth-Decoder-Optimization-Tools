@@ -10,6 +10,7 @@ class Settings:
     author_name: str
     node_js_folder: str
     fspackagetool_folder: str
+    bake_textures_enabled: str
     msfs_steam_version: str
     build_package_enabled: str
     sources_path: str
@@ -24,6 +25,7 @@ class Settings:
         self.author_name = str()
         self.node_js_folder = str()
         self.fspackagetool_folder = str()
+        self.bake_textures_enabled = False
         self.msfs_steam_version = "False"
         self.build_package_enabled = "False"
         self.reload_modules = "False"
@@ -39,6 +41,9 @@ class Settings:
         for section_name in config.sections():
             for name, value in config.items(section_name):
                 setattr(self, name, value.replace('"', str()))
+
+        # reduce the number of texture files (Lily Texture Packer addon is necessary https://gumroad.com/l/DFExj)
+        self.bake_textures_enabled = json.loads(self.bake_textures_enabled.lower())
 
         # check if the package is built at the end of the script
         self.msfs_steam_version = json.loads(self.msfs_steam_version.lower())

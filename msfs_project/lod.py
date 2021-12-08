@@ -1,14 +1,16 @@
 import json
 import os
+import re
 import shutil
 
-from constants import BUFFERS_TAG, IMAGES_TAG, MIME_TYPE_TAG, URI_TAG, ASSET_TAG, GENERATOR_TAG
+from constants import BUFFERS_TAG, IMAGES_TAG, MIME_TYPE_TAG, URI_TAG, ASSET_TAG, GENERATOR_TAG, PNG_TEXTURE_FORMAT, JPG_TEXTURE_FORMAT
 from msfs_project.binary import MsfsBinary
 from msfs_project.texture import MsfsTexture
 from utils import backup_file
 
 
 class MsfsLod:
+    optimization_in_progress: bool
     optimized: bool
     lod_level: int
     min_size: int
@@ -21,17 +23,23 @@ class MsfsLod:
     TEXTURE_FOLDER = "texture"
     OPTIMIZATION_GENERATOR_TAG = "Scenery optimized"
     ALT_OPTIMIZATION_GENERATOR_TAG = "FPS optimized"
+    UNBAKED_TEXTURE_NAME_PATTERN = "([a-zA-Z0-9\s_\\.\-\(\):])(LOD)(\d+)(_)(\d+).(" + PNG_TEXTURE_FORMAT + "|" + JPG_TEXTURE_FORMAT + ")"
 
     def __init__(self, lod_level, min_size, model_file, folder):
         self.lod_level = lod_level
         self.min_size = int(min_size)
         self.name = os.path.splitext(model_file)[0]
-        self.model_file = model_file
         self.folder = folder
+        self.optimization_in_progress = os.path.isdir(os.path.join(self.folder, self.name))
+        self.folder = self.folder if not self.optimization_in_progress else os.path.join(self.folder, self.name)
+        self.model_file = model_file
         self.optimized = self.__is_optimized()
         self.__retrieve_gltf_resources()
 
     def backup_files(self, backup_path, dry_mode=False, pbar=None):
+        if self.optimization_in_progress:
+            return
+
         for binary in self.binaries:
             binary.backup_file(backup_path, dry_mode=dry_mode, pbar=pbar)
         for texture in self.textures:
@@ -46,6 +54,9 @@ class MsfsLod:
         self.remove_file()
 
     def backup_file(self, backup_path, dry_mode=False, pbar=None):
+        if self.optimization_in_progress:
+            return
+
         backup_file(backup_path, self.folder, self.model_file, dry_mode=dry_mode, pbar=pbar)
 
     def remove_file(self):
@@ -55,6 +66,9 @@ class MsfsLod:
             print(self.model_file, "removed")
 
     def create_optimization_folder(self, other_tiles=[]):
+        if self.optimization_in_progress:
+            return
+
         optimization_folder_path = os.path.join(self.folder, self.name)
         os.makedirs(optimization_folder_path, exist_ok=True)
         self.move_resources(optimization_folder_path)
@@ -69,6 +83,16 @@ class MsfsLod:
             if not os.path.isfile(os.path.join(dest_path, binary.file)): shutil.move(os.path.join(binary.folder, binary.file), dest_path)
         for texture in self.textures:
             if not os.path.isfile(os.path.join(dest_path, texture.file)): shutil.move(os.path.join(texture.folder, texture.file), dest_path)
+        self.folder = dest_path
+        self.__retrieve_gltf_resources()
+
+    def has_unbaked_textures(self):
+        unbaked_texture_name_pattern = re.compile(self.UNBAKED_TEXTURE_NAME_PATTERN)
+        for texture in self.textures:
+            if re.search(unbaked_texture_name_pattern, texture.file):
+                return True
+
+        return False
 
     def __load_model_file_json(self):
         file_path = os.path.join(self.folder, self.model_file)
@@ -91,11 +115,13 @@ class MsfsLod:
             mime_type = str()
             if MIME_TYPE_TAG in image.keys():
                 mime_type = image[MIME_TYPE_TAG]
-            self.textures.append(MsfsTexture(idx, file_path, os.path.join(self.folder, self.TEXTURE_FOLDER), image[URI_TAG], mime_type))
+            self.textures.append(
+                MsfsTexture(idx, file_path, self.folder if self.optimization_in_progress else os.path.join(self.folder, self.TEXTURE_FOLDER), image[URI_TAG], mime_type))
 
     def __is_optimized(self):
         file_path, data = self.__load_model_file_json()
         if not data:
             return
 
-        return self.OPTIMIZATION_GENERATOR_TAG in data[ASSET_TAG][GENERATOR_TAG] or self.ALT_OPTIMIZATION_GENERATOR_TAG in data[ASSET_TAG][GENERATOR_TAG]
+        return self.OPTIMIZATION_GENERATOR_TAG in data[ASSET_TAG][
+            GENERATOR_TAG] or self.ALT_OPTIMIZATION_GENERATOR_TAG in data[ASSET_TAG][GENERATOR_TAG]
