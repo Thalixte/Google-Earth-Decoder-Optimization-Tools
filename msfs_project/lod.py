@@ -1,5 +1,6 @@
 import json
 import os
+import shutil
 
 from constants import BUFFERS_TAG, IMAGES_TAG, MIME_TYPE_TAG, URI_TAG
 from msfs_project.binary import MsfsBinary
@@ -8,7 +9,9 @@ from utils import backup_file
 
 
 class MsfsLod:
+    lod_level: int
     min_size: int
+    name: str
     model_file: str or None
     folder: str
     binaries: list
@@ -16,8 +19,10 @@ class MsfsLod:
 
     TEXTURE_FOLDER = "texture"
 
-    def __init__(self, min_size, model_file, folder):
+    def __init__(self, lod_level, min_size, model_file, folder):
+        self.lod_level = lod_level
         self.min_size = int(min_size)
+        self.name = os.path.splitext(model_file)[0]
         self.model_file = model_file
         self.folder = folder
         self.__retrieve_gltf_resources()
@@ -45,6 +50,22 @@ class MsfsLod:
             os.remove(os.path.join(file_path))
             print(self.model_file, "removed")
 
+    def create_optimization_folder(self, other_tiles=[]):
+        optimization_folder_path = os.path.join(self.folder, self.name)
+        os.makedirs(optimization_folder_path, exist_ok=True)
+        self.move_resources(optimization_folder_path)
+        for other_tile in other_tiles:
+            for lod in other_tile.lods:
+                if lod.lod_level == self.lod_level:
+                    lod.move_resources(optimization_folder_path)
+
+    def move_resources(self, dest_path):
+        if not os.path.isfile(os.path.join(dest_path, self.model_file)): shutil.move(os.path.join(self.folder, self.model_file), dest_path)
+        for binary in self.binaries:
+            if not os.path.isfile(os.path.join(dest_path, binary.file)): shutil.move(os.path.join(binary.folder, binary.file), dest_path)
+        for texture in self.textures:
+            if not os.path.isfile(os.path.join(dest_path, texture.file)): shutil.move(os.path.join(texture.folder, texture.file), dest_path)
+
     def __retrieve_gltf_resources(self):
         self.binaries = []
         self.textures = []
@@ -60,3 +81,4 @@ class MsfsLod:
             if MIME_TYPE_TAG in image.keys():
                 mime_type = image[MIME_TYPE_TAG]
             self.textures.append(MsfsTexture(idx, file_path, os.path.join(self.folder, self.TEXTURE_FOLDER), image[URI_TAG], mime_type))
+

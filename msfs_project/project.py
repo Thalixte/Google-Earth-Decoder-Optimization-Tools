@@ -1,5 +1,7 @@
+import collections
 import shutil
 import os
+from collections import OrderedDict
 
 from constants import *
 from msfs_project.objects_xml import ObjectsXml
@@ -94,10 +96,11 @@ class MsfsProject:
         self.__clean_objects(self.objects)
 
     def optimize(self, settings):
+        print(EOL)
         dest_format = settings.output_texture_format
         src_format = JPG_TEXTURE_FORMAT if dest_format == PNG_TEXTURE_FORMAT else PNG_TEXTURE_FORMAT
         self.__convert_tiles_textures(src_format, dest_format)
-        print(EOL)
+        self.__create_optimization_folders()
 
     def backup_tiles(self, backup_subfolder):
         backup_path = os.path.join(self.backup_folder, backup_subfolder)
@@ -285,4 +288,35 @@ class MsfsProject:
 
             for lod_level, nb in lod_stats.items():
                 if nb == max_res: self.min_lod_level = lod_level
+
+    def __link_tiles_by_position(self):
+        linked_tiles = {}
+        tile_candidates = [tile for tile in self.tiles.values()]
+        # maybe sorting in unnecessary, but as it can impact the optimization process, ensure that it is done
+        sorted_tiles_by_name = sorted(sorted(tile_candidates, key=lambda tile: tile.name), key=lambda tile: len(tile.name))
+
+        for tile in sorted_tiles_by_name[:]:
+            if len(tile.name) != self.min_lod_level: continue
+            if tile not in tile_candidates: continue
+            linked_tiles[tile] = [tile]
+            for tile_candidate in tile_candidates[:]:
+                if tile_candidate.name == tile.name:
+                    tile_candidates.remove(tile_candidate)
+                    continue
+                if tile.name != tile_candidate.name and (tile_candidate.pos.lat, tile_candidate.pos.lon) == (tile.pos.lat, tile.pos.lon):
+                    linked_tiles[tile].append(tile_candidate)
+                    tile_candidates.remove(tile_candidate)
+                    sorted_tiles_by_name.remove(tile_candidate)
+
+        return linked_tiles
+
+    def __create_optimization_folders(self):
+        pbar = ProgressBar(list())
+        link_tiles_by_position = self.__link_tiles_by_position()
+        for parent_tile, tiles in link_tiles_by_position.items():
+            parent_tile.create_optimization_folders(tiles, dry_mode=True, pbar=pbar)
+        if pbar.range > 0:
+            pbar.display_title("Create optimization folders")
+            for parent_tile, tiles in link_tiles_by_position.items():
+                parent_tile.create_optimization_folders(tiles, dry_mode=False, pbar=pbar)
 

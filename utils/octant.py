@@ -94,11 +94,3 @@ def is_octant(file_name):
 
     return True
 
-
-def link_octant_by_position(octants, min_lod_level):
-    res = dict()
-
-    # for octant in octants:
-
-    return res
-

@@ -13,7 +13,7 @@ from utils import check_configuration, ScriptError, build_package, pr_bg_green, 
 from msfs_project import MsfsProject
 from blender import clean_scene
 
-BACKUP_ENABLED = False
+BACKUP_ENABLED = True
 
 ##################################################################
 #                        Main process
@@ -26,7 +26,7 @@ try:
     check_configuration(settings, msfs_project)
 
     if BACKUP_ENABLED:
-        msfs_project.backup(Path(os.path.abspath(__file__)).stem, False)
+        msfs_project.backup(Path(os.path.abspath(__file__)).stem)
 
     print_title("OPTIMIZE SCENERY")
 
