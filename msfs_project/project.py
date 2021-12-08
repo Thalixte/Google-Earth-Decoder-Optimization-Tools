@@ -1,7 +1,5 @@
-import collections
 import shutil
 import os
-from collections import OrderedDict
 
 from constants import *
 from msfs_project.objects_xml import ObjectsXml
