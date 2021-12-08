@@ -63,5 +63,7 @@ BUFFERS_TAG = "buffers"
 IMAGES_TAG = "images"
 MIME_TYPE_TAG = "mimeType"
 URI_TAG = "uri"
+ASSET_TAG = "asset"
+GENERATOR_TAG = "generator"
 
 

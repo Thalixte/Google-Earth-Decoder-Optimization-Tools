@@ -15,6 +15,7 @@ class MsfsTile(MsfsSceneObject):
     def create_optimization_folders(self, linked_tiles, dry_mode=False, pbar=None):
         other_tiles = [tile for tile in linked_tiles if tile.name != self.name]
         for lod in self.lods:
+            if lod.optimized: continue
             if not dry_mode:
                 lod.create_optimization_folder(other_tiles)
             if not pbar is None:

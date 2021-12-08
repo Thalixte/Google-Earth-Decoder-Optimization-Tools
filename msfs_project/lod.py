@@ -2,13 +2,14 @@ import json
 import os
 import shutil
 
-from constants import BUFFERS_TAG, IMAGES_TAG, MIME_TYPE_TAG, URI_TAG
+from constants import BUFFERS_TAG, IMAGES_TAG, MIME_TYPE_TAG, URI_TAG, ASSET_TAG, GENERATOR_TAG
 from msfs_project.binary import MsfsBinary
 from msfs_project.texture import MsfsTexture
 from utils import backup_file
 
 
 class MsfsLod:
+    optimized: bool
     lod_level: int
     min_size: int
     name: str
@@ -18,6 +19,7 @@ class MsfsLod:
     textures: list
 
     TEXTURE_FOLDER = "texture"
+    OPTIMIZATION_GENERATOR_TAG = "Scenery optimized"
 
     def __init__(self, lod_level, min_size, model_file, folder):
         self.lod_level = lod_level
@@ -25,6 +27,7 @@ class MsfsLod:
         self.name = os.path.splitext(model_file)[0]
         self.model_file = model_file
         self.folder = folder
+        self.optimized = self.__is_optimized()
         self.__retrieve_gltf_resources()
 
     def backup_files(self, backup_path, dry_mode=False, pbar=None):
@@ -82,3 +85,9 @@ class MsfsLod:
                 mime_type = image[MIME_TYPE_TAG]
             self.textures.append(MsfsTexture(idx, file_path, os.path.join(self.folder, self.TEXTURE_FOLDER), image[URI_TAG], mime_type))
 
+    def __is_optimized(self):
+        file_path = os.path.join(self.folder, self.model_file)
+        if not os.path.isfile(file_path):
+            return
+
+        return self.OPTIMIZATION_GENERATOR_TAG in json.load(open(file_path))[ASSET_TAG][GENERATOR_TAG]
