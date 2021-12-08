@@ -100,7 +100,11 @@ class MsfsProject:
         dest_format = settings.output_texture_format
         src_format = JPG_TEXTURE_FORMAT if dest_format == PNG_TEXTURE_FORMAT else PNG_TEXTURE_FORMAT
         self.__convert_tiles_textures(src_format, dest_format)
-        self.__create_optimization_folders()
+        self.__update_lod_values(settings)
+        # some tile lods are not optimized
+        if self.__optimization_needed():
+            print_title("OPTIMIZE THE TILES")
+            self.__create_optimization_folders()
 
     def backup_tiles(self, backup_subfolder):
         backup_path = os.path.join(self.backup_folder, backup_subfolder)
@@ -288,6 +292,29 @@ class MsfsProject:
 
             for lod_level, nb in lod_stats.items():
                 if nb == max_res: self.min_lod_level = lod_level
+
+    def __nb_lods(self):
+        res = 0
+        for tile in self.tiles.values():
+            res += len(tile.lods)
+
+        return res
+
+    def __update_lod_values(self, settings):
+        pbar = ProgressBar(list())
+        pbar.range = len(self.tiles) + len(self.colliders)
+        pbar.display_title("Update lod values")
+        for tile in self.tiles.values():
+            tile.update_lod_values(settings.target_lod_values, pbar=pbar)
+        for collider in self.colliders.values():
+            collider.update_lod_values(settings.target_lod_values, pbar=pbar)
+
+    def __optimization_needed(self):
+        for tile in self.tiles.values():
+            for lod in tile.lods:
+                if not lod.optimized: return True
+
+        return False
 
     def __link_tiles_by_position(self):
         linked_tiles = {}

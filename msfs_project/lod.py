@@ -20,6 +20,7 @@ class MsfsLod:
 
     TEXTURE_FOLDER = "texture"
     OPTIMIZATION_GENERATOR_TAG = "Scenery optimized"
+    ALT_OPTIMIZATION_GENERATOR_TAG = "FPS optimized"
 
     def __init__(self, lod_level, min_size, model_file, folder):
         self.lod_level = lod_level
@@ -69,14 +70,21 @@ class MsfsLod:
         for texture in self.textures:
             if not os.path.isfile(os.path.join(dest_path, texture.file)): shutil.move(os.path.join(texture.folder, texture.file), dest_path)
 
+    def __load_model_file_json(self):
+        file_path = os.path.join(self.folder, self.model_file)
+        if not os.path.isfile(file_path):
+            return file_path, False
+
+        data = json.load(open(file_path))
+        return file_path, data
+
     def __retrieve_gltf_resources(self):
         self.binaries = []
         self.textures = []
-        file_path = os.path.join(self.folder, self.model_file)
-        if not os.path.isfile(file_path):
+        file_path, data = self.__load_model_file_json()
+        if not data:
             return
 
-        data = json.load(open(file_path))
         for buffer in data[BUFFERS_TAG]:
             self.binaries.append(MsfsBinary(file_path, self.folder, buffer[URI_TAG]))
         for idx, image in enumerate(data[IMAGES_TAG]):
@@ -86,8 +94,8 @@ class MsfsLod:
             self.textures.append(MsfsTexture(idx, file_path, os.path.join(self.folder, self.TEXTURE_FOLDER), image[URI_TAG], mime_type))
 
     def __is_optimized(self):
-        file_path = os.path.join(self.folder, self.model_file)
-        if not os.path.isfile(file_path):
+        file_path, data = self.__load_model_file_json()
+        if not data:
             return
 
-        return self.OPTIMIZATION_GENERATOR_TAG in json.load(open(file_path))[ASSET_TAG][GENERATOR_TAG]
+        return self.OPTIMIZATION_GENERATOR_TAG in data[ASSET_TAG][GENERATOR_TAG] or self.ALT_OPTIMIZATION_GENERATOR_TAG in data[ASSET_TAG][GENERATOR_TAG]

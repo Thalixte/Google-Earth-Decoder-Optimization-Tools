@@ -13,10 +13,10 @@ class Settings:
     msfs_steam_version: str
     build_package_enabled: str
     sources_path: str
+    target_lod_values: list
     output_texture_format: str
     lat_correction: float
     lon_correction: float
-    lods: list
 
     def __init__(self, sources_path=str()):
         self.projects_path = str()
@@ -28,6 +28,7 @@ class Settings:
         self.build_package_enabled = "False"
         self.reload_modules = "False"
         self.sources_path = sources_path
+        self.target_lod_values = []
         self.output_texture_format = PNG_TEXTURE_FORMAT
         self.lat_correction = 0.0
         self.lon_correction = 0.0
@@ -47,6 +48,9 @@ class Settings:
 
         # check if modules have to be reloaded (mostly for blender dev purpose)
         self.reload_modules = json.loads(self.reload_modules.lower())
+
+        # get the target lod values
+        self.target_lod_values = str().join(self.target_lod_values.split()).split(",")
 
         # ensure to convert float settings values
         self.lat_correction = float(str(self.lat_correction))
