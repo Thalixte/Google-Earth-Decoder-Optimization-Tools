@@ -2,8 +2,11 @@ import json
 import os
 import re
 import shutil
+from pathlib import Path
 
-from constants import BUFFERS_TAG, IMAGES_TAG, MIME_TYPE_TAG, URI_TAG, ASSET_TAG, GENERATOR_TAG, PNG_TEXTURE_FORMAT, JPG_TEXTURE_FORMAT
+from blender import import_model_files, bake_texture_files
+from constants import BUFFERS_TAG, IMAGES_TAG, MIME_TYPE_TAG, URI_TAG, ASSET_TAG, GENERATOR_TAG, PNG_TEXTURE_FORMAT, \
+    JPG_TEXTURE_FORMAT, GLTF_FILE_PATTERN
 from msfs_project.binary import MsfsBinary
 from msfs_project.texture import MsfsTexture
 from utils import backup_file
@@ -33,7 +36,7 @@ class MsfsLod:
         self.optimization_in_progress = os.path.isdir(os.path.join(self.folder, self.name))
         self.folder = self.folder if not self.optimization_in_progress else os.path.join(self.folder, self.name)
         self.model_file = model_file
-        self.optimized = self.__is_optimized()
+        self.optimized = self.__is_optimized(self.model_file)
         self.__retrieve_gltf_resources()
 
     def backup_files(self, backup_path, dry_mode=False, pbar=None):
@@ -94,8 +97,17 @@ class MsfsLod:
 
         return False
 
-    def __load_model_file_json(self):
-        file_path = os.path.join(self.folder, self.model_file)
+    def optimize(self, output_texture_format):
+        model_files = [model_file for model_file in Path(os.path.dirname(self.folder)).rglob(self.name + GLTF_FILE_PATTERN) if not self.__is_optimized(model_file)]
+        # Import the gltf files located in the object folder
+        import_model_files(model_files)
+
+        if self.has_unbaked_textures():
+            bake_texture_files(self.folder, self.name + "." + output_texture_format)
+            print("bake textures for", self.name)
+
+    def __load_model_file_json(self, model_file):
+        file_path = os.path.join(self.folder, model_file)
         if not os.path.isfile(file_path):
             return file_path, False
 
@@ -105,7 +117,7 @@ class MsfsLod:
     def __retrieve_gltf_resources(self):
         self.binaries = []
         self.textures = []
-        file_path, data = self.__load_model_file_json()
+        file_path, data = self.__load_model_file_json(self.model_file)
         if not data:
             return
 
@@ -118,10 +130,9 @@ class MsfsLod:
             self.textures.append(
                 MsfsTexture(idx, file_path, self.folder if self.optimization_in_progress else os.path.join(self.folder, self.TEXTURE_FOLDER), image[URI_TAG], mime_type))
 
-    def __is_optimized(self):
-        file_path, data = self.__load_model_file_json()
+    def __is_optimized(self, model_file):
+        file_path, data = self.__load_model_file_json(model_file)
         if not data:
             return
 
-        return self.OPTIMIZATION_GENERATOR_TAG in data[ASSET_TAG][
-            GENERATOR_TAG] or self.ALT_OPTIMIZATION_GENERATOR_TAG in data[ASSET_TAG][GENERATOR_TAG]
+        return self.OPTIMIZATION_GENERATOR_TAG in data[ASSET_TAG][GENERATOR_TAG] or self.ALT_OPTIMIZATION_GENERATOR_TAG in data[ASSET_TAG][GENERATOR_TAG]

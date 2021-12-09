@@ -106,8 +106,7 @@ class MsfsProject:
             if settings.bake_textures_enabled:
                 for tile in self.tiles.values():
                     for lod in tile.lods:
-                        if lod.has_unbaked_textures():
-                            print("bake textures for", lod.name)
+                        lod.optimize(settings.output_texture_format)
 
     def backup_tiles(self, backup_subfolder):
         backup_path = os.path.join(self.backup_folder, backup_subfolder)
