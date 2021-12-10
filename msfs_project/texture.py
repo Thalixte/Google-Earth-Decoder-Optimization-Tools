@@ -38,6 +38,6 @@ class MsfsTexture(MsfsLodResource):
 
     def __update_model_file(self):
         model_file = MsfsGltf(os.path.join(self.model_file_path))
-        model_file.update_image(self.idx, self.uri, self.mime_type)
+        model_file.update_image(self.idx, self.file, self.mime_type)
 
 

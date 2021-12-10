@@ -114,6 +114,11 @@ class MsfsLod:
         isolated_print("fix bounding box for", self.name)
         fix_object_bounding_box()
         export_to_optimized_gltf_files(new_gltf, self.TEXTURE_FOLDER)
+        shutil.rmtree(self.folder)
+        self.folder = os.path.dirname(self.folder)
+        self.optimization_in_progress = False
+        self.__retrieve_gltf_resources()
+
 
     def __load_model_file_json(self, model_file):
         file_path = os.path.join(self.folder, model_file)
