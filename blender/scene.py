@@ -4,7 +4,8 @@ import bpy
 from blender.image import get_image_node, fix_texture_size_for_package_compilation
 from blender.memory import remove_mesh_from_memory
 from constants import EOL
-from utils import ScriptError
+from utils import ScriptError, isolated_print
+from utils.progress_bar import ProgressBar
 
 SELECT_ACTION = "SELECT"
 SELECTED_OBJ = "selected_objects"
@@ -38,7 +39,7 @@ def clean_scene():
     # Now cycles through the dangling datablocks and remove them.
     for me in bpy.data.meshes:
         if not remove_mesh_from_memory(me.name):
-            print("Unable to remove [%s]." % me.name)
+            isolated_print("Unable to remove [%s]." % me.name)
 
     print(EOL)
     print("3d scene cleaned", EOL)
@@ -61,9 +62,6 @@ def import_model_files(model_files):
 # Bake the tile texture files
 ##################################################################
 def bake_texture_files(folder, file_name):
-    print("-------------------------------------------------------------------------------")
-    print("------------------------ BAKE TILE TEXTURE FILES ------------------------------")
-    print("-------------------------------------------------------------------------------")
     error = False
 
     if not bpy.context.scene: return False
@@ -96,7 +94,6 @@ def bake_texture_files(folder, file_name):
         bpy.ops.object.lily_texture_packer()
     except:
         raise ScriptError("Texture packer error detected !!!" + file_name)
-        return False
 
     # create baked texture with Lily texture packer addon
     packed_image = bpy.data.images[PACKED_IMAGE_NAME]
@@ -104,14 +101,12 @@ def bake_texture_files(folder, file_name):
     # fix texture final size for package compilation
     fix_texture_size_for_package_compilation(packed_image)
 
-    print("Save new baked texture", os.path.join(folder, file_name))
+    # isolated_print("Save new baked texture", os.path.join(folder, file_name))
     packed_image.save_render(os.path.join(folder, file_name))
 
     # link the tile materials to the new packed texture
     link_materials_to_packed_texture(objects, folder, file_name)
     bpy.data.images.remove(packed_image)
-
-    return True
 
 
 ##################################################################
@@ -120,7 +115,8 @@ def bake_texture_files(folder, file_name):
 def link_materials_to_packed_texture(objects, folder, file_name):
     img = bpy.data.images.load(os.path.join(folder, file_name))
 
-    for obj in bpy.context.selected_objects:
+    pbar = ProgressBar(bpy.context.scene.objects)
+    for obj in pbar.iterable:
         material = obj.material_slots[0].material
         material.msfs_show_road_material = True
         material.msfs_show_collision_material = True
@@ -130,7 +126,7 @@ def link_materials_to_packed_texture(objects, folder, file_name):
         material.msfs_day_night_cycle = True
 
         source_image_nodes = [get_image_node(obj) for obj in objects]
-        print("link packed texture to ", obj.name)
+        pbar.update("link packed texture to %s" % obj.name)
         # Update image in materials
         for node in source_image_nodes:
             node.image = img

@@ -8,7 +8,7 @@ from msfs_project.collider import MsfsCollider
 from msfs_project.tile import MsfsTile
 from msfs_project.shape import MsfsShape
 from utils import replace_in_file, is_octant, backup_file, install_python_lib, ScriptError, print_title, \
-    get_backup_file_path
+    get_backup_file_path, isolated_print
 from pathlib import Path
 
 from utils.progress_bar import ProgressBar
@@ -53,7 +53,7 @@ class MsfsProject:
     COLLIDER_SUFFIX = "_collider"
 
     def __init__(self, projects_path, project_name, author_name, sources_path, init=False):
-        print(EOL)
+        isolated_print(EOL)
         self.parent_path = projects_path
         self.project_name = project_name
         self.author_name = author_name
@@ -75,11 +75,11 @@ class MsfsProject:
         self.__initialize(sources_path)
 
     def update_objects_position(self, settings):
-        print(EOL)
+        isolated_print(EOL)
         self.objects_xml.update_objects_position(self, settings)
 
     def backup(self, backup_subfolder, all_files=True):
-        print(EOL)
+        isolated_print(EOL)
         self.backup_files(backup_subfolder)
         if all_files:
             self.backup_tiles(backup_subfolder)
@@ -88,13 +88,13 @@ class MsfsProject:
         self.backup_shapes(backup_subfolder)
 
     def clean(self):
-        print(EOL)
+        isolated_print(EOL)
         self.__clean_objects(self.tiles)
         self.__clean_objects(self.colliders)
         self.__clean_objects(self.objects)
 
     def optimize(self, settings):
-        print(EOL)
+        isolated_print(EOL)
         dest_format = settings.output_texture_format
         src_format = JPG_TEXTURE_FORMAT if dest_format == PNG_TEXTURE_FORMAT else PNG_TEXTURE_FORMAT
         self.__convert_tiles_textures(src_format, dest_format)
@@ -271,7 +271,7 @@ class MsfsProject:
         textures = self.__retrieve_tiles_textures(src_format)
 
         if textures:
-            print(src_format + " texture files detected in the tiles of the project! Try to install pip, then convert them")
+            isolated_print(src_format + " texture files detected in the tiles of the project! Try to install pip, then convert them")
             print_title("INSTALL PILLOW")
             install_python_lib("Pillow")
 
@@ -345,7 +345,7 @@ class MsfsProject:
         for parent_tile, tiles in link_tiles_by_position.items():
             parent_tile.create_optimization_folders(tiles, dry_mode=True, pbar=pbar)
         if pbar.range > 0:
-            pbar.display_title("Create optimization folders")
+            isolated_print("Create optimization folders")
             for parent_tile, tiles in link_tiles_by_position.items():
                 parent_tile.create_optimization_folders(tiles, dry_mode=False, pbar=pbar)
 

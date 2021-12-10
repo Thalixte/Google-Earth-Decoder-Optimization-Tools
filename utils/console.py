@@ -8,6 +8,7 @@ import subprocess
 from ctypes import wintypes, windll
 
 from constants import CLEAR_CONSOLE_CMD, EOL, CEND
+from utils.isolated_print import isolated_print
 
 KERNEL32_LIB = "kernel32"
 USER32_LIB = "user32"
@@ -76,7 +77,7 @@ def maximize_console(lines=None):
 
 
 def print_title(title):
-    print(CEND, TITLE_FILL_CHAR*TITLE_LENGTH)
+    isolated_print(CEND, TITLE_FILL_CHAR*TITLE_LENGTH)
     title = " " + title + " "
-    print(title.upper().center(TITLE_LENGTH, TITLE_FILL_CHAR))
-    print(TITLE_FILL_CHAR*TITLE_LENGTH, EOL)
+    isolated_print(title.upper().center(TITLE_LENGTH, TITLE_FILL_CHAR))
+    isolated_print(TITLE_FILL_CHAR*TITLE_LENGTH, EOL)

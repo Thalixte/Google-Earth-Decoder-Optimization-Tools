@@ -9,7 +9,7 @@ from constants import BUFFERS_TAG, IMAGES_TAG, MIME_TYPE_TAG, URI_TAG, ASSET_TAG
     JPG_TEXTURE_FORMAT, GLTF_FILE_PATTERN
 from msfs_project.binary import MsfsBinary
 from msfs_project.texture import MsfsTexture
-from utils import backup_file
+from utils import backup_file, isolated_print
 
 
 class MsfsLod:
@@ -103,8 +103,8 @@ class MsfsLod:
         import_model_files(model_files)
 
         if self.has_unbaked_textures():
+            isolated_print("bake textures for", self.name)
             bake_texture_files(self.folder, self.name + "." + output_texture_format)
-            print("bake textures for", self.name)
 
     def __load_model_file_json(self, model_file):
         file_path = os.path.join(self.folder, model_file)

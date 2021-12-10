@@ -11,3 +11,4 @@ from .backup import *
 from .install_lib import *
 from .console import *
 from .module import *
+from .isolated_print import *
