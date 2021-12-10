@@ -81,10 +81,8 @@ class MsfsLod:
                 if lod.lod_level == self.lod_level:
                     lod.move_resources(optimization_folder_path)
 
-            try:
-                os.remove(os.path.join(other_tile.folder, other_tile.definition_file))
-            except:
-                pass
+            # remove unused definition files
+            other_tile.remove_file()
 
     def move_resources(self, dest_path):
         if not os.path.isfile(os.path.join(dest_path, self.model_file)): shutil.move(os.path.join(self.folder, self.model_file), dest_path)
