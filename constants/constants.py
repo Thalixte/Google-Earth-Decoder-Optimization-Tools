@@ -61,10 +61,22 @@ THUMBNAIL_PICTURE_TEMPLATE_PATH = THUMBNAIL_FOLDER + "\\" + THUMBNAIL_PICTURE_TE
 
 BUFFERS_TAG = "buffers"
 IMAGES_TAG = "images"
+MATERIALS_TAG = "materials"
 MIME_TYPE_TAG = "mimeType"
 URI_TAG = "uri"
+DOUBLESIDED_TAG = "doubleSided"
 ASSET_TAG = "asset"
+TAGS_TAG = "tags"
 GENERATOR_TAG = "generator"
+EXTENSIONS_TAG = "extensions"
+ASOBO_TAGS_TAG = "ASOBO_tags"
+ROAD_TAG = "Road"
+COLLISION_TAG = "Collision"
+ENABLED_TAG = "enabled"
+ASOBO_MATERIAL_DAY_NIGHT_SWITCH_TAG = "ASOBO_material_day_night_switch"
+ASOBO_MATERIAL_FAKE_TERRAIN_TAG = "ASOBO_material_fake_terrain"
+
+
 
 
 

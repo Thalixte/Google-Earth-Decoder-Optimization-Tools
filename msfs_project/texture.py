@@ -3,6 +3,7 @@ import os
 
 from constants import IMAGES_TAG, URI_TAG, MIME_TYPE_TAG
 from msfs_project.lod_resource import MsfsLodResource
+from utils import load_json_file, save_json_file, MsfsGltf
 
 
 class MsfsTexture(MsfsLodResource):
@@ -36,15 +37,7 @@ class MsfsTexture(MsfsLodResource):
         return True
 
     def __update_model_file(self):
-        file_path = os.path.join(self.model_file_path)
-        if not os.path.isfile(file_path):
-            return
+        model_file = MsfsGltf(os.path.join(self.model_file_path))
+        model_file.update_image(self.idx, self.uri, self.mime_type)
 
-        with open(file_path, "r+") as file:
-            data = json.load(file)
-            if data[IMAGES_TAG][self.idx]:
-                image = data[IMAGES_TAG][self.idx]
-                image[URI_TAG] = self.file
-                image[MIME_TYPE_TAG] = self.mime_type
-                file.seek(0)
-                json.dump(data, file, indent=4)
+

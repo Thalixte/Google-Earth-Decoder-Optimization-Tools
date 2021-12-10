@@ -4,7 +4,7 @@ import bpy
 from blender.image import get_image_node, fix_texture_size_for_package_compilation
 from blender.memory import remove_mesh_from_memory
 from constants import EOL
-from utils import ScriptError, isolated_print
+from utils import ScriptError, isolated_print, MsfsGltf
 from utils.progress_bar import ProgressBar
 
 SELECT_ACTION = "SELECT"
@@ -18,6 +18,7 @@ CURSOR_ORIGIN = "ORIGIN_CURSOR"
 GEOMETRY_ORIGIN = "ORIGIN_GEOMETRY"
 MEDIAN_POS = "MEDIAN"
 BOUNDS_POS = "BOUNDS"
+GLTF_SEPARATE_EXPORT_FORMAT = "GLTF_SEPARATE"
 COPY_COLLECTION_NAME = "CopyCollection"
 
 
@@ -65,6 +66,21 @@ def import_model_files(model_files):
             bpy.ops.import_scene.gltf(filepath=str(model_file))
         except:
             continue
+
+
+##############################################################################
+# Export and optimize the tile in a new gltf file, with bin file and textures
+##############################################################################
+def export_to_optimized_gltf_files(file, texture_folder):
+    isolated_print("export to ", file, "with associated textures", EOL)
+    bpy.ops.export_scene.gltf(export_format=GLTF_SEPARATE_EXPORT_FORMAT, export_extras=True, filepath=file, export_texture_dir=texture_folder)
+    model_file = MsfsGltf(file)
+    model_file.add_optimization_tag()
+    model_file.fix_texture_path()
+    model_file.fix_doublesided()
+    model_file.add_asobo_extensions()
+    model_file.dump()
+    clean_scene()
 
 
 ##################################################################
