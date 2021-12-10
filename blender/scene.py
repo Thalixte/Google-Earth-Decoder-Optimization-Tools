@@ -118,10 +118,14 @@ def bake_texture_files(folder, file_name):
     try:
         bpy.ops.object.lily_texture_packer()
     except:
-        raise ScriptError("Texture packer error detected !!!" + file_name)
+        raise ScriptError("Lily texture packer error detected when trying to pack the textures for " + file_name)
 
     # create baked texture with Lily texture packer addon
-    packed_image = bpy.data.images[PACKED_IMAGE_NAME]
+    packed_image = PACKED_IMAGE_NAME
+    for image in bpy.data.images:
+        if PACKED_IMAGE_NAME in image.name:
+            packed_image = image
+            break
 
     # fix texture final size for package compilation
     fix_texture_size_for_package_compilation(packed_image)

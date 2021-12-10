@@ -1,7 +1,5 @@
-import json
 import os
 
-from constants import IMAGES_TAG, URI_TAG, MIME_TYPE_TAG
 from msfs_project.lod_resource import MsfsLodResource
 from utils import load_json_file, save_json_file, MsfsGltf
 

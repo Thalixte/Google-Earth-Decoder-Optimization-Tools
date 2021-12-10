@@ -1,16 +1,13 @@
-import json
 import os
 import re
 import shutil
 from pathlib import Path
 
 from blender import import_model_files, bake_texture_files, fix_object_bounding_box, export_to_optimized_gltf_files
-from constants import BUFFERS_TAG, IMAGES_TAG, MIME_TYPE_TAG, URI_TAG, ASSET_TAG, GENERATOR_TAG, PNG_TEXTURE_FORMAT, \
-    JPG_TEXTURE_FORMAT, GLTF_FILE_PATTERN, GLTF_FILE_EXT
+from constants import PNG_TEXTURE_FORMAT, JPG_TEXTURE_FORMAT, GLTF_FILE_PATTERN, GLTF_FILE_EXT
 from msfs_project.binary import MsfsBinary
 from msfs_project.texture import MsfsTexture
 from utils import backup_file, isolated_print, MsfsGltf
-from utils.json import load_json_file
 
 
 class MsfsLod:
@@ -122,11 +119,6 @@ class MsfsLod:
         self.optimization_in_progress = False
         self.__retrieve_gltf_resources()
 
-
-    def __load_model_file_json(self, model_file):
-        file_path = os.path.join(self.folder, model_file)
-        return file_path, load_json_file(file_path)
-
     def __retrieve_gltf_resources(self):
         self.binaries = []
         self.textures = []
@@ -134,15 +126,15 @@ class MsfsLod:
         model_file = MsfsGltf(file_path)
         if not model_file.data: return
 
-        for buffer in model_file.data[BUFFERS_TAG]:
-            self.binaries.append(MsfsBinary(file_path, self.folder, buffer[URI_TAG]))
-        for idx, image in enumerate(model_file.data[IMAGES_TAG]):
+        for buffer in model_file.data[MsfsGltf.BUFFERS_TAG]:
+            self.binaries.append(MsfsBinary(file_path, self.folder, buffer[MsfsGltf.URI_TAG]))
+        for idx, image in enumerate(model_file.data[MsfsGltf.IMAGES_TAG]):
             mime_type = str()
-            if MIME_TYPE_TAG in image.keys():
-                mime_type = image[MIME_TYPE_TAG]
-            self.textures.append(MsfsTexture(idx, file_path, self.folder if self.optimization_in_progress else os.path.join(self.folder, self.TEXTURE_FOLDER), image[URI_TAG], mime_type))
+            if MsfsGltf.MIME_TYPE_TAG in image.keys():
+                mime_type = image[MsfsGltf.MIME_TYPE_TAG]
+            self.textures.append(MsfsTexture(idx, file_path, self.folder if self.optimization_in_progress else os.path.join(self.folder, self.TEXTURE_FOLDER), image[MsfsGltf.URI_TAG], mime_type))
 
     def __is_optimized(self, model_file):
         model_file = MsfsGltf(os.path.join(self.folder, model_file))
         if not model_file.data: return
-        return self.OPTIMIZATION_GENERATOR_TAG in model_file.data[ASSET_TAG][GENERATOR_TAG] or self.ALT_OPTIMIZATION_GENERATOR_TAG in model_file.data[ASSET_TAG][GENERATOR_TAG]
+        return self.OPTIMIZATION_GENERATOR_TAG in model_file.data[MsfsGltf.ASSET_TAG][MsfsGltf.GENERATOR_TAG] or self.ALT_OPTIMIZATION_GENERATOR_TAG in model_file.data[MsfsGltf.ASSET_TAG][MsfsGltf.GENERATOR_TAG]

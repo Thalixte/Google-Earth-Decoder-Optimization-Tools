@@ -1,7 +1,8 @@
 import os
 
+import bpy
 from constants import *
-from utils import pr_ko_red, pr_ok_green, pr_ko_orange
+from utils import pr_ko_red, pr_ok_green, pr_ko_orange, isolated_print
 from utils.script_errors import ScriptError
 
 
@@ -37,7 +38,7 @@ def check_configuration(settings, msfs_project):
     if not os.path.isfile(settings.fspackagetool_folder + "\\" + MSFS_BUILD_EXE):
         pr_ko_orange("fspackagetool_folder value         ")
         settings.build_package_enabled = False
-        print(CORANGE + warning_msg + MSFS_BUILD_EXE + " bin file not found. Automatic package building disabled" + CEND + EOL)
+        isolated_print(CORANGE + warning_msg + MSFS_BUILD_EXE + " bin file not found. Automatic package building disabled" + CEND + EOL)
     else:
         pr_ok_green("fspackagetool_folder value         ")
 
@@ -82,3 +83,19 @@ def check_configuration(settings, msfs_project):
         raise ScriptError(
             error_msg + "The folder containing the textures of the scene (" + msfs_project.texture_folder + ") was not found. Please check the textures_folder value")
     pr_ok_green("textures_folder value              ")
+
+    # check if Lily texture packer is installed
+    if settings.bake_textures_enabled:
+        texture_packer_enabled = False
+        try:
+            if LILY_TEXTURE_PACKER_ADDON in bpy.context.preferences.addons:
+                texture_packer_enabled = True
+                pr_ok_green("Lily texture packer enabled        ")
+        except:
+            pass
+
+        if not texture_packer_enabled:
+            pr_ko_orange("Lily texture packer enabled        ")
+            settings.bake_textures_enabled = False
+            isolated_print(CORANGE + warning_msg + " Lily texture packer is not enabled on your blender addons. Baking of the tile textures is disabled" + CEND + EOL)
+
