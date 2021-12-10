@@ -1,6 +1,7 @@
 import sys
 import time
 
+import os
 from types import GeneratorType
 
 from constants import EOL, CRED, CORANGE, CGREEN, CEND
@@ -53,6 +54,7 @@ class ProgressBar:
         sys.stdout = sys.__stdout__
         sys.stdout.write(msg.ljust(140))
         sys.stdout.flush()
+        sys.stdout = open(os.devnull, 'w')
         time.sleep(self.sleep)
 
         if progress >= 1:

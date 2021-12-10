@@ -4,7 +4,7 @@ import re
 import shutil
 from pathlib import Path
 
-from blender import import_model_files, bake_texture_files
+from blender import import_model_files, bake_texture_files, fix_object_bounding_box
 from constants import BUFFERS_TAG, IMAGES_TAG, MIME_TYPE_TAG, URI_TAG, ASSET_TAG, GENERATOR_TAG, PNG_TEXTURE_FORMAT, \
     JPG_TEXTURE_FORMAT, GLTF_FILE_PATTERN
 from msfs_project.binary import MsfsBinary
@@ -105,6 +105,9 @@ class MsfsLod:
         if self.has_unbaked_textures():
             isolated_print("bake textures for", self.name)
             bake_texture_files(self.folder, self.name + "." + output_texture_format)
+
+        isolated_print("fix bounding box for", self.name)
+        fix_object_bounding_box()
 
     def __load_model_file_json(self, model_file):
         file_path = os.path.join(self.folder, model_file)

@@ -4,7 +4,7 @@ from utils.isolated_print import isolated_print
 
 
 def remove_mesh_from_memory(passedName):
-    # isolated_print("removeMeshFromMemory:[%s]." % passedName)
+    # print("removeMeshFromMemory:[%s]." % passedName)
     # Extra test because this can crash Blender if not done correctly.
     result = False
     mesh = bpy.data.meshes.get(passedName)
@@ -19,20 +19,20 @@ def remove_mesh_from_memory(passedName):
             if can_continue:
                 try:
                     bpy.data.meshes.remove(mesh)
-                    # isolated_print("removeMeshFromMemory: MESH [", passedName, "] removed from memory.")
+                    # print("removeMeshFromMemory: MESH [", passedName, "] removed from memory.")
                     return True
                 except:
-                    # isolated_print("removeMeshFromMemory: FAILED to remove [", passedName, "] from memory.")
+                    # print("removeMeshFromMemory: FAILED to remove [", passedName, "] from memory.")
                     return False
             else:
                 # Unable to clear users, something is holding a reference to it.
                 # Can't risk removing. Favor leaving it in memory instead of risking a crash.
-                # isolated_print("removeMeshFromMemory: Unable to clear users for MESH, something is holding a reference to it.")
+                # print("removeMeshFromMemory: Unable to clear users for MESH, something is holding a reference to it.")
                 return False
         else:
             # isolated_print("removeMeshFromMemory: Unable to remove MESH because it still has [", str(mesh.users), "] users.")
             return False
     else:
         # We could not fetch it, it does not exist in memory, essentially removed.
-        # isolated_print("We could not fetch MESH [%s], it does not exist in memory, essentially removed." % passedName)
+        # print("We could not fetch MESH [%s], it does not exist in memory, essentially removed." % passedName)
         return False

@@ -1,4 +1,4 @@
-from utils import Settings, get_sources_path, reload_modules, print_title
+from utils import Settings, get_sources_path, reload_modules, print_title, isolated_print
 
 settings = Settings(get_sources_path())
 
@@ -25,10 +25,10 @@ try:
 
 except ScriptError as ex:
     error_report = "".join(ex.value)
-    print(constants.EOL + error_report)
+    isolated_print(constants.EOL + error_report)
     pr_bg_red("Script aborted" + constants.CEND)
 except RuntimeError as ex:
-    print(constants.EOL + ex)
+    isolated_print(constants.EOL + ex)
     pr_bg_red("Script aborted" + constants.CEND)
 finally:
     os.chdir(os.path.dirname(__file__))
