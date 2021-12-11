@@ -43,9 +43,8 @@ from constants import *
 open_console()
 
 # Specify the script to be included
-scriptFiles = ["clean_package_files_script.py"]
+script_files = ["clean_package_files_script.py"]
 
-for scriptFile in scriptFiles:
+for script_file in script_files:
     # Compile and execute script file
-    file = os.path.join(cwd, scriptFile)
-    exec(compile(open(file).read(), scriptFile, PYTHON_COMPIL_OPTION))
+    exec(compile(open(os.path.join(cwd, script_file)).read(), script_file, PYTHON_COMPIL_OPTION))

@@ -98,7 +98,7 @@ class MsfsLod:
 
         return False
 
-    def optimize(self, output_texture_format):
+    def optimize(self, bake_textures_enabled, output_texture_format):
         model_files = [model_file for model_file in Path(self.folder).glob(GLTF_FILE_PATTERN) if not self.__is_optimized(model_file)]
         if not model_files:
             return
@@ -107,17 +107,25 @@ class MsfsLod:
         # Import the gltf files located in the object folder
         import_model_files(model_files)
 
-        if self.has_unbaked_textures():
+        if bake_textures_enabled and self.has_unbaked_textures():
             isolated_print("bake textures for", self.name)
             bake_texture_files(self.folder, self.name + "." + output_texture_format)
 
         isolated_print("fix bounding box for", self.name)
         fix_object_bounding_box()
         export_to_optimized_gltf_files(new_gltf, self.TEXTURE_FOLDER)
-        shutil.rmtree(self.folder)
-        self.folder = os.path.dirname(self.folder)
-        self.optimization_in_progress = False
-        self.__retrieve_gltf_resources()
+
+        if os.path.isfile(new_gltf):
+            shutil.rmtree(self.folder)
+            self.folder = os.path.dirname(self.folder)
+            self.optimization_in_progress = False
+            self.__retrieve_gltf_resources()
+
+    def prepare_for_msfs(self):
+        model_file = MsfsGltf(os.path.join(self.folder, self.model_file))
+        model_file.fix_doublesided()
+        model_file.add_asobo_extensions()
+        model_file.dump()
 
     def __retrieve_gltf_resources(self):
         self.binaries = []
@@ -138,3 +146,4 @@ class MsfsLod:
         model_file = MsfsGltf(os.path.join(self.folder, model_file))
         if not model_file.data: return
         return self.OPTIMIZATION_GENERATOR_TAG in model_file.data[MsfsGltf.ASSET_TAG][MsfsGltf.GENERATOR_TAG] or self.ALT_OPTIMIZATION_GENERATOR_TAG in model_file.data[MsfsGltf.ASSET_TAG][MsfsGltf.GENERATOR_TAG]
+

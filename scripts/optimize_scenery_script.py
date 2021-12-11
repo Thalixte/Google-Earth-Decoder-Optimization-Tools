@@ -28,8 +28,6 @@ try:
     if BACKUP_ENABLED:
         msfs_project.backup(Path(os.path.abspath(__file__)).stem)
 
-    print_title("OPTIMIZE SCENERY")
-
     clean_scene()
     msfs_project.optimize(settings)
 

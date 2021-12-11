@@ -1,5 +1,6 @@
 import configparser as cp
 import json
+import os
 
 from constants import ENCODING, PNG_TEXTURE_FORMAT, INI_FILE
 
@@ -25,7 +26,7 @@ class Settings:
         self.author_name = str()
         self.node_js_folder = str()
         self.fspackagetool_folder = str()
-        self.bake_textures_enabled = False
+        self.bake_textures_enabled = "False"
         self.msfs_steam_version = "False"
         self.build_package_enabled = "False"
         self.reload_modules = "False"
@@ -36,7 +37,10 @@ class Settings:
         self.lon_correction = 0.0
 
         config = cp.ConfigParser()
-        config.read(INI_FILE, encoding=ENCODING)
+        if os.path.isfile(INI_FILE):
+            config.read(INI_FILE, encoding=ENCODING)
+        else:
+            config.read(os.path.join(sources_path, INI_FILE), encoding=ENCODING)
 
         for section_name in config.sections():
             for name, value in config.items(section_name):

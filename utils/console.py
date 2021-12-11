@@ -77,7 +77,7 @@ def maximize_console(lines=None):
 
 
 def print_title(title):
-    isolated_print(CEND, TITLE_FILL_CHAR*TITLE_LENGTH)
+    isolated_print(CEND + TITLE_FILL_CHAR*TITLE_LENGTH)
     title = " " + title + " "
     isolated_print(title.upper().center(TITLE_LENGTH, TITLE_FILL_CHAR))
     isolated_print(TITLE_FILL_CHAR*TITLE_LENGTH, EOL)

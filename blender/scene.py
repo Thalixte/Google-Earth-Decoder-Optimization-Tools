@@ -77,11 +77,8 @@ def export_to_optimized_gltf_files(file, texture_folder):
     model_file = MsfsGltf(file)
     model_file.add_optimization_tag()
     model_file.fix_texture_path()
-    model_file.fix_doublesided()
-    model_file.add_asobo_extensions()
     model_file.dump()
     clean_scene()
-
 
 ##################################################################
 # Bake the tile texture files

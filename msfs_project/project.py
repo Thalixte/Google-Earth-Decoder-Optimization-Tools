@@ -97,16 +97,20 @@ class MsfsProject:
         isolated_print(EOL)
         dest_format = settings.output_texture_format
         src_format = JPG_TEXTURE_FORMAT if dest_format == PNG_TEXTURE_FORMAT else PNG_TEXTURE_FORMAT
+        lods = [lod for tile in self.tiles.values() for lod in tile.lods]
         self.__convert_tiles_textures(src_format, dest_format)
         self.__update_lod_values(settings)
         # some tile lods are not optimized
         if self.__optimization_needed():
             print_title("OPTIMIZE THE TILES")
             self.__create_optimization_folders()
-            if settings.bake_textures_enabled:
-                for tile in self.tiles.values():
-                    for lod in tile.lods:
-                        lod.optimize(settings.output_texture_format)
+            for lod in lods:
+                lod.optimize(settings.bake_textures_enabled, settings.output_texture_format)
+
+        pbar = ProgressBar(list(lods), title="PREPARE THE TILES FOR MSFS")
+        for lod in lods:
+            lod.prepare_for_msfs()
+            pbar.update("%s prepared for msfs" % lod.name)
 
     def backup_tiles(self, backup_subfolder):
         backup_path = os.path.join(self.backup_folder, backup_subfolder)
@@ -151,7 +155,7 @@ class MsfsProject:
         # create the PackageSources folder if it does not exist
         os.makedirs(self.package_sources_folder, exist_ok=True)
         # rename modelLib folder if it exists
-        if os.path.isdir(os.path.join(self.package_sources_folder, self.MODEL_LIB_FOLDER)):
+        if os.path.isdir(os.path.join(self.package_sources_folder, self.MODEL_LIB_FOLDER)) and not os.path.isdir(self.modelLib_folder):
             # change modelib folder to fix CTD issues (see
             # https://flightsim.to/blog/creators-guide-fix-ctd-issues-on-your-scenery/)
             os.rename(os.path.join(self.package_sources_folder, self.MODEL_LIB_FOLDER), self.modelLib_folder)
@@ -250,8 +254,7 @@ class MsfsProject:
         pop_objects = []
         for guid, object in objects.items():
             # first, check if the object is unused
-            if not self.objects_xml.find_scenery_objects(guid) and not self.objects_xml.find_scenery_objects_in_group(
-                    guid):
+            if not self.objects_xml.find_scenery_objects(guid) and not self.objects_xml.find_scenery_objects_in_group(guid):
                 # unused object, so remove the files related to it
                 object.remove_files()
                 pop_objects.append(guid)
