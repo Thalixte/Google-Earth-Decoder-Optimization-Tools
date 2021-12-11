@@ -73,7 +73,15 @@ first_latlonbox_dict = {
 #######################****************###########################
 
 def get_position_from_file_name(file_name):
-    pos = tuple([0, 0])
+    return tuple(get_latlonbox_from_file_name(file_name).bl_point)
+
+
+def get_coords_from_file_name(file_name):
+    return tuple(get_latlonbox_from_file_name(file_name))
+
+
+def get_latlonbox_from_file_name(file_name):
+    pos = tuple([0, 0, 0, 0])
 
     try:
         latlonbox = first_latlonbox_dict[file_name[0:2]]
@@ -83,7 +91,7 @@ def get_position_from_file_name(file_name):
     for octant in file_name[2:]:
         latlonbox = latlonbox.get_child(octant)
 
-    return tuple(latlonbox.bl_point)
+    return latlonbox
 
 
 def is_octant(file_name):
@@ -93,4 +101,11 @@ def is_octant(file_name):
         return False
 
     return True
+
+
+def is_contained(box1, box2):
+    n1, s1, w1, e1 = box1
+    n2, s2, w2, e2 = box2
+
+    return (n1 <= n2) and (s1 >= s2) and (w1 >= w2) and (e1 <= e2)
 

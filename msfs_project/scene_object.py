@@ -9,6 +9,7 @@ from msfs_project.lod import MsfsLod
 
 class MsfsSceneObject(MsfsObject):
     pos: MsfsPosition
+    coords: tuple
     lods: list
 
     LOD_MODEL_FILES_SEARCH_PATTERN = "_LOD*.gltf"
@@ -16,6 +17,7 @@ class MsfsSceneObject(MsfsObject):
     def __init__(self, path, name, definition_file):
         super().__init__(path, name, definition_file)
         self.pos = MsfsPosition(0, 0, 0)
+        self.coords = ([0, 0, 0, 0])
         self.lods = self.__retrieve_lods()
 
     def backup_files(self, backup_path, dry_mode=False, pbar=None):
