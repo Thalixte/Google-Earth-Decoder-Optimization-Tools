@@ -8,7 +8,7 @@ from msfs_project.collider import MsfsCollider
 from msfs_project.tile import MsfsTile
 from msfs_project.shape import MsfsShape
 from utils import replace_in_file, is_octant, backup_file, install_python_lib, ScriptError, print_title, \
-    get_backup_file_path, isolated_print, is_contained
+    get_backup_file_path, isolated_print
 from pathlib import Path
 
 from utils.progress_bar import ProgressBar
@@ -331,7 +331,7 @@ class MsfsProject:
                 if tile_candidate.name == tile.name:
                     tile_candidates.remove(tile_candidate)
                     continue
-                if tile.name != tile_candidate.name and ((tile_candidate.pos.lat, tile_candidate.pos.lon) == (tile.pos.lat, tile.pos.lon)) or is_contained(tile_candidate.coords, tile.coords):
+                if tile.name != tile_candidate.name and tile.contains(tile_candidate):
                     linked_tiles[tile].append(tile_candidate)
                     tile_candidates.remove(tile_candidate)
                     sorted_tiles_by_name.remove(tile_candidate)

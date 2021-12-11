@@ -72,7 +72,7 @@ def import_model_files(model_files):
 # Export and optimize the tile in a new gltf file, with bin file and textures
 ##############################################################################
 def export_to_optimized_gltf_files(file, texture_folder):
-    isolated_print("export to ", file, "with associated textures", EOL)
+    isolated_print("export to", file, "with associated textures", EOL)
     bpy.ops.export_scene.gltf(export_format=GLTF_SEPARATE_EXPORT_FORMAT, export_extras=True, filepath=file, export_texture_dir=texture_folder)
     model_file = MsfsGltf(file)
     model_file.add_optimization_tag()

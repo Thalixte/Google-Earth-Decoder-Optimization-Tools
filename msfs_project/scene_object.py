@@ -46,6 +46,12 @@ class MsfsSceneObject(MsfsObject):
         self.xml.save()
         pbar.update("%s lod values updated" % self.name)
 
+    def contains(self, tile):
+        n1, s1, w1, e1 = self.coords
+        n2, s2, w2, e2 = tile.coords
+
+        return (n1 >= n2) and (s1 <= s2) and (w1 <= w2) and (e1 >= e2)
+
     def __retrieve_lods(self):
         lods = []
         lods_definition = self.xml.find_scenery_lods()

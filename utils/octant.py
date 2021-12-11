@@ -103,9 +103,3 @@ def is_octant(file_name):
     return True
 
 
-def is_contained(box1, box2):
-    n1, s1, w1, e1 = box1
-    n2, s2, w2, e2 = box2
-
-    return (n1 <= n2) and (s1 >= s2) and (w1 >= w2) and (e1 <= e2)
-
