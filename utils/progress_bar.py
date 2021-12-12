@@ -21,7 +21,7 @@ class ProgressBar:
     range: int
     idx: int
 
-    PROGRESS_BAR_COLORS = {0: CRED, 0.25: CORANGE, 0.5: CGREEN, 0.75: CGREEN, 1.0: CGREEN}
+    PROGRESS_BAR_COLORS = {0: CRED, 0.25: CORANGE, 0.75: CGREEN}
 
     def __init__(self, iterable, title=str(), sleep=DEFAULT_SLEEP, length=PROGRESS_BAR_LENGTH):
         self.iterable = iterable
