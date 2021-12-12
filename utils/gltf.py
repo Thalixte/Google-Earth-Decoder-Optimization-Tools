@@ -69,7 +69,6 @@ class MsfsGltf:
         }
 
         for material in self.data[self.MATERIALS_TAG]:
-            if material[self.EXTENSIONS_TAG]: del material[self.EXTENSIONS_TAG]
             material[self.EXTENSIONS_TAG] = material_extensions_data
 
     def dump(self):

@@ -14,3 +14,4 @@ from .module import *
 from .isolated_print import *
 from .json import *
 from .gltf import *
+from .chunks import *

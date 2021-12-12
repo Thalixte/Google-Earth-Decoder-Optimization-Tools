@@ -3,10 +3,14 @@ from utils.progress_bar import ProgressBar
 
 
 class ObjectsXml(Xml):
+    GROUP_TAG = "Group"
+    SCENERY_OBJECT_TAG = "SceneryObject"
+    LIBRARY_OBJECT_TAG = "LibraryObject"
     GUID_TAG = "name"
-    LIBRARY_OBJECTS_SEARCH_PATTERN = "./SceneryObject/LibraryObject"
-    SCENERY_OBJECT_SEARCH_PATTERN = "./SceneryObject/LibraryObject[@name='"
-    SCENERY_OBJECT_GROUP_SEARCH_PATTERN = "./Group/SceneryObject/LibraryObject[@name='"
+
+    LIBRARY_OBJECTS_SEARCH_PATTERN = "./" + SCENERY_OBJECT_TAG + "/" + LIBRARY_OBJECT_TAG
+    SCENERY_OBJECT_SEARCH_PATTERN = LIBRARY_OBJECTS_SEARCH_PATTERN + "[@name='"
+    SCENERY_OBJECT_GROUP_SEARCH_PATTERN = "./" + GROUP_TAG + "/" + SCENERY_OBJECT_TAG + "/" + LIBRARY_OBJECT_TAG + "[@name='"
 
     def __init__(self, file_folder, file_name):
         super().__init__(file_folder, file_name)

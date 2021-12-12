@@ -12,7 +12,7 @@ from constants import *
 from utils import check_configuration, ScriptError, build_package, pr_bg_green, pr_bg_red
 from msfs_project import MsfsProject
 
-BACKUP_ENABLED = True
+BACKUP_ENABLED = False
 
 ##################################################################
 #                        Main process
@@ -27,6 +27,7 @@ try:
     if BACKUP_ENABLED:
         msfs_project.backup(Path(os.path.abspath(__file__)).stem)
 
+    isolated_print(EOL)
     print_title("CLEAN PACKAGE FILES")
 
     msfs_project.clean()

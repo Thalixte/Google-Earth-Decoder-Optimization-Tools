@@ -2,15 +2,16 @@ import shutil
 import os
 
 from constants import *
+from msfs_project.package_definitions_xml import MsfsPackageDefinitionsXml
 from msfs_project.objects_xml import ObjectsXml
 from msfs_project.scene_object import MsfsSceneObject
 from msfs_project.collider import MsfsCollider
 from msfs_project.tile import MsfsTile
 from msfs_project.shape import MsfsShape
-from utils import replace_in_file, is_octant, backup_file, install_python_lib, ScriptError, print_title, \
-    get_backup_file_path, isolated_print
+from utils import replace_in_file, is_octant, backup_file, install_python_lib, ScriptError, print_title, get_backup_file_path, isolated_print
 from pathlib import Path
 
+from utils.compressonator import Compressonator
 from utils.progress_bar import ProgressBar
 
 
@@ -21,7 +22,7 @@ class MsfsProject:
     project_folder: str
     package_definitions_folder: str
     package_sources_folder: str
-    modelLib_folder: str
+    model_lib_folder: str
     texture_folder: str
     scene_folder: str
     business_json_folder: str
@@ -33,6 +34,9 @@ class MsfsProject:
     scene_objects_xml_file_path: str
     business_json_path: str
     thumbnail_picture_path: str
+    built_packages_folder: str
+    built_project_package_folder: str
+    model_lib_output_dir: str
     min_lod_level: int
     objects: dict
     tiles: dict
@@ -45,6 +49,7 @@ class MsfsProject:
     BACKUP_FOLDER = "backup"
     PACKAGE_DEFINITIONS_FOLDER = "PackageDefinitions"
     PACKAGE_SOURCES_FOLDER = "PackageSources"
+    BUILT_PACKAGES_FOLDER = "Packages"
     MODEL_LIB_FOLDER = "modelLib"
     SCENE_FOLDER = "scene"
     TEXTURE_FOLDER = "texture"
@@ -52,7 +57,7 @@ class MsfsProject:
     SCENE_OBJECTS_FILE = "objects" + XML_FILE_EXT
     COLLIDER_SUFFIX = "_collider"
 
-    def __init__(self, projects_path, project_name, author_name, sources_path, init=False):
+    def __init__(self, projects_path, project_name, author_name, sources_path, init=False, fast_init=False):
         isolated_print(EOL)
         self.parent_path = projects_path
         self.project_name = project_name
@@ -61,18 +66,23 @@ class MsfsProject:
         self.backup_folder = os.path.join(self.project_folder, self.BACKUP_FOLDER)
         self.package_definitions_folder = os.path.join(self.project_folder, self.PACKAGE_DEFINITIONS_FOLDER)
         self.package_sources_folder = os.path.join(self.project_folder, self.PACKAGE_SOURCES_FOLDER)
-        self.modelLib_folder = os.path.join(self.package_sources_folder, self.MODEL_LIB_FOLDER if init else self.project_name.lower() + "-" + self.MODEL_LIB_FOLDER)
+        self.model_lib_folder = os.path.join(self.package_sources_folder, self.MODEL_LIB_FOLDER if init else self.project_name.lower() + "-" + self.MODEL_LIB_FOLDER)
         self.scene_folder = os.path.join(self.package_sources_folder, self.SCENE_FOLDER)
-        self.texture_folder = os.path.join(self.modelLib_folder, self.TEXTURE_FOLDER)
+        self.texture_folder = os.path.join(self.model_lib_folder, self.TEXTURE_FOLDER)
         self.scene_folder = os.path.join(self.package_sources_folder, self.SCENE_FOLDER)
-        self.business_json_folder = os.path.join(self.package_definitions_folder, self.author_name.lower() + "-" + self.project_name.lower())
-        self.content_info_folder = os.path.join(self.package_definitions_folder, self.business_json_folder, self.CONTENT_INFO_FOLDER)
+        self.business_json_folder = os.path.join(self.package_definitions_folder,
+                                                 self.author_name.lower() + "-" + self.project_name.lower())
+        self.content_info_folder = os.path.join(self.package_definitions_folder, self.business_json_folder,
+                                                self.CONTENT_INFO_FOLDER)
+        self.built_packages_folder = os.path.join(self.project_folder, self.BUILT_PACKAGES_FOLDER)
+        self.built_project_package_folder = os.path.join(self.built_packages_folder,
+                                                         self.author_name.lower() + "-" + self.project_name.lower())
         self.scene_objects_xml_file_path = os.path.join(self.scene_folder, self.SCENE_OBJECTS_FILE)
         if os.path.isfile(self.scene_objects_xml_file_path):
             self.objects_xml = ObjectsXml(self.scene_folder, self.SCENE_OBJECTS_FILE)
         self.min_lod_level = 0
 
-        self.__initialize(sources_path)
+        self.__initialize(sources_path, fast_init)
 
     def update_objects_position(self, settings):
         isolated_print(EOL)
@@ -134,10 +144,16 @@ class MsfsProject:
             pbar = ProgressBar([self.SCENE_OBJECTS_FILE], title="backup " + self.SCENE_OBJECTS_FILE)
             backup_file(backup_path, self.scene_folder, self.SCENE_OBJECTS_FILE, pbar=pbar)
 
-    def __initialize(self, sources_path):
+    def compress_built_package(self, settings):
+        compressonator = Compressonator(os.path.join(settings.compressonator_folder, COMPRESSONATOR_EXE), self.model_lib_output_folder)
+        compressonator.compress_texture_files()
+
+    def __initialize(self, sources_path, fast_init):
         self.__init_structure(sources_path)
-        self.__init_components()
-        self.__guess_min_lod_level()
+
+        if not fast_init:
+            self.__init_components()
+            self.__guess_min_lod_level()
 
     def __init_structure(self, sources_path):
         self.project_definition_xml = self.project_name + XML_FILE_EXT
@@ -155,12 +171,13 @@ class MsfsProject:
         # create the PackageSources folder if it does not exist
         os.makedirs(self.package_sources_folder, exist_ok=True)
         # rename modelLib folder if it exists
-        if os.path.isdir(os.path.join(self.package_sources_folder, self.MODEL_LIB_FOLDER)) and not os.path.isdir(self.modelLib_folder):
+        if os.path.isdir(os.path.join(self.package_sources_folder, self.MODEL_LIB_FOLDER)) and not os.path.isdir(
+                self.model_lib_folder):
             # change modelib folder to fix CTD issues (see
             # https://flightsim.to/blog/creators-guide-fix-ctd-issues-on-your-scenery/)
-            os.rename(os.path.join(self.package_sources_folder, self.MODEL_LIB_FOLDER), self.modelLib_folder)
+            os.rename(os.path.join(self.package_sources_folder, self.MODEL_LIB_FOLDER), self.model_lib_folder)
         # create the modelLib folder if it does not exist
-        os.makedirs(self.modelLib_folder, exist_ok=True)
+        os.makedirs(self.model_lib_folder, exist_ok=True)
         # create the scene folder if it does not exist
         os.makedirs(self.scene_folder, exist_ok=True)
         # create the texture folder if it does not exist
@@ -191,6 +208,8 @@ class MsfsProject:
         self.thumbnail_picture_path = os.path.join(self.content_info_folder, THUMBNAIL_PICTURE_TEMPLATE)
         self.__create_project_file(sources_path, THUMBNAIL_PICTURE_TEMPLATE_PATH, self.thumbnail_picture_path)
 
+        self.model_lib_output_folder = self.__get_model_lib_output_folder()
+
     def __init_components(self):
         self.__retrieve_objects()
 
@@ -216,21 +235,21 @@ class MsfsProject:
         self.__retrieve_shapes()
 
     def __retrieve_scene_objects(self):
-        pbar = ProgressBar(list(Path(self.modelLib_folder).rglob(XML_FILE_PATTERN)), title="Retrieve project infos")
+        pbar = ProgressBar(list(Path(self.model_lib_folder).rglob(XML_FILE_PATTERN)), title="Retrieve project infos")
         for i, path in enumerate(pbar.iterable):
             if not is_octant(path.stem):
-                msfs_scene_object = MsfsSceneObject(self.modelLib_folder, path.stem, path.name)
+                msfs_scene_object = MsfsSceneObject(self.model_lib_folder, path.stem, path.name)
                 self.objects[msfs_scene_object.xml.guid] = msfs_scene_object
                 pbar.update("%s" % path.name)
                 continue
 
             if self.COLLIDER_SUFFIX in path.stem:
-                msfs_collider = MsfsCollider(self.modelLib_folder, path.stem, path.name)
+                msfs_collider = MsfsCollider(self.model_lib_folder, path.stem, path.name)
                 self.colliders[msfs_collider.xml.guid] = msfs_collider
                 pbar.update("%s" % path.name)
                 continue
 
-            msfs_tile = MsfsTile(self.modelLib_folder, path.stem, path.name)
+            msfs_tile = MsfsTile(self.model_lib_folder, path.stem, path.name)
             self.tiles[msfs_tile.xml.guid] = msfs_tile
             pbar.update("%s" % path.name)
 
@@ -254,7 +273,8 @@ class MsfsProject:
         pop_objects = []
         for guid, object in objects.items():
             # first, check if the object is unused
-            if not self.objects_xml.find_scenery_objects(guid) and not self.objects_xml.find_scenery_objects_in_group(guid):
+            if not self.objects_xml.find_scenery_objects(guid) and not self.objects_xml.find_scenery_objects_in_group(
+                    guid):
                 # unused object, so remove the files related to it
                 object.remove_files()
                 pop_objects.append(guid)
@@ -274,15 +294,18 @@ class MsfsProject:
         textures = self.__retrieve_tiles_textures(src_format)
 
         if textures:
-            isolated_print(src_format + " texture files detected in the tiles of the project! Try to install pip, then convert them")
+            isolated_print(
+                src_format + " texture files detected in the tiles of the project! Try to install pip, then convert them")
             print_title("INSTALL PILLOW")
             install_python_lib("Pillow")
 
-            pbar = ProgressBar(textures, title="CONVERT " + src_format.upper() + " TEXTURE FILES TO " + dest_format.upper())
+            pbar = ProgressBar(textures,
+                               title="CONVERT " + src_format.upper() + " TEXTURE FILES TO " + dest_format.upper())
             for texture in textures:
                 file = texture.file
                 if not texture.convert(src_format, dest_format):
-                    raise ScriptError(src_format + " texture files detected in " + self.texture_folder + " ! Please convert them to " + dest_format + " format prior to launch the script, or remove them")
+                    raise ScriptError(
+                        src_format + " texture files detected in " + self.texture_folder + " ! Please convert them to " + dest_format + " format prior to launch the script, or remove them")
                 else:
                     pbar.update("%s converted to %s" % (file, dest_format))
 
@@ -351,3 +374,6 @@ class MsfsProject:
             for parent_tile, tiles in link_tiles_by_position.items():
                 parent_tile.create_optimization_folders(tiles, dry_mode=False, pbar=pbar)
 
+    def __get_model_lib_output_folder(self):
+        xml = MsfsPackageDefinitionsXml(self.package_definitions_folder, self.package_definitions_xml)
+        return os.path.join(self.built_project_package_folder, xml.find_model_lib_asset_group(self.project_name.lower() + "-" + self.MODEL_LIB_FOLDER))

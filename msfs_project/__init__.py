@@ -8,3 +8,4 @@ from .lod import *
 from .position import *
 from .objects_xml import *
 from .object_xml import *
+from .package_definitions_xml import *
