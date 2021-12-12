@@ -109,7 +109,7 @@ class MsfsProject:
         src_format = JPG_TEXTURE_FORMAT if dest_format == PNG_TEXTURE_FORMAT else PNG_TEXTURE_FORMAT
         lods = [lod for tile in self.tiles.values() for lod in tile.lods]
         self.__convert_tiles_textures(src_format, dest_format)
-        self.__update_lod_values(settings)
+        self.update_lod_values(settings)
         # some tile lods are not optimized
         if self.__optimization_needed():
             print_title("OPTIMIZE THE TILES")
@@ -143,6 +143,15 @@ class MsfsProject:
         if not os.path.isfile(get_backup_file_path(backup_path, self.scene_folder, self.SCENE_OBJECTS_FILE)):
             pbar = ProgressBar([self.SCENE_OBJECTS_FILE], title="backup " + self.SCENE_OBJECTS_FILE)
             backup_file(backup_path, self.scene_folder, self.SCENE_OBJECTS_FILE, pbar=pbar)
+
+    def update_lod_values(self, settings):
+        pbar = ProgressBar(list())
+        pbar.range = len(self.tiles) + len(self.colliders)
+        pbar.display_title("Update lod values")
+        for tile in self.tiles.values():
+            tile.update_lod_values(settings.target_lod_values, pbar=pbar)
+        for collider in self.colliders.values():
+            collider.update_lod_values(settings.target_lod_values, pbar=pbar)
 
     def compress_built_package(self, settings):
         compressonator = Compressonator(os.path.join(settings.compressonator_folder, COMPRESSONATOR_EXE), self.model_lib_output_folder)
@@ -327,15 +336,6 @@ class MsfsProject:
             res += len(tile.lods)
 
         return res
-
-    def __update_lod_values(self, settings):
-        pbar = ProgressBar(list())
-        pbar.range = len(self.tiles) + len(self.colliders)
-        pbar.display_title("Update lod values")
-        for tile in self.tiles.values():
-            tile.update_lod_values(settings.target_lod_values, pbar=pbar)
-        for collider in self.colliders.values():
-            collider.update_lod_values(settings.target_lod_values, pbar=pbar)
 
     def __optimization_needed(self):
         for tile in self.tiles.values():
