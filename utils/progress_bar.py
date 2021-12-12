@@ -7,7 +7,7 @@ from types import GeneratorType
 from constants import EOL, CRED, CORANGE, CGREEN, CEND
 from utils import print_title, isolated_print
 
-MSG_LENGTH = 150
+MSG_LENGTH = 160
 PROGRESS_BAR_LENGTH = 50
 DEFAULT_SLEEP = 0.0
 DONE_PROCESS = "DONE"
@@ -50,7 +50,7 @@ class ProgressBar:
         progress = self.idx / self.range
         block = int(round(self.length * progress))
         description = DONE_PROCESS if progress >= 1 else description
-        msg = self.__get_color(progress) + "\r[{0}] {1}%: {2}".format("\u25A0" * block + "-" * (self.length - block), round(progress * 100, 2), description)
+        msg = self.__get_color(progress) + "\r[{0}] {1}%: {2}".format("\u25A0" * block + "-" * (self.length - block), round(progress * 100, 2), description + CEND)
 
         sys.stdout = sys.__stdout__
         sys.stdout.write(msg.ljust(MSG_LENGTH))
@@ -59,7 +59,7 @@ class ProgressBar:
         time.sleep(self.sleep)
 
         if progress >= 1:
-            isolated_print(CEND, EOL)
+            isolated_print(EOL)
 
     def __get_color(self, progress):
         for step, color in self.PROGRESS_BAR_COLORS.items(): res = color if progress >= step else res

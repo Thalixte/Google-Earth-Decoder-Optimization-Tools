@@ -60,10 +60,8 @@ class Compressonator:
     def __convert_dds_texture_files(self):
         ON_POSIX = 'posix' in sys.builtin_module_names
 
-        pbar = ProgressBar(list(), title="convert " + self.DDS_FORMAT + " textures to " + self.BMP_FORMAT)
         self.converted_data, data = itertools.tee(self.converted_data)
-        pbar.range = len(list(data))
-        pbar.display_title()
+        pbar = ProgressBar(list(data), title="convert " + self.DDS_FORMAT + " textures to " + self.BMP_FORMAT)
         for chunck in self.converted_data:
             # create a pipe to get data
             input_fd, output_fd = os.pipe()
@@ -77,7 +75,7 @@ class Compressonator:
             os.close(output_fd)  # close unused end of the pipe
 
             # read output line by line as soon as it is available
-            with io.open(input_fd, "r", buffering=1) as file:
+            with io.open(input_fd, "r") as file:
                 for line in file:
                     print(line, end=str())
 
@@ -89,10 +87,8 @@ class Compressonator:
     def __compress_dds_texture_files(self):
         ON_POSIX = 'posix' in sys.builtin_module_names
 
-        pbar = ProgressBar(list(), title="compress " + self.BMP_FORMAT + " textures to " + self.DDS_FORMAT + " " + self.DDS_CONVERSION_FORMAT)
         self.compressed_data, data = itertools.tee(self.compressed_data)
-        pbar.range = len(list(data))
-        pbar.display_title()
+        pbar = ProgressBar(list(data), title="compress " + self.BMP_FORMAT + " textures to " + self.DDS_FORMAT + " " + self.DDS_CONVERSION_FORMAT)
         for chunck in self.compressed_data:
             # create a pipe to get data
             input_fd, output_fd = os.pipe()
