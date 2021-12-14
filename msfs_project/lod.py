@@ -26,7 +26,7 @@ class MsfsLod:
     ALT_OPTIMIZATION_GENERATOR_TAG = "FPS optimized"
     UNBAKED_TEXTURE_NAME_PATTERN = "([a-zA-Z0-9\s_\\.\-\(\):])(LOD)(\d+)(_)(\d+).(" + PNG_TEXTURE_FORMAT + "|" + JPG_TEXTURE_FORMAT + ")"
 
-    def __init__(self, lod_level, min_size, model_file, folder):
+    def __init__(self, lod_level, min_size, folder, model_file):
         self.lod_level = lod_level
         self.min_size = int(min_size)
         self.name = os.path.splitext(model_file)[0]

@@ -1,6 +1,12 @@
+import itertools
+import sys
+
+import io
 import shutil
 import os
+import subprocess
 
+import bpy
 from constants import *
 from msfs_project.package_definitions_xml import MsfsPackageDefinitionsXml
 from msfs_project.objects_xml import ObjectsXml
@@ -8,7 +14,8 @@ from msfs_project.scene_object import MsfsSceneObject
 from msfs_project.collider import MsfsCollider
 from msfs_project.tile import MsfsTile
 from msfs_project.shape import MsfsShape
-from utils import replace_in_file, is_octant, backup_file, install_python_lib, ScriptError, print_title, get_backup_file_path, isolated_print
+from utils import replace_in_file, is_octant, backup_file, install_python_lib, ScriptError, print_title, \
+    get_backup_file_path, isolated_print, chunks
 from pathlib import Path
 
 from utils.compressonator import Compressonator
@@ -56,6 +63,7 @@ class MsfsProject:
     CONTENT_INFO_FOLDER = "ContentInfo"
     SCENE_OBJECTS_FILE = "objects" + XML_FILE_EXT
     COLLIDER_SUFFIX = "_collider"
+    NB_PARALLEL_TASKS = 4
 
     def __init__(self, projects_path, project_name, author_name, sources_path, init=False, fast_init=False):
         isolated_print(EOL)
@@ -114,11 +122,12 @@ class MsfsProject:
         if self.__optimization_needed():
             print_title("OPTIMIZE THE TILES")
             self.__create_optimization_folders()
-            for lod in lods:
-                lod.optimize(settings.bake_textures_enabled, settings.output_texture_format)
+            self.__optimize_tile_lods(self.__retrieve_lods_to_optimize())
 
         pbar = ProgressBar(list(lods), title="PREPARE THE TILES FOR MSFS")
         for lod in lods:
+            lod.folder = os.path.dirname(lod.folder)
+            lod.optimization_in_progress = False
             lod.prepare_for_msfs()
             pbar.update("%s prepared for msfs" % lod.name)
 
@@ -376,4 +385,50 @@ class MsfsProject:
 
     def __get_model_lib_output_folder(self):
         xml = MsfsPackageDefinitionsXml(self.package_definitions_folder, self.package_definitions_xml)
-        return os.path.join(self.built_project_package_folder, xml.find_model_lib_asset_group(self.project_name.lower() + "-" + self.MODEL_LIB_FOLDER))
+        return os.path.join(self.built_project_package_folder,
+                            xml.find_model_lib_asset_group(self.project_name.lower() + "-" + self.MODEL_LIB_FOLDER))
+
+    def __retrieve_lods_to_optimize(self):
+        data = []
+        for tile in self.tiles.values():
+            for lod in tile.lods:
+                if os.path.isdir(lod.folder):
+                    data.append({'path': lod.folder, 'model_file': lod.model_file})
+
+        return chunks(data, self.NB_PARALLEL_TASKS)
+
+    @staticmethod
+    def __optimize_tile_lods(lods_data):
+        ON_POSIX = 'posix' in sys.builtin_module_names
+
+        lods_data, data = itertools.tee(lods_data)
+        pbar = ProgressBar(list(data), title="OPTIMIZE THE TILES")
+
+        try:
+            for chunck in lods_data:
+                # create a pipe to get data
+                input_fd, output_fd = os.pipe()
+
+                for obj in chunck:
+                    print("-------------------------------------------------------------------------------")
+                    print("prepare command line: ", "\"" + str(bpy.app.binary_path) + "\" --background --python \"" + os.path.join(os.path.dirname(os.path.dirname(__file__)), "optimize_tile_lod.py") + "\" -- --path \"" + obj['path'] + "\" --model_file " + obj['model_file'])
+
+                si = subprocess.STARTUPINFO()
+                si.dwFlags = subprocess.STARTF_USESTDHANDLES | subprocess.HIGH_PRIORITY_CLASS
+
+                processes = [subprocess.Popen([str(bpy.app.binary_path), "--background", "--python", os.path.join(os.path.dirname(os.path.dirname(__file__)), "optimize_tile_lod.py"), "--", "--path", obj['path'], "--model_file", obj['model_file']],
+                                              stdout=output_fd, stderr=subprocess.DEVNULL, close_fds=ON_POSIX, startupinfo=si, encoding="UTF-8") for obj in chunck]
+
+                os.close(output_fd)  # close unused end of the pipe
+
+                # read output line by line as soon as it is available
+                with io.open(input_fd, "r", buffering=1) as file:
+                    for line in file:
+                        print(line, end=str())
+
+                for p in processes:
+                    p.wait()
+                    pbar.update("%s optimized" % os.path.basename(obj['path']))
+
+        except:
+            pass

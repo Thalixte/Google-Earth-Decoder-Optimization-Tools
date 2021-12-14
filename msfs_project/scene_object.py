@@ -57,15 +57,15 @@ class MsfsSceneObject(MsfsObject):
         lods_definition = self.xml.find_scenery_lods()
 
         if not lods_definition:
-            lods.append(MsfsLod(0, 0, self.name + GLTF_FILE_EXT, self.folder))
+            lods.append(MsfsLod(0, 0, self.folder, self.name + GLTF_FILE_EXT))
 
         for i, lod_definition in enumerate(lods_definition):
-            lods.append(MsfsLod(i, lod_definition.get(self.xml.MIN_SIZE_TAG), lod_definition.get(self.xml.MODEL_FILE_TAG), self.folder))
+            lods.append(MsfsLod(i, lod_definition.get(self.xml.MIN_SIZE_TAG), self.folder, lod_definition.get(self.xml.MODEL_FILE_TAG)))
 
         # check if other lod files exist
         for path in Path(os.path.dirname(self.folder)).rglob(self.name + self.LOD_MODEL_FILES_SEARCH_PATTERN):
             if not self.__model_file_exists(lods, path.name):
-                lods.append(MsfsLod(int(path.stem[-2:]), 0, path.name, self.folder))
+                lods.append(MsfsLod(int(path.stem[-2:]), 0, self.folder, path.name))
 
         return lods
 
