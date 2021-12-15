@@ -166,6 +166,14 @@ class MsfsProject:
         compressonator = Compressonator(os.path.join(settings.compressonator_folder, COMPRESSONATOR_EXE), self.model_lib_output_folder)
         compressonator.compress_texture_files()
 
+    def merge(self, project_to_merge):
+        if self.objects_xml and project_to_merge.objects_xml:
+            self.__merge_tiles(self.tiles, project_to_merge.project_name, project_to_merge.tiles, project_to_merge.objects_xml)
+            self.__merge_colliders(self.colliders, project_to_merge.project_name, project_to_merge.colliders, project_to_merge.objects_xml)
+            self.__merge_scene_objects(self.objects, project_to_merge.project_name, project_to_merge.objects, project_to_merge.objects_xml)
+            self.objects_xml.save()
+            self.__merge_shapes(self.shapes, project_to_merge.shapes)
+
     def __initialize(self, sources_path, fast_init):
         self.__init_structure(sources_path)
 
@@ -302,26 +310,18 @@ class MsfsProject:
             objects.pop(guid)
 
     def __remove_object(self, object):
-        found_scenery_objects = []
         guid = object.xml.guid
-        if self.objects_xml.find_scenery_objects(guid):
-            found_scenery_objects = self.objects_xml.find_scenery_objects(guid)
-            found_scenery_objects_parents = self.objects_xml.find_scenery_objects_parents(guid)
 
-        if self.objects_xml.find_scenery_objects_in_group(guid):
-            found_scenery_objects = self.objects_xml.find_scenery_objects_in_group(guid)
-            found_scenery_objects_parents = self.objects_xml.find_scenery_objects_in_group_parents(guid)
-
-        if found_scenery_objects:
-            self.objects_xml.remove_tags(found_scenery_objects_parents, found_scenery_objects)
+        found_scenery_objects_parents, found_scenery_objects = self.__find_scenery_objects_and_its_parents(self.objects_xml, guid)
+        self.objects_xml.remove_tags(found_scenery_objects_parents, found_scenery_objects)
 
         self.objects_xml.save()
 
         if guid in self.tiles:
-            self.tiles.pop(guid)
+            self.tiles.pop(guid, None)
 
         if guid in self.colliders:
-            self.colliders.remove(guid)
+            self.colliders.pop(guid, None)
 
     def __retrieve_tiles_textures(self, extension):
         textures = []
@@ -333,18 +333,15 @@ class MsfsProject:
         textures = self.__retrieve_tiles_textures(src_format)
 
         if textures:
-            isolated_print(
-                src_format + " texture files detected in the tiles of the project! Try to install pip, then convert them")
+            isolated_print(src_format + " texture files detected in the tiles of the project! Try to install pip, then convert them")
             print_title("INSTALL PILLOW")
             install_python_lib("Pillow")
 
-            pbar = ProgressBar(textures,
-                               title="CONVERT " + src_format.upper() + " TEXTURE FILES TO " + dest_format.upper())
+            pbar = ProgressBar(textures, title="CONVERT " + src_format.upper() + " TEXTURE FILES TO " + dest_format.upper())
             for texture in textures:
                 file = texture.file
                 if not texture.convert(src_format, dest_format):
-                    raise ScriptError(
-                        src_format + " texture files detected in " + self.texture_folder + " ! Please convert them to " + dest_format + " format prior to launch the script, or remove them")
+                    raise ScriptError(src_format + " texture files detected in " + self.texture_folder + " ! Please convert them to " + dest_format + " format prior to launch the script, or remove them")
                 else:
                     pbar.update("%s converted to %s" % (file, dest_format))
 
@@ -456,3 +453,63 @@ class MsfsProject:
 
         except:
             pass
+
+    def __merge_tiles(self, tiles, project_to_merge_name, tiles_to_merge, objects_xml_to_merge):
+        pbar = ProgressBar(tiles_to_merge.items(), title="MERGE THE TILES")
+        self.__merge_objects(tiles, project_to_merge_name, tiles_to_merge, objects_xml_to_merge, pbar)
+
+    def __merge_colliders(self, colliders, project_to_merge_name, colliders_to_merge, objects_xml_to_merge):
+        pbar = ProgressBar(colliders_to_merge.items(), title="MERGE THE COLLIDERS")
+        self.__merge_objects(colliders, project_to_merge_name, colliders_to_merge, objects_xml_to_merge, pbar)
+
+    def __merge_scene_objects(self, scene_objects, project_to_merge_name, scene_objects_to_merge, objects_xml_to_merge):
+        pbar = ProgressBar(scene_objects_to_merge.items(), title="MERGE THE OBJECTS")
+        self.__merge_objects(scene_objects, project_to_merge_name, scene_objects_to_merge, objects_xml_to_merge, pbar)
+
+    def __merge_objects(self, objects, project_to_merge_name, objects_to_merge, objects_xml_to_merge, pbar):
+        for guid, object in pbar.iterable:
+            add_guid = False
+            # copy or overwrite files
+            add_guid = True if not os.path.isfile(os.path.join(self.model_lib_folder, object.definition_file)) else add_guid
+            shutil.copyfile(os.path.join(object.folder, object.definition_file), os.path.join(self.model_lib_folder, object.definition_file))
+            for lod in object.lods:
+                shutil.copyfile(os.path.join(lod.folder, lod.model_file), os.path.join(self.model_lib_folder, lod.model_file))
+                for binary in lod.binaries:
+                    shutil.copyfile(os.path.join(binary.folder, binary.file), os.path.join(self.model_lib_folder, binary.file))
+                for texture in lod.textures:
+                    shutil.copyfile(os.path.join(texture.folder, texture.file), os.path.join(self.texture_folder, texture.file))
+
+            # update objects.xml file
+            if not add_guid:
+                objects.pop(guid, None)
+                scenery_objects_parents, scenery_objects = self.__find_scenery_objects_and_its_parents(self.objects_xml, guid)
+                self.objects_xml.remove_tags(scenery_objects_parents, scenery_objects)
+
+            # new guid to add
+            new_scenery_objects_parents, new_scenery_objects = self.__find_scenery_objects_and_its_parents(objects_xml_to_merge, guid)
+            for new_scenery_object in new_scenery_objects:
+                new_scenery_object.set(self.objects_xml.DISPLAY_NAME_TAG, project_to_merge_name + "_" + object.name)
+                self.objects_xml.root.append(new_scenery_object)
+
+            objects[guid] = object
+            pbar.update("%s merged" % object.name)
+
+    def __merge_shapes(self, shapes, shapes_to_merge):
+        pbar = ProgressBar(shapes_to_merge.items(), title="MERGE THE SHAPES")
+        for name, shape in pbar.iterable:
+            if not os.path.isfile(os.path.join(shape.folder, shape.definition_file)):
+                shutil.copyfile(os.path.join(shape.folder, shape.definition_file), os.path.join(self.scene_folder, shape.definition_file))
+                shutil.copyfile(os.path.join(shape.folder, shape.dbf_file_name), os.path.join(self.scene_folder, shape.dbf_file_name))
+                shutil.copyfile(os.path.join(shape.folder, shape.shp_file_name), os.path.join(self.scene_folder, shape.shp_file_name))
+                shutil.copyfile(os.path.join(shape.folder, shape.shx_file_name), os.path.join(self.scene_folder, shape.shx_file_name))
+
+    @staticmethod
+    def __find_scenery_objects_and_its_parents(objects_xml, guid):
+        if objects_xml.find_scenery_objects(guid):
+            return objects_xml.find_scenery_objects_parents(guid), objects_xml.find_scenery_objects(guid)
+
+        if objects_xml.find_scenery_objects_in_group(guid):
+            return objects_xml.find_scenery_objects_in_group_parents(guid), objects_xml.find_scenery_objects_in_group(
+                guid)
+
+        return [], []

@@ -7,6 +7,7 @@ class ObjectsXml(Xml):
     SCENERY_OBJECT_TAG = "SceneryObject"
     LIBRARY_OBJECT_TAG = "LibraryObject"
     GUID_TAG = "name"
+    DISPLAY_NAME_TAG = "displayName"
 
     LIBRARY_OBJECTS_SEARCH_PATTERN = "./" + SCENERY_OBJECT_TAG + "/" + LIBRARY_OBJECT_TAG
     SCENERY_OBJECT_SEARCH_PATTERN = LIBRARY_OBJECTS_SEARCH_PATTERN + "[@name='"

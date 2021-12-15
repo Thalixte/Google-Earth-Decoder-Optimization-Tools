@@ -30,7 +30,7 @@ try:
     if BACKUP_ENABLED:
         msfs_project.backup(Path(os.path.abspath(__file__)).stem)
 
-    # msfs_project.merge(msfs_project_to_merge)
+    msfs_project.merge(msfs_project_to_merge)
 
     if settings.build_package_enabled:
         build_package(msfs_project, settings)
