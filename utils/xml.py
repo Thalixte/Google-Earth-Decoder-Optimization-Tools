@@ -11,7 +11,8 @@ class Xml:
     root: object
 
     PATTERN_SUFFIX = "']"
-    PARENT_PATTERN_SUFFIX = PATTERN_SUFFIX + "/.."
+    PARENT_SUFFIX = "/.."
+    PARENT_PATTERN_SUFFIX = PATTERN_SUFFIX + PARENT_SUFFIX
 
     def __init__(self, file_folder, file_name):
         self.file_path = os.path.join(file_folder, file_name)
@@ -24,6 +25,7 @@ class Xml:
         pretty_print(element=self.root)
         line_prepender(self.file_path, XML_HEADER)
 
-    def remove_tags(self, tags):
-        for tag in tags:
-            self.root.remove(tag)
+    def remove_tags(self, parents, elems):
+        for parent in parents:
+            for elem in elems:
+                parent.remove(elem)

@@ -28,14 +28,17 @@ class ObjectsXml(Xml):
 
         self.save()
 
-    def __retrieve_library_objects(self):
-        return self.root.findall(self.LIBRARY_OBJECTS_SEARCH_PATTERN)
-
     def find_scenery_objects(self, guid):
         return self.root.findall(self.SCENERY_OBJECT_SEARCH_PATTERN + guid.upper() + self.PARENT_PATTERN_SUFFIX)
 
+    def find_scenery_objects_parents(self, guid):
+        return self.root.findall(self.SCENERY_OBJECT_SEARCH_PATTERN + guid.upper() + self.PARENT_PATTERN_SUFFIX + self.PARENT_SUFFIX)
+
     def find_scenery_objects_in_group(self, guid):
         return self.root.findall(self.SCENERY_OBJECT_GROUP_SEARCH_PATTERN + guid.upper() + self.PARENT_PATTERN_SUFFIX)
+
+    def find_scenery_objects_in_group_parents(self, guid):
+        return self.root.findall(self.SCENERY_OBJECT_GROUP_SEARCH_PATTERN + guid.upper() + self.PARENT_PATTERN_SUFFIX + self.PARENT_SUFFIX)
 
     def __update_tiles_pos(self, msfs_project, settings):
         if not msfs_project.tiles.items():

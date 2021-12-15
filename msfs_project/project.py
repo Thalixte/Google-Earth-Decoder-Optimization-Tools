@@ -291,8 +291,7 @@ class MsfsProject:
         pop_objects = []
         for guid, object in objects.items():
             # first, check if the object is unused
-            if not self.objects_xml.find_scenery_objects(guid) and not self.objects_xml.find_scenery_objects_in_group(
-                    guid):
+            if not self.objects_xml.find_scenery_objects(guid) and not self.objects_xml.find_scenery_objects_in_group(guid):
                 # unused object, so remove the files related to it
                 object.remove_files()
                 pop_objects.append(guid)
@@ -301,6 +300,28 @@ class MsfsProject:
 
         for guid in pop_objects:
             objects.pop(guid)
+
+    def __remove_object(self, object):
+        found_scenery_objects = []
+        guid = object.xml.guid
+        if self.objects_xml.find_scenery_objects(guid):
+            found_scenery_objects = self.objects_xml.find_scenery_objects(guid)
+            found_scenery_objects_parents = self.objects_xml.find_scenery_objects_parents(guid)
+
+        if self.objects_xml.find_scenery_objects_in_group(guid):
+            found_scenery_objects = self.objects_xml.find_scenery_objects_in_group(guid)
+            found_scenery_objects_parents = self.objects_xml.find_scenery_objects_in_group_parents(guid)
+
+        if found_scenery_objects:
+            self.objects_xml.remove_tags(found_scenery_objects_parents, found_scenery_objects)
+
+        self.objects_xml.save()
+
+        if guid in self.tiles:
+            self.tiles.pop(guid)
+
+        if guid in self.colliders:
+            self.colliders.remove(guid)
 
     def __retrieve_tiles_textures(self, extension):
         textures = []
@@ -370,6 +391,8 @@ class MsfsProject:
                     linked_tiles[tile].append(tile_candidate)
                     tile_candidates.remove(tile_candidate)
                     sorted_tiles_by_name.remove(tile_candidate)
+                    # remove tile candidate from the project
+                    self.__remove_object(tile_candidate)
 
         return linked_tiles
 
@@ -428,7 +451,8 @@ class MsfsProject:
 
                 for p in processes:
                     p.wait()
-                    pbar.update("%s optimized" % os.path.basename(obj['path']))
+
+                pbar.update("%s optimized" % os.path.basename(obj['path']))
 
         except:
             pass
