@@ -3,6 +3,7 @@ import os
 import bpy
 from constants import *
 from utils import pr_ko_red, pr_ok_green, pr_ko_orange, isolated_print
+from utils.console import print_title
 from utils.script_errors import ScriptError
 
 RESULT_MSG_LENGTH = 40
@@ -14,6 +15,8 @@ RESULT_MSG_LENGTH = 40
 def check_configuration(settings, msfs_project, check_lily_texture_packer=False, check_built_package=False, check_compressonator=False):
     error_msg = "Configuration error found ! "
     warning_msg = "Configuration warning ! "
+
+    print_title("CHECK CONFIGURATION FOR " + msfs_project.project_name + " PROJECT")
 
     # check if the projects folder exists
     if not os.path.isdir(msfs_project.parent_path):

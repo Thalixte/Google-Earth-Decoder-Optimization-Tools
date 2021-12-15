@@ -8,6 +8,7 @@ from constants import ENCODING, PNG_TEXTURE_FORMAT, INI_FILE
 class Settings:
     projects_path: str
     project_name: str
+    project_name_to_merge: str
     author_name: str
     node_js_folder: str
     fspackagetool_folder: str
@@ -23,6 +24,7 @@ class Settings:
     def __init__(self, sources_path=str()):
         self.projects_path = str()
         self.project_name = str()
+        self.project_name_to_merge = str()
         self.author_name = str()
         self.node_js_folder = str()
         self.fspackagetool_folder = str()
