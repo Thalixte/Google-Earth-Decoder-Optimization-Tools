@@ -423,6 +423,11 @@ class MsfsProject:
             for chunck in lods_data:
                 # create a pipe to get data
                 input_fd, output_fd = os.pipe()
+
+                for obj in chunck:
+                    print("-------------------------------------------------------------------------------")
+                    print("prepare command line: ", "\"" + str(bpy.app.binary_path) + "\" --background --python \"" + os.path.join(os.path.dirname(os.path.dirname(__file__)), "optimize_tile_lod.py") + "\" -- --path \"" + obj['path'] + "\" --model_file " + obj['model_file'])
+
                 si = subprocess.STARTUPINFO()
                 si.dwFlags = subprocess.STARTF_USESTDHANDLES | subprocess.HIGH_PRIORITY_CLASS
 
