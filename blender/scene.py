@@ -80,6 +80,7 @@ def export_to_optimized_gltf_files(file, texture_folder):
     model_file.dump()
     clean_scene()
 
+
 ##################################################################
 # Bake the tile texture files
 ##################################################################

@@ -78,13 +78,10 @@ class MsfsProject:
         self.scene_folder = os.path.join(self.package_sources_folder, self.SCENE_FOLDER)
         self.texture_folder = os.path.join(self.model_lib_folder, self.TEXTURE_FOLDER)
         self.scene_folder = os.path.join(self.package_sources_folder, self.SCENE_FOLDER)
-        self.business_json_folder = os.path.join(self.package_definitions_folder,
-                                                 self.author_name.lower() + "-" + self.project_name.lower())
-        self.content_info_folder = os.path.join(self.package_definitions_folder, self.business_json_folder,
-                                                self.CONTENT_INFO_FOLDER)
+        self.business_json_folder = os.path.join(self.package_definitions_folder, self.author_name.lower() + "-" + self.project_name.lower())
+        self.content_info_folder = os.path.join(self.package_definitions_folder, self.business_json_folder, self.CONTENT_INFO_FOLDER)
         self.built_packages_folder = os.path.join(self.project_folder, self.BUILT_PACKAGES_FOLDER)
-        self.built_project_package_folder = os.path.join(self.built_packages_folder,
-                                                         self.author_name.lower() + "-" + self.project_name.lower())
+        self.built_project_package_folder = os.path.join(self.built_packages_folder, self.author_name.lower() + "-" + self.project_name.lower())
         self.scene_objects_xml_file_path = os.path.join(self.scene_folder, self.SCENE_OBJECTS_FILE)
         if os.path.isfile(self.scene_objects_xml_file_path):
             self.objects_xml = ObjectsXml(self.scene_folder, self.SCENE_OBJECTS_FILE)
@@ -282,8 +279,7 @@ class MsfsProject:
     def __retrieve_shapes(self):
         pbar = ProgressBar(list(Path(self.scene_folder).rglob(DBF_FILE_PATTERN)), title="Retrieve shapes")
         for i, path in enumerate(pbar.iterable):
-            self.shapes[path.stem] = MsfsShape(self.scene_folder, path.stem, path.stem + XML_FILE_EXT, path.name,
-                                               path.stem + SHP_FILE_EXT, path.stem + SHX_FILE_EXT)
+            self.shapes[path.stem] = MsfsShape(self.scene_folder, path.stem, path.stem + XML_FILE_EXT, path.name, path.stem + SHP_FILE_EXT, path.stem + SHX_FILE_EXT)
             pbar.update("%s" % path.name)
 
     def __backup_objects(self, objects: dict, backup_path, pbar_title="backup files"):
@@ -405,8 +401,7 @@ class MsfsProject:
 
     def __get_model_lib_output_folder(self):
         xml = MsfsPackageDefinitionsXml(self.package_definitions_folder, self.package_definitions_xml)
-        return os.path.join(self.built_project_package_folder,
-                            xml.find_model_lib_asset_group(self.project_name.lower() + "-" + self.MODEL_LIB_FOLDER))
+        return os.path.join(self.built_project_package_folder, xml.find_model_lib_asset_group(self.project_name.lower() + "-" + self.MODEL_LIB_FOLDER))
 
     def __retrieve_lods_to_optimize(self):
         data = []
@@ -428,11 +423,6 @@ class MsfsProject:
             for chunck in lods_data:
                 # create a pipe to get data
                 input_fd, output_fd = os.pipe()
-
-                for obj in chunck:
-                    print("-------------------------------------------------------------------------------")
-                    print("prepare command line: ", "\"" + str(bpy.app.binary_path) + "\" --background --python \"" + os.path.join(os.path.dirname(os.path.dirname(__file__)), "optimize_tile_lod.py") + "\" -- --path \"" + obj['path'] + "\" --model_file " + obj['model_file'])
-
                 si = subprocess.STARTUPINFO()
                 si.dwFlags = subprocess.STARTF_USESTDHANDLES | subprocess.HIGH_PRIORITY_CLASS
 
@@ -495,13 +485,16 @@ class MsfsProject:
             pbar.update("%s merged" % object.name)
 
     def __merge_shapes(self, shapes, shapes_to_merge):
-        pbar = ProgressBar(shapes_to_merge.items(), title="MERGE THE SHAPES")
+        pbar = ProgressBar(shapes_to_merge.items())
         for name, shape in pbar.iterable:
-            if not os.path.isfile(os.path.join(shape.folder, shape.definition_file)):
+            if not os.path.isfile(os.path.join(self.scene_folder, shape.definition_file)):
+                pbar.display_title("MERGE THE SHAPES")
                 shutil.copyfile(os.path.join(shape.folder, shape.definition_file), os.path.join(self.scene_folder, shape.definition_file))
                 shutil.copyfile(os.path.join(shape.folder, shape.dbf_file_name), os.path.join(self.scene_folder, shape.dbf_file_name))
                 shutil.copyfile(os.path.join(shape.folder, shape.shp_file_name), os.path.join(self.scene_folder, shape.shp_file_name))
                 shutil.copyfile(os.path.join(shape.folder, shape.shx_file_name), os.path.join(self.scene_folder, shape.shx_file_name))
+                shapes[name] = shape
+                pbar.update("%s merged" % shape.name)
 
     @staticmethod
     def __find_scenery_objects_and_its_parents(objects_xml, guid):

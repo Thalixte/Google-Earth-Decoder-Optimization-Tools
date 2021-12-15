@@ -37,8 +37,7 @@ def get_image_node(obj):
     if len(image_nodes) <= 0:
         nodes = material.node_tree.nodes
         node_texture = nodes.new(type=SHADER_TEX_IMAGE_NODE_TYPE)
-        node_texture.image = bpy.data.images.new(name=BLANK_IMAGE_NAME, width=DUMMY_IMAGE_WIDTH,
-                                                 height=DUMMY_IMAGE_HEIGHT, color=BLANK_COLOR, alpha=True)
+        node_texture.image = bpy.data.images.new(name=BLANK_IMAGE_NAME, width=DUMMY_IMAGE_WIDTH, height=DUMMY_IMAGE_HEIGHT, color=BLANK_COLOR, alpha=True)
         node_texture.location = 0, 0
         links = material.node_tree.links
         links.new(node_texture.outputs[0], nodes.get(BSDF_NODE_TYPE).inputs[0])

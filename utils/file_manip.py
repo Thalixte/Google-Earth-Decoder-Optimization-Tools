@@ -25,15 +25,13 @@ def replace_in_file(file, text, replacement):
 # function to pretty print the XML code
 ##########################################################################
 def pretty_print(element, level=0):
-    '''
-    Function taken from elementTree site:
-    http://effbot.org/zone/element-lib.htm#prettyprint
+    # Function taken from elementTree site:
+    # http://effbot.org/zone/element-lib.htm#prettyprint
 
-    '''
-    indent = '\n' + level * '  '
+    indent = "\n" + level * "  "
     if len(element):
         if not element.text or not element.text.strip():
-            element.text = indent + '  '
+            element.text = indent + "  "
 
         if not element.tail or not element.tail.strip():
             element.tail = indent

@@ -9,6 +9,7 @@ import bpy
 ######################################################
 # Python lib installation
 ######################################################
+
 from os.path import normpath, join, dirname
 from utils import ScriptError
 
@@ -41,15 +42,11 @@ def install_python_lib(lib, install_pip=False):
         if install_pip:
             # install or upgrade pip
             subprocess.check_call([sys.executable, "-m", "ensurepip"], shell=True)
-            subprocess.check_call(
-                [python_exe, "-m", PIP_LIB, "--disable-pip-version-check", "install", "--upgrade", PIP_LIB,
-                 "--user", "--no-warn-script-location"], shell=True)
+            subprocess.check_call([python_exe, "-m", PIP_LIB, "--disable-pip-version-check", "install", "--upgrade", PIP_LIB, "--user", "--no-warn-script-location"], shell=True)
             globals()[PIP_LIB] = import_module(PIP_LIB)
 
         # install required packages
-        subprocess.run(
-            [python_exe, "-m", PIP_LIB, "--disable-pip-version-check", "install", "--upgrade", lib, "--user",
-             "--no-warn-script-location"], shell=True)
+        subprocess.run([python_exe, "-m", PIP_LIB, "--disable-pip-version-check", "install", "--upgrade", lib, "--user", "--no-warn-script-location"], shell=True)
     except:
         raise ScriptError(error_msg)
 
