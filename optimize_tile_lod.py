@@ -88,6 +88,7 @@ try:
     clean_scene()
 
     settings = Settings(get_sources_path())
+    check_lily_texture_packer_availability(settings)
 
     lod = MsfsLod(int(args.path[-2:]), 0, args.path, args.model_file)
     lod.optimize(settings.bake_textures_enabled, settings.output_texture_format)

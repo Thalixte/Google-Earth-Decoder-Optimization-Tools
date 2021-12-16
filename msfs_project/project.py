@@ -407,7 +407,7 @@ class MsfsProject:
         data = []
         for tile in self.tiles.values():
             for lod in tile.lods:
-                if os.path.isdir(lod.folder):
+                if os.path.isdir(lod.folder) and lod.folder != self.model_lib_folder:
                     data.append({'path': lod.folder, 'model_file': lod.model_file})
 
         return chunks(data, self.NB_PARALLEL_TASKS)

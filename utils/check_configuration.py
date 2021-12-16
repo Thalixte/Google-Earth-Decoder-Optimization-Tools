@@ -41,7 +41,7 @@ def check_configuration(settings, msfs_project, check_lily_texture_packer=False,
     if not os.path.isfile(settings.fspackagetool_folder + "\\" + MSFS_BUILD_EXE):
         pr_ko_orange(str("fspackagetool_folder value").ljust(RESULT_MSG_LENGTH))
         settings.build_package_enabled = False
-        isolated_print(CORANGE + warning_msg + MSFS_BUILD_EXE + " bin file not found. Automatic package building disabled" + CEND + EOL)
+        isolated_print(CORANGE + warning_msg + MSFS_BUILD_EXE + " bin file not found. Automatic package building is disabled" + CEND + EOL)
     else:
         pr_ok_green(str("fspackagetool_folder value").ljust(RESULT_MSG_LENGTH))
 
@@ -83,18 +83,7 @@ def check_configuration(settings, msfs_project, check_lily_texture_packer=False,
 
     # check if Lily texture packer is installed
     if check_lily_texture_packer and settings.bake_textures_enabled:
-        texture_packer_enabled = False
-        try:
-            if LILY_TEXTURE_PACKER_ADDON in bpy.context.preferences.addons:
-                texture_packer_enabled = True
-                pr_ok_green(str("Lily texture packer enabled").ljust(RESULT_MSG_LENGTH))
-        except:
-            pass
-
-        if not texture_packer_enabled:
-            pr_ko_orange(str("Lily texture packer enabled").ljust(RESULT_MSG_LENGTH))
-            settings.bake_textures_enabled = False
-            isolated_print(CORANGE + warning_msg + " Lily texture packer is not enabled in your blender addons. Baking of the tile textures is disabled" + CEND + EOL)
+        check_lily_texture_packer_availability(settings, warning_msg=warning_msg)
 
     if check_built_package:
         # check if the folder containing project package exists
@@ -111,3 +100,17 @@ def check_configuration(settings, msfs_project, check_lily_texture_packer=False,
         else:
             pr_ok_green(str("compressonator_folder value").ljust(RESULT_MSG_LENGTH))
 
+
+def check_lily_texture_packer_availability(settings, warning_msg=str()):
+    texture_packer_enabled = False
+    try:
+        if LILY_TEXTURE_PACKER_ADDON in bpy.context.preferences.addons:
+            texture_packer_enabled = True
+            pr_ok_green(str("Lily texture packer enabled").ljust(RESULT_MSG_LENGTH))
+    except:
+        pass
+
+    if not texture_packer_enabled:
+        pr_ko_orange(str("Lily texture packer disabled").ljust(RESULT_MSG_LENGTH))
+        settings.bake_textures_enabled = False
+        isolated_print(CORANGE + warning_msg + " Lily texture packer is not enabled in your blender addons. Baking of the tile textures is disabled" + CEND + EOL)
