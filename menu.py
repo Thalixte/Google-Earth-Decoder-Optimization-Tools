@@ -18,7 +18,6 @@
 
 # <pep8 compliant>
 import os
-import argparse
 import site
 import sys
 import bpy
@@ -59,15 +58,12 @@ if cwd not in sys.path:
     sys.path.append(cwd)
 
 from utils import *
-from blender import clean_scene
-from msfs_project import MsfsLod
-
 
 settings = Settings(get_sources_path())
 
 
 class TOPBAR_MT_google_earth_optimization_menus(Menu):
-    os.system("cls")
+    os.system(CLEAR_CONSOLE_CMD)
     bl_idname = "TOPBAR_MT_google_earth_optimization_menus"
     bl_label = ""
 
@@ -81,25 +77,23 @@ class TOPBAR_MT_google_earth_optimization_menu(Menu):
 
     def draw(self, context):
         layout = self.layout
-        layout.operator("screen.init_msfs_scenery_project_operator")
+        layout.operator("text.init_msfs_scenery_project_operator")
 
 
 class InitMsfsSceneryProjectOperator(bpy.types.Operator):
     """Tooltip"""
-    bl_idname = "screen.init_msfs_scenery_project_operator"
+    bl_space_type = 'TEXT_EDITOR'
+    bl_idname = "text.init_msfs_scenery_project_operator"
     bl_label = "Init a new MSFS scenery project"
 
     @classmethod
     def poll(cls, context):
-        return not os.path.isdir(os.path.join(settings.projects_path, settings.project_name))
+        # return not os.path.isdir(os.path.join(settings.projects_path, settings.project_name))
+        return True
 
     def execute(self, context):
-        script_file = "init_msfs_scenery_project_script.py"
-        text = bpy.data.texts.load(os.path.join(cwd, script_file))   # if exists in blend
-        ctx = bpy.context.copy()
-        ctx[script_file] = text
-        lib1 = bpy.data.texts[script_file].as_string()
-        exec(text)
+        script_file = "init_msfs_scenery_project.py"
+        exec_script_from_menu(os.path.join(files_dir, script_file))
         return {'FINISHED'}
 
 
