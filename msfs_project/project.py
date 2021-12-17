@@ -186,31 +186,34 @@ class MsfsProject:
         self.shapes = dict()
         self.colliders = dict()
 
-        # create the project folder if it does not exist
-        os.makedirs(self.project_folder, exist_ok=True)
-        os.chdir(self.project_folder)
-        # create the backup folder if it does not exist
-        os.makedirs(self.backup_folder, exist_ok=True)
-        # create the PackageSources folder if it does not exist
-        os.makedirs(self.package_sources_folder, exist_ok=True)
-        # rename modelLib folder if it exists
-        if os.path.isdir(os.path.join(self.package_sources_folder, self.MODEL_LIB_FOLDER)) and not os.path.isdir(
-                self.model_lib_folder):
-            # change modelib folder to fix CTD issues (see
-            # https://flightsim.to/blog/creators-guide-fix-ctd-issues-on-your-scenery/)
-            os.rename(os.path.join(self.package_sources_folder, self.MODEL_LIB_FOLDER), self.model_lib_folder)
-        # create the modelLib folder if it does not exist
-        os.makedirs(self.model_lib_folder, exist_ok=True)
-        # create the scene folder if it does not exist
-        os.makedirs(self.scene_folder, exist_ok=True)
-        # create the texture folder if it does not exist
-        os.makedirs(self.texture_folder, exist_ok=True)
-        # create the PackageDefinitions folder if it does not exist
-        os.makedirs(self.package_definitions_folder, exist_ok=True)
-        # create the business.json folder if it does not exist
-        os.makedirs(self.business_json_folder, exist_ok=True)
-        # create the content info folder if it does not exist
-        os.makedirs(self.content_info_folder, exist_ok=True)
+        try:
+            # create the project folder if it does not exist
+            os.makedirs(self.project_folder, exist_ok=True)
+            os.chdir(self.project_folder)
+            # create the backup folder if it does not exist
+            os.makedirs(self.backup_folder, exist_ok=True)
+            # create the PackageSources folder if it does not exist
+            os.makedirs(self.package_sources_folder, exist_ok=True)
+            # rename modelLib folder if it exists
+            if os.path.isdir(os.path.join(self.package_sources_folder, self.MODEL_LIB_FOLDER)) and not os.path.isdir(
+                    self.model_lib_folder):
+                # change modelib folder to fix CTD issues (see
+                # https://flightsim.to/blog/creators-guide-fix-ctd-issues-on-your-scenery/)
+                os.rename(os.path.join(self.package_sources_folder, self.MODEL_LIB_FOLDER), self.model_lib_folder)
+            # create the modelLib folder if it does not exist
+            os.makedirs(self.model_lib_folder, exist_ok=True)
+            # create the scene folder if it does not exist
+            os.makedirs(self.scene_folder, exist_ok=True)
+            # create the texture folder if it does not exist
+            os.makedirs(self.texture_folder, exist_ok=True)
+            # create the PackageDefinitions folder if it does not exist
+            os.makedirs(self.package_definitions_folder, exist_ok=True)
+            # create the business.json folder if it does not exist
+            os.makedirs(self.business_json_folder, exist_ok=True)
+            # create the content info folder if it does not exist
+            os.makedirs(self.content_info_folder, exist_ok=True)
+        except WindowsError:
+            raise ScriptError("Impossible de créer les répertoires du projet")
 
         # rename project definition xml file folder if it exists
         old_project_definition_xml_path = os.path.join(self.project_folder, self.package_definitions_xml)
