@@ -78,6 +78,7 @@ class TOPBAR_MT_google_earth_optimization_menu(Menu):
     def draw(self, context):
         layout = self.layout
         layout.operator("text.init_msfs_scenery_project_operator")
+        layout.operator("text.optimize_scenery_operator")
 
 
 class InitMsfsSceneryProjectOperator(bpy.types.Operator):
@@ -97,10 +98,27 @@ class InitMsfsSceneryProjectOperator(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class OptimizeSceneryOperator(bpy.types.Operator):
+    """Tooltip"""
+    bl_space_type = 'TEXT_EDITOR'
+    bl_idname = "text.optimize_scenery_operator"
+    bl_label = "Optimize a MSFS scenery"
+
+    @classmethod
+    def poll(cls, context):
+        return os.path.isdir(os.path.join(settings.projects_path, settings.project_name))
+
+    def execute(self, context):
+        script_file = "optimize_scenery.py"
+        exec_script_from_menu(os.path.join(files_dir, script_file))
+        return {'FINISHED'}
+
+
 classes = (
     TOPBAR_MT_google_earth_optimization_menus,
     TOPBAR_MT_google_earth_optimization_menu,
-    InitMsfsSceneryProjectOperator
+    InitMsfsSceneryProjectOperator,
+    OptimizeSceneryOperator
 )
 
 
