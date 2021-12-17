@@ -248,7 +248,11 @@ class MsfsProject:
     def __create_project_file(self, sources_path, src_file_relative_path, dest_file_path, replace_content=False):
         if not os.path.isfile(dest_file_path):
             src_file_path = os.path.join(sources_path, src_file_relative_path)
-            shutil.copyfile(src_file_path, dest_file_path)
+
+            try:
+                shutil.copyfile(src_file_path, dest_file_path)
+            except WindowsError:
+                raise ScriptError("Impossible de copier le fichier" + sources_path + " vers " + dest_file_path)
 
         if replace_content:
             replace_in_file(dest_file_path, self.DUMMY_STRING.capitalize(), self.project_name)
