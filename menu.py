@@ -78,6 +78,9 @@ class TOPBAR_MT_google_earth_optimization_menu(Menu):
     def draw(self, context):
         layout = self.layout
         layout.operator("text.init_msfs_scenery_project_operator")
+
+        layout.separator()
+        
         layout.operator("text.optimize_scenery_operator")
 
 
