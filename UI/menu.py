@@ -27,6 +27,7 @@ def projects_path_updated(self, context):
     context.window.cursor_warp(panel_props.first_mouse_x, panel_props.first_mouse_y)
     bpy.ops.wm.init_msfs_scenery_project('INVOKE_DEFAULT')
 
+
 def project_name_updated(self, context):
     settings.project_name = context.scene.custom_props.project_name
     settings.save()
