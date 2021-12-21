@@ -6,6 +6,7 @@ from constants import ENCODING, PNG_TEXTURE_FORMAT, INI_FILE
 
 
 class Settings:
+    sources_path: str
     projects_path: str
     project_name: str
     project_name_to_merge: str
@@ -22,6 +23,7 @@ class Settings:
     lon_correction: float
 
     def __init__(self, sources_path=str()):
+        self.sources_path = sources_path
         self.projects_path = str()
         self.project_name = str()
         self.project_name_to_merge = str()
@@ -64,8 +66,24 @@ class Settings:
         self.target_lod_values = str().join(self.target_lod_values.split()).split(",")
 
         # ensure to convert float settings values
-        self.lat_correction = float(str(self.lat_correction))
-        self.lon_correction = float(str(self.lon_correction))
+        self.lat_correction = "{:.9f}".format(float(str(self.lat_correction))).rstrip("0").rstrip(".")
+        self.lon_correction = "{:.9f}".format(float(str(self.lon_correction))).rstrip("0").rstrip(".")
+
+    def save(self):
+        config = cp.ConfigParser(comment_prefixes='# ', allow_no_value=True)
+        if os.path.isfile(INI_FILE):
+            config.read(INI_FILE, encoding=ENCODING)
+        else:
+            config.read(os.path.join(self.sources_path, INI_FILE), encoding=ENCODING)
+
+        for section_name in config.sections():
+            for name, value in config.items(section_name):
+                config.set(section_name, name, str(getattr(self, name)))
+
+        config.set("LODS", "target_lod_values", ", ".join(self.target_lod_values))
+
+        with open(os.path.join(self.sources_path, INI_FILE), "w") as configfile:
+            config.write(configfile)
 
     def __setattr__(self, attr, value):
         super().__setattr__(attr, value)

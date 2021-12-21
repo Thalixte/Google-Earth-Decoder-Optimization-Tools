@@ -45,6 +45,11 @@ CLEAR_CONSOLE_CMD = "cls"
 
 PYTHON_COMPIL_OPTION = "exec"
 
+CONSTANTS_FOLDER = "constants"
+UTILS_FOLDER = "utils"
+SCRIPT_FOLDER = "scripts"
+UI_FOLDER = "UI"
+
 RESOURCE_FOLDER = "resource"
 TEMPLATES_FOLDER = RESOURCE_FOLDER + "\\" + "templates"
 THUMBNAIL_FOLDER = RESOURCE_FOLDER + "\\" + "thumbnail"
