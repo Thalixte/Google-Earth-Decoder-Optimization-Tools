@@ -2,11 +2,12 @@
 import os
 
 import bpy
+from bpy.props import IntProperty, BoolProperty
 from bpy.types import Menu
 from bpy_extras.io_utils import ImportHelper
 from bpy_types import Operator
 from constants import CLEAR_CONSOLE_CMD
-from utils import exec_script_from_menu, Settings, get_sources_path
+from utils import exec_script_from_menu, Settings, get_sources_path, isolated_print
 
 settings = Settings(get_sources_path())
 settings.save()
@@ -22,7 +23,9 @@ def reload_topbar_menu():
 def projects_path_updated(self, context):
     settings.projects_path = context.scene.custom_props.projects_path
     settings.save()
-
+    panel_props = context.scene.panel_props
+    context.window.cursor_warp(panel_props.first_mouse_x, panel_props.first_mouse_y)
+    bpy.ops.wm.init_msfs_scenery_project('INVOKE_DEFAULT')
 
 def project_name_updated(self, context):
     settings.project_name = context.scene.custom_props.project_name
@@ -44,12 +47,7 @@ class TOPBAR_MT_google_earth_optimization_menu(Menu):
 
     def draw(self, context):
         layout = self.layout
-
         layout.operator("wm.init_msfs_scenery_project")
-
-        layout.separator()
-
-        layout.operator("text.optimize_scenery_operator")
 
 
 class CustomPropertyGroup(bpy.types.PropertyGroup):
@@ -73,34 +71,35 @@ class CustomPropertyGroup(bpy.types.PropertyGroup):
     )
 
 
-# create a panel (class) by deriving from the bpy Panel, this be the UI
-class VIEW_3D_PT_CustomToolShelf(bpy.types.Panel):
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
-    bl_label = 'Custom Tool Shelf'
-    bl_context = 'objectmode'
-    bl_category = 'View'
+class PanelPropertyGroup(bpy.types.PropertyGroup):
+    first_mouse_x: IntProperty(default=0)
+    first_mouse_y: IntProperty(default=0)
+
+
+class VIEW_3D_PT_CustomToolShelf(Operator):
+    bl_idname = 'wm.init_msfs_scenery_project'
+    bl_label = 'Initialize a new MSFS project scenery'
+    bl_options = {'REGISTER', 'UNDO'}
 
     def draw(self, context):
         layout = self.layout
-        layout.operator('text.init_msfs_scenery_project_operator', text='Initialize the MSFS scenery project')
-        subrow = layout.row(align=True)
-        layout.label(text="v Testing layout, does nothing bellow this v")
         subrow = layout.row(align=True)
         layout.prop(context.scene.custom_props, 'projects_path')
         layout.separator()
         layout.prop(context.scene.custom_props, 'project_name')
 
-
-class InitMsfsSceneryProjectOperator(Operator):
-    """Tooltip"""
-    bl_space_type = 'TEXT_EDITOR'
-    bl_idname = "text.init_msfs_scenery_project_operator"
-    bl_label = "Init a new MSFS scenery project"
+    def invoke(self, context, event):
+        panel_props = context.scene.panel_props
+        if panel_props.first_mouse_x == 0 and panel_props.first_mouse_y == 0:
+            panel_props.first_mouse_x = event.mouse_x
+            panel_props.first_mouse_y = event.mouse_y
+        # context.window.cursor_warp(context.window.width / 2, (context.window.height / 2) + 60)
+        context.window_manager.invoke_props_dialog(self, width=600)
+        return {'RUNNING_MODAL'}
 
     @classmethod
     def poll(cls, context):
-        return not os.path.isdir(os.path.join(settings.projects_path, settings.project_name))
+        return True
 
     def execute(self, context):
         script_file = "init_msfs_scenery_project.py"
@@ -118,15 +117,25 @@ class ProjectsPathOperator(Operator, ImportHelper):
         name="Path of the projects",
         description="Select the path containing all your MSFS scenery projects",
         maxlen=1024,
-        default=settings.projects_path
+        default=settings.projects_path,
+        update=projects_path_updated,
     )
 
     filter_folder: bpy.props.BoolProperty(default=True, options={'HIDDEN'})
 
     def execute(self, context):
-        settings.projects_path = self.directory
-        return {'FINISHED'}
+        pass
 
+
+class InitMsfsSceneryProjectOperator(Operator):
+    bl_idname = 'text.init_msfs_scenery_project'
+    bl_label = 'Initialize a new MSFS project scenery...'
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        script_file = "init_msfs_scenery_project.py"
+        exec_script_from_menu(os.path.join(settings.sources_path, script_file))
+        return {'FINISHED'}
 
 bl_info = {
     "name": "Ui test addon",
@@ -137,6 +146,7 @@ classes = (
     TOPBAR_MT_google_earth_optimization_menus,
     TOPBAR_MT_google_earth_optimization_menu,
     CustomPropertyGroup,
+    PanelPropertyGroup,
     InitMsfsSceneryProjectOperator,
     VIEW_3D_PT_CustomToolShelf,
 )
@@ -150,12 +160,15 @@ def register():
             pass
 
     bpy.types.Scene.custom_props = bpy.props.PointerProperty(type=CustomPropertyGroup)
-    # bpy.types.TOPBAR_MT_editor_menus.append(TOPBAR_MT_google_earth_optimization_menus.draw)
+    bpy.types.Scene.panel_props = bpy.props.PointerProperty(type=PanelPropertyGroup)
+    bpy.types.TOPBAR_MT_editor_menus.append(TOPBAR_MT_google_earth_optimization_menus.draw)
 
 
 def unregister():
-    # bpy.types.TOPBAR_MT_editor_menus.remove(TOPBAR_MT_google_earth_optimization_menus.draw)
+    bpy.types.TOPBAR_MT_editor_menus.remove(TOPBAR_MT_google_earth_optimization_menus.draw)
+
     del bpy.types.Scene.custom_props
+    del bpy.types.Scene.panel_props
     for cls in classes:
         bpy.utils.unregister_class(cls)
 
