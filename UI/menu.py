@@ -33,6 +33,11 @@ def project_name_updated(self, context):
     settings.save()
 
 
+def author_name_updated(self, context):
+    settings.project_name = context.scene.settings.author_name
+    settings.save()
+
+
 class TOPBAR_MT_google_earth_optimization_menus(Menu):
     os.system(CLEAR_CONSOLE_CMD)
     bl_idname = "TOPBAR_MT_google_earth_optimization_menus"
@@ -70,6 +75,13 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         maxlen=256,
         update=project_name_updated
     )
+    author_name: bpy.props.StringProperty(
+        name="Author name",
+        description="author of the msfs scenery project",
+        default=settings.author_name,
+        maxlen=256,
+        update=author_name_updated
+    )
 
 
 class PanelPropertyGroup(bpy.types.PropertyGroup):
@@ -88,6 +100,8 @@ class OT_InitMsfsSceneryPanel(Operator):
         layout.prop(context.scene.settings, 'projects_path')
         layout.separator()
         layout.prop(context.scene.settings, 'project_name')
+        layout.separator()
+        layout.prop(context.scene.settings, 'author_name')
 
     def invoke(self, context, event):
         panel_props = context.scene.panel_props
