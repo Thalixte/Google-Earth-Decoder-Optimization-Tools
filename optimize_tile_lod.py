@@ -11,30 +11,30 @@ SCRIPT_FOLDER = "scripts"
 
 # Check if script is executed in Blender and get absolute path of current folder
 if bpy.context.space_data is not None:
-    files_dir = os.path.dirname(bpy.context.space_data.text.filepath)
+    sources_path = os.path.dirname(bpy.context.space_data.text.filepath)
 else:
-    files_dir = os.path.dirname(os.path.abspath(__file__))
+    sources_path = os.path.dirname(os.path.abspath(__file__))
 
 # Get scripts folder and add it to the search path for modules
-os.chdir(files_dir)
+os.chdir(sources_path)
 
 sys.path.append(site.USER_SITE)
 
-if files_dir not in sys.path:
-    sys.path.append(files_dir)
+if sources_path not in sys.path:
+    sys.path.append(sources_path)
 
 # Get scripts folder and add it to the search path for modules
-cwd = os.path.join(files_dir, CONSTANTS_FOLDER)
+cwd = os.path.join(sources_path, CONSTANTS_FOLDER)
 if cwd not in sys.path:
     sys.path.append(cwd)
 
 # Get scripts folder and add it to the search path for modules
-cwd = os.path.join(files_dir, UTILS_FOLDER)
+cwd = os.path.join(sources_path, UTILS_FOLDER)
 if cwd not in sys.path:
     sys.path.append(cwd)
 
 # Get scripts folder and add it to the search path for modules
-cwd = os.path.join(files_dir, SCRIPT_FOLDER)
+cwd = os.path.join(sources_path, SCRIPT_FOLDER)
 if cwd not in sys.path:
     sys.path.append(cwd)
 
