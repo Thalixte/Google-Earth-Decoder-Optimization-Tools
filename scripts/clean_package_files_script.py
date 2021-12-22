@@ -12,8 +12,6 @@ from constants import *
 from utils import check_configuration, ScriptError, build_package, pr_bg_green, pr_bg_red
 from msfs_project import MsfsProject
 
-BACKUP_ENABLED = False
-
 ##################################################################
 #                        Main process
 ##################################################################
@@ -24,7 +22,7 @@ try:
 
     check_configuration(settings, msfs_project)
 
-    if BACKUP_ENABLED:
+    if settings.backup_enabled:
         msfs_project.backup(Path(os.path.abspath(__file__)).stem)
 
     isolated_print(EOL)

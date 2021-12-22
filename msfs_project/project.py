@@ -252,7 +252,7 @@ class MsfsProject:
             try:
                 shutil.copyfile(src_file_path, dest_file_path)
             except WindowsError:
-                raise ScriptError("Impossible de copier le fichier" + sources_path + " vers " + dest_file_path)
+                raise ScriptError("Impossible de copier le fichier " + sources_path + " vers " + dest_file_path)
 
         if replace_content:
             replace_in_file(dest_file_path, self.DUMMY_STRING.capitalize(), self.project_name)

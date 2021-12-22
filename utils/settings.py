@@ -13,6 +13,7 @@ class Settings:
     author_name: str
     node_js_folder: str
     fspackagetool_folder: str
+    backup_enabled: str
     bake_textures_enabled: str
     msfs_steam_version: str
     build_package_enabled: str
@@ -21,6 +22,7 @@ class Settings:
     output_texture_format: str
     lat_correction: float
     lon_correction: float
+    sections = list
 
     def __init__(self, sources_path=str()):
         self.sources_path = sources_path
@@ -30,6 +32,7 @@ class Settings:
         self.author_name = str()
         self.node_js_folder = str()
         self.fspackagetool_folder = str()
+        self.backup_enabled = "False"
         self.bake_textures_enabled = "False"
         self.msfs_steam_version = "False"
         self.build_package_enabled = "False"
@@ -39,6 +42,7 @@ class Settings:
         self.output_texture_format = PNG_TEXTURE_FORMAT
         self.lat_correction = 0.0
         self.lon_correction = 0.0
+        self.sections = []
 
         config = cp.ConfigParser()
         if os.path.isfile(INI_FILE):
@@ -47,6 +51,7 @@ class Settings:
             config.read(os.path.join(sources_path, INI_FILE), encoding=ENCODING)
 
         for section_name in config.sections():
+            self.sections.append((section_name, section_name, section_name))
             for name, value in config.items(section_name):
                 setattr(self, name, value.replace('"', str()))
 
@@ -55,6 +60,9 @@ class Settings:
 
         # check if the package is built at the end of the script
         self.msfs_steam_version = json.loads(self.msfs_steam_version.lower())
+
+        # check if the backup of the project files is enabled
+        self.backup_enabled = json.loads(self.backup_enabled.lower())
 
         # check if the package is built at the end of the script
         self.build_package_enabled = json.loads(self.build_package_enabled.lower())

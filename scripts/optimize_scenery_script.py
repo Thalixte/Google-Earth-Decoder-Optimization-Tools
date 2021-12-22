@@ -13,8 +13,6 @@ from utils import check_configuration, ScriptError, build_package, pr_bg_green, 
 from msfs_project import MsfsProject
 from blender import clean_scene
 
-BACKUP_ENABLED = True
-
 ##################################################################
 #                        Main process
 ##################################################################
@@ -25,7 +23,7 @@ try:
 
     check_configuration(settings, msfs_project, check_lily_texture_packer=True)
 
-    if BACKUP_ENABLED:
+    if settings.backup_enabled:
         msfs_project.backup(Path(os.path.abspath(__file__)).stem)
 
     clean_scene()

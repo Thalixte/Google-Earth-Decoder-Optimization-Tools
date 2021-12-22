@@ -2,40 +2,87 @@
 import os
 
 import bpy
-from bpy.props import IntProperty
+from bpy import context
+from bpy.props import IntProperty, StringProperty, EnumProperty
 from bpy.types import Menu
-from bpy_extras.io_utils import ImportHelper
 from bpy_types import Operator
-from constants import CLEAR_CONSOLE_CMD
-from utils import exec_script_from_menu, Settings, get_sources_path
+from constants import CLEAR_CONSOLE_CMD, PNG_TEXTURE_FORMAT, JPG_TEXTURE_FORMAT
+from utils import exec_script_from_menu, Settings, get_sources_path, isolated_print
 
 settings = Settings(get_sources_path())
-settings.save()
 
 
 def reload_topbar_menu():
-    if hasattr(bpy.types.TOPBAR_MT_editor_menus.draw, "_draw_funcs"):
-        for f in bpy.types.TOPBAR_MT_editor_menus.draw._draw_funcs:
-            if not repr(f).startswith("<function TOPBAR_MT_editor_menus.draw"):
-                bpy.types.TOPBAR_MT_editor_menus.draw._draw_funcs.remove(f)
+    try:
+        if hasattr(bpy.types.TOPBAR_MT_editor_menus.draw, "_draw_funcs"):
+            for f in bpy.types.TOPBAR_MT_editor_menus.draw._draw_funcs:
+                if not repr(f).startswith("<function TOPBAR_MT_editor_menus.draw"):
+                    bpy.types.TOPBAR_MT_editor_menus.draw._draw_funcs.remove(f)
+    except AttributeError:
+        pass
+
+
+def invoke_current_operator():
+    eval("bpy.ops." + context.scene.panel_props.current_operator + "(\"INVOKE_DEFAULT\")")
 
 
 def projects_path_updated(self, context):
-    settings.projects_path = context.scene.settings.projects_path
+    setting_props = context.scene.setting_props
+    settings.projects_path = setting_props.projects_path
+    setting_props.projects_path_readonly = settings.projects_path
     settings.save()
     panel_props = context.scene.panel_props
     context.window.cursor_warp(panel_props.first_mouse_x, panel_props.first_mouse_y)
-    bpy.ops.wm.init_msfs_scenery_project_panel('INVOKE_DEFAULT')
+    invoke_current_operator()
+
+
+def project_path_updated(self, context):
+    setting_props = context.scene.setting_props
+    setting_props.projects_path = os.path.dirname(os.path.dirname(setting_props.project_path)) + os.path.sep
+    settings.projects_path = setting_props.projects_path
+    setting_props.project_name = os.path.relpath(setting_props.project_path, start=setting_props.projects_path)
+    setting_props.projects_path_readonly = settings.projects_path
+    settings.project_name = setting_props.project_name
+    settings.save()
+    panel_props = context.scene.panel_props
+    context.window.cursor_warp()
+    context.window.cursor_warp(panel_props.first_mouse_x, panel_props.first_mouse_y)
+    invoke_current_operator()
 
 
 def project_name_updated(self, context):
-    settings.project_name = context.scene.settings.project_name
+    settings.project_name = context.scene.setting_props.project_name
     settings.save()
 
 
 def author_name_updated(self, context):
-    settings.project_name = context.scene.settings.author_name
+    settings.project_name = context.scene.setting_props.author_name
     settings.save()
+
+
+def bake_textures_enabled_updated(self, context):
+    settings.bake_textures_enabled_updated = context.scene.setting_props.bake_textures_enabled_updated
+    settings.save()
+
+
+def output_texture_format_updated(self, context):
+    settings.output_texture_format = context.scene.setting_props.output_texture_format
+    settings.save()
+
+
+def backup_enabled_updated(self, context):
+    settings.backup_enabled = context.scene.setting_props.backup_enabled
+    settings.save()
+
+
+def setting_sections_updated(self, context):
+    panel_props = context.scene.panel_props
+    current_section = panel_props.current_section.lower()
+    next_section = panel_props.setting_sections.lower()
+    panel_props.current_section = next_section.upper()
+    panel_props.current_operator = panel_props.current_operator.replace("_" + current_section + "_", "_" + next_section + "_", 1)
+    context.window.cursor_warp(context.window.width / 2, (context.window.height / 2) + 60)
+    invoke_current_operator()
 
 
 class TOPBAR_MT_google_earth_optimization_menus(Menu):
@@ -54,13 +101,12 @@ class TOPBAR_MT_google_earth_optimization_menu(Menu):
     def draw(self, context):
         layout = self.layout
         layout.operator("wm.init_msfs_scenery_project_panel")
+        layout.separator()
+        layout.operator("wm.optimize_scenery_panel_project_section")
 
 
 class SettingsPropertyGroup(bpy.types.PropertyGroup):
-    # float_slider: bpy.props.FloatProperty(name='float value', soft_min=0, soft_max=10)
-    # int_slider: bpy.props.IntProperty(name='int value', soft_min=0, soft_max=10)
-    # bool_toggle: bpy.props.BoolProperty(name='bool toggle')
-    projects_path: bpy.props.StringProperty(
+    projects_path: StringProperty(
         subtype="DIR_PATH",
         name="Path of the projects",
         description="Select the path containing all your MSFS scenery projects",
@@ -68,109 +114,180 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         default=settings.projects_path,
         update=projects_path_updated
     )
-    project_name: bpy.props.StringProperty(
+    projects_path_readonly: StringProperty(
+        subtype="NONE",
+        name="Path of the projects",
+        description="Select the path containing all your MSFS scenery projects",
+        maxlen=1024,
+        default=settings.projects_path
+    )
+    project_name: StringProperty(
         name="Project name",
         description="name of the project to initialize",
         default=settings.project_name,
         maxlen=256,
         update=project_name_updated
     )
-    author_name: bpy.props.StringProperty(
+    project_path: StringProperty(
+        subtype="DIR_PATH",
+        name="Path of the project",
+        description="Select the path containing the MSFS scenery project",
+        maxlen=1024,
+        default=os.path.join(settings.projects_path, settings.project_name),
+        update=project_path_updated
+    )
+    author_name: StringProperty(
         name="Author name",
         description="author of the msfs scenery project",
         default=settings.author_name,
         maxlen=256,
         update=author_name_updated
     )
+    bake_textures_enabled: bpy.props.BoolProperty(
+        name="Bake textures enabled",
+        description="Reduce the number of texture files (Lily Texture Packer addon is necessary https://gumroad.com/l/DFExj)",
+        default=settings.bake_textures_enabled,
+        update=bake_textures_enabled_updated,
+    )
+    output_texture_format: EnumProperty(
+        name="Output texture format",
+        description="output format of the texture files (jpg or png) used by the photogrammetry tiles",
+        items=[
+                (PNG_TEXTURE_FORMAT, PNG_TEXTURE_FORMAT, str()),
+                (JPG_TEXTURE_FORMAT, JPG_TEXTURE_FORMAT, str()),
+        ],
+        default=settings.output_texture_format,
+        update=output_texture_format_updated,
+
+    )
+    backup_enabled: bpy.props.BoolProperty(
+        name="Backup enabled",
+        description="Enable the backup of the project files before processing",
+        default=settings.backup_enabled,
+        update=backup_enabled_updated,
+    )
 
 
 class PanelPropertyGroup(bpy.types.PropertyGroup):
+    current_operator: StringProperty(default=str())
+    current_section: StringProperty(default=str())
     first_mouse_x: IntProperty(default=0)
     first_mouse_y: IntProperty(default=0)
+    setting_sections: EnumProperty(items=settings.sections, default="PROJECT", update=setting_sections_updated)
 
 
-class OT_InitMsfsSceneryPanel(Operator):
-    bl_idname = 'wm.init_msfs_scenery_project_panel'
-    bl_label = 'Initialize a new MSFS project scenery'
-    bl_options = {'REGISTER', 'UNDO'}
-
-    def draw(self, context):
-        layout = self.layout
-        subrow = layout.row(align=True)
-        layout.prop(context.scene.settings, 'projects_path')
-        layout.separator()
-        layout.prop(context.scene.settings, 'project_name')
-        layout.separator()
-        layout.prop(context.scene.settings, 'author_name')
-
+class panelOperator(Operator):
     def invoke(self, context, event):
-        panel_props = context.scene.panel_props
-        if panel_props.first_mouse_x == 0 and panel_props.first_mouse_y == 0:
-            panel_props.first_mouse_x = event.mouse_x
-            panel_props.first_mouse_y = event.mouse_y
-        # context.window.cursor_warp(context.window.width / 2, (context.window.height / 2) + 60)
-        context.window_manager.invoke_props_dialog(self, width=600)
-        return {'RUNNING_MODAL'}
+        self.__save_operator_context(context, event)
+        return {"RUNNING_MODAL"}
+
+    def execute(self, context, script_file):
+        exec_script_from_menu(os.path.join(settings.sources_path, script_file))
+        return {"FINISHED"}
 
     @classmethod
     def poll(cls, context):
         return True
 
-    def execute(self, context):
-        script_file = "init_msfs_scenery_project.py"
-        exec_script_from_menu(os.path.join(settings.sources_path, script_file))
-        return {'FINISHED'}
-
-
-class OT_OptimizeSceneryPanel(Operator):
-    bl_idname = 'wm.optimise_scenery_panel'
-    bl_label = 'Optimize a MSFS scenery'
-    bl_options = {'REGISTER', 'UNDO'}
-
-    def draw(self, context):
-        layout = self.layout
-        subrow = layout.row(align=True)
-        layout.prop(context.scene.settings, 'projects_path')
-        layout.separator()
-        layout.prop(context.scene.settings, 'project_name')
-
-    def invoke(self, context, event):
+    def __save_operator_context(self, context, event):
         panel_props = context.scene.panel_props
+        panel_props.current_operator = self.id_name
+        panel_props.current_section = panel_props.setting_sections
         if panel_props.first_mouse_x == 0 and panel_props.first_mouse_y == 0:
             panel_props.first_mouse_x = event.mouse_x
             panel_props.first_mouse_y = event.mouse_y
-        # context.window.cursor_warp(context.window.width / 2, (context.window.height / 2) + 60)
-        context.window_manager.invoke_props_dialog(self, width=600)
-        return {'RUNNING_MODAL'}
+            context.window.cursor_warp(context.window.width / 2, (context.window.height / 2) + 60)
+        context.window_manager.invoke_props_dialog(self, width=800)
 
-    @classmethod
-    def poll(cls, context):
-        return True
+
+class settingsOperator(panelOperator):
+    bl_options = {"REGISTER", "UNDO"}
+
+    def draw(self, context):
+        layout = self.layout
+        box = layout.box()
+        split = box.split(factor=0.2, align=True)
+        self.__display_config_sections(split)
+        return split
+
+    @staticmethod
+    def __display_config_sections(layout):
+        col = layout.column()
+        col.scale_x = 1.3
+        col.scale_y = 1.3
+        col.prop(context.scene.panel_props, "setting_sections", expand=True)
+
+
+class OT_InitMsfsSceneryPanel(settingsOperator):
+    id_name = "wm.init_msfs_scenery_project_panel"
+    bl_idname = id_name
+    bl_label = "Initialize a new MSFS project scenery"
+
+    def draw(self, context):
+        layout = self.layout
+        setting_props = context.scene.setting_props
+
+        box = layout.box()
+        col = box.column()
+        col.prop(setting_props, "projects_path")
+        col.separator()
+        col.prop(setting_props, "project_name")
+        col.separator()
+        col.prop(setting_props, "author_name")
 
     def execute(self, context):
-        script_file = "init_msfs_scenery_project.py"
-        exec_script_from_menu(os.path.join(settings.sources_path, script_file))
-        return {'FINISHED'}
+        return super().execute(context, "init_msfs_scenery_project.py")
 
 
-class ProjectsPathOperator(Operator, ImportHelper):
-    bl_idname = "scene.project_path_operator"
-    bl_label = "Select folder..."
-    bl_options = {'PRESET', 'UNDO'}
-
-    directory: bpy.props.StringProperty(
-        subtype="DIR_PATH",
-        name="Path of the projects",
-        description="Select the path containing all your MSFS scenery projects",
-        maxlen=1024,
-        default=settings.projects_path,
-        update=projects_path_updated,
-    )
-
-    filter_folder: bpy.props.BoolProperty(default=True, options={'HIDDEN'})
-
+class OT_OptimizeSceneryPanel(settingsOperator):
     def execute(self, context):
-        pass
+        return super().execute(context, "init_msfs_scenery_project.py")
+
+
+class OT_SettingPanelProjectSection(settingsOperator):
+    def draw(self, context):
+        setting_props = context.scene.setting_props
+
+        split = super().draw(context)
+        col = split.column()
+        row = col.row()
+        row.enabled = False
+        row.prop(setting_props, "projects_path_readonly")
+        col.separator()
+        col.prop(setting_props, "project_path")
+        col.separator()
+        row = col.row()
+        row.enabled = False
+        row.prop(setting_props, "project_name")
+        col.separator()
+        col.prop(setting_props, "bake_textures_enabled")
+        col.separator()
+        col.prop(setting_props, "output_texture_format")
+        col.separator()
+        col.separator()
+        col.prop(setting_props, "backup_enabled")
+
+
+class OT_SettingPanelTileSection(settingsOperator):
+    def draw(self, context):
+        setting_props = context.scene.setting_props
+
+        split = super().draw(context)
+        col = split.column()
+        col.prop(setting_props, "project_path")
+        col.separator()
+
+
+class OT_OptimizeSceneryPanelProjectSection(OT_SettingPanelProjectSection, OT_OptimizeSceneryPanel):
+    id_name = "wm.optimize_scenery_panel_project_section"
+    bl_idname = id_name
+    bl_label = "Optimize an existing MSFS scenery"
+
+
+class OT_OptimizeSceneryPanelTileSection(OT_SettingPanelTileSection, OT_OptimizeSceneryPanel):
+    id_name = "wm.optimize_scenery_panel_tile_section"
+    bl_idname = id_name
+    bl_label = "Optimize an existing MSFS scenery"
 
 
 bl_info = {
@@ -184,31 +301,37 @@ classes = (
     SettingsPropertyGroup,
     PanelPropertyGroup,
     OT_InitMsfsSceneryPanel,
-    OT_OptimizeSceneryPanel,
+    OT_OptimizeSceneryPanelProjectSection,
+    OT_OptimizeSceneryPanelTileSection,
 )
 
 
 def register():
+    reload_topbar_menu()
+
     for cls in classes:
         try:
             bpy.utils.register_class(cls)
         except ValueError:
             pass
 
-    bpy.types.Scene.settings = bpy.props.PointerProperty(type=SettingsPropertyGroup)
-    bpy.types.Scene.panel_props = bpy.props.PointerProperty(type=PanelPropertyGroup)
-    bpy.types.TOPBAR_MT_editor_menus.append(TOPBAR_MT_google_earth_optimization_menus.draw)
+    try:
+        bpy.types.Scene.setting_props = bpy.props.PointerProperty(type=SettingsPropertyGroup)
+        bpy.types.Scene.panel_props = bpy.props.PointerProperty(type=PanelPropertyGroup)
+        bpy.types.TOPBAR_MT_editor_menus.append(TOPBAR_MT_google_earth_optimization_menus.draw)
+    except AttributeError:
+        pass
 
 
 def unregister():
     bpy.types.TOPBAR_MT_editor_menus.remove(TOPBAR_MT_google_earth_optimization_menus.draw)
 
-    del bpy.types.Scene.settings
+    del bpy.types.Scene.setting_props
     del bpy.types.Scene.panel_props
     for cls in classes:
         bpy.utils.unregister_class(cls)
 
 
-# a quick line to autorun the script from the text editor when we hit 'run script'
-if __name__ == '__main__':
+# a quick line to autorun the script from the text editor when we hit "run script"
+if __name__ == "__main__":
     register()

@@ -11,9 +11,6 @@ from pathlib import Path
 from constants import *
 from utils import check_configuration, ScriptError, build_package, pr_bg_green, pr_bg_red
 from msfs_project import MsfsProject
-from blender import clean_scene
-
-BACKUP_ENABLED = True
 
 ##################################################################
 #                        Main process
@@ -27,7 +24,7 @@ try:
     check_configuration(settings, msfs_project)
     check_configuration(settings, msfs_project_to_merge)
 
-    if BACKUP_ENABLED:
+    if settings.backup_enabled:
         msfs_project.backup(Path(os.path.abspath(__file__)).stem)
 
     msfs_project.merge(msfs_project_to_merge)
