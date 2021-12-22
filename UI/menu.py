@@ -25,13 +25,17 @@ def reload_topbar_menu():
 
 
 def invoke_current_operator(refresh=False):
+    import ctypes
     if refresh:
-        import ctypes
-
         VK_ESCAPE = 0x1B
         ctypes.windll.user32.keybd_event(VK_ESCAPE)
         sleep(0.1)
+    else:
+        SW_SHOWDEFAULT = 10
+        # ctypes.windll.shell32.ShellExecuteW(0, "explore", settings.projects_path, 0, 0, SW_SHOWDEFAULT)
+    isolated_print("bpy.ops." + context.scene.panel_props.current_operator + "(\"INVOKE_DEFAULT\")")
     eval("bpy.ops." + context.scene.panel_props.current_operator + "(\"INVOKE_DEFAULT\")")
+    # eval("bpy.ops." + context.scene.panel_props.current_operator + "(\"INVOKE_DEFAULT\")")
 
 
 def projects_path_updated(self, context):
@@ -51,6 +55,7 @@ def project_path_updated(self, context):
     setting_props.project_name = os.path.relpath(setting_props.project_path, start=setting_props.projects_path)
     setting_props.projects_path_readonly = settings.projects_path
     settings.project_name = setting_props.project_name
+    setting_props.project_name_readonly = setting_props.project_name
     settings.save()
     panel_props = context.scene.panel_props
     # context.window.cursor_warp(panel_props.first_mouse_x, panel_props.first_mouse_y)
@@ -130,6 +135,12 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         default=settings.project_name,
         maxlen=256,
         update=project_name_updated
+    )
+    project_name_readonly: StringProperty(
+        name="Project name",
+        description="name of the project to initialize",
+        default=settings.project_name,
+        maxlen=256,
     )
     project_path: StringProperty(
         subtype="DIR_PATH",
@@ -268,7 +279,7 @@ class OT_OptimizeSceneryPanel(settingsOperator):
         col.separator()
         row = col.row()
         row.enabled = False
-        row.prop(setting_props, "project_name")
+        row.prop(setting_props, "project_name_readonly")
         col.separator()
         col.prop(setting_props, "bake_textures_enabled")
         col.separator()
