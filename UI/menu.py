@@ -1,4 +1,6 @@
 # import the bpy module to access blender API
+from time import sleep
+
 import os
 
 import bpy
@@ -22,7 +24,13 @@ def reload_topbar_menu():
         pass
 
 
-def invoke_current_operator():
+def invoke_current_operator(refresh=False):
+    if refresh:
+        import ctypes
+
+        VK_ESCAPE = 0x1B
+        ctypes.windll.user32.keybd_event(VK_ESCAPE)
+        sleep(0.1)
     eval("bpy.ops." + context.scene.panel_props.current_operator + "(\"INVOKE_DEFAULT\")")
 
 
@@ -33,7 +41,7 @@ def projects_path_updated(self, context):
     settings.save()
     panel_props = context.scene.panel_props
     context.window.cursor_warp(panel_props.first_mouse_x, panel_props.first_mouse_y)
-    invoke_current_operator()
+    invoke_current_operator(refresh=True)
 
 
 def project_path_updated(self, context):
@@ -45,9 +53,8 @@ def project_path_updated(self, context):
     settings.project_name = setting_props.project_name
     settings.save()
     panel_props = context.scene.panel_props
-    context.window.cursor_warp()
-    context.window.cursor_warp(panel_props.first_mouse_x, panel_props.first_mouse_y)
-    invoke_current_operator()
+    # context.window.cursor_warp(panel_props.first_mouse_x, panel_props.first_mouse_y)
+    invoke_current_operator(refresh=True)
 
 
 def project_name_updated(self, context):
@@ -77,12 +84,8 @@ def backup_enabled_updated(self, context):
 
 def setting_sections_updated(self, context):
     panel_props = context.scene.panel_props
-    current_section = panel_props.current_section.lower()
-    next_section = panel_props.setting_sections.lower()
-    panel_props.current_section = next_section.upper()
-    panel_props.current_operator = panel_props.current_operator.replace("_" + current_section + "_", "_" + next_section + "_", 1)
-    context.window.cursor_warp(context.window.width / 2, (context.window.height / 2) + 60)
-    invoke_current_operator()
+    context.window.cursor_warp(panel_props.first_mouse_x, panel_props.first_mouse_y)
+    invoke_current_operator(refresh=True)
 
 
 class TOPBAR_MT_google_earth_optimization_menus(Menu):
@@ -102,7 +105,7 @@ class TOPBAR_MT_google_earth_optimization_menu(Menu):
         layout = self.layout
         layout.operator("wm.init_msfs_scenery_project_panel")
         layout.separator()
-        layout.operator("wm.optimize_scenery_panel_project_section")
+        layout.operator("wm.optimize_scenery_panel")
 
 
 class SettingsPropertyGroup(bpy.types.PropertyGroup):
@@ -196,7 +199,7 @@ class panelOperator(Operator):
         if panel_props.first_mouse_x == 0 and panel_props.first_mouse_y == 0:
             panel_props.first_mouse_x = event.mouse_x
             panel_props.first_mouse_y = event.mouse_y
-            context.window.cursor_warp(context.window.width / 2, (context.window.height / 2) + 60)
+            # context.window.cursor_warp(context.window.width / 2, (context.window.height / 2) + 60)
         context.window_manager.invoke_props_dialog(self, width=800)
 
 
@@ -240,12 +243,19 @@ class OT_InitMsfsSceneryPanel(settingsOperator):
 
 
 class OT_OptimizeSceneryPanel(settingsOperator):
+    id_name = "wm.optimize_scenery_panel"
+    bl_idname = id_name
+    bl_label = "Optimize an existing MSFS scenery"
+
     def execute(self, context):
         return super().execute(context, "init_msfs_scenery_project.py")
 
-
-class OT_SettingPanelProjectSection(settingsOperator):
     def draw(self, context):
+        panel_props = context.scene.panel_props
+
+        eval("self.draw_" + context.scene.panel_props.current_section.lower() + "_panel(context)")
+
+    def draw_project_panel(self, context):
         setting_props = context.scene.setting_props
 
         split = super().draw(context)
@@ -267,27 +277,13 @@ class OT_SettingPanelProjectSection(settingsOperator):
         col.separator()
         col.prop(setting_props, "backup_enabled")
 
-
-class OT_SettingPanelTileSection(settingsOperator):
-    def draw(self, context):
+    def draw_tile_panel(self, context):
         setting_props = context.scene.setting_props
 
         split = super().draw(context)
         col = split.column()
         col.prop(setting_props, "project_path")
         col.separator()
-
-
-class OT_OptimizeSceneryPanelProjectSection(OT_SettingPanelProjectSection, OT_OptimizeSceneryPanel):
-    id_name = "wm.optimize_scenery_panel_project_section"
-    bl_idname = id_name
-    bl_label = "Optimize an existing MSFS scenery"
-
-
-class OT_OptimizeSceneryPanelTileSection(OT_SettingPanelTileSection, OT_OptimizeSceneryPanel):
-    id_name = "wm.optimize_scenery_panel_tile_section"
-    bl_idname = id_name
-    bl_label = "Optimize an existing MSFS scenery"
 
 
 bl_info = {
@@ -301,8 +297,7 @@ classes = (
     SettingsPropertyGroup,
     PanelPropertyGroup,
     OT_InitMsfsSceneryPanel,
-    OT_OptimizeSceneryPanelProjectSection,
-    OT_OptimizeSceneryPanelTileSection,
+    OT_OptimizeSceneryPanel,
 )
 
 
