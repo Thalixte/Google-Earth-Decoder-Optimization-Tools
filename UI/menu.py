@@ -5,9 +5,9 @@ import os
 
 import bpy
 from bpy import context
-from bpy.props import IntProperty, StringProperty, EnumProperty, BoolProperty
+from bpy.props import IntProperty, StringProperty, EnumProperty
 from bpy.types import Menu
-from bpy_extras.io_utils import ImportHelper, ExportHelper
+from bpy_extras.io_utils import ImportHelper
 from bpy_types import Operator
 from constants import CLEAR_CONSOLE_CMD, PNG_TEXTURE_FORMAT, JPG_TEXTURE_FORMAT
 from utils import exec_script_from_menu, Settings, get_sources_path, isolated_print
@@ -39,7 +39,7 @@ def invoke_current_operator(refresh=False):
 
 def projects_path_updated(self, context):
     setting_props = context.scene.setting_props
-    settings.projects_path = setting_props.projects_path_readonly = setting_props.projects_path
+    settings.projects_path = setting_props.projects_path
     panel_props = context.scene.panel_props
     context.window.cursor_warp(panel_props.first_mouse_x, panel_props.first_mouse_y)
     invoke_current_operator(refresh=False)
@@ -47,15 +47,15 @@ def projects_path_updated(self, context):
 
 def project_path_updated(self, context):
     setting_props = context.scene.setting_props
-    settings.projects_path = setting_props.projects_path_readonly = setting_props.projects_path = os.path.dirname(os.path.dirname(setting_props.project_path)) + os.path.sep
-    settings.project_name = setting_props.project_name_readonly = setting_props.project_name = os.path.relpath(setting_props.project_path, start=setting_props.projects_path)
+    settings.projects_path = setting_props.projects_path = os.path.dirname(os.path.dirname(setting_props.project_path)) + os.path.sep
+    settings.project_name = setting_props.project_name = os.path.relpath(setting_props.project_path, start=setting_props.projects_path)
     settings.save()
 
 
 def project_name_updated(self, context):
     setting_props = context.scene.setting_props
-    settings.project_name = setting_props.project_name_readonly = setting_props.project_name
-    settings.project_path = setting_props.project_path_readonly = os.path.join(settings.projects_path, settings.project_name)
+    settings.project_name = setting_props.project_name
+    settings.project_path = os.path.join(settings.projects_path, settings.project_name)
     settings.save()
 
 
@@ -114,25 +114,12 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         default=settings.projects_path,
         update=projects_path_updated
     )
-    projects_path_readonly: StringProperty(
-        subtype="NONE",
-        name="Path of the projects",
-        description="Select the path containing all your MSFS scenery projects",
-        maxlen=1024,
-        default=settings.projects_path
-    )
     project_name: StringProperty(
         name="Project name",
         description="name of the project to initialize",
         default=settings.project_name,
         maxlen=256,
         update=project_name_updated
-    )
-    project_name_readonly: StringProperty(
-        name="Project name",
-        description="name of the project to initialize",
-        default=settings.project_name,
-        maxlen=256,
     )
     project_path: StringProperty(
         subtype="DIR_PATH",
@@ -238,7 +225,7 @@ class OT_InitMsfsSceneryPanel(settingsOperator):
         col.operator("wm.projects_path_operator")
         row = col.row()
         row.enabled = False
-        row.prop(setting_props, "projects_path_readonly")
+        row.prop(setting_props, "projects_path")
         col.separator()
         col.separator()
         col.prop(setting_props, "project_name")
@@ -269,11 +256,11 @@ class OT_OptimizeSceneryPanel(settingsOperator):
         col.operator("wm.project_path_operator")
         row = col.row()
         row.enabled = False
-        row.prop(setting_props, "projects_path_readonly")
+        row.prop(setting_props, "projects_path")
         col.separator()
         row = col.row()
         row.enabled = False
-        row.prop(setting_props, "project_name_readonly")
+        row.prop(setting_props, "project_name")
         col.separator()
         col.prop(setting_props, "bake_textures_enabled")
         col.separator()
