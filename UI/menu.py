@@ -31,7 +31,7 @@ def invoke_current_operator(refresh=False):
     if refresh:
         VK_ESCAPE = 0x1B
         ctypes.windll.user32.keybd_event(VK_ESCAPE)
-        sleep(0.1)
+        sleep(0.2)
 
     eval("bpy.ops." + context.scene.panel_props.current_operator + "(\"INVOKE_DEFAULT\")")
 
@@ -48,44 +48,36 @@ def project_path_updated(self, context):
     setting_props = context.scene.setting_props
     settings.projects_path = setting_props.projects_path = os.path.dirname(os.path.dirname(setting_props.project_path)) + os.path.sep
     settings.project_name = setting_props.project_name = os.path.relpath(setting_props.project_path, start=setting_props.projects_path)
-    settings.save()
 
 
 def project_name_updated(self, context):
     setting_props = context.scene.setting_props
     settings.project_name = setting_props.project_name
     settings.project_path = os.path.join(settings.projects_path, settings.project_name)
-    settings.save()
 
 
 def author_name_updated(self, context):
     settings.author_name = context.scene.setting_props.author_name
-    settings.save()
 
 
 def bake_textures_enabled_updated(self, context):
     settings.bake_textures_enabled_updated = context.scene.setting_props.bake_textures_enabled_updated
-    settings.save()
 
 
 def output_texture_format_updated(self, context):
     settings.output_texture_format = context.scene.setting_props.output_texture_format
-    settings.save()
 
 
 def backup_enabled_updated(self, context):
     settings.backup_enabled = context.scene.setting_props.backup_enabled
-    settings.save()
 
 
 def lat_correction_updated(self, context):
     settings.lat_correction = "{:.9f}".format(float(str(context.scene.setting_props.lat_correction))).rstrip("0").rstrip(".")
-    settings.save()
 
 
 def lon_correction_updated(self, context):
     settings.lon_correction = "{:.9f}".format(float(str(context.scene.setting_props.lon_correction))).rstrip("0").rstrip(".")
-    settings.save()
 
 
 def setting_sections_updated(self, context):
@@ -225,12 +217,20 @@ class panelOperator(Operator):
 class settingsOperator(panelOperator):
     bl_options = {"REGISTER", "UNDO"}
 
-    def draw(self, context):
+    def draw_setting_sections_panel(self, context):
         layout = self.layout
         box = layout.box()
         split = box.split(factor=0.2, align=True)
         self.__display_config_sections(split)
         return split
+
+    def draw_footer(self, context):
+        layout = self.layout
+        box = layout.box()
+        col = box.column()
+        col.separator()
+        col.operator("wm.save_settings_operator")
+
 
     @staticmethod
     def __display_config_sections(layout):
@@ -277,7 +277,7 @@ class OT_OptimizeSceneryPanel(settingsOperator):
 
     def draw_project_panel(self, context):
         setting_props = context.scene.setting_props
-        split = super().draw(context)
+        split = super().draw_setting_sections_panel(context)
         col = split.column()
         col.separator()
         col.operator("wm.project_path_operator")
@@ -295,38 +295,57 @@ class OT_OptimizeSceneryPanel(settingsOperator):
         col.separator()
         col.separator()
         col.prop(setting_props, "backup_enabled")
+        col.separator()
+        super().draw_footer(context)
 
     def draw_tile_panel(self, context):
         setting_props = context.scene.setting_props
-        split = super().draw(context)
+        split = super().draw_setting_sections_panel(context)
         col = split.column()
         col.prop(setting_props, "lat_correction", slider=True)
         col.separator()
         col.prop(setting_props, "lon_correction", slider=True)
+        col.separator()
+        super().draw_footer(context)
 
     def draw_nodejs_panel(self, context):
         setting_props = context.scene.setting_props
-        split = super().draw(context)
+        split = super().draw_setting_sections_panel(context)
+        col = split.column()
+        col.separator()
+        super().draw_footer(context)
         pass
 
     def draw_lods_panel(self, context):
         setting_props = context.scene.setting_props
-        split = super().draw(context)
+        split = super().draw_setting_sections_panel(context)
+        col = split.column()
+        col.separator()
+        super().draw_footer(context)
         pass
 
     def draw_msfs_sdk_panel(self, context):
         setting_props = context.scene.setting_props
-        split = super().draw(context)
+        split = super().draw_setting_sections_panel(context)
+        col = split.column()
+        col.separator()
+        super().draw_footer(context)
         pass
 
     def draw_python_panel(self, context):
         setting_props = context.scene.setting_props
-        split = super().draw(context)
+        split = super().draw_setting_sections_panel(context)
+        col = split.column()
+        col.separator()
+        super().draw_footer(context)
         pass
 
     def draw_compressonator_panel(self, context):
         setting_props = context.scene.setting_props
-        split = super().draw(context)
+        split = super().draw_setting_sections_panel(context)
+        col = split.column()
+        col.separator()
+        super().draw_footer(context)
         pass
 
 
@@ -378,6 +397,15 @@ class OT_ProjectPathOperator(DirectoryBrowserOperator):
         return {'RUNNING_MODAL'}
 
 
+class OT_SaveSettingsOperator(Operator):
+    bl_idname = "wm.save_settings_operator"
+    bl_label = "Save settings..."
+
+    def execute(self, context):
+        settings.save()
+        return {'FINISHED'}
+
+
 bl_info = {
     "name": "Ui test addon",
     "category": "tests"
@@ -390,6 +418,7 @@ classes = (
     PanelPropertyGroup,
     OT_ProjectPathOperator,
     OT_ProjectsPathOperator,
+    OT_SaveSettingsOperator,
     OT_InitMsfsSceneryPanel,
     OT_OptimizeSceneryPanel,
 )
