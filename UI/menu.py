@@ -5,8 +5,9 @@ import os
 
 import bpy
 from bpy import context
-from bpy.props import IntProperty, StringProperty, EnumProperty
+from bpy.props import IntProperty, StringProperty, EnumProperty, BoolProperty
 from bpy.types import Menu
+from bpy_extras.io_utils import ImportHelper, ExportHelper
 from bpy_types import Operator
 from constants import CLEAR_CONSOLE_CMD, PNG_TEXTURE_FORMAT, JPG_TEXTURE_FORMAT
 from utils import exec_script_from_menu, Settings, get_sources_path, isolated_print
@@ -26,49 +27,40 @@ def reload_topbar_menu():
 
 def invoke_current_operator(refresh=False):
     import ctypes
+
     if refresh:
         VK_ESCAPE = 0x1B
         ctypes.windll.user32.keybd_event(VK_ESCAPE)
         sleep(0.1)
-    else:
-        SW_SHOWDEFAULT = 10
-        # ctypes.windll.shell32.ShellExecuteW(0, "explore", settings.projects_path, 0, 0, SW_SHOWDEFAULT)
+
     isolated_print("bpy.ops." + context.scene.panel_props.current_operator + "(\"INVOKE_DEFAULT\")")
     eval("bpy.ops." + context.scene.panel_props.current_operator + "(\"INVOKE_DEFAULT\")")
-    # eval("bpy.ops." + context.scene.panel_props.current_operator + "(\"INVOKE_DEFAULT\")")
 
 
 def projects_path_updated(self, context):
     setting_props = context.scene.setting_props
-    settings.projects_path = setting_props.projects_path
-    setting_props.projects_path_readonly = settings.projects_path
-    settings.save()
+    settings.projects_path = setting_props.projects_path_readonly = setting_props.projects_path
     panel_props = context.scene.panel_props
     context.window.cursor_warp(panel_props.first_mouse_x, panel_props.first_mouse_y)
-    invoke_current_operator(refresh=True)
+    invoke_current_operator(refresh=False)
 
 
 def project_path_updated(self, context):
     setting_props = context.scene.setting_props
-    setting_props.projects_path = os.path.dirname(os.path.dirname(setting_props.project_path)) + os.path.sep
-    settings.projects_path = setting_props.projects_path
-    setting_props.project_name = os.path.relpath(setting_props.project_path, start=setting_props.projects_path)
-    setting_props.projects_path_readonly = settings.projects_path
-    settings.project_name = setting_props.project_name
-    setting_props.project_name_readonly = setting_props.project_name
+    settings.projects_path = setting_props.projects_path_readonly = setting_props.projects_path = os.path.dirname(os.path.dirname(setting_props.project_path)) + os.path.sep
+    settings.project_name = setting_props.project_name_readonly = setting_props.project_name = os.path.relpath(setting_props.project_path, start=setting_props.projects_path)
     settings.save()
-    panel_props = context.scene.panel_props
-    # context.window.cursor_warp(panel_props.first_mouse_x, panel_props.first_mouse_y)
-    invoke_current_operator(refresh=True)
 
 
 def project_name_updated(self, context):
-    settings.project_name = context.scene.setting_props.project_name
+    setting_props = context.scene.setting_props
+    settings.project_name = setting_props.project_name_readonly = setting_props.project_name
+    settings.project_path = setting_props.project_path_readonly = os.path.join(settings.projects_path, settings.project_name)
     settings.save()
 
 
 def author_name_updated(self, context):
-    settings.project_name = context.scene.setting_props.author_name
+    settings.author_name = context.scene.setting_props.author_name
     settings.save()
 
 
@@ -243,7 +235,11 @@ class OT_InitMsfsSceneryPanel(settingsOperator):
 
         box = layout.box()
         col = box.column()
-        col.prop(setting_props, "projects_path")
+        col.operator("wm.projects_path_operator")
+        row = col.row()
+        row.enabled = False
+        row.prop(setting_props, "projects_path_readonly")
+        col.separator()
         col.separator()
         col.prop(setting_props, "project_name")
         col.separator()
@@ -262,8 +258,6 @@ class OT_OptimizeSceneryPanel(settingsOperator):
         return super().execute(context, "init_msfs_scenery_project.py")
 
     def draw(self, context):
-        panel_props = context.scene.panel_props
-
         eval("self.draw_" + context.scene.panel_props.current_section.lower() + "_panel(context)")
 
     def draw_project_panel(self, context):
@@ -271,11 +265,11 @@ class OT_OptimizeSceneryPanel(settingsOperator):
 
         split = super().draw(context)
         col = split.column()
+        col.separator()
+        col.operator("wm.project_path_operator")
         row = col.row()
         row.enabled = False
         row.prop(setting_props, "projects_path_readonly")
-        col.separator()
-        col.prop(setting_props, "project_path")
         col.separator()
         row = col.row()
         row.enabled = False
@@ -297,6 +291,54 @@ class OT_OptimizeSceneryPanel(settingsOperator):
         col.separator()
 
 
+class DirectoryBrowserOperator(Operator, ImportHelper):
+    def draw(self, context):
+        space = context.space_data
+        params = space.params
+        params.use_filter = True
+        params.use_filter_folder = True
+        params.display_size = "NORMAL"
+
+
+class OT_ProjectsPathOperator(DirectoryBrowserOperator):
+    bl_idname = "wm.projects_path_operator"
+    bl_label = "Path of the MSFS projects..."
+
+    directory: bpy.props.StringProperty(subtype="DIR_PATH")
+
+    def draw(self, context):
+        super().draw(context)
+
+    def execute(self, context):
+        context.scene.setting_props.projects_path = self.directory
+        return {'FINISHED'}
+
+    def invoke(self, context, event):
+        self.directory = context.scene.setting_props.projects_path
+        context.window_manager.fileselect_add(self)
+        return {'RUNNING_MODAL'}
+
+
+class OT_ProjectPathOperator(DirectoryBrowserOperator):
+    bl_idname = "wm.project_path_operator"
+    bl_label = "Path of the MSFS project..."
+
+    directory: bpy.props.StringProperty(subtype="DIR_PATH")
+
+    def draw(self, context):
+        super().draw(context)
+
+    def execute(self, context):
+        context.scene.setting_props.project_path = self.directory
+        isolated_print(self.directory)
+        return {'FINISHED'}
+
+    def invoke(self, context, event):
+        self.directory = context.scene.setting_props.project_path
+        context.window_manager.fileselect_add(self)
+        return {'RUNNING_MODAL'}
+
+
 bl_info = {
     "name": "Ui test addon",
     "category": "tests"
@@ -307,6 +349,8 @@ classes = (
     TOPBAR_MT_google_earth_optimization_menu,
     SettingsPropertyGroup,
     PanelPropertyGroup,
+    OT_ProjectPathOperator,
+    OT_ProjectsPathOperator,
     OT_InitMsfsSceneryPanel,
     OT_OptimizeSceneryPanel,
 )
@@ -338,6 +382,5 @@ def unregister():
         bpy.utils.unregister_class(cls)
 
 
-# a quick line to autorun the script from the text editor when we hit "run script"
 if __name__ == "__main__":
     register()
