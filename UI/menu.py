@@ -79,12 +79,12 @@ def backup_enabled_updated(self, context):
 
 
 def lat_correction_updated(self, context):
-    settings.lat_correction = context.scene.setting_props.lat_correction
+    settings.lat_correction = "{:.9f}".format(float(str(context.scene.setting_props.lat_correction))).rstrip("0").rstrip(".")
     settings.save()
 
 
 def lon_correction_updated(self, context):
-    settings.lon_correction = context.scene.setting_props.lon_correction
+    settings.lon_correction = "{:.9f}".format(float(str(context.scene.setting_props.lon_correction))).rstrip("0").rstrip(".")
     settings.save()
 
 
@@ -171,8 +171,8 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
     lat_correction: bpy.props.FloatProperty(
         name="Latitude correction",
         description="Set the latitude correction for positioning the tiles",
-        soft_min=-1.0,
-        soft_max=1.0,
+        soft_min=-0.1,
+        soft_max=0.1,
         step=1,
         precision=6,
         default=float(settings.lat_correction),
@@ -181,8 +181,8 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
     lon_correction: bpy.props.FloatProperty(
         name="Longitude correction",
         description="Set the longitude correction for positioning the tiles",
-        soft_min=-1.0,
-        soft_max=1.0,
+        soft_min=-0.1,
+        soft_max=0.1,
         step=1,
         precision=6,
         default=float(settings.lon_correction),
