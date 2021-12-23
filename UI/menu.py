@@ -33,7 +33,6 @@ def invoke_current_operator(refresh=False):
         ctypes.windll.user32.keybd_event(VK_ESCAPE)
         sleep(0.1)
 
-    isolated_print("bpy.ops." + context.scene.panel_props.current_operator + "(\"INVOKE_DEFAULT\")")
     eval("bpy.ops." + context.scene.panel_props.current_operator + "(\"INVOKE_DEFAULT\")")
 
 
@@ -79,6 +78,16 @@ def backup_enabled_updated(self, context):
     settings.save()
 
 
+def lat_correction_updated(self, context):
+    settings.lat_correction = context.scene.setting_props.lat_correction
+    settings.save()
+
+
+def lon_correction_updated(self, context):
+    settings.lon_correction = context.scene.setting_props.lon_correction
+    settings.save()
+
+
 def setting_sections_updated(self, context):
     panel_props = context.scene.panel_props
     context.window.cursor_warp(panel_props.first_mouse_x, panel_props.first_mouse_y)
@@ -106,7 +115,7 @@ class TOPBAR_MT_google_earth_optimization_menu(Menu):
 
 
 class SettingsPropertyGroup(bpy.types.PropertyGroup):
-    projects_path: StringProperty(
+    projects_path: bpy.props.StringProperty(
         subtype="DIR_PATH",
         name="Path of the projects",
         description="Select the path containing all your MSFS scenery projects",
@@ -158,6 +167,26 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         description="Enable the backup of the project files before processing",
         default=settings.backup_enabled,
         update=backup_enabled_updated,
+    )
+    lat_correction: bpy.props.FloatProperty(
+        name="Latitude correction",
+        description="Set the latitude correction for positioning the tiles",
+        soft_min=-1.0,
+        soft_max=1.0,
+        step=1,
+        precision=6,
+        default=float(settings.lat_correction),
+        update=lat_correction_updated,
+    )
+    lon_correction: bpy.props.FloatProperty(
+        name="Longitude correction",
+        description="Set the longitude correction for positioning the tiles",
+        soft_min=-1.0,
+        soft_max=1.0,
+        step=1,
+        precision=6,
+        default=float(settings.lon_correction),
+        update=lon_correction_updated,
     )
 
 
@@ -219,7 +248,6 @@ class OT_InitMsfsSceneryPanel(settingsOperator):
     def draw(self, context):
         layout = self.layout
         setting_props = context.scene.setting_props
-
         box = layout.box()
         col = box.column()
         col.operator("wm.projects_path_operator")
@@ -249,7 +277,6 @@ class OT_OptimizeSceneryPanel(settingsOperator):
 
     def draw_project_panel(self, context):
         setting_props = context.scene.setting_props
-
         split = super().draw(context)
         col = split.column()
         col.separator()
@@ -271,11 +298,36 @@ class OT_OptimizeSceneryPanel(settingsOperator):
 
     def draw_tile_panel(self, context):
         setting_props = context.scene.setting_props
-
         split = super().draw(context)
         col = split.column()
-        col.prop(setting_props, "project_path")
+        col.prop(setting_props, "lat_correction", slider=True)
         col.separator()
+        col.prop(setting_props, "lon_correction", slider=True)
+
+    def draw_nodejs_panel(self, context):
+        setting_props = context.scene.setting_props
+        split = super().draw(context)
+        pass
+
+    def draw_lods_panel(self, context):
+        setting_props = context.scene.setting_props
+        split = super().draw(context)
+        pass
+
+    def draw_msfs_sdk_panel(self, context):
+        setting_props = context.scene.setting_props
+        split = super().draw(context)
+        pass
+
+    def draw_python_panel(self, context):
+        setting_props = context.scene.setting_props
+        split = super().draw(context)
+        pass
+
+    def draw_compressonator_panel(self, context):
+        setting_props = context.scene.setting_props
+        split = super().draw(context)
+        pass
 
 
 class DirectoryBrowserOperator(Operator, ImportHelper):
