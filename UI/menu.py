@@ -10,7 +10,7 @@ from bpy.types import Menu
 from bpy_extras.io_utils import ImportHelper
 from bpy_types import Operator
 from constants import CLEAR_CONSOLE_CMD, PNG_TEXTURE_FORMAT, JPG_TEXTURE_FORMAT
-from utils import exec_script_from_menu, Settings, get_sources_path, isolated_print
+from utils import exec_script_from_menu, Settings, get_sources_path
 
 settings = Settings(get_sources_path())
 
@@ -38,7 +38,7 @@ def invoke_current_operator(refresh=False):
 
 def projects_path_updated(self, context):
     setting_props = context.scene.setting_props
-    settings.projects_path = setting_props.projects_path
+    settings.projects_path_readonly = settings.projects_path = setting_props.projects_path
     panel_props = context.scene.panel_props
     context.window.cursor_warp(panel_props.first_mouse_x, panel_props.first_mouse_y)
     invoke_current_operator(refresh=False)
@@ -82,8 +82,7 @@ def lon_correction_updated(self, context):
 
 def setting_sections_updated(self, context):
     panel_props = context.scene.panel_props
-    context.window.cursor_warp(panel_props.first_mouse_x, panel_props.first_mouse_y)
-    invoke_current_operator(refresh=True)
+    panel_props.current_section = panel_props.setting_sections
 
 
 class TOPBAR_MT_google_earth_optimization_menus(Menu):
@@ -93,17 +92,18 @@ class TOPBAR_MT_google_earth_optimization_menus(Menu):
 
     def draw(self, _context):
         layout = self.layout
-        layout.menu("TOPBAR_MT_google_earth_optimization_menu")
+        layout.menu(TOPBAR_MT_google_earth_optimization_menu.bl_idname)
 
 
 class TOPBAR_MT_google_earth_optimization_menu(Menu):
+    bl_idname = "TOPBAR_MT_google_earth_optimization_menu"
     bl_label = "Google Earth Optimization Tools"
 
     def draw(self, context):
         layout = self.layout
-        layout.operator("wm.init_msfs_scenery_project_panel")
+        layout.operator(OT_InitMsfsSceneryPanel.bl_idname)
         layout.separator()
-        layout.operator("wm.optimize_scenery_panel")
+        layout.operator(OT_OptimizeSceneryPanel.bl_idname)
 
 
 class SettingsPropertyGroup(bpy.types.PropertyGroup):
@@ -114,6 +114,12 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         maxlen=1024,
         default=settings.projects_path,
         update=projects_path_updated
+    )
+    projects_path_readonly: bpy.props.StringProperty(
+        name="Path of the projects",
+        description="Select the path containing all your MSFS scenery projects",
+        maxlen=1024,
+        default=settings.projects_path
     )
     project_name: StringProperty(
         name="Project name",
@@ -190,7 +196,10 @@ class PanelPropertyGroup(bpy.types.PropertyGroup):
     setting_sections: EnumProperty(items=settings.sections, default="PROJECT", update=setting_sections_updated)
 
 
-class panelOperator(Operator):
+class PanelOperator(Operator):
+    def check(self, context):
+        return True
+
     def invoke(self, context, event):
         self.__save_operator_context(context, event)
         return {"RUNNING_MODAL"}
@@ -211,36 +220,47 @@ class panelOperator(Operator):
             panel_props.first_mouse_x = event.mouse_x
             panel_props.first_mouse_y = event.mouse_y
             # context.window.cursor_warp(context.window.width / 2, (context.window.height / 2) + 60)
-        context.window_manager.invoke_props_dialog(self, width=800)
+        context.window_manager.invoke_props_dialog(self, width=1024)
 
 
-class settingsOperator(panelOperator):
+class SettingsOperator(PanelOperator):
     bl_options = {"REGISTER", "UNDO"}
 
-    def draw_setting_sections_panel(self, context):
+    def draw_setting_sections_panel(self):
         layout = self.layout
         box = layout.box()
         split = box.split(factor=0.2, align=True)
         self.__display_config_sections(split)
         return split
 
-    def draw_footer(self, context):
-        layout = self.layout
-        box = layout.box()
-        col = box.column()
+    @staticmethod
+    def draw_header(layout):
+        col = layout.column()
+        header_box = col.box()
+        header_split = header_box.split(factor=0.8, align=True)
+        header_split.column()
+        header_col = header_split.column()
+        header_col.operator(OT_SaveSettingsOperator.bl_idname)
         col.separator()
-        col.operator("wm.save_settings_operator")
+        box = col.box()
+        return box.column(align=True)
 
+    @staticmethod
+    def draw_splitted_prop(context, layout, split_factor, property_key, property_name, slider=False):
+        split = layout.split(factor=split_factor, align=True)
+        split.label(text=property_name)
+        split.prop(context.scene.setting_props, property_key, slider=slider, text=str())
 
     @staticmethod
     def __display_config_sections(layout):
-        col = layout.column()
+        box = layout.box()
+        col = box.column(align=True)
         col.scale_x = 1.3
         col.scale_y = 1.3
         col.prop(context.scene.panel_props, "setting_sections", expand=True)
 
 
-class OT_InitMsfsSceneryPanel(settingsOperator):
+class OT_InitMsfsSceneryPanel(SettingsOperator):
     id_name = "wm.init_msfs_scenery_project_panel"
     bl_idname = id_name
     bl_label = "Initialize a new MSFS project scenery"
@@ -250,7 +270,7 @@ class OT_InitMsfsSceneryPanel(settingsOperator):
         setting_props = context.scene.setting_props
         box = layout.box()
         col = box.column()
-        col.operator("wm.projects_path_operator")
+        col.operator(OT_ProjectsPathOperator)
         row = col.row()
         row.enabled = False
         row.prop(setting_props, "projects_path")
@@ -264,7 +284,7 @@ class OT_InitMsfsSceneryPanel(settingsOperator):
         return super().execute(context, "init_msfs_scenery_project.py")
 
 
-class OT_OptimizeSceneryPanel(settingsOperator):
+class OT_OptimizeSceneryPanel(SettingsOperator):
     id_name = "wm.optimize_scenery_panel"
     bl_idname = id_name
     bl_label = "Optimize an existing MSFS scenery"
@@ -277,75 +297,72 @@ class OT_OptimizeSceneryPanel(settingsOperator):
 
     def draw_project_panel(self, context):
         setting_props = context.scene.setting_props
-        split = super().draw_setting_sections_panel(context)
-        col = split.column()
+        split = super().draw_setting_sections_panel()
+        col = super().draw_header(split)
         col.separator()
-        col.operator("wm.project_path_operator")
+        col.operator(OT_ProjectPathOperator.bl_idname)
         row = col.row()
         row.enabled = False
-        row.prop(setting_props, "projects_path")
+        super().draw_splitted_prop(context, row, 0.2, "projects_path_readonly", "Path of the project")
+        col.separator()
         col.separator()
         row = col.row()
         row.enabled = False
-        row.prop(setting_props, "project_name")
-        col.separator()
-        col.prop(setting_props, "bake_textures_enabled")
-        col.separator()
-        col.prop(setting_props, "output_texture_format")
+        super().draw_splitted_prop(context, row, 0.2, "project_name", "Project name")
         col.separator()
         col.separator()
-        col.prop(setting_props, "backup_enabled")
+        super().draw_splitted_prop(context, col, 0.2, "bake_textures_enabled", "Bake textures enabled")
         col.separator()
-        super().draw_footer(context)
+        super().draw_splitted_prop(context, col, 0.2, "output_texture_format", "Output texture format")
+        col.separator()
+        col.separator()
+        col.separator()
+        super().draw_splitted_prop(context, col, 0.2, "backup_enabled", "Backup enabled")
+        col.separator()
 
     def draw_tile_panel(self, context):
         setting_props = context.scene.setting_props
-        split = super().draw_setting_sections_panel(context)
-        col = split.column()
-        col.prop(setting_props, "lat_correction", slider=True)
+        split = super().draw_setting_sections_panel()
+        col = super().draw_header(split)
         col.separator()
-        col.prop(setting_props, "lon_correction", slider=True)
+        super().draw_splitted_prop(context, col, 0.2, "lat_correction", "Latitude correction", slider=True)
         col.separator()
-        super().draw_footer(context)
+        super().draw_splitted_prop(context, col, 0.2, "lon_correction", "Longitude correction", slider=True)
+        col.separator()
 
     def draw_nodejs_panel(self, context):
         setting_props = context.scene.setting_props
-        split = super().draw_setting_sections_panel(context)
-        col = split.column()
+        split = super().draw_setting_sections_panel()
+        col = super().draw_header(split)
         col.separator()
-        super().draw_footer(context)
         pass
 
     def draw_lods_panel(self, context):
         setting_props = context.scene.setting_props
-        split = super().draw_setting_sections_panel(context)
-        col = split.column()
+        split = super().draw_setting_sections_panel()
+        col = super().draw_header(split)
         col.separator()
-        super().draw_footer(context)
         pass
 
     def draw_msfs_sdk_panel(self, context):
         setting_props = context.scene.setting_props
-        split = super().draw_setting_sections_panel(context)
-        col = split.column()
+        split = super().draw_setting_sections_panel()
+        col = super().draw_header(context, split)
         col.separator()
-        super().draw_footer(context)
         pass
 
     def draw_python_panel(self, context):
         setting_props = context.scene.setting_props
-        split = super().draw_setting_sections_panel(context)
-        col = split.column()
+        split = super().draw_setting_sections_panel()
+        col = super().draw_header(context, split)
         col.separator()
-        super().draw_footer(context)
         pass
 
     def draw_compressonator_panel(self, context):
         setting_props = context.scene.setting_props
-        split = super().draw_setting_sections_panel(context)
-        col = split.column()
+        split = super().draw_setting_sections_panel()
+        col = super().draw_header(context, split)
         col.separator()
-        super().draw_footer(context)
         pass
 
 
@@ -388,7 +405,6 @@ class OT_ProjectPathOperator(DirectoryBrowserOperator):
 
     def execute(self, context):
         context.scene.setting_props.project_path = self.directory
-        isolated_print(self.directory)
         return {'FINISHED'}
 
     def invoke(self, context, event):
@@ -420,7 +436,7 @@ classes = (
     OT_ProjectsPathOperator,
     OT_SaveSettingsOperator,
     OT_InitMsfsSceneryPanel,
-    OT_OptimizeSceneryPanel,
+    OT_OptimizeSceneryPanel
 )
 
 
