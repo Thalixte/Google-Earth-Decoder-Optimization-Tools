@@ -12,7 +12,7 @@ class Settings:
     project_name_to_merge: str
     author_name: str
     node_js_folder: str
-    fspackagetool_folder: str
+    msfs_build_exe_path: str
     backup_enabled: str
     bake_textures_enabled: str
     msfs_steam_version: str
@@ -31,7 +31,7 @@ class Settings:
         self.project_name_to_merge = str()
         self.author_name = str()
         self.node_js_folder = str()
-        self.fspackagetool_folder = str()
+        self.msfs_build_exe_path = str()
         self.backup_enabled = "False"
         self.bake_textures_enabled = "False"
         self.msfs_steam_version = "False"

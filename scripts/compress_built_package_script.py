@@ -13,23 +13,23 @@ from utils import check_configuration, ScriptError, build_package, pr_bg_green, 
 from msfs_project import MsfsProject
 
 
-def compress_built_package(settings):
+def compress_built_package(script_settings):
     try:
         # instantiate the msfsProject and create the necessary resources if it does not exist
-        msfs_project = MsfsProject(settings.projects_path, settings.project_name, settings.author_name, settings.sources_path, fast_init=True)
+        msfs_project = MsfsProject(script_settings.projects_path, script_settings.project_name, script_settings.author_name, script_settings.sources_path, fast_init=True)
 
-        check_configuration(settings, msfs_project, check_built_package=True, check_compressonator=True)
+        check_configuration(script_settings, msfs_project, check_built_package=True, check_compressonator=True)
 
-        if settings.backup_enabled:
+        if script_settings.backup_enabled:
             msfs_project.backup(Path(os.path.abspath(__file__)).stem)
 
         isolated_print(EOL)
         print_title("COMPRESS BUILT PACKAGE")
 
-        msfs_project.compress_built_package(settings)
+        msfs_project.compress_built_package(script_settings)
 
-        if settings.build_package_enabled:
-            build_package(msfs_project, settings)
+        if script_settings.build_package_enabled:
+            build_package(msfs_project, script_settings)
 
         pr_bg_green("Script correctly applied" + constants.CEND)
 

@@ -1,6 +1,4 @@
 # import the bpy module to access blender API
-from time import sleep
-
 import os
 
 import bpy
@@ -15,6 +13,8 @@ from scripts.optimize_scenery_script import optimize_scenery
 from utils import Settings, get_sources_path, open_console
 
 settings = Settings(get_sources_path())
+
+SPLIT_LABEL_FACTOR = 0.4
 
 
 def reload_topbar_menu():
@@ -33,7 +33,7 @@ def invoke_current_operator():
 
 def projects_path_updated(self, context):
     setting_props = context.scene.setting_props
-    settings.projects_path_readonly = settings.projects_path = setting_props.projects_path
+    settings.projects_path = setting_props.projects_path_readonly = setting_props.projects_path
     panel_props = context.scene.panel_props
     context.window.cursor_warp(panel_props.first_mouse_x, panel_props.first_mouse_y)
     invoke_current_operator()
@@ -75,6 +75,11 @@ def lon_correction_updated(self, context):
     settings.lon_correction = "{:.9f}".format(float(str(context.scene.setting_props.lon_correction))).rstrip("0").rstrip(".")
 
 
+def msfs_build_exe_path_updated(self, context):
+    setting_props = context.scene.setting_props
+    settings.msfs_build_exe_path = setting_props.msfs_build_exe_path_readonly = setting_props.msfs_build_exe_path
+
+
 def setting_sections_updated(self, context):
     panel_props = context.scene.panel_props
     panel_props.current_section = panel_props.setting_sections
@@ -113,7 +118,6 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
     projects_path_readonly: bpy.props.StringProperty(
         name="Path of the projects",
         description="Select the path containing all your MSFS scenery projects",
-        maxlen=1024,
         default=settings.projects_path
     )
     project_name: StringProperty(
@@ -148,8 +152,8 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         name="Output texture format",
         description="output format of the texture files (jpg or png) used by the photogrammetry tiles",
         items=[
-                (PNG_TEXTURE_FORMAT, PNG_TEXTURE_FORMAT, str()),
-                (JPG_TEXTURE_FORMAT, JPG_TEXTURE_FORMAT, str()),
+            (PNG_TEXTURE_FORMAT, PNG_TEXTURE_FORMAT, str()),
+            (JPG_TEXTURE_FORMAT, JPG_TEXTURE_FORMAT, str()),
         ],
         default=settings.output_texture_format,
         update=output_texture_format_updated,
@@ -180,6 +184,19 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         precision=6,
         default=float(settings.lon_correction),
         update=lon_correction_updated,
+    )
+    msfs_build_exe_path: bpy.props.StringProperty(
+        subtype="FILE_PATH",
+        name="Path to the MSFS bin exe that builds the MSFS packages",
+        description="Select the path to the MSFS bin exe that builds the MSFS packages",
+        maxlen=1024,
+        default=settings.msfs_build_exe_path,
+        update=msfs_build_exe_path_updated
+    )
+    msfs_build_exe_path_readonly: bpy.props.StringProperty(
+        name="Path to the MSFS bin exe that builds the MSFS packages",
+        description="Select the path to the MSFS bin exe that builds the MSFS packages",
+        default=settings.msfs_build_exe_path
     )
 
 
@@ -220,7 +237,7 @@ class SettingsOperator(PanelOperator):
     def draw_setting_sections_panel(self):
         layout = self.layout
         box = layout.box()
-        split = box.split(factor=0.2, align=True)
+        split = box.split(factor=SPLIT_LABEL_FACTOR, align=True)
         self.__display_config_sections(split)
         return split
 
@@ -297,21 +314,21 @@ class OT_OptimizeSceneryPanel(SettingsOperator):
         col.operator(OT_ProjectPathOperator.bl_idname)
         row = col.row()
         row.enabled = False
-        super().draw_splitted_prop(context, row, 0.2, "projects_path_readonly", "Path of the project")
+        super().draw_splitted_prop(context, row, SPLIT_LABEL_FACTOR, "projects_path_readonly", "Path of the project")
         col.separator()
         col.separator()
         row = col.row()
         row.enabled = False
-        super().draw_splitted_prop(context, row, 0.2, "project_name", "Project name")
+        super().draw_splitted_prop(context, row, SPLIT_LABEL_FACTOR, "project_name", "Project name")
         col.separator()
         col.separator()
-        super().draw_splitted_prop(context, col, 0.2, "bake_textures_enabled", "Bake textures enabled")
+        super().draw_splitted_prop(context, col, SPLIT_LABEL_FACTOR, "bake_textures_enabled", "Bake textures enabled")
         col.separator()
-        super().draw_splitted_prop(context, col, 0.2, "output_texture_format", "Output texture format")
+        super().draw_splitted_prop(context, col, SPLIT_LABEL_FACTOR, "output_texture_format", "Output texture format")
         col.separator()
         col.separator()
         col.separator()
-        super().draw_splitted_prop(context, col, 0.2, "backup_enabled", "Backup enabled")
+        super().draw_splitted_prop(context, col, SPLIT_LABEL_FACTOR, "backup_enabled", "Backup enabled")
         col.separator()
         col.separator()
         col.separator()
@@ -324,9 +341,9 @@ class OT_OptimizeSceneryPanel(SettingsOperator):
         split = super().draw_setting_sections_panel()
         col = super().draw_header(split)
         col.separator()
-        super().draw_splitted_prop(context, col, 0.2, "lat_correction", "Latitude correction", slider=True)
+        super().draw_splitted_prop(context, col, SPLIT_LABEL_FACTOR, "lat_correction", "Latitude correction", slider=True)
         col.separator()
-        super().draw_splitted_prop(context, col, 0.2, "lon_correction", "Longitude correction", slider=True)
+        super().draw_splitted_prop(context, col, SPLIT_LABEL_FACTOR, "lon_correction", "Longitude correction", slider=True)
         col.separator()
         col.separator()
         col.separator()
@@ -334,12 +351,6 @@ class OT_OptimizeSceneryPanel(SettingsOperator):
         col.operator(OT_OptimizeMsfsSceneryOperator.bl_idname)
         col.separator()
         col.separator()
-
-    def draw_nodejs_panel(self, context):
-        split = super().draw_setting_sections_panel()
-        col = super().draw_header(split)
-        col.separator()
-        pass
 
     def draw_lods_panel(self, context):
         split = super().draw_setting_sections_panel()
@@ -349,25 +360,43 @@ class OT_OptimizeSceneryPanel(SettingsOperator):
 
     def draw_msfs_sdk_panel(self, context):
         split = super().draw_setting_sections_panel()
-        col = super().draw_header(context, split)
+        col = super().draw_header(split)
+        col.separator()
+        col.operator(OT_MsfsBuildExePathOperator.bl_idname)
+        row = col.row()
+        row.enabled = False
+        super().draw_splitted_prop(context, row, SPLIT_LABEL_FACTOR, "msfs_build_exe_path_readonly", "Path to the MSFS bin exe that builds the MSFS packages")
         col.separator()
         pass
 
     def draw_python_panel(self, context):
         split = super().draw_setting_sections_panel()
-        col = super().draw_header(context, split)
+        col = super().draw_header(split)
         col.separator()
         pass
 
     def draw_compressonator_panel(self, context):
         split = super().draw_setting_sections_panel()
-        col = super().draw_header(context, split)
+        col = super().draw_header(split)
+        col.separator()
+        pass
+
+    def draw_nodejs_panel(self, context):
+        split = super().draw_setting_sections_panel()
+        col = super().draw_header(split)
         col.separator()
         pass
 
     def execute(self, context):
         optimize_scenery(settings)
         return {'FINISHED'}
+
+
+class FileBrowserOperator(Operator, ImportHelper):
+    def draw(self, context):
+        space = context.space_data
+        params = space.params
+        params.display_size = "NORMAL"
 
 
 class DirectoryBrowserOperator(Operator, ImportHelper):
@@ -413,6 +442,30 @@ class OT_ProjectPathOperator(DirectoryBrowserOperator):
 
     def invoke(self, context, event):
         self.directory = context.scene.setting_props.project_path
+        context.window_manager.fileselect_add(self)
+        return {'RUNNING_MODAL'}
+
+
+class OT_MsfsBuildExePathOperator(FileBrowserOperator):
+    bl_idname = "wm.msfs_build_exe_path_operator"
+    bl_label = "Path to the MSFS bin exe that builds the MSFS packages..."
+
+    filter_glob: StringProperty(
+        default="*.exe",
+        options={"HIDDEN"},
+    )
+
+    filepath: bpy.props.StringProperty(subtype="FILE_PATH")
+
+    def draw(self, context):
+        super().draw(context)
+
+    def execute(self, context):
+        context.scene.setting_props.msfs_build_exe_path = self.filepath
+        return {'FINISHED'}
+
+    def invoke(self, context, event):
+        self.filepath = context.scene.setting_props.msfs_build_exe_path
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
 
@@ -464,6 +517,7 @@ classes = (
     PanelPropertyGroup,
     OT_ProjectPathOperator,
     OT_ProjectsPathOperator,
+    OT_MsfsBuildExePathOperator,
     OT_InitMsfsSceneryProjectOperator,
     OT_OptimizeMsfsSceneryOperator,
     OT_SaveSettingsOperator,

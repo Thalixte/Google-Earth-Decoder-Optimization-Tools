@@ -13,14 +13,14 @@ from utils import check_configuration, ScriptError, build_package, pr_bg_green, 
 from msfs_project import MsfsProject
 
 
-def clean_package_files(settings):
+def clean_package_files(script_settings):
     try:
         # instantiate the msfsProject and create the necessary resources if it does not exist
-        msfs_project = MsfsProject(settings.projects_path, settings.project_name, settings.author_name, settings.sources_path)
+        msfs_project = MsfsProject(script_settings.projects_path, script_settings.project_name, script_settings.author_name, script_settings.sources_path)
 
-        check_configuration(settings, msfs_project)
+        check_configuration(script_settings, msfs_project)
 
-        if settings.backup_enabled:
+        if script_settings.backup_enabled:
             msfs_project.backup(Path(os.path.abspath(__file__)).stem)
 
         isolated_print(EOL)
@@ -28,8 +28,8 @@ def clean_package_files(settings):
 
         msfs_project.clean()
 
-        if settings.build_package_enabled:
-            build_package(msfs_project, settings)
+        if script_settings.build_package_enabled:
+            build_package(msfs_project, script_settings)
 
         pr_bg_green("Script correctly applied" + constants.CEND)
 

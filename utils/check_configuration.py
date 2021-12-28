@@ -38,12 +38,12 @@ def check_configuration(settings, msfs_project, check_lily_texture_packer=False,
     pr_ok_green(str("project_file_name value").ljust(RESULT_MSG_LENGTH))
 
     # check if the fspackagetool.exe file is reachable
-    if not os.path.isfile(settings.fspackagetool_folder + "\\" + MSFS_BUILD_EXE):
-        pr_ko_orange(str("fspackagetool_folder value").ljust(RESULT_MSG_LENGTH))
+    if not os.path.isfile(settings.msfs_build_exe_path):
+        pr_ko_orange(str("msfs_build_exe_path value").ljust(RESULT_MSG_LENGTH))
         settings.build_package_enabled = False
-        isolated_print(CORANGE + warning_msg + MSFS_BUILD_EXE + " bin file not found. Automatic package building is disabled" + CEND + EOL)
+        isolated_print(CORANGE + warning_msg + settings.msfs_build_exe_path + " bin file not found. Automatic package building is disabled" + CEND + EOL)
     else:
-        pr_ok_green(str("fspackagetool_folder value").ljust(RESULT_MSG_LENGTH))
+        pr_ok_green(str("msfs_build_exe_path value").ljust(RESULT_MSG_LENGTH))
 
     # check if the package definitions folder exists
     if not os.path.isdir(msfs_project.package_definitions_folder):
