@@ -10,7 +10,9 @@ from bpy.types import Menu
 from bpy_extras.io_utils import ImportHelper
 from bpy_types import Operator
 from constants import CLEAR_CONSOLE_CMD, PNG_TEXTURE_FORMAT, JPG_TEXTURE_FORMAT
-from utils import exec_script_from_menu, Settings, get_sources_path
+from scripts.init_msfs_scenery_project_script import init_msfs_scenery_project
+from scripts.optimize_scenery_script import optimize_scenery
+from utils import Settings, get_sources_path, open_console
 
 settings = Settings(get_sources_path())
 
@@ -25,14 +27,7 @@ def reload_topbar_menu():
         pass
 
 
-def invoke_current_operator(refresh=False):
-    import ctypes
-
-    if refresh:
-        VK_ESCAPE = 0x1B
-        ctypes.windll.user32.keybd_event(VK_ESCAPE)
-        sleep(0.2)
-
+def invoke_current_operator():
     eval("bpy.ops." + context.scene.panel_props.current_operator + "(\"INVOKE_DEFAULT\")")
 
 
@@ -41,7 +36,7 @@ def projects_path_updated(self, context):
     settings.projects_path_readonly = settings.projects_path = setting_props.projects_path
     panel_props = context.scene.panel_props
     context.window.cursor_warp(panel_props.first_mouse_x, panel_props.first_mouse_y)
-    invoke_current_operator(refresh=False)
+    invoke_current_operator()
 
 
 def project_path_updated(self, context):
@@ -204,10 +199,6 @@ class PanelOperator(Operator):
         self.__save_operator_context(context, event)
         return {"RUNNING_MODAL"}
 
-    def execute(self, context, script_file):
-        exec_script_from_menu(os.path.join(settings.sources_path, script_file))
-        return {"FINISHED"}
-
     @classmethod
     def poll(cls, context):
         return True
@@ -259,6 +250,9 @@ class SettingsOperator(PanelOperator):
         col.scale_y = 1.3
         col.prop(context.scene.panel_props, "setting_sections", expand=True)
 
+    def execute(self, context):
+        return {'FINISHED'}
+
 
 class OT_InitMsfsSceneryPanel(SettingsOperator):
     id_name = "wm.init_msfs_scenery_project_panel"
@@ -270,18 +264,22 @@ class OT_InitMsfsSceneryPanel(SettingsOperator):
         setting_props = context.scene.setting_props
         box = layout.box()
         col = box.column()
-        col.operator(OT_ProjectsPathOperator)
+        col.operator(OT_ProjectsPathOperator.bl_idname)
         row = col.row()
         row.enabled = False
-        row.prop(setting_props, "projects_path")
+        row.prop(setting_props, "projects_path_readonly")
         col.separator()
         col.separator()
         col.prop(setting_props, "project_name")
         col.separator()
         col.prop(setting_props, "author_name")
-
-    def execute(self, context):
-        return super().execute(context, "init_msfs_scenery_project.py")
+        col.separator()
+        col.separator()
+        col.separator()
+        col.separator()
+        col.operator(OT_InitMsfsSceneryProjectOperator.bl_idname)
+        col.separator()
+        col.separator()
 
 
 class OT_OptimizeSceneryPanel(SettingsOperator):
@@ -289,14 +287,10 @@ class OT_OptimizeSceneryPanel(SettingsOperator):
     bl_idname = id_name
     bl_label = "Optimize an existing MSFS scenery"
 
-    def execute(self, context):
-        return super().execute(context, "init_msfs_scenery_project.py")
-
     def draw(self, context):
         eval("self.draw_" + context.scene.panel_props.current_section.lower() + "_panel(context)")
 
     def draw_project_panel(self, context):
-        setting_props = context.scene.setting_props
         split = super().draw_setting_sections_panel()
         col = super().draw_header(split)
         col.separator()
@@ -319,9 +313,14 @@ class OT_OptimizeSceneryPanel(SettingsOperator):
         col.separator()
         super().draw_splitted_prop(context, col, 0.2, "backup_enabled", "Backup enabled")
         col.separator()
+        col.separator()
+        col.separator()
+        col.separator()
+        col.operator(OT_OptimizeMsfsSceneryOperator.bl_idname)
+        col.separator()
+        col.separator()
 
     def draw_tile_panel(self, context):
-        setting_props = context.scene.setting_props
         split = super().draw_setting_sections_panel()
         col = super().draw_header(split)
         col.separator()
@@ -329,41 +328,46 @@ class OT_OptimizeSceneryPanel(SettingsOperator):
         col.separator()
         super().draw_splitted_prop(context, col, 0.2, "lon_correction", "Longitude correction", slider=True)
         col.separator()
+        col.separator()
+        col.separator()
+        col.separator()
+        col.operator(OT_OptimizeMsfsSceneryOperator.bl_idname)
+        col.separator()
+        col.separator()
 
     def draw_nodejs_panel(self, context):
-        setting_props = context.scene.setting_props
         split = super().draw_setting_sections_panel()
         col = super().draw_header(split)
         col.separator()
         pass
 
     def draw_lods_panel(self, context):
-        setting_props = context.scene.setting_props
         split = super().draw_setting_sections_panel()
         col = super().draw_header(split)
         col.separator()
         pass
 
     def draw_msfs_sdk_panel(self, context):
-        setting_props = context.scene.setting_props
         split = super().draw_setting_sections_panel()
         col = super().draw_header(context, split)
         col.separator()
         pass
 
     def draw_python_panel(self, context):
-        setting_props = context.scene.setting_props
         split = super().draw_setting_sections_panel()
         col = super().draw_header(context, split)
         col.separator()
         pass
 
     def draw_compressonator_panel(self, context):
-        setting_props = context.scene.setting_props
         split = super().draw_setting_sections_panel()
         col = super().draw_header(context, split)
         col.separator()
         pass
+
+    def execute(self, context):
+        optimize_scenery(settings)
+        return {'FINISHED'}
 
 
 class DirectoryBrowserOperator(Operator, ImportHelper):
@@ -413,6 +417,32 @@ class OT_ProjectPathOperator(DirectoryBrowserOperator):
         return {'RUNNING_MODAL'}
 
 
+class OT_InitMsfsSceneryProjectOperator(Operator):
+    bl_idname = "wm.init_msfs_scenery_project"
+    bl_label = "Initialize a new MSFS project scenery..."
+
+    script_file = "init_msfs_scenery_project.py"
+
+    def execute(self, context):
+        # clear and open the system console
+        open_console()
+        init_msfs_scenery_project(settings)
+        return {'FINISHED'}
+
+
+class OT_OptimizeMsfsSceneryOperator(Operator):
+    bl_idname = "wm.optimize_msfs_scenery"
+    bl_label = "Optimize an existing MSFS scenery..."
+
+    script_file = "optimize_scenery.py"
+
+    def execute(self, context):
+        # clear and open the system console
+        open_console()
+        optimize_scenery(settings)
+        return {'FINISHED'}
+
+
 class OT_SaveSettingsOperator(Operator):
     bl_idname = "wm.save_settings_operator"
     bl_label = "Save settings..."
@@ -434,9 +464,11 @@ classes = (
     PanelPropertyGroup,
     OT_ProjectPathOperator,
     OT_ProjectsPathOperator,
+    OT_InitMsfsSceneryProjectOperator,
+    OT_OptimizeMsfsSceneryOperator,
     OT_SaveSettingsOperator,
     OT_InitMsfsSceneryPanel,
-    OT_OptimizeSceneryPanel
+    OT_OptimizeSceneryPanel,
 )
 
 
