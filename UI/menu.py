@@ -75,9 +75,21 @@ def lon_correction_updated(self, context):
     settings.lon_correction = "{:.9f}".format(float(str(context.scene.setting_props.lon_correction))).rstrip("0").rstrip(".")
 
 
+def target_min_size_values_updated(self, context):
+    # settings.target_min_size_values = context.scene.setting_props.target_min_size_values
+    pass
+
+def build_package_enabled_updated(self, context):
+    settings.build_package_enabled = context.scene.setting_props.build_package_enabled
+
+
 def msfs_build_exe_path_updated(self, context):
     setting_props = context.scene.setting_props
     settings.msfs_build_exe_path = setting_props.msfs_build_exe_path_readonly = setting_props.msfs_build_exe_path
+
+
+def msfs_steam_version_updated(self, context):
+    settings.msfs_steam_version = context.scene.setting_props.msfs_steam_version
 
 
 def setting_sections_updated(self, context):
@@ -185,6 +197,19 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         default=float(settings.lon_correction),
         update=lon_correction_updated,
     )
+    setting_sections: EnumProperty(
+        name="Min size values per lod",
+        description="Set the min size value for each tile lod",
+        items=settings.target_min_size_values,
+        default="settings.target_min_size_values",
+        update=target_min_size_values_updated
+    )
+    build_package_enabled: bpy.props.BoolProperty(
+        name="Build package enabled",
+        description="Enable the package compilation when the script has finished",
+        default=settings.build_package_enabled,
+        update=build_package_enabled_updated,
+    )
     msfs_build_exe_path: bpy.props.StringProperty(
         subtype="FILE_PATH",
         name="Path to the MSFS bin exe that builds the MSFS packages",
@@ -197,6 +222,12 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         name="Path to the MSFS bin exe that builds the MSFS packages",
         description="Select the path to the MSFS bin exe that builds the MSFS packages",
         default=settings.msfs_build_exe_path
+    )
+    msfs_steam_version: bpy.props.BoolProperty(
+        name="Msfs Steam version",
+        description="Set this to true if you have the MSFS 2020 Steam version",
+        default=settings.msfs_steam_version,
+        update=msfs_steam_version_updated,
     )
 
 
@@ -325,17 +356,9 @@ class OT_OptimizeSceneryPanel(SettingsOperator):
         super().draw_splitted_prop(context, col, SPLIT_LABEL_FACTOR, "bake_textures_enabled", "Bake textures enabled")
         col.separator()
         super().draw_splitted_prop(context, col, SPLIT_LABEL_FACTOR, "output_texture_format", "Output texture format")
-        col.separator()
-        col.separator()
-        col.separator()
+        col.separator(factor=3.0)
         super().draw_splitted_prop(context, col, SPLIT_LABEL_FACTOR, "backup_enabled", "Backup enabled")
-        col.separator()
-        col.separator()
-        col.separator()
-        col.separator()
-        col.operator(OT_OptimizeMsfsSceneryOperator.bl_idname)
-        col.separator()
-        col.separator()
+        self.__draw_footer(col)
 
     def draw_tile_panel(self, context):
         split = super().draw_setting_sections_panel()
@@ -344,19 +367,14 @@ class OT_OptimizeSceneryPanel(SettingsOperator):
         super().draw_splitted_prop(context, col, SPLIT_LABEL_FACTOR, "lat_correction", "Latitude correction", slider=True)
         col.separator()
         super().draw_splitted_prop(context, col, SPLIT_LABEL_FACTOR, "lon_correction", "Longitude correction", slider=True)
-        col.separator()
-        col.separator()
-        col.separator()
-        col.separator()
-        col.operator(OT_OptimizeMsfsSceneryOperator.bl_idname)
-        col.separator()
-        col.separator()
+        self.__draw_footer(col)
 
     def draw_lods_panel(self, context):
         split = super().draw_setting_sections_panel()
         col = super().draw_header(split)
         col.separator()
-        pass
+        col.operator(OT_MinSizeValuesOperator.bl_idname)
+        self.__draw_footer(col)
 
     def draw_msfs_sdk_panel(self, context):
         split = super().draw_setting_sections_panel()
@@ -367,7 +385,10 @@ class OT_OptimizeSceneryPanel(SettingsOperator):
         row.enabled = False
         super().draw_splitted_prop(context, row, SPLIT_LABEL_FACTOR, "msfs_build_exe_path_readonly", "Path to the MSFS bin exe that builds the MSFS packages")
         col.separator()
-        pass
+        super().draw_splitted_prop(context, col, SPLIT_LABEL_FACTOR, "build_package_enabled", "Build package enabled")
+        col.separator()
+        super().draw_splitted_prop(context, col, SPLIT_LABEL_FACTOR, "msfs_steam_version", "Msfs Steam version")
+        self.__draw_footer(col)
 
     def draw_python_panel(self, context):
         split = super().draw_setting_sections_panel()
@@ -386,6 +407,12 @@ class OT_OptimizeSceneryPanel(SettingsOperator):
         col = super().draw_header(split)
         col.separator()
         pass
+
+    @staticmethod
+    def __draw_footer(layout):
+        layout.separator(factor=10.0)
+        layout.operator(OT_OptimizeMsfsSceneryOperator.bl_idname)
+        layout.separator(factor=10.0)
 
     def execute(self, context):
         optimize_scenery(settings)
@@ -470,6 +497,16 @@ class OT_MsfsBuildExePathOperator(FileBrowserOperator):
         return {'RUNNING_MODAL'}
 
 
+class OT_MinSizeValuesOperator(Operator):
+    bl_idname = "wm.min_size_values_operator"
+    bl_label = "Update min size values for each tile lod"
+
+    def draw(self, context):
+        for min_size_value in context.scene.setting_props.min_size_values:
+            context.layout.column()
+            context.layout.label(min_size_value)
+
+
 class OT_InitMsfsSceneryProjectOperator(Operator):
     bl_idname = "wm.init_msfs_scenery_project"
     bl_label = "Initialize a new MSFS project scenery..."
@@ -518,6 +555,7 @@ classes = (
     OT_ProjectPathOperator,
     OT_ProjectsPathOperator,
     OT_MsfsBuildExePathOperator,
+    OT_MinSizeValuesOperator,
     OT_InitMsfsSceneryProjectOperator,
     OT_OptimizeMsfsSceneryOperator,
     OT_SaveSettingsOperator,

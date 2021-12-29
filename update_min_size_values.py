@@ -43,7 +43,7 @@ from constants import *
 open_console()
 
 # Specify the script to be included
-script_files = ["update_lod_values_script.py"]
+script_files = ["update_min_size_values_script.py"]
 
 for script_file in script_files:
     # Compile and execute script file

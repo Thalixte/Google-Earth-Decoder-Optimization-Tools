@@ -38,10 +38,10 @@ class MsfsSceneObject(MsfsObject):
                 pop_lods.append(i)
         self.lods.pop(i)
 
-    def update_lod_values(self, lod_values, pbar=None):
+    def update_min_size_values(self, min_size_values, pbar=None):
         lods_definition = self.xml.find_scenery_lods()
         for i, lod_definition in enumerate(lods_definition):
-            lod_definition.set(self.xml.MIN_SIZE_TAG, str(lod_values[(len(lods_definition)-1)-i]))
+            lod_definition.set(self.xml.MIN_SIZE_TAG, str(min_size_values[(len(lods_definition) - 1) - i]))
 
         self.xml.save()
         pbar.update("%s lod values updated" % self.name)

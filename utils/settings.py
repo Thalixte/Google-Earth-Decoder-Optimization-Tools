@@ -18,7 +18,8 @@ class Settings:
     msfs_steam_version: str
     build_package_enabled: str
     sources_path: str
-    target_lod_values: list
+    min_tile_lod: str
+    target_min_size_values: list
     output_texture_format: str
     lat_correction: float
     lon_correction: float
@@ -38,7 +39,8 @@ class Settings:
         self.build_package_enabled = "False"
         self.reload_modules = "False"
         self.sources_path = sources_path
-        self.target_lod_values = []
+        self.min_tile_lod = str()
+        self.target_min_size_values = []
         self.output_texture_format = PNG_TEXTURE_FORMAT
         self.lat_correction = 0.0
         self.lon_correction = 0.0
@@ -71,7 +73,11 @@ class Settings:
         self.reload_modules = json.loads(self.reload_modules.lower())
 
         # get the target lod values
-        self.target_lod_values = str().join(self.target_lod_values.split()).split(",")
+        target_min_size_values = str().join(self.target_min_size_values.split()).split(",")
+        self.target_min_size_values = []
+
+        for min_size_value in target_min_size_values:
+            self.target_min_size_values.append((min_size_value, min_size_value, min_size_value))
 
         # ensure to convert float settings values
         self.lat_correction = "{:.9f}".format(float(str(self.lat_correction))).rstrip("0").rstrip(".")
@@ -88,7 +94,7 @@ class Settings:
             for name, value in config.items(section_name):
                 config.set(section_name, name, str(getattr(self, name)))
 
-        config.set("LODS", "target_lod_values", ", ".join(self.target_lod_values))
+        config.set("LODS", "target_min_size_values", ", ".join(self.target_min_size_values))
 
         with open(os.path.join(self.sources_path, INI_FILE), "w") as configfile:
             config.write(configfile)
