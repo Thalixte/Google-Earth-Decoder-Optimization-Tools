@@ -373,9 +373,11 @@ class OT_OptimizeSceneryPanel(SettingsOperator):
         split = super().draw_setting_sections_panel()
         col = super().draw_header(split)
         col.separator()
-        for min_size_value in context.scene.setting_props.min_size_values:
+        for min_size_value in setting_props.bl_rna.properties["min_size_values"].enum_items:
             col.column()
-            col.label(text=min_size_value)
+            col.label(text=min_size_value.name)
+            col.label(text=min_size_value.description)
+            col.label(text=str(min_size_value.value))
         self.__draw_footer(col)
 
     def draw_msfs_sdk_panel(self, context):
