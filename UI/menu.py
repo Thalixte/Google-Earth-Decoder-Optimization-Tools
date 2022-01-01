@@ -3,7 +3,7 @@ import os
 
 import bpy
 from bpy import context
-from bpy.props import IntProperty, StringProperty, EnumProperty
+from bpy.props import IntProperty, StringProperty, EnumProperty, BoolProperty
 from bpy.types import Menu
 from bpy_extras.io_utils import ImportHelper
 from bpy_types import Operator
@@ -75,7 +75,7 @@ def lon_correction_updated(self, context):
     settings.lon_correction = "{:.9f}".format(float(str(context.scene.setting_props.lon_correction))).rstrip("0").rstrip(".")
 
 
-def target_min_size_values_updated(self, context):
+def min_size_values_updated(self, context):
     # settings.target_min_size_values = context.scene.setting_props.target_min_size_values
     pass
 
@@ -154,7 +154,7 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         maxlen=256,
         update=author_name_updated
     )
-    bake_textures_enabled: bpy.props.BoolProperty(
+    bake_textures_enabled: BoolProperty(
         name="Bake textures enabled",
         description="Reduce the number of texture files (Lily Texture Packer addon is necessary https://gumroad.com/l/DFExj)",
         default=settings.bake_textures_enabled,
@@ -197,12 +197,11 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         default=float(settings.lon_correction),
         update=lon_correction_updated,
     )
-    setting_sections: EnumProperty(
+    min_size_values: EnumProperty(
         name="Min size values per lod",
         description="Set the min size value for each tile lod",
         items=settings.target_min_size_values,
-        default="settings.target_min_size_values",
-        update=target_min_size_values_updated
+        update=min_size_values_updated,
     )
     build_package_enabled: bpy.props.BoolProperty(
         name="Build package enabled",
@@ -370,10 +369,13 @@ class OT_OptimizeSceneryPanel(SettingsOperator):
         self.__draw_footer(col)
 
     def draw_lods_panel(self, context):
+        setting_props = context.scene.setting_props
         split = super().draw_setting_sections_panel()
         col = super().draw_header(split)
         col.separator()
-        col.operator(OT_MinSizeValuesOperator.bl_idname)
+        for min_size_value in context.scene.setting_props.min_size_values:
+            col.column()
+            col.label(text=min_size_value)
         self.__draw_footer(col)
 
     def draw_msfs_sdk_panel(self, context):
@@ -555,7 +557,7 @@ classes = (
     OT_ProjectPathOperator,
     OT_ProjectsPathOperator,
     OT_MsfsBuildExePathOperator,
-    OT_MinSizeValuesOperator,
+    # OT_MinSizeValuesOperator,
     OT_InitMsfsSceneryProjectOperator,
     OT_OptimizeMsfsSceneryOperator,
     OT_SaveSettingsOperator,
