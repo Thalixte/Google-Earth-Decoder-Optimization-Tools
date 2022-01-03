@@ -18,7 +18,6 @@ class Settings:
     msfs_steam_version: str
     build_package_enabled: str
     sources_path: str
-    min_tile_lod: str
     target_min_size_values: list
     output_texture_format: str
     lat_correction: float
@@ -39,7 +38,6 @@ class Settings:
         self.build_package_enabled = "False"
         self.reload_modules = "False"
         self.sources_path = sources_path
-        self.min_tile_lod = str()
         self.target_min_size_values = []
         self.output_texture_format = PNG_TEXTURE_FORMAT
         self.lat_correction = 0.0
@@ -73,11 +71,7 @@ class Settings:
         self.reload_modules = json.loads(self.reload_modules.lower())
 
         # get the target lod values
-        target_min_size_values = str().join(self.target_min_size_values.split()).split(",")
-        self.target_min_size_values = []
-
-        for min_size_value in target_min_size_values:
-            self.target_min_size_values.append((min_size_value, min_size_value, min_size_value))
+        self.target_min_size_values = str().join(self.target_min_size_values.split()).split(",")
 
         # ensure to convert float settings values
         self.lat_correction = "{:.9f}".format(float(str(self.lat_correction))).rstrip("0").rstrip(".")

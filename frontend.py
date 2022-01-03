@@ -42,7 +42,7 @@ cwd = os.path.join(files_dir, UI_FOLDER)
 if cwd not in sys.path:
     sys.path.append(cwd)
 
-from UI import *
+from UI import menu
 
 
 def register():

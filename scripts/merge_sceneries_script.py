@@ -47,4 +47,5 @@ def merge_sceneries(script_settings):
 #                        Main process
 ##################################################################
 
-merge_sceneries(settings)
+if __name__ == "__main__":
+    merge_sceneries(settings)

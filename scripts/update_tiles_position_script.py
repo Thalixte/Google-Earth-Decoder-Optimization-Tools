@@ -45,4 +45,5 @@ def update_tiles_position(script_settings):
 #                        Main process
 ##################################################################
 
-update_tiles_position(settings)
+if __name__ == "__main__":
+    update_tiles_position(settings)

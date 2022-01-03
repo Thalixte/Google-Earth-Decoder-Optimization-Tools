@@ -47,4 +47,5 @@ def optimize_scenery(script_settings):
 #                        Main process
 ##################################################################
 
-optimize_scenery(settings)
+if __name__ == "__main__":
+    optimize_scenery(settings)

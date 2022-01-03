@@ -36,4 +36,5 @@ def init_msfs_scenery_project(script_settings):
 #                        Main process
 ##################################################################
 
-init_msfs_scenery_project(settings)
+if __name__ == "__main__":
+    init_msfs_scenery_project(settings)

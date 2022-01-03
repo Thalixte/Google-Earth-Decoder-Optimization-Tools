@@ -48,4 +48,5 @@ def compress_built_package(script_settings):
 #                        Main process
 ##################################################################
 
-compress_built_package(settings)
+if __name__ == "__main__":
+    compress_built_package(settings)

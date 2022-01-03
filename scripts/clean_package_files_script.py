@@ -48,4 +48,5 @@ def clean_package_files(script_settings):
 #                        Main process
 ##################################################################
 
-clean_package_files(settings)
+if __name__ == "__main__":
+    clean_package_files(settings)

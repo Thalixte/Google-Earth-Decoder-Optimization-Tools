@@ -3,18 +3,21 @@ import os
 
 import bpy
 from bpy import context
-from bpy.props import IntProperty, StringProperty, EnumProperty, BoolProperty
+from bpy.props import IntProperty, StringProperty, EnumProperty, BoolProperty, FloatProperty
 from bpy.types import Menu
 from bpy_extras.io_utils import ImportHelper
 from bpy_types import Operator
 from constants import CLEAR_CONSOLE_CMD, PNG_TEXTURE_FORMAT, JPG_TEXTURE_FORMAT
 from scripts.init_msfs_scenery_project_script import init_msfs_scenery_project
 from scripts.optimize_scenery_script import optimize_scenery
-from utils import Settings, get_sources_path, open_console
+from utils import Settings, get_sources_path, open_console, isolated_print
 
 settings = Settings(get_sources_path())
+updatedSettingsPropertyGroup = None
 
+TARGET_MIN_SIZE_VALUE_PROPERTY_PREFIX = "target_min_size_value_"
 SPLIT_LABEL_FACTOR = 0.4
+MAX_PHOTOGRAMMETRY_LOD = 23
 
 
 def reload_topbar_menu():
@@ -32,69 +35,73 @@ def invoke_current_operator():
 
 
 def projects_path_updated(self, context):
-    setting_props = context.scene.setting_props
-    settings.projects_path = setting_props.projects_path_readonly = setting_props.projects_path
+    settings.projects_path = self.projects_path_readonly = self.projects_path
     panel_props = context.scene.panel_props
     context.window.cursor_warp(panel_props.first_mouse_x, panel_props.first_mouse_y)
     invoke_current_operator()
 
 
 def project_path_updated(self, context):
-    setting_props = context.scene.setting_props
-    settings.projects_path = setting_props.projects_path = os.path.dirname(os.path.dirname(setting_props.project_path)) + os.path.sep
-    settings.project_name = setting_props.project_name = os.path.relpath(setting_props.project_path, start=setting_props.projects_path)
+    settings.projects_path = self.projects_path = os.path.dirname(os.path.dirname(self.project_path)) + os.path.sep
+    settings.project_name = self.project_name = os.path.relpath(self.project_path, start=self.projects_path)
 
 
 def project_name_updated(self, context):
-    setting_props = context.scene.setting_props
-    settings.project_name = setting_props.project_name
+    settings.project_name = self.project_name
     settings.project_path = os.path.join(settings.projects_path, settings.project_name)
 
 
 def author_name_updated(self, context):
-    settings.author_name = context.scene.setting_props.author_name
+    settings.author_name = self.author_name
 
 
 def bake_textures_enabled_updated(self, context):
-    settings.bake_textures_enabled_updated = context.scene.setting_props.bake_textures_enabled_updated
+    settings.bake_textures_enabled_updated = self.bake_textures_enabled_updated
 
 
 def output_texture_format_updated(self, context):
-    settings.output_texture_format = context.scene.setting_props.output_texture_format
+    settings.output_texture_format = self.output_texture_format
 
 
 def backup_enabled_updated(self, context):
-    settings.backup_enabled = context.scene.setting_props.backup_enabled
+    settings.backup_enabled = self.backup_enabled
 
 
 def lat_correction_updated(self, context):
-    settings.lat_correction = "{:.9f}".format(float(str(context.scene.setting_props.lat_correction))).rstrip("0").rstrip(".")
+    settings.lat_correction = "{:.9f}".format(float(str(self.lat_correction))).rstrip("0").rstrip(".")
 
 
 def lon_correction_updated(self, context):
-    settings.lon_correction = "{:.9f}".format(float(str(context.scene.setting_props.lon_correction))).rstrip("0").rstrip(".")
+    settings.lon_correction = "{:.9f}".format(float(str(self.lon_correction))).rstrip("0").rstrip(".")
 
 
-def min_size_values_updated(self, context):
-    # settings.target_min_size_values = context.scene.setting_props.target_min_size_values
-    pass
+def target_min_size_value_updated(self, context):
+    idx = 0
+    prev_value = -1
+    for name in self.__annotations__.keys():
+        if TARGET_MIN_SIZE_VALUE_PROPERTY_PREFIX in name:
+            cur_value = int(eval("self." + name))
+            cur_value = prev_value if cur_value < prev_value else cur_value
+            self[name] = cur_value
+            settings.target_min_size_values[idx] = str(cur_value)
+            prev_value = int(settings.target_min_size_values[idx])
+            idx = idx+1
+
 
 def build_package_enabled_updated(self, context):
-    settings.build_package_enabled = context.scene.setting_props.build_package_enabled
+    settings.build_package_enabled = self.build_package_enabled
 
 
 def msfs_build_exe_path_updated(self, context):
-    setting_props = context.scene.setting_props
-    settings.msfs_build_exe_path = setting_props.msfs_build_exe_path_readonly = setting_props.msfs_build_exe_path
+    settings.msfs_build_exe_path = self.msfs_build_exe_path_readonly = self.msfs_build_exe_path
 
 
 def msfs_steam_version_updated(self, context):
-    settings.msfs_steam_version = context.scene.setting_props.msfs_steam_version
+    settings.msfs_steam_version = self.msfs_steam_version
 
 
 def setting_sections_updated(self, context):
-    panel_props = context.scene.panel_props
-    panel_props.current_section = panel_props.setting_sections
+    self.current_section = self.setting_sections
 
 
 class TOPBAR_MT_google_earth_optimization_menus(Menu):
@@ -171,13 +178,13 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         update=output_texture_format_updated,
 
     )
-    backup_enabled: bpy.props.BoolProperty(
+    backup_enabled: BoolProperty(
         name="Backup enabled",
         description="Enable the backup of the project files before processing",
         default=settings.backup_enabled,
         update=backup_enabled_updated,
     )
-    lat_correction: bpy.props.FloatProperty(
+    lat_correction: FloatProperty(
         name="Latitude correction",
         description="Set the latitude correction for positioning the tiles",
         soft_min=-0.1,
@@ -187,7 +194,7 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         default=float(settings.lat_correction),
         update=lat_correction_updated,
     )
-    lon_correction: bpy.props.FloatProperty(
+    lon_correction: FloatProperty(
         name="Longitude correction",
         description="Set the longitude correction for positioning the tiles",
         soft_min=-0.1,
@@ -197,19 +204,13 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         default=float(settings.lon_correction),
         update=lon_correction_updated,
     )
-    min_size_values: EnumProperty(
-        name="Min size values per lod",
-        description="Set the min size value for each tile lod",
-        items=settings.target_min_size_values,
-        update=min_size_values_updated,
-    )
-    build_package_enabled: bpy.props.BoolProperty(
+    build_package_enabled: BoolProperty(
         name="Build package enabled",
         description="Enable the package compilation when the script has finished",
         default=settings.build_package_enabled,
         update=build_package_enabled_updated,
     )
-    msfs_build_exe_path: bpy.props.StringProperty(
+    msfs_build_exe_path: StringProperty(
         subtype="FILE_PATH",
         name="Path to the MSFS bin exe that builds the MSFS packages",
         description="Select the path to the MSFS bin exe that builds the MSFS packages",
@@ -217,12 +218,12 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         default=settings.msfs_build_exe_path,
         update=msfs_build_exe_path_updated
     )
-    msfs_build_exe_path_readonly: bpy.props.StringProperty(
+    msfs_build_exe_path_readonly: StringProperty(
         name="Path to the MSFS bin exe that builds the MSFS packages",
         description="Select the path to the MSFS bin exe that builds the MSFS packages",
         default=settings.msfs_build_exe_path
     )
-    msfs_steam_version: bpy.props.BoolProperty(
+    msfs_steam_version: BoolProperty(
         name="Msfs Steam version",
         description="Set this to true if you have the MSFS 2020 Steam version",
         default=settings.msfs_steam_version,
@@ -265,6 +266,7 @@ class SettingsOperator(PanelOperator):
     bl_options = {"REGISTER", "UNDO"}
 
     def draw_setting_sections_panel(self):
+        setting_props = context.scene.setting_props
         layout = self.layout
         box = layout.box()
         split = box.split(factor=SPLIT_LABEL_FACTOR, align=True)
@@ -369,15 +371,16 @@ class OT_OptimizeSceneryPanel(SettingsOperator):
         self.__draw_footer(col)
 
     def draw_lods_panel(self, context):
-        setting_props = context.scene.setting_props
         split = super().draw_setting_sections_panel()
         col = super().draw_header(split)
         col.separator()
-        for min_size_value in setting_props.bl_rna.properties["min_size_values"].enum_items:
-            col.column()
-            col.label(text=min_size_value.name)
-            col.label(text=min_size_value.description)
-            col.label(text=str(min_size_value.value))
+
+        for idx, min_size_value in enumerate(settings.target_min_size_values):
+            reverse_idx = (len(settings.target_min_size_values) - 1) - idx
+            cur_lod = MAX_PHOTOGRAMMETRY_LOD - reverse_idx
+            super().draw_splitted_prop(context, col, SPLIT_LABEL_FACTOR, "target_min_size_value_" + str(cur_lod), "Min size values for the lod " + str(cur_lod), slider=True)
+            col.separator()
+
         self.__draw_footer(col)
 
     def draw_msfs_sdk_panel(self, context):
@@ -419,7 +422,6 @@ class OT_OptimizeSceneryPanel(SettingsOperator):
         layout.separator(factor=10.0)
 
     def execute(self, context):
-        optimize_scenery(settings)
         return {'FINISHED'}
 
 
@@ -515,8 +517,6 @@ class OT_InitMsfsSceneryProjectOperator(Operator):
     bl_idname = "wm.init_msfs_scenery_project"
     bl_label = "Initialize a new MSFS project scenery..."
 
-    script_file = "init_msfs_scenery_project.py"
-
     def execute(self, context):
         # clear and open the system console
         open_console()
@@ -527,8 +527,6 @@ class OT_InitMsfsSceneryProjectOperator(Operator):
 class OT_OptimizeMsfsSceneryOperator(Operator):
     bl_idname = "wm.optimize_msfs_scenery"
     bl_label = "Optimize an existing MSFS scenery..."
-
-    script_file = "optimize_scenery.py"
 
     def execute(self, context):
         # clear and open the system console
@@ -554,12 +552,11 @@ bl_info = {
 classes = (
     TOPBAR_MT_google_earth_optimization_menus,
     TOPBAR_MT_google_earth_optimization_menu,
-    SettingsPropertyGroup,
     PanelPropertyGroup,
+    updatedSettingsPropertyGroup,
     OT_ProjectPathOperator,
     OT_ProjectsPathOperator,
     OT_MsfsBuildExePathOperator,
-    # OT_MinSizeValuesOperator,
     OT_InitMsfsSceneryProjectOperator,
     OT_OptimizeMsfsSceneryOperator,
     OT_SaveSettingsOperator,
@@ -570,6 +567,27 @@ classes = (
 
 def register():
     reload_topbar_menu()
+    for idx, min_size_value in enumerate(settings.target_min_size_values):
+        reverse_idx = (len(settings.target_min_size_values) - 1) - idx
+        cur_lod = MAX_PHOTOGRAMMETRY_LOD - reverse_idx
+        SettingsPropertyGroup.__annotations__[TARGET_MIN_SIZE_VALUE_PROPERTY_PREFIX + str(cur_lod)] = (IntProperty, {
+            "name": TARGET_MIN_SIZE_VALUE_PROPERTY_PREFIX + str(cur_lod),
+            "description": "set the min size value for the lod " + str(cur_lod),
+            "default": int(min_size_value),
+            "soft_min": 0,
+            "soft_max": 100,
+            "step": 1,
+            "update": target_min_size_value_updated,
+        })
+
+    data = {
+        'bl_label': "updatedSettingsPropertyGroup",
+        'bl_idname': "wm.updatedSettingsPropertyGroup",
+        '__annotations__': SettingsPropertyGroup.__annotations__
+    }
+
+    updatedSettingsPropertyGroup = type("newSettingsPropertyGroup", (bpy.types.PropertyGroup,), data)
+    bpy.utils.register_class(updatedSettingsPropertyGroup)
 
     for cls in classes:
         try:
@@ -578,7 +596,7 @@ def register():
             pass
 
     try:
-        bpy.types.Scene.setting_props = bpy.props.PointerProperty(type=SettingsPropertyGroup)
+        bpy.types.Scene.setting_props = bpy.props.PointerProperty(type=updatedSettingsPropertyGroup)
         bpy.types.Scene.panel_props = bpy.props.PointerProperty(type=PanelPropertyGroup)
         bpy.types.TOPBAR_MT_editor_menus.append(TOPBAR_MT_google_earth_optimization_menus.draw)
     except AttributeError:

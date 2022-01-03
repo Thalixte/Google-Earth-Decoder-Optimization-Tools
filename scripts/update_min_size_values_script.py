@@ -48,4 +48,5 @@ def update_min_size_values(script_settings):
 #                        Main process
 ##################################################################
 
-update_min_size_values(settings)
+if __name__ == "__main__":
+    update_min_size_values(settings)
