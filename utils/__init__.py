@@ -15,4 +15,6 @@ from .isolated_print import *
 from .json import *
 from .gltf import *
 from .chunks import *
-from .script import*
+from .progress_bar import *
+from .compressonator import *
+from .script import *

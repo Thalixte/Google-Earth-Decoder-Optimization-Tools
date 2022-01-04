@@ -1,2 +1,3 @@
 from .menu import *
-from panel import *
+from .update_methods import *
+from .tools import *

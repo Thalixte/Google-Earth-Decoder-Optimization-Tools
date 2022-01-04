@@ -1,141 +1,20 @@
-# import the bpy module to access blender API
-import os
-
-import bpy
-from bpy import context
+from update_methods import *
+from tools import *
 from bpy.props import IntProperty, StringProperty, EnumProperty, BoolProperty, FloatProperty
 from bpy.types import Menu
 from bpy_extras.io_utils import ImportHelper
 from bpy_types import Operator
 from constants import CLEAR_CONSOLE_CMD, PNG_TEXTURE_FORMAT, JPG_TEXTURE_FORMAT
+from scripts.compress_built_package_script import compress_built_package
 from scripts.init_msfs_scenery_project_script import init_msfs_scenery_project
 from scripts.optimize_scenery_script import optimize_scenery
 from scripts.update_min_size_values_script import update_min_size_values
-from utils import Settings, get_sources_path, open_console
+from utils import open_console
 
-settings = Settings(get_sources_path())
 updatedSettingsPropertyGroup = None
 
-TARGET_MIN_SIZE_VALUE_PROPERTY_PREFIX = "target_min_size_value_"
 SPLIT_LABEL_FACTOR = 0.4
 MAX_PHOTOGRAMMETRY_LOD = 23
-
-
-def reload_topbar_menu():
-    try:
-        if hasattr(bpy.types.TOPBAR_MT_editor_menus.draw, "_draw_funcs"):
-            for f in bpy.types.TOPBAR_MT_editor_menus.draw._draw_funcs:
-                if not repr(f).startswith("<function TOPBAR_MT_editor_menus.draw"):
-                    bpy.types.TOPBAR_MT_editor_menus.draw._draw_funcs.remove(f)
-    except AttributeError:
-        pass
-
-
-def invoke_current_operator():
-    eval("bpy.ops." + context.scene.panel_props.current_operator + "(\"INVOKE_DEFAULT\")")
-
-
-def projects_path_updated(self, context):
-    settings.projects_path = self.projects_path_readonly = self.projects_path
-    panel_props = context.scene.panel_props
-    context.window.cursor_warp(panel_props.first_mouse_x, panel_props.first_mouse_y)
-    invoke_current_operator()
-
-
-def project_path_updated(self, context):
-    settings.projects_path = self.projects_path = os.path.dirname(os.path.dirname(self.project_path)) + os.path.sep
-    settings.project_name = self.project_name = os.path.relpath(self.project_path, start=self.projects_path)
-
-
-def project_name_updated(self, context):
-    settings.project_name = self.project_name
-    settings.project_path = os.path.join(settings.projects_path, settings.project_name)
-
-
-def author_name_updated(self, context):
-    settings.author_name = self.author_name
-
-
-def bake_textures_enabled_updated(self, context):
-    settings.bake_textures_enabled_updated = self.bake_textures_enabled_updated
-
-
-def output_texture_format_updated(self, context):
-    settings.output_texture_format = self.output_texture_format
-
-
-def backup_enabled_updated(self, context):
-    settings.backup_enabled = self.backup_enabled
-
-
-def lat_correction_updated(self, context):
-    settings.lat_correction = "{:.9f}".format(float(str(self.lat_correction))).rstrip("0").rstrip(".")
-
-
-def lon_correction_updated(self, context):
-    settings.lon_correction = "{:.9f}".format(float(str(self.lon_correction))).rstrip("0").rstrip(".")
-
-
-def target_min_size_value_updated(self, context):
-    idx = 0
-    prev_value = -1
-    for name in self.__annotations__.keys():
-        if TARGET_MIN_SIZE_VALUE_PROPERTY_PREFIX in name:
-            cur_value = int(eval("self." + name))
-            cur_value = prev_value if cur_value < prev_value else cur_value
-            self[name] = cur_value
-            settings.target_min_size_values[idx] = str(cur_value)
-            prev_value = int(settings.target_min_size_values[idx])
-            idx = idx+1
-
-
-def build_package_enabled_updated(self, context):
-    settings.build_package_enabled = self.build_package_enabled
-
-
-def msfs_build_exe_path_updated(self, context):
-    settings.msfs_build_exe_path = self.msfs_build_exe_path_readonly = self.msfs_build_exe_path
-    invoke_current_operator()
-
-
-def msfs_steam_version_updated(self, context):
-    settings.msfs_steam_version = self.msfs_steam_version
-
-
-def compressonator_exe_path_updated(self, context):
-    settings.compressonator_exe_path = self.compressonator_exe_path_readonly = self.compressonator_exe_path
-    invoke_current_operator()
-
-
-def python_reload_modules_updated(self, context):
-    settings.reload_modules = self.python_reload_modules
-
-
-def setting_sections_updated(self, context):
-    self.current_section = self.setting_sections
-
-
-class TOPBAR_MT_google_earth_optimization_menus(Menu):
-    os.system(CLEAR_CONSOLE_CMD)
-    bl_idname = "TOPBAR_MT_google_earth_optimization_menus"
-    bl_label = ""
-
-    def draw(self, _context):
-        layout = self.layout
-        layout.menu(TOPBAR_MT_google_earth_optimization_menu.bl_idname)
-
-
-class TOPBAR_MT_google_earth_optimization_menu(Menu):
-    bl_idname = "TOPBAR_MT_google_earth_optimization_menu"
-    bl_label = "Google Earth Optimization Tools"
-
-    def draw(self, context):
-        layout = self.layout
-        layout.operator(OT_InitMsfsSceneryPanel.bl_idname)
-        layout.separator()
-        layout.operator(OT_OptimizeSceneryPanel.bl_idname)
-        layout.separator()
-        layout.operator(OT_UpdateMinSizeValuesPanel.bl_idname)
 
 
 class SettingsPropertyGroup(bpy.types.PropertyGroup):
@@ -271,6 +150,31 @@ class PanelPropertyGroup(bpy.types.PropertyGroup):
     setting_sections: EnumProperty(items=settings.sections, default="PROJECT", update=setting_sections_updated)
 
 
+class TOPBAR_MT_google_earth_optimization_menus(Menu):
+    os.system(CLEAR_CONSOLE_CMD)
+    bl_idname = "TOPBAR_MT_google_earth_optimization_menus"
+    bl_label = ""
+
+    def draw(self, _context):
+        layout = self.layout
+        layout.menu(TOPBAR_MT_google_earth_optimization_menu.bl_idname)
+
+
+class TOPBAR_MT_google_earth_optimization_menu(Menu):
+    bl_idname = "TOPBAR_MT_google_earth_optimization_menu"
+    bl_label = "Google Earth Optimization Tools"
+
+    def draw(self, context):
+        layout = self.layout
+        layout.operator(OT_InitMsfsSceneryPanel.bl_idname)
+        layout.separator()
+        layout.operator(OT_OptimizeSceneryPanel.bl_idname)
+        layout.separator()
+        layout.operator(OT_UpdateMinSizeValuesPanel.bl_idname)
+        layout.separator()
+        layout.operator(OT_CompressBuiltPackagePanel.bl_idname)
+
+
 class PanelOperator(Operator):
     id_name = str()
     previous_operator = str()
@@ -290,7 +194,7 @@ class PanelOperator(Operator):
     def __save_operator_context(self, context, event):
         panel_props = context.scene.panel_props
         panel_props.current_operator = self.id_name
-        panel_props.setting_sections = self.starting_section if panel_props.current_operator != self.previous_operator else panel_props.setting_sections
+        panel_props.setting_sections = self.starting_section if self.starting_section is not str() and panel_props.current_operator is not self.previous_operator else panel_props.setting_sections
         panel_props.current_section = panel_props.setting_sections
         self.previous_operator = panel_props.current_operator
         if panel_props.first_mouse_x == 0 and panel_props.first_mouse_y == 0:
@@ -336,7 +240,7 @@ class SettingsOperator(PanelOperator):
         self.draw_splitted_prop(context, col, SPLIT_LABEL_FACTOR, "output_texture_format", "Output texture format")
         col.separator(factor=3.0)
         self.draw_splitted_prop(context, col, SPLIT_LABEL_FACTOR, "backup_enabled", "Backup enabled")
-        self.__draw_footer(col, self.operator_name)
+        self.draw_footer(self.layout, self.operator_name)
 
     def draw_tile_panel(self, context):
         split = self.draw_setting_sections_panel()
@@ -345,7 +249,7 @@ class SettingsOperator(PanelOperator):
         self.draw_splitted_prop(context, col, SPLIT_LABEL_FACTOR, "lat_correction", "Latitude correction", slider=True)
         col.separator()
         self.draw_splitted_prop(context, col, SPLIT_LABEL_FACTOR, "lon_correction", "Longitude correction", slider=True)
-        self.__draw_footer(col, self.operator_name)
+        self.draw_footer(self.layout, self.operator_name)
 
     def draw_lods_panel(self, context):
         split = self.draw_setting_sections_panel()
@@ -358,7 +262,7 @@ class SettingsOperator(PanelOperator):
             self.draw_splitted_prop(context, col, SPLIT_LABEL_FACTOR, "target_min_size_value_" + str(cur_lod), "Min size values for the lod " + str(cur_lod), slider=True)
             col.separator()
 
-        self.__draw_footer(col, self.operator_name)
+        self.draw_footer(self.layout, self.operator_name)
 
     def draw_msfs_sdk_panel(self, context):
         split = self.draw_setting_sections_panel()
@@ -372,7 +276,7 @@ class SettingsOperator(PanelOperator):
         self.draw_splitted_prop(context, col, SPLIT_LABEL_FACTOR, "build_package_enabled", "Build package enabled")
         col.separator()
         self.draw_splitted_prop(context, col, SPLIT_LABEL_FACTOR, "msfs_steam_version", "Msfs Steam version")
-        self.__draw_footer(col, self.operator_name)
+        self.draw_footer(self.layout, self.operator_name)
 
     def draw_python_panel(self, context):
         split = self.draw_setting_sections_panel()
@@ -380,7 +284,7 @@ class SettingsOperator(PanelOperator):
         col.separator()
         self.draw_splitted_prop(context, col, SPLIT_LABEL_FACTOR, "python_reload_modules", "Reload python modules (for dev purpose)")
         col.separator()
-        self.__draw_footer(col, self.operator_name)
+        self.draw_footer(self.layout, self.operator_name)
 
     def draw_compressonator_panel(self, context):
         split = self.draw_setting_sections_panel()
@@ -390,7 +294,7 @@ class SettingsOperator(PanelOperator):
         row = col.row()
         row.enabled = False
         self.draw_splitted_prop(context, row, SPLIT_LABEL_FACTOR, "compressonator_exe_path_readonly", "Compressonator bin exe path")
-        self.__draw_footer(col, self.operator_name)
+        self.draw_footer(self.layout, self.operator_name)
 
     @staticmethod
     def draw_header(layout):
@@ -417,18 +321,28 @@ class SettingsOperator(PanelOperator):
         col.scale_x = 1.3
         col.scale_y = 1.3
         col.prop(context.scene.panel_props, "setting_sections", expand=True)
+        col.separator(factor=14.0)
 
     @staticmethod
-    def __draw_footer(layout, operator_name):
-        layout.separator(factor=10.0)
-        layout.operator(operator_name)
-        layout.separator(factor=10.0)
+    def draw_footer(layout, operator_name):
+        layout.separator()
+        box = layout.box()
+        box.separator(factor=3.0)
+        col = box.column(align=True)
+        col.scale_x = 2.0
+        col.scale_y = 2.0
+        col.alert = True
+        col.operator(operator_name)
+        col.alert = False
+        box.separator(factor=3.0)
+        layout.separator(factor=3.0)
 
     def execute(self, context):
         return {'FINISHED'}
 
 
 class OT_InitMsfsSceneryPanel(SettingsOperator):
+    operator_name = "wm.init_msfs_scenery_project"
     id_name = "wm.init_msfs_scenery_project_panel"
     bl_idname = id_name
     bl_label = "Initialize a new MSFS project scenery"
@@ -450,10 +364,7 @@ class OT_InitMsfsSceneryPanel(SettingsOperator):
         col.separator()
         col.separator()
         col.separator()
-        col.separator()
-        col.operator(OT_InitMsfsSceneryProjectOperator.bl_idname)
-        col.separator()
-        col.separator()
+        super().draw_footer(col, self.operator_name)
 
 
 class OT_OptimizeSceneryPanel(SettingsOperator):
@@ -463,9 +374,6 @@ class OT_OptimizeSceneryPanel(SettingsOperator):
     bl_label = "Optimize an existing MSFS scenery"
     starting_section = "PROJECT"
 
-    def execute(self, context):
-        return {'FINISHED'}
-
 
 class OT_UpdateMinSizeValuesPanel(SettingsOperator):
     operator_name = "wm.update_min_size_values"
@@ -474,13 +382,13 @@ class OT_UpdateMinSizeValuesPanel(SettingsOperator):
     bl_label = "Update LOD min size values for each tile of the project"
     starting_section = "LODS"
 
-    def invoke(self, context, event):
-        context.scene.panel_props.current_section = "LODS"
-        super().invoke(context, event)
-        return {"RUNNING_MODAL"}
 
-    def execute(self, context):
-        return {'FINISHED'}
+class OT_CompressBuiltPackagePanel(SettingsOperator):
+    operator_name = "wm.compress_built_package"
+    id_name = "wm.compress_built_package_panel"
+    bl_idname = id_name
+    bl_label = "Optimize the built package by compressing the texture files"
+    starting_section = "COMPRESSONATOR"
 
 
 class FileBrowserOperator(Operator, ImportHelper):
@@ -618,6 +526,17 @@ class OT_UpdateMinSizeValuesOperator(Operator):
         return {'FINISHED'}
 
 
+class OT_CompressBuiltPackageOperator(Operator):
+    bl_idname = "wm.compress_built_package"
+    bl_label = "Optimize the built package by compressing the texture files..."
+
+    def execute(self, context):
+        # clear and open the system console
+        open_console()
+        compress_built_package(settings)
+        return {'FINISHED'}
+
+
 class OT_SaveSettingsOperator(Operator):
     bl_idname = "wm.save_settings_operator"
     bl_label = "Save settings..."
@@ -644,10 +563,12 @@ classes = (
     OT_InitMsfsSceneryProjectOperator,
     OT_OptimizeMsfsSceneryOperator,
     OT_UpdateMinSizeValuesOperator,
+    OT_CompressBuiltPackageOperator,
     OT_SaveSettingsOperator,
     OT_InitMsfsSceneryPanel,
     OT_OptimizeSceneryPanel,
     OT_UpdateMinSizeValuesPanel,
+    OT_CompressBuiltPackagePanel,
 )
 
 

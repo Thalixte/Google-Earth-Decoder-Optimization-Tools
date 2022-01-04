@@ -20,6 +20,7 @@ def reload_modules(settings):
 
     print("modules reloaded", EOL)
 
+
 def reload_package(root_module):
     package_name = root_module.__name__
 
