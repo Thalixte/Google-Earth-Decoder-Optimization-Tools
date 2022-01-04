@@ -160,7 +160,7 @@ class MsfsProject:
             collider.update_min_size_values(settings.target_min_size_values, pbar=pbar)
 
     def compress_built_package(self, settings):
-        compressonator = Compressonator(os.path.join(settings.compressonator_folder, COMPRESSONATOR_EXE), self.model_lib_output_folder)
+        compressonator = Compressonator(settings.compressonator_exe_path, self.model_lib_output_folder)
         compressonator.compress_texture_files()
 
     def merge(self, project_to_merge):

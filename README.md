@@ -49,7 +49,6 @@ Change the following settings, according to your project:
 *   **bake_textures_enabled:** tells the script to optimize the textures by baking all the textures corresponding to the min Lod levels of the tiles (default is True). For instance, if you have a gltf file for a tile that is named 30604141705340627_LOD00.gltf, all the texture files corresponding to this tile and this LOD level (all the texture files that start with 30604141705340627_LOD00) will be baked into one single texture
 *   **projects_folder:** the parent folder that contains your sceneries
 *   **project_name:** the name of your project
-*   **node_js_folder:** the folder that contains the node js script that retrieves the Google Earth coords
 *   **fspackagetool_folder:** the folder that contains the fspackagetool exe that builds the MSFS packages
 *   **target_lods**: an array representing the minsize values per LOD, starting from a minLod of 17 (from the less detailed lod to the most detailed)
 *   **project_file_name**: the name of the xml file that embeds the project definition (by default, project_name.xml or author_name+project_name.xml)
@@ -99,7 +98,6 @@ Change the following settings, according to your project:
 
 *   **projects_folder:** the parent folder that contains your sceneries
 *   **project_name:** the name of your project
-*   **node_js_folder**: the folder that contains the node js script that retrieves the Google Earth coords
 *   **fspackagetool_folder**: the folder that contains the fspackagetool exe that builds the MSFS packages
 *   **project_file_name**: the name of the xml file that embeds the project definition (by default, project_name.xml or author_name+project_name.xml)
 *   **scene_file_name**: the name of the xml file that embeds the tile descriptions (by default, objects.xml)

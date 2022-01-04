@@ -11,17 +11,18 @@ class Settings:
     project_name: str
     project_name_to_merge: str
     author_name: str
-    node_js_folder: str
     msfs_build_exe_path: str
     backup_enabled: str
     bake_textures_enabled: str
     msfs_steam_version: str
     build_package_enabled: str
+    reload_modules = str
     sources_path: str
     target_min_size_values: list
     output_texture_format: str
     lat_correction: float
     lon_correction: float
+    compressonator_exe_path = str
     sections = list
 
     def __init__(self, sources_path=str()):
@@ -30,7 +31,6 @@ class Settings:
         self.project_name = str()
         self.project_name_to_merge = str()
         self.author_name = str()
-        self.node_js_folder = str()
         self.msfs_build_exe_path = str()
         self.backup_enabled = "False"
         self.bake_textures_enabled = "False"
@@ -42,6 +42,7 @@ class Settings:
         self.output_texture_format = PNG_TEXTURE_FORMAT
         self.lat_correction = 0.0
         self.lon_correction = 0.0
+        self.compressonator_exe_path = str()
         self.sections = []
 
         config = cp.ConfigParser()

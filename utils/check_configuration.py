@@ -94,11 +94,11 @@ def check_configuration(settings, msfs_project, check_lily_texture_packer=False,
 
     if check_compressonator:
         # check if the compressonatorcli.exe file is reachable
-        if not os.path.isfile(os.path.join(settings.compressonator_folder, COMPRESSONATOR_EXE)):
-            pr_ko_red(str("compressonator_folder value").ljust(RESULT_MSG_LENGTH))
-            raise ScriptError(error_msg + COMPRESSONATOR_EXE + "file was not found in " + msfs_project.compressonator_folder + ". Please check the compressonator_folder value or install compressonator")
+        if not os.path.isfile(settings.compressonator_exe_path):
+            pr_ko_red(str("compressonator_exe_path value").ljust(RESULT_MSG_LENGTH))
+            raise ScriptError(error_msg + settings.compressonator_exe_path + "file was not found. Please check the compressonator_exe_path value or install compressonator")
         else:
-            pr_ok_green(str("compressonator_folder value").ljust(RESULT_MSG_LENGTH))
+            pr_ok_green(str("compressonator_exe_path value").ljust(RESULT_MSG_LENGTH))
 
 
 def check_lily_texture_packer_availability(settings, warning_msg=str()):
