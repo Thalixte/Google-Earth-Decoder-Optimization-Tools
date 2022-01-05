@@ -300,8 +300,9 @@ class SettingsOperator(PanelOperator):
     def draw_header(layout):
         col = layout.column()
         header_box = col.box()
-        header_split = header_box.split(factor=0.8, align=True)
-        header_split.column()
+        header_split = header_box.split(factor=0.75, align=True)
+        header_col = header_split.split(factor=0.3, align=True)
+        header_col.operator(OT_ReloadSettingsOperator.bl_idname)
         header_col = header_split.column()
         header_col.operator(OT_SaveSettingsOperator.bl_idname)
         col.separator()
@@ -537,6 +538,15 @@ class OT_CompressBuiltPackageOperator(Operator):
         return {'FINISHED'}
 
 
+class OT_ReloadSettingsOperator(Operator):
+    bl_idname = "wm.reload_settings_operator"
+    bl_label = "Reload settings..."
+
+    def execute(self, context):
+        reload_setting_props()
+        return {'FINISHED'}
+
+
 class OT_SaveSettingsOperator(Operator):
     bl_idname = "wm.save_settings_operator"
     bl_label = "Save settings..."
@@ -565,6 +575,7 @@ classes = (
     OT_UpdateMinSizeValuesOperator,
     OT_CompressBuiltPackageOperator,
     OT_SaveSettingsOperator,
+    OT_ReloadSettingsOperator,
     OT_InitMsfsSceneryPanel,
     OT_OptimizeSceneryPanel,
     OT_UpdateMinSizeValuesPanel,
