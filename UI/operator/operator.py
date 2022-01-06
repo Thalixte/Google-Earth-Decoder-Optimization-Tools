@@ -4,6 +4,7 @@ from scripts.init_msfs_scenery_project_script import init_msfs_scenery_project
 from scripts.optimize_scenery_script import optimize_scenery
 from scripts.update_min_size_values_script import update_min_size_values
 from scripts.compress_built_package_script import compress_built_package
+from scripts.update_tiles_position_script import update_tiles_position
 from utils import open_console, Settings
 from .tools import reload_current_operator, reload_setting_props
 from bpy_extras.io_utils import ImportHelper
@@ -148,6 +149,17 @@ class OT_UpdateMinSizeValuesOperator(Operator):
         # clear and open the system console
         open_console()
         update_min_size_values(context.scene.settings)
+        return {'FINISHED'}
+
+
+class OT_UpdateTilesPositionOperator(Operator):
+    bl_idname = "wm.update_tiles_position"
+    bl_label = "Update the position of the MSFS scenery tiles..."
+
+    def execute(self, context):
+        # clear and open the system console
+        open_console()
+        update_tiles_position(context.scene.settings)
         return {'FINISHED'}
 
 

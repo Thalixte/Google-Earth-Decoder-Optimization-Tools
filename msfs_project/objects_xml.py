@@ -50,7 +50,7 @@ class ObjectsXml(Xml):
             self.__update_scenery_object_pos(tile, self.find_scenery_objects(guid), settings)
             self.__update_scenery_object_pos(tile, self.find_scenery_objects_in_group(guid), settings)
 
-            pbar.update("%s" % tile.name + " : new lat: " + str(tile.pos.lat + settings.lat_correction) + " : new lon: " + str(tile.pos.lon + settings.lon_correction))
+            pbar.update("%s" % tile.name + " : new lat: " + str(tile.pos.lat + float(settings.lat_correction)) + " : new lon: " + str(tile.pos.lon + float(settings.lon_correction)))
 
     def __update_colliders_pos(self, msfs_project, settings):
         if not msfs_project.colliders.items():
@@ -61,12 +61,12 @@ class ObjectsXml(Xml):
             self.__update_scenery_object_pos(collider, self.find_scenery_objects(guid), settings)
             self.__update_scenery_object_pos(collider, self.find_scenery_objects_in_group(guid), settings)
 
-            pbar.update("%s" % collider.name + " : new lat: " + str(collider.pos.lat + settings.lat_correction) + " : new lon: " + str(collider.pos.lon + settings.lon_correction))
+            pbar.update("%s" % collider.name + " : new lat: " + str(collider.pos.lat + float(settings.lat_correction)) + " : new lon: " + str(collider.pos.lon + float(settings.lon_correction)))
 
     @staticmethod
     def __update_scenery_object_pos(tile, found_scenery_objects, settings):
         for scenery_object in found_scenery_objects:
-            new_lat = tile.pos.lat + settings.lat_correction
-            new_lon = tile.pos.lon + settings.lon_correction
+            new_lat = tile.pos.lat + float(settings.lat_correction)
+            new_lon = tile.pos.lon + float(settings.lon_correction)
             scenery_object.set("lat", str(new_lat))
             scenery_object.set("lon", str(new_lon))

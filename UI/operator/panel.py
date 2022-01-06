@@ -207,6 +207,14 @@ class OT_OptimizeSceneryPanel(SettingsOperator):
     starting_section = "PROJECT"
 
 
+class OT_UpdateTilesPositionPanel(SettingsOperator):
+    operator_name = "wm.update_tiles_position"
+    id_name = "wm.update_tiles_position_panel"
+    bl_idname = id_name
+    bl_label = "Update the position of the MSFS scenery tiles"
+    starting_section = "TILE"
+
+
 class OT_UpdateMinSizeValuesPanel(SettingsOperator):
     operator_name = "wm.update_min_size_values"
     id_name = "wm.update_min_size_values_panel"
