@@ -1,15 +1,18 @@
 from bpy_types import Operator
 from constants import MAX_PHOTOGRAMMETRY_LOD
+from utils import isolated_print
 from .operator import OT_ProjectPathOperator, OT_MsfsBuildExePathOperator, OT_CompressonatorExePathOperator, OT_ReloadSettingsOperator, \
                         OT_SaveSettingsOperator, OT_ProjectsPathOperator
 
 
 class PanelOperator(Operator):
     id_name = str()
-    previous_section = str()
     starting_section = str()
 
     SPLIT_LABEL_FACTOR = 0.4
+
+    def test(self):
+        isolated_print("test_called")
 
     def check(self, context):
         return True
@@ -24,14 +27,15 @@ class PanelOperator(Operator):
 
     def __save_operator_context(self, context, event):
         panel_props = context.scene.panel_props
-        panel_props.current_operator = self.id_name
-        panel_props.setting_sections = self.starting_section if self.starting_section is not str() and self.previous_section is str() else panel_props.setting_sections
-        self.previous_section = panel_props.current_section
-        panel_props.current_section = panel_props.setting_sections
-        if panel_props.first_mouse_x < 0 and panel_props.first_mouse_y < 0:
-            panel_props.first_mouse_x = event.mouse_x
-            panel_props.first_mouse_y = event.mouse_y
-            # context.window.cursor_warp(context.window.width / 2, (context.window.height / 2) + 60)
+        if panel_props.invocation_type != "INVOKE_SCREEN":
+            panel_props.current_operator = self.id_name
+            panel_props.setting_sections = self.starting_section
+            panel_props.current_section = panel_props.setting_sections
+            if panel_props.first_mouse_x < 0 and panel_props.first_mouse_y < 0:
+                panel_props.first_mouse_x = event.mouse_x
+                panel_props.first_mouse_y = event.mouse_y
+                # context.window.cursor_warp(context.window.width / 2, (context.window.height / 2) + 60)
+        panel_props.invocation_type = "INVOKE_DEFAULT"
         context.window_manager.invoke_props_dialog(self, width=1024)
 
 

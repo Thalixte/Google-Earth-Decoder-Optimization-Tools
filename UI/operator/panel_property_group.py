@@ -13,6 +13,9 @@ class PanelPropertyGroup(bpy.types.PropertyGroup):
     current_section: StringProperty(
         default=str()
     )
+    invocation_type: StringProperty(
+        default=str()
+    )
     first_mouse_x: IntProperty(
         default=-1
     )

@@ -18,11 +18,12 @@ def reload_topbar_menu():
 def reload_current_operator(context):
     panel_props = context.scene.panel_props
     context.window.cursor_warp(panel_props.first_mouse_x, panel_props.first_mouse_y)
-    invoke_current_operator(context)
+    panel_props.invocation_type = "INVOKE_SCREEN"
+    invoke_current_operator(context, panel_props.invocation_type)
 
 
-def invoke_current_operator(context):
-    eval("bpy.ops." + context.scene.panel_props.current_operator + "(\"INVOKE_DEFAULT\")")
+def invoke_current_operator(context, invocation_type):
+    eval("bpy.ops." + context.scene.panel_props.current_operator + "(\"" + invocation_type + "\")")
 
 
 def reload_project_path(operator, context):
