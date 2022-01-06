@@ -1,6 +1,5 @@
 from bpy_types import Operator
 from constants import MAX_PHOTOGRAMMETRY_LOD
-from utils import isolated_print
 from .operator import OT_ProjectPathOperator, OT_MsfsBuildExePathOperator, OT_CompressonatorExePathOperator, OT_ReloadSettingsOperator, \
                         OT_SaveSettingsOperator, OT_ProjectsPathOperator
 
@@ -10,9 +9,6 @@ class PanelOperator(Operator):
     starting_section = str()
 
     SPLIT_LABEL_FACTOR = 0.4
-
-    def test(self):
-        isolated_print("test_called")
 
     def check(self, context):
         return True
