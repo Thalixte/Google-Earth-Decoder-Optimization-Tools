@@ -1,5 +1,6 @@
 import bpy
 from bpy.types import Menu
+from constants import CLEAR_CONSOLE_CMD
 from utils import Settings, get_sources_path
 
 updatedSettingsPropertyGroup = None
