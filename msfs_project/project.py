@@ -117,7 +117,6 @@ class MsfsProject:
         self.update_min_size_values(settings)
         # some tile lods are not optimized
         if self.__optimization_needed():
-            print_title("OPTIMIZE THE TILES")
             self.__create_optimization_folders()
             self.__optimize_tile_lods(self.__retrieve_lods_to_optimize())
 
@@ -402,7 +401,7 @@ class MsfsProject:
         for parent_tile, tiles in link_tiles_by_position.items():
             parent_tile.create_optimization_folders(tiles, dry_mode=True, pbar=pbar)
         if pbar.range > 0:
-            isolated_print("Create optimization folders")
+            pbar.display_title("Create optimization folders")
             for parent_tile, tiles in link_tiles_by_position.items():
                 parent_tile.create_optimization_folders(tiles, dry_mode=False, pbar=pbar)
 
