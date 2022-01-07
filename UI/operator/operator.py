@@ -5,7 +5,7 @@ from scripts.optimize_scenery_script import optimize_scenery
 from scripts.update_min_size_values_script import update_min_size_values
 from scripts.compress_built_package_script import compress_built_package
 from scripts.update_tiles_position_script import update_tiles_position
-from utils import open_console, Settings
+from utils import open_console
 from .tools import reload_current_operator, reload_setting_props
 from bpy_extras.io_utils import ImportHelper
 from bpy_types import Operator
@@ -141,17 +141,6 @@ class OT_OptimizeMsfsSceneryOperator(Operator):
         return {'FINISHED'}
 
 
-class OT_UpdateMinSizeValuesOperator(Operator):
-    bl_idname = "wm.update_min_size_values"
-    bl_label = "Update LOD min size values for each tile of the project..."
-
-    def execute(self, context):
-        # clear and open the system console
-        open_console()
-        update_min_size_values(context.scene.settings)
-        return {'FINISHED'}
-
-
 class OT_UpdateTilesPositionOperator(Operator):
     bl_idname = "wm.update_tiles_position"
     bl_label = "Update the position of the MSFS scenery tiles..."
@@ -160,6 +149,17 @@ class OT_UpdateTilesPositionOperator(Operator):
         # clear and open the system console
         open_console()
         update_tiles_position(context.scene.settings)
+        return {'FINISHED'}
+
+
+class OT_UpdateMinSizeValuesOperator(Operator):
+    bl_idname = "wm.update_min_size_values"
+    bl_label = "Update LOD min size values for each tile of the project..."
+
+    def execute(self, context):
+        # clear and open the system console
+        open_console()
+        update_min_size_values(context.scene.settings)
         return {'FINISHED'}
 
 
@@ -179,10 +179,7 @@ class OT_ReloadSettingsOperator(Operator):
     bl_label = "Reload settings..."
 
     def execute(self, context):
-        sources_path = context.scene.settings.sources_path
-        del bpy.types.Scene.settings
-        bpy.types.Scene.settings = Settings(sources_path)
-        reload_setting_props(context.scene.setting_props, context)
+        reload_setting_props(context)
         return {'FINISHED'}
 
 

@@ -1,7 +1,8 @@
 from bpy_types import Operator
-from constants import MAX_PHOTOGRAMMETRY_LOD
+from constants import MAX_PHOTOGRAMMETRY_LOD, PROJECT_INI_SECTION, TILE_INI_SECTION, LODS_INI_SECTION, COMPRESSONATOR_INI_SECTION, MSFS_SDK_INI_SECTION
 from .operator import OT_ProjectPathOperator, OT_MsfsBuildExePathOperator, OT_CompressonatorExePathOperator, OT_ReloadSettingsOperator, \
                         OT_SaveSettingsOperator, OT_ProjectsPathOperator
+from .tools import reload_setting_props
 
 
 class PanelOperator(Operator):
@@ -24,6 +25,8 @@ class PanelOperator(Operator):
     def __save_operator_context(self, context, event):
         panel_props = context.scene.panel_props
         if panel_props.invocation_type != "INVOKE_SCREEN":
+            reload_setting_props(context)
+            panel_props.current_operator_class_name = type(self).__name__
             panel_props.current_operator = self.id_name
             panel_props.setting_sections = self.starting_section
             panel_props.current_section = panel_props.setting_sections
@@ -71,6 +74,12 @@ class SettingsOperator(PanelOperator):
         self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "output_texture_format", "Output texture format")
         col.separator(factor=3.0)
         self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "backup_enabled", "Backup enabled")
+        self.draw_footer(self.layout, self.operator_name)
+
+    def draw_merge_panel(self, context):
+        split = self.draw_setting_sections_panel(context)
+        col = self.draw_header(split)
+        col.separator()
         self.draw_footer(self.layout, self.operator_name)
 
     def draw_tile_panel(self, context):
@@ -178,6 +187,10 @@ class OT_InitMsfsSceneryPanel(SettingsOperator):
     id_name = "wm.init_msfs_scenery_project_panel"
     bl_idname = id_name
     bl_label = "Initialize a new MSFS project scenery"
+    starting_section = PROJECT_INI_SECTION
+    displayed_sections = [
+        PROJECT_INI_SECTION,
+    ]
 
     def draw(self, context):
         layout = self.layout
@@ -204,7 +217,13 @@ class OT_OptimizeSceneryPanel(SettingsOperator):
     id_name = "wm.optimize_scenery_panel"
     bl_idname = id_name
     bl_label = "Optimize an existing MSFS scenery"
-    starting_section = "PROJECT"
+    starting_section = PROJECT_INI_SECTION
+    displayed_sections = [
+        PROJECT_INI_SECTION,
+        TILE_INI_SECTION,
+        LODS_INI_SECTION,
+        MSFS_SDK_INI_SECTION,
+    ]
 
 
 class OT_UpdateTilesPositionPanel(SettingsOperator):
@@ -212,7 +231,12 @@ class OT_UpdateTilesPositionPanel(SettingsOperator):
     id_name = "wm.update_tiles_position_panel"
     bl_idname = id_name
     bl_label = "Update the position of the MSFS scenery tiles"
-    starting_section = "TILE"
+    starting_section = TILE_INI_SECTION
+    displayed_sections = [
+        PROJECT_INI_SECTION,
+        TILE_INI_SECTION,
+        MSFS_SDK_INI_SECTION,
+    ]
 
 
 class OT_UpdateMinSizeValuesPanel(SettingsOperator):
@@ -220,7 +244,12 @@ class OT_UpdateMinSizeValuesPanel(SettingsOperator):
     id_name = "wm.update_min_size_values_panel"
     bl_idname = id_name
     bl_label = "Update LOD min size values for each tile of the project"
-    starting_section = "LODS"
+    starting_section = LODS_INI_SECTION
+    displayed_sections = [
+        PROJECT_INI_SECTION,
+        LODS_INI_SECTION,
+        MSFS_SDK_INI_SECTION,
+    ]
 
 
 class OT_CompressBuiltPackagePanel(SettingsOperator):
@@ -228,4 +257,8 @@ class OT_CompressBuiltPackagePanel(SettingsOperator):
     id_name = "wm.compress_built_package_panel"
     bl_idname = id_name
     bl_label = "Optimize the built package by compressing the texture files"
-    starting_section = "COMPRESSONATOR"
+    starting_section = COMPRESSONATOR_INI_SECTION
+    displayed_sections = [
+        PROJECT_INI_SECTION,
+        COMPRESSONATOR_INI_SECTION,
+    ]

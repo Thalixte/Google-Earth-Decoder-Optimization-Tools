@@ -1,8 +1,5 @@
 import bpy
-from bpy import context
-from bpy.props import IntProperty
 from bpy.types import Menu
-from constants import CLEAR_CONSOLE_CMD, MAX_PHOTOGRAMMETRY_LOD
 from utils import Settings, get_sources_path
 
 updatedSettingsPropertyGroup = None
@@ -10,7 +7,7 @@ updatedSettingsPropertyGroup = None
 bpy.types.Scene.settings = Settings(get_sources_path())
 
 from .operator.tools import *
-from .operator import SettingsPropertyGroup, PanelPropertyGroup, OT_ProjectPathOperator, OT_ProjectsPathOperator, OT_MsfsBuildExePathOperator, \
+from .operator import PanelPropertyGroup, OT_ProjectPathOperator, OT_ProjectsPathOperator, OT_MsfsBuildExePathOperator, \
     OT_CompressonatorExePathOperator, OT_InitMsfsSceneryProjectOperator, OT_OptimizeMsfsSceneryOperator, OT_UpdateTilesPositionOperator, \
     OT_UpdateMinSizeValuesOperator, OT_CompressBuiltPackageOperator, OT_SaveSettingsOperator, OT_ReloadSettingsOperator, OT_InitMsfsSceneryPanel, \
     OT_OptimizeSceneryPanel, OT_UpdateTilesPositionPanel, OT_UpdateMinSizeValuesPanel, OT_CompressBuiltPackagePanel
@@ -75,28 +72,6 @@ classes = (
 def register():
     reload_topbar_menu()
 
-    for idx, min_size_value in enumerate(context.scene.settings.target_min_size_values):
-        reverse_idx = (len(context.scene.settings.target_min_size_values) - 1) - idx
-        cur_lod = MAX_PHOTOGRAMMETRY_LOD - reverse_idx
-        SettingsPropertyGroup.__annotations__[TARGET_MIN_SIZE_VALUE_PROPERTY_PREFIX + str(cur_lod)] = (IntProperty, {
-            "name": TARGET_MIN_SIZE_VALUE_PROPERTY_PREFIX + str(cur_lod),
-            "description": "set the min size value for the lod " + str(cur_lod),
-            "default": int(min_size_value),
-            "soft_min": 0,
-            "soft_max": 100,
-            "step": 1,
-            "update": SettingsPropertyGroup.target_min_size_value_updated,
-        })
-
-    data = {
-        'bl_label': "updatedSettingsPropertyGroup",
-        'bl_idname': "wm.updatedSettingsPropertyGroup",
-        '__annotations__': SettingsPropertyGroup.__annotations__
-    }
-
-    updatedSettingsPropertyGroup = type("newSettingsPropertyGroup", (bpy.types.PropertyGroup,), data)
-    bpy.utils.register_class(updatedSettingsPropertyGroup)
-
     for cls in classes:
         try:
             bpy.utils.register_class(cls)
@@ -104,7 +79,6 @@ def register():
             pass
 
     try:
-        bpy.types.Scene.setting_props = bpy.props.PointerProperty(type=updatedSettingsPropertyGroup)
         bpy.types.Scene.panel_props = bpy.props.PointerProperty(type=PanelPropertyGroup)
         bpy.types.TOPBAR_MT_editor_menus.append(TOPBAR_MT_google_earth_optimization_menus.draw)
     except AttributeError:

@@ -2,7 +2,7 @@ import os
 
 import bpy
 from bpy.props import StringProperty, BoolProperty, EnumProperty, FloatProperty
-from constants import TARGET_MIN_SIZE_VALUE_PROPERTY_PREFIX, PNG_TEXTURE_FORMAT, JPG_TEXTURE_FORMAT
+from constants import TARGET_MIN_SIZE_VALUE_PROPERTY_PREFIX, PNG_TEXTURE_FORMAT, JPG_TEXTURE_FORMAT, MAX_PHOTOGRAMMETRY_LOD
 
 
 class SettingsPropertyGroup(bpy.types.PropertyGroup):
@@ -37,16 +37,16 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         context.scene.settings.lon_correction = "{:.9f}".format(float(str(self.lon_correction))).rstrip("0").rstrip(".")
 
     def target_min_size_value_updated(self, context):
-        idx = 0
         prev_value = -1
-        for name in self.__annotations__.keys():
-            if TARGET_MIN_SIZE_VALUE_PROPERTY_PREFIX in name:
-                cur_value = int(eval("self." + name))
-                cur_value = prev_value if cur_value < prev_value else cur_value
-                self[name] = cur_value
-                context.scene.settings.target_min_size_values[idx] = str(cur_value)
-                prev_value = int(context.scene.settings.target_min_size_values[idx])
-                idx = idx + 1
+        for idx, min_size_value in enumerate(bpy.types.Scene.settings.target_min_size_values):
+            reverse_idx = (len(bpy.types.Scene.settings.target_min_size_values) - 1) - idx
+            cur_lod = MAX_PHOTOGRAMMETRY_LOD - reverse_idx
+            name = TARGET_MIN_SIZE_VALUE_PROPERTY_PREFIX + str(cur_lod)
+            cur_value = int(eval("self." + name))
+            cur_value = prev_value if cur_value < prev_value else cur_value
+            self[name] = cur_value
+            context.scene.settings.target_min_size_values[idx] = str(cur_value)
+            prev_value = int(context.scene.settings.target_min_size_values[idx])
 
     def build_package_enabled_updated(self, context):
         context.scene.settings.build_package_enabled = self.build_package_enabled

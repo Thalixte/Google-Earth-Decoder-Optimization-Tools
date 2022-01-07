@@ -91,7 +91,7 @@ class Settings:
 
         config.set("LODS", "target_min_size_values", ", ".join(self.target_min_size_values))
 
-        with open(os.path.join(self.sources_path, INI_FILE), "w") as configfile:
+        with open(os.path.join(self.sources_path, INI_FILE), "w", encoding=ENCODING) as configfile:
             config.write(configfile)
 
     def __setattr__(self, attr, value):
