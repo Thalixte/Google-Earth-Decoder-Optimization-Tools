@@ -438,7 +438,7 @@ class MsfsProject:
                 si.dwFlags = subprocess.STARTF_USESTDHANDLES | subprocess.HIGH_PRIORITY_CLASS
 
                 processes = [subprocess.Popen([str(bpy.app.binary_path), "--background", "--python", os.path.join(os.path.dirname(os.path.dirname(__file__)), "optimize_tile_lod.py"), "--", "--path", obj['path'], "--model_file", obj['model_file']],
-                                              stdout=output_fd, stderr=subprocess.DEVNULL, close_fds=ON_POSIX, startupinfo=si, encoding="UTF-8") for obj in chunck]
+                                              stdout=output_fd, stderr=subprocess.DEVNULL, close_fds=ON_POSIX, startupinfo=si, encoding=ENCODING) for obj in chunck]
 
                 os.close(output_fd)  # close unused end of the pipe
 

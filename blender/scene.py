@@ -145,12 +145,16 @@ def link_materials_to_packed_texture(objects, folder, file_name):
     pbar = ProgressBar(bpy.context.scene.objects)
     for obj in pbar.iterable:
         material = obj.material_slots[0].material
-        material.msfs_show_road_material = True
-        material.msfs_show_collision_material = True
-        material.msfs_show_day_night_cycle = True
-        material.msfs_road_material = True
-        material.msfs_collision_material = True
-        material.msfs_day_night_cycle = True
+
+        try:
+            material.msfs_show_road_material = True
+            material.msfs_show_collision_material = True
+            material.msfs_show_day_night_cycle = True
+            material.msfs_road_material = True
+            material.msfs_collision_material = True
+            material.msfs_day_night_cycle = True
+        except AttributeError:
+            pass
 
         source_image_nodes = [get_image_node(obj) for obj in objects]
         pbar.update("link packed texture to %s" % obj.name)
