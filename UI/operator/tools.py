@@ -36,6 +36,10 @@ def reload_project_name(context):
     context.scene.setting_props.project_name = context.scene.settings.project_name
 
 
+def reload_project_path_to_merge(context):
+    context.scene.setting_props.project_path_to_merge = context.scene.settings.project_path_to_merge + os.path.sep
+
+
 def reload_author_name(context):
     context.scene.setting_props.author_name = context.scene.settings.author_name
 
@@ -126,6 +130,7 @@ def reload_setting_props(context):
 
     reload_project_path(context)
     reload_project_name(context)
+    reload_project_path_to_merge(context)
     reload_author_name(context)
     reload_bake_textures_enabled(context)
     reload_output_texture_format(context)

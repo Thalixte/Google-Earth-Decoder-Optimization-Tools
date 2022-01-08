@@ -9,7 +9,7 @@ class Settings:
     sources_path: str
     projects_path: str
     project_name: str
-    project_name_to_merge: str
+    project_path_to_merge: str
     author_name: str
     msfs_build_exe_path: str
     backup_enabled: str
@@ -29,7 +29,7 @@ class Settings:
         self.sources_path = sources_path
         self.projects_path = str()
         self.project_name = str()
-        self.project_name_to_merge = str()
+        self.project_path_to_merge = str()
         self.author_name = str()
         self.msfs_build_exe_path = str()
         self.backup_enabled = "False"

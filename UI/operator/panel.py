@@ -1,7 +1,7 @@
 from bpy_types import Operator
-from constants import MAX_PHOTOGRAMMETRY_LOD, PROJECT_INI_SECTION, TILE_INI_SECTION, LODS_INI_SECTION, COMPRESSONATOR_INI_SECTION, MSFS_SDK_INI_SECTION
+from constants import MAX_PHOTOGRAMMETRY_LOD, PROJECT_INI_SECTION, TILE_INI_SECTION, LODS_INI_SECTION, COMPRESSONATOR_INI_SECTION, MSFS_SDK_INI_SECTION, MERGE_INI_SECTION
 from .operator import OT_ProjectPathOperator, OT_MsfsBuildExePathOperator, OT_CompressonatorExePathOperator, OT_ReloadSettingsOperator, \
-                        OT_SaveSettingsOperator, OT_ProjectsPathOperator
+    OT_SaveSettingsOperator, OT_ProjectsPathOperator, OT_ProjectPathToMergeOperator
 from .tools import reload_setting_props
 
 
@@ -59,16 +59,13 @@ class SettingsOperator(PanelOperator):
         col = self.draw_header(split)
         col.separator()
         col.operator(OT_ProjectPathOperator.bl_idname)
-        row = col.row()
-        row.enabled = False
-        self.draw_splitted_prop(context, row, self.SPLIT_LABEL_FACTOR, "projects_path_readonly", "Path of the project")
         col.separator()
-        col.separator()
-        row = col.row()
-        row.enabled = False
-        self.draw_splitted_prop(context, row, self.SPLIT_LABEL_FACTOR, "project_name", "Project name")
-        col.separator()
-        col.separator()
+        self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "projects_path_readonly", "Path of the project", enabled=False)
+        col.separator(factor=2.0)
+        self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "project_name", "Project name", enabled=False)
+        col.separator(factor=2.0)
+        self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "author_name", "Author of the project")
+        col.separator(factor=2.0)
         self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "bake_textures_enabled", "Bake textures enabled")
         col.separator()
         self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "output_texture_format", "Output texture format")
@@ -79,6 +76,13 @@ class SettingsOperator(PanelOperator):
     def draw_merge_panel(self, context):
         split = self.draw_setting_sections_panel(context)
         col = self.draw_header(split)
+        col.separator()
+        self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "project_path_readonly", "Path of the final msfs scenery project", enabled=False)
+        col.separator()
+        col.separator(factor=3.0)
+        col.operator(OT_ProjectPathToMergeOperator.bl_idname)
+        col.separator()
+        self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "project_path_to_merge_readonly", "Path of the project to merge into the final one", enabled=False)
         col.separator()
         self.draw_footer(self.layout, self.operator_name)
 
@@ -109,9 +113,8 @@ class SettingsOperator(PanelOperator):
         col = self.draw_header(split)
         col.separator()
         col.operator(OT_MsfsBuildExePathOperator.bl_idname)
-        row = col.row()
-        row.enabled = False
-        self.draw_splitted_prop(context, row, self.SPLIT_LABEL_FACTOR, "msfs_build_exe_path_readonly", "MSFS build exe path")
+        col.separator()
+        self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "msfs_build_exe_path_readonly", "MSFS build exe path", enabled=False)
         col.separator()
         self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "build_package_enabled", "Build package enabled")
         col.separator()
@@ -131,9 +134,8 @@ class SettingsOperator(PanelOperator):
         col = self.draw_header(split)
         col.separator()
         col.operator(OT_CompressonatorExePathOperator.bl_idname)
-        row = col.row()
-        row.enabled = False
-        self.draw_splitted_prop(context, row, self.SPLIT_LABEL_FACTOR, "compressonator_exe_path_readonly", "Compressonator bin exe path")
+        col.separator()
+        self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "compressonator_exe_path_readonly", "Compressonator bin exe path", enabled=False)
         self.draw_footer(self.layout, self.operator_name)
 
     @staticmethod
@@ -150,10 +152,13 @@ class SettingsOperator(PanelOperator):
         return box.column(align=True)
 
     @staticmethod
-    def draw_splitted_prop(context, layout, split_factor, property_key, property_name, slider=False):
+    def draw_splitted_prop(context, layout, split_factor, property_key, property_name, slider=False, enabled=True):
         split = layout.split(factor=split_factor, align=True)
         split.label(text=property_name)
-        split.prop(context.scene.setting_props, property_key, slider=slider, text=str())
+        col = split.column(align=True)
+        if not enabled:
+            col.enabled = False
+        col.prop(context.scene.setting_props, property_key, slider=slider, text=str())
 
     @staticmethod
     def display_config_sections(context, layout):
@@ -194,18 +199,15 @@ class OT_InitMsfsSceneryPanel(SettingsOperator):
 
     def draw(self, context):
         layout = self.layout
-        setting_props = context.scene.setting_props
         box = layout.box()
         col = box.column()
         col.operator(OT_ProjectsPathOperator.bl_idname)
-        row = col.row()
-        row.enabled = False
-        row.prop(setting_props, "projects_path_readonly")
         col.separator()
+        self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "projects_path_readonly", "Path of the project", enabled=False)
         col.separator()
-        col.prop(setting_props, "project_name")
+        self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "project_name", "Name of the project to initialize")
         col.separator()
-        col.prop(setting_props, "author_name")
+        self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "author_name", "Author of the project")
         col.separator()
         col.separator()
         col.separator()
@@ -216,12 +218,25 @@ class OT_OptimizeSceneryPanel(SettingsOperator):
     operator_name = "wm.optimize_msfs_scenery"
     id_name = "wm.optimize_scenery_panel"
     bl_idname = id_name
-    bl_label = "Optimize an existing MSFS scenery"
+    bl_label = "Optimize an existing MSFS scenery project"
     starting_section = PROJECT_INI_SECTION
     displayed_sections = [
         PROJECT_INI_SECTION,
         TILE_INI_SECTION,
         LODS_INI_SECTION,
+        MSFS_SDK_INI_SECTION,
+    ]
+
+
+class OT_MergeSceneriesPanel(SettingsOperator):
+    operator_name = "wm.merge_sceneries"
+    id_name = "wm.merge_sceneries_panel"
+    bl_idname = id_name
+    bl_label = "Merge an existing MSFS scenery project into another one"
+    starting_section = MERGE_INI_SECTION
+    displayed_sections = [
+        PROJECT_INI_SECTION,
+        MERGE_INI_SECTION,
         MSFS_SDK_INI_SECTION,
     ]
 

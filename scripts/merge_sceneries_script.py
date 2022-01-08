@@ -17,7 +17,9 @@ def merge_sceneries(script_settings):
     try:
         # instantiate the msfsProject and create the necessary resources if it does not exist
         msfs_project = MsfsProject(script_settings.projects_path, script_settings.project_name, script_settings.author_name, script_settings.sources_path)
-        msfs_project_to_merge = MsfsProject(script_settings.projects_path, script_settings.project_name_to_merge, script_settings.author_name, script_settings.sources_path)
+        project_folder_to_merge = os.path.dirname(script_settings.project_path_to_merge) + os.path.sep
+        project_name_to_merge = os.path.relpath(script_settings.project_path_to_merge, start=project_folder_to_merge)
+        msfs_project_to_merge = MsfsProject(script_settings.projects_path, project_name_to_merge, script_settings.author_name, script_settings.sources_path)
 
         check_configuration(script_settings, msfs_project)
         check_configuration(script_settings, msfs_project_to_merge)

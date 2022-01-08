@@ -1,6 +1,7 @@
 import bpy
 from bpy.props import StringProperty
 from scripts.init_msfs_scenery_project_script import init_msfs_scenery_project
+from scripts.merge_sceneries_script import merge_sceneries
 from scripts.optimize_scenery_script import optimize_scenery
 from scripts.update_min_size_values_script import update_min_size_values
 from scripts.compress_built_package_script import compress_built_package
@@ -63,6 +64,26 @@ class OT_ProjectPathOperator(DirectoryBrowserOperator):
 
     def invoke(self, context, event):
         self.directory = context.scene.setting_props.project_path
+        context.window_manager.fileselect_add(self)
+        return {'RUNNING_MODAL'}
+
+
+class OT_ProjectPathToMergeOperator(DirectoryBrowserOperator):
+    bl_idname = "wm.project_path_to_merge_operator"
+    bl_label = "Path of the project you want to merge into the final one..."
+
+    directory: bpy.props.StringProperty(subtype="DIR_PATH")
+
+    def draw(self, context):
+        super().draw(context)
+
+    def execute(self, context):
+        context.scene.setting_props.project_path_to_merge = self.directory
+        reload_current_operator(context)
+        return {'FINISHED'}
+
+    def invoke(self, context, event):
+        self.directory = context.scene.setting_props.project_path_to_merge
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
 
@@ -138,6 +159,17 @@ class OT_OptimizeMsfsSceneryOperator(Operator):
         # clear and open the system console
         open_console()
         optimize_scenery(context.scene.settings)
+        return {'FINISHED'}
+
+
+class OT_MergeSceneriesOperator(Operator):
+    bl_idname = "wm.merge_sceneries"
+    bl_label = "Merge an existing MSFS scenery project into another one..."
+
+    def execute(self, context):
+        # clear and open the system console
+        open_console()
+        merge_sceneries(context.scene.settings)
         return {'FINISHED'}
 
 
