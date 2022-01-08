@@ -1,5 +1,6 @@
 import bpy
 from bpy.props import StringProperty
+from scripts.clean_package_files_script import clean_package_files
 from scripts.init_msfs_scenery_project_script import init_msfs_scenery_project
 from scripts.merge_sceneries_script import merge_sceneries
 from scripts.optimize_scenery_script import optimize_scenery
@@ -159,6 +160,17 @@ class OT_OptimizeMsfsSceneryOperator(Operator):
         # clear and open the system console
         open_console()
         optimize_scenery(context.scene.settings)
+        return {'FINISHED'}
+
+
+class OT_CleanPackageFilesOperator(Operator):
+    bl_idname = "wm.clean_package_files"
+    bl_label = "Clean the unused files of the msfs project..."
+
+    def execute(self, context):
+        # clear and open the system console
+        open_console()
+        clean_package_files(context.scene.settings)
         return {'FINISHED'}
 
 

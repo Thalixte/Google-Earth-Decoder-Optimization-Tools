@@ -1,5 +1,5 @@
 from bpy_types import Operator
-from constants import MAX_PHOTOGRAMMETRY_LOD, PROJECT_INI_SECTION, TILE_INI_SECTION, LODS_INI_SECTION, COMPRESSONATOR_INI_SECTION, MSFS_SDK_INI_SECTION, MERGE_INI_SECTION
+from constants import MAX_PHOTOGRAMMETRY_LOD, PROJECT_INI_SECTION, TILE_INI_SECTION, LODS_INI_SECTION, COMPRESSONATOR_INI_SECTION, MSFS_SDK_INI_SECTION, MERGE_INI_SECTION, BACKUP_INI_SECTION
 from .operator import OT_ProjectPathOperator, OT_MsfsBuildExePathOperator, OT_CompressonatorExePathOperator, OT_ReloadSettingsOperator, \
     OT_SaveSettingsOperator, OT_ProjectsPathOperator, OT_ProjectPathToMergeOperator
 from .tools import reload_setting_props
@@ -69,8 +69,7 @@ class SettingsOperator(PanelOperator):
         self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "bake_textures_enabled", "Bake textures enabled")
         col.separator()
         self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "output_texture_format", "Output texture format")
-        col.separator(factor=3.0)
-        self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "backup_enabled", "Backup enabled")
+        col.separator()
         self.draw_footer(self.layout, self.operator_name)
 
     def draw_merge_panel(self, context):
@@ -136,6 +135,14 @@ class SettingsOperator(PanelOperator):
         col.operator(OT_CompressonatorExePathOperator.bl_idname)
         col.separator()
         self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "compressonator_exe_path_readonly", "Compressonator bin exe path", enabled=False)
+        self.draw_footer(self.layout, self.operator_name)
+
+    def draw_backup_panel(self, context):
+        split = self.draw_setting_sections_panel(context)
+        col = self.draw_header(split)
+        col.separator()
+        self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "backup_enabled", "Backup enabled")
+        col.separator()
         self.draw_footer(self.layout, self.operator_name)
 
     @staticmethod
@@ -225,6 +232,20 @@ class OT_OptimizeSceneryPanel(SettingsOperator):
         TILE_INI_SECTION,
         LODS_INI_SECTION,
         MSFS_SDK_INI_SECTION,
+        BACKUP_INI_SECTION,
+    ]
+
+
+class OT_CleanPackageFilesPanel(SettingsOperator):
+    operator_name = "wm.clean_package_files"
+    id_name = "wm.clean_package_files_panel"
+    bl_idname = id_name
+    bl_label = "Clean the unused files of the msfs project"
+    starting_section = PROJECT_INI_SECTION
+    displayed_sections = [
+        PROJECT_INI_SECTION,
+        MSFS_SDK_INI_SECTION,
+        BACKUP_INI_SECTION,
     ]
 
 
@@ -238,6 +259,7 @@ class OT_MergeSceneriesPanel(SettingsOperator):
         PROJECT_INI_SECTION,
         MERGE_INI_SECTION,
         MSFS_SDK_INI_SECTION,
+        BACKUP_INI_SECTION,
     ]
 
 
@@ -251,6 +273,7 @@ class OT_UpdateTilesPositionPanel(SettingsOperator):
         PROJECT_INI_SECTION,
         TILE_INI_SECTION,
         MSFS_SDK_INI_SECTION,
+        BACKUP_INI_SECTION,
     ]
 
 
@@ -264,6 +287,7 @@ class OT_UpdateMinSizeValuesPanel(SettingsOperator):
         PROJECT_INI_SECTION,
         LODS_INI_SECTION,
         MSFS_SDK_INI_SECTION,
+        BACKUP_INI_SECTION,
     ]
 
 
@@ -276,4 +300,5 @@ class OT_CompressBuiltPackagePanel(SettingsOperator):
     displayed_sections = [
         PROJECT_INI_SECTION,
         COMPRESSONATOR_INI_SECTION,
+        BACKUP_INI_SECTION,
     ]
