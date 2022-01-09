@@ -28,8 +28,6 @@ def init_msfs_scenery_project(script_settings):
     except RuntimeError as ex:
         isolated_print(constants.EOL + ex)
         pr_bg_red("Script aborted" + constants.CEND)
-    finally:
-        os.chdir(os.path.dirname(__file__))
 
 
 ##################################################################

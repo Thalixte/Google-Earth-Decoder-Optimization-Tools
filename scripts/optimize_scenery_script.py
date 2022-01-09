@@ -39,8 +39,6 @@ def optimize_scenery(script_settings):
     except RuntimeError as ex:
         isolated_print(constants.EOL + str(ex))
         pr_bg_red("Script aborted" + CEND)
-    finally:
-        os.chdir(os.path.dirname(__file__))
 
 
 ##################################################################

@@ -12,7 +12,8 @@ from .operator import PanelPropertyGroup, OT_ProjectPathOperator, OT_ProjectsPat
     OT_CompressonatorExePathOperator, OT_InitMsfsSceneryProjectOperator, OT_OptimizeMsfsSceneryOperator, OT_UpdateTilesPositionOperator, \
     OT_UpdateMinSizeValuesOperator, OT_CompressBuiltPackageOperator, OT_SaveSettingsOperator, OT_ReloadSettingsOperator, OT_InitMsfsSceneryPanel, \
     OT_OptimizeSceneryPanel, OT_UpdateTilesPositionPanel, OT_UpdateMinSizeValuesPanel, OT_CompressBuiltPackagePanel, OT_ProjectPathToMergeOperator, \
-    OT_MergeSceneriesPanel, OT_MergeSceneriesOperator, OT_CleanPackageFilesOperator, OT_CleanPackageFilesPanel, OT_FixTilesLightningIssuesPanel, OT_FixTilesLightningIssuesOperator
+    OT_MergeSceneriesPanel, OT_MergeSceneriesOperator, OT_CleanPackageFilesOperator, OT_CleanPackageFilesPanel, OT_FixTilesLightningIssuesPanel, \
+    OT_FixTilesLightningIssuesOperator
 
 
 class TOPBAR_MT_google_earth_optimization_menus(Menu):
@@ -95,19 +96,30 @@ def register():
 
     try:
         bpy.types.Scene.panel_props = bpy.props.PointerProperty(type=PanelPropertyGroup)
-        bpy.types.TOPBAR_MT_editor_menus.append(TOPBAR_MT_google_earth_optimization_menus.draw)
     except AttributeError:
         pass
+    finally:
+        bpy.types.TOPBAR_MT_editor_menus.append(TOPBAR_MT_google_earth_optimization_menus.draw)
+
+        if not hasattr(bpy.types.Scene, "settings"):
+            bpy.types.Scene.settings = Settings(get_sources_path())
 
 
 def unregister():
     bpy.types.TOPBAR_MT_editor_menus.remove(TOPBAR_MT_google_earth_optimization_menus.draw)
 
-    del bpy.types.Scene.setting_props
-    del bpy.types.Scene.panel_props
-    del bpy.types.Scene.settings
-    for cls in classes:
-        bpy.utils.unregister_class(cls)
+    try:
+        del bpy.types.Scene.setting_props
+        del bpy.types.Scene.panel_props
+        del bpy.types.Scene.settings
+        for cls in classes:
+            bpy.utils.unregister_class(cls)
+    except AttributeError:
+        pass
+    except ValueError:
+        pass
+    finally:
+        reload_topbar_menu()
 
 
 if __name__ == "__main__":
