@@ -127,6 +127,15 @@ class MsfsProject:
             lod.prepare_for_msfs()
             pbar.update("%s prepared for msfs" % lod.name)
 
+    def fix_tiles_lightning_issues(self, settings):
+        isolated_print(EOL)
+        lods = [lod for tile in self.tiles.values() for lod in tile.lods]
+        pbar = ProgressBar(list(lods), title="FIX TILES LIGHTNING ISSUES")
+        for lod in lods:
+            lod.optimization_in_progress = False
+            lod.prepare_for_msfs()
+            pbar.update("%s lightning issues fixed" % lod.name)
+
     def backup_tiles(self, backup_subfolder):
         backup_path = os.path.join(self.backup_folder, backup_subfolder)
         self.__backup_objects(self.tiles, backup_path, "backup tiles")

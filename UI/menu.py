@@ -12,7 +12,7 @@ from .operator import PanelPropertyGroup, OT_ProjectPathOperator, OT_ProjectsPat
     OT_CompressonatorExePathOperator, OT_InitMsfsSceneryProjectOperator, OT_OptimizeMsfsSceneryOperator, OT_UpdateTilesPositionOperator, \
     OT_UpdateMinSizeValuesOperator, OT_CompressBuiltPackageOperator, OT_SaveSettingsOperator, OT_ReloadSettingsOperator, OT_InitMsfsSceneryPanel, \
     OT_OptimizeSceneryPanel, OT_UpdateTilesPositionPanel, OT_UpdateMinSizeValuesPanel, OT_CompressBuiltPackagePanel, OT_ProjectPathToMergeOperator, \
-    OT_MergeSceneriesPanel, OT_MergeSceneriesOperator, OT_CleanPackageFilesOperator, OT_CleanPackageFilesPanel
+    OT_MergeSceneriesPanel, OT_MergeSceneriesOperator, OT_CleanPackageFilesOperator, OT_CleanPackageFilesPanel, OT_FixTilesLightningIssuesPanel, OT_FixTilesLightningIssuesOperator
 
 
 class TOPBAR_MT_google_earth_optimization_menus(Menu):
@@ -43,6 +43,8 @@ class TOPBAR_MT_google_earth_optimization_menu(Menu):
         layout.separator()
         layout.operator(OT_UpdateMinSizeValuesPanel.bl_idname)
         layout.separator()
+        layout.operator(OT_FixTilesLightningIssuesPanel.bl_idname)
+        layout.separator()
         layout.operator(OT_CompressBuiltPackagePanel.bl_idname)
 
 
@@ -67,6 +69,7 @@ classes = (
     OT_MergeSceneriesOperator,
     OT_UpdateTilesPositionOperator,
     OT_UpdateMinSizeValuesOperator,
+    OT_FixTilesLightningIssuesOperator,
     OT_CompressBuiltPackageOperator,
     OT_SaveSettingsOperator,
     OT_ReloadSettingsOperator,
@@ -76,6 +79,7 @@ classes = (
     OT_MergeSceneriesPanel,
     OT_UpdateTilesPositionPanel,
     OT_UpdateMinSizeValuesPanel,
+    OT_FixTilesLightningIssuesPanel,
     OT_CompressBuiltPackagePanel,
 )
 

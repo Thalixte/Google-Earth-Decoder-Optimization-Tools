@@ -291,6 +291,19 @@ class OT_UpdateMinSizeValuesPanel(SettingsOperator):
     ]
 
 
+class OT_FixTilesLightningIssuesPanel(SettingsOperator):
+    operator_name = "wm.fix_tiles_lightning_issues"
+    id_name = "wm.fix_tiles_lightning_issues_panel"
+    bl_idname = id_name
+    bl_label = "Fix lightning issues on tiles at dawn or dusk"
+    starting_section = PROJECT_INI_SECTION
+    displayed_sections = [
+        PROJECT_INI_SECTION,
+        MSFS_SDK_INI_SECTION,
+        BACKUP_INI_SECTION,
+    ]
+
+
 class OT_CompressBuiltPackagePanel(SettingsOperator):
     operator_name = "wm.compress_built_package"
     id_name = "wm.compress_built_package_panel"

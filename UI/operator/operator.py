@@ -1,6 +1,7 @@
 import bpy
 from bpy.props import StringProperty
 from scripts.clean_package_files_script import clean_package_files
+from scripts.fix_tiles_lightning_issues_script import fix_tiles_lightning_issues
 from scripts.init_msfs_scenery_project_script import init_msfs_scenery_project
 from scripts.merge_sceneries_script import merge_sceneries
 from scripts.optimize_scenery_script import optimize_scenery
@@ -204,6 +205,17 @@ class OT_UpdateMinSizeValuesOperator(Operator):
         # clear and open the system console
         open_console()
         update_min_size_values(context.scene.settings)
+        return {'FINISHED'}
+
+
+class OT_FixTilesLightningIssuesOperator(Operator):
+    bl_idname = "wm.fix_tiles_lightning_issues"
+    bl_label = "Fix lightning issues on tiles at dawn or dusk..."
+
+    def execute(self, context):
+        # clear and open the system console
+        open_console()
+        fix_tiles_lightning_issues(context.scene.settings)
         return {'FINISHED'}
 
 

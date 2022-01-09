@@ -1,15 +1,17 @@
 import json
 import os
 
+from constants import ENCODING
+
 
 def load_json_file(json_file_path):
     if not os.path.isfile(json_file_path):
         return False
 
-    file = open(json_file_path)
+    file = open(json_file_path, encoding=ENCODING)
 
     try:
-        data = json.load(open(json_file_path))
+        data = json.load(file)
     except:
         data = False
     finally:
