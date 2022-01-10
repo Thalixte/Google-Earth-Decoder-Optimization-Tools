@@ -25,7 +25,7 @@ def merge_sceneries(script_settings):
         check_configuration(script_settings, msfs_project_to_merge)
 
         if script_settings.backup_enabled:
-            msfs_project.backup(Path(os.path.abspath(__file__)).stem)
+            msfs_project.backup(Path(os.path.abspath(__file__)).stem.replace(SCRIPT_PREFIX, str()))
 
         msfs_project.merge(msfs_project_to_merge)
 

@@ -22,7 +22,7 @@ def fix_tiles_lightning_issues(script_settings):
         check_configuration(script_settings, msfs_project, check_lily_texture_packer=True)
 
         if script_settings.backup_enabled:
-            msfs_project.backup(Path(os.path.abspath(__file__)).stem)
+            msfs_project.backup(Path(os.path.abspath(__file__)).stem.replace(SCRIPT_PREFIX, str()))
 
         clean_scene()
         msfs_project.fix_tiles_lightning_issues(script_settings)

@@ -1,5 +1,8 @@
+import os
+
 import bpy
 from bpy.props import StringProperty
+from msfs_project import MsfsProject
 from scripts.clean_package_files_script import clean_package_files
 from scripts.fix_tiles_lightning_issues_script import fix_tiles_lightning_issues
 from scripts.init_msfs_scenery_project_script import init_msfs_scenery_project
@@ -142,90 +145,132 @@ class OT_CompressonatorExePathOperator(FileBrowserOperator):
         return {'RUNNING_MODAL'}
 
 
-class OT_InitMsfsSceneryProjectOperator(Operator):
+class ActionOperator(Operator):
+    @classmethod
+    def poll(cls, context):
+        settings = context.scene.settings
+        return MsfsProject(settings.projects_path, settings.project_name, settings.author_name, settings.sources_path, fast_init=True)
+
+    def execute(self, context):
+        # clear and open the system console
+        open_console()
+
+
+class OT_InitMsfsSceneryProjectOperator(ActionOperator):
     bl_idname = "wm.init_msfs_scenery_project"
     bl_label = "Initialize a new MSFS project scenery..."
 
     def execute(self, context):
-        # clear and open the system console
-        open_console()
+        super().execute(context)
         init_msfs_scenery_project(context.scene.settings)
         return {'FINISHED'}
 
 
-class OT_OptimizeMsfsSceneryOperator(Operator):
+class OT_OptimizeMsfsSceneryOperator(ActionOperator):
     bl_idname = "wm.optimize_msfs_scenery"
     bl_label = "Optimize an existing MSFS scenery..."
 
+    @classmethod
+    def poll(cls, context):
+        msfs_project = super().poll(context)
+        return os.path.isdir(msfs_project.scene_folder)
+
     def execute(self, context):
-        # clear and open the system console
-        open_console()
+        super().execute(context)
         optimize_scenery(context.scene.settings)
         return {'FINISHED'}
 
 
-class OT_CleanPackageFilesOperator(Operator):
+class OT_CleanPackageFilesOperator(ActionOperator):
     bl_idname = "wm.clean_package_files"
     bl_label = "Clean the unused files of the msfs project..."
 
+    @classmethod
+    def poll(cls, context):
+        msfs_project = super().poll(context)
+        return os.path.isdir(msfs_project.scene_folder)
+
     def execute(self, context):
-        # clear and open the system console
-        open_console()
+        super().execute(context)
         clean_package_files(context.scene.settings)
         return {'FINISHED'}
 
 
-class OT_MergeSceneriesOperator(Operator):
+class OT_MergeSceneriesOperator(ActionOperator):
     bl_idname = "wm.merge_sceneries"
     bl_label = "Merge an existing MSFS scenery project into another one..."
 
+    @classmethod
+    def poll(cls, context):
+        msfs_project = super().poll(context)
+        settings = context.scene.settings
+        project_folder_to_merge = os.path.dirname(settings.project_path_to_merge) + os.path.sep
+        project_name_to_merge = os.path.relpath(settings.project_path_to_merge, start=project_folder_to_merge)
+        msfs_project_to_merge = MsfsProject(settings.projects_path, project_name_to_merge, settings.author_name, settings.sources_path, fast_init=True)
+        return (os.path.isdir(msfs_project.scene_folder) and os.path.isdir(msfs_project_to_merge.scene_folder)) and msfs_project.project_folder != msfs_project_to_merge.project_folder
+
     def execute(self, context):
-        # clear and open the system console
-        open_console()
+        super().execute(context)
         merge_sceneries(context.scene.settings)
         return {'FINISHED'}
 
 
-class OT_UpdateTilesPositionOperator(Operator):
+class OT_UpdateTilesPositionOperator(ActionOperator):
     bl_idname = "wm.update_tiles_position"
     bl_label = "Update the position of the MSFS scenery tiles..."
 
+    @classmethod
+    def poll(cls, context):
+        msfs_project = super().poll(context)
+        return os.path.isdir(msfs_project.scene_folder)
+
     def execute(self, context):
-        # clear and open the system console
-        open_console()
+        super().execute(context)
         update_tiles_position(context.scene.settings)
         return {'FINISHED'}
 
 
-class OT_UpdateMinSizeValuesOperator(Operator):
+class OT_UpdateMinSizeValuesOperator(ActionOperator):
     bl_idname = "wm.update_min_size_values"
     bl_label = "Update LOD min size values for each tile of the project..."
 
+    @classmethod
+    def poll(cls, context):
+        msfs_project = super().poll(context)
+        return os.path.isdir(msfs_project.scene_folder)
+
     def execute(self, context):
-        # clear and open the system console
-        open_console()
+        super().execute(context)
         update_min_size_values(context.scene.settings)
         return {'FINISHED'}
 
 
-class OT_FixTilesLightningIssuesOperator(Operator):
+class OT_FixTilesLightningIssuesOperator(ActionOperator):
     bl_idname = "wm.fix_tiles_lightning_issues"
     bl_label = "Fix lightning issues on tiles at dawn or dusk..."
 
+    @classmethod
+    def poll(cls, context):
+        msfs_project = super().poll(context)
+        return os.path.isdir(msfs_project.scene_folder)
+
     def execute(self, context):
-        # clear and open the system console
-        open_console()
+        super().execute(context)
         fix_tiles_lightning_issues(context.scene.settings)
         return {'FINISHED'}
 
 
-class OT_CompressBuiltPackageOperator(Operator):
+class OT_CompressBuiltPackageOperator(ActionOperator):
     bl_idname = "wm.compress_built_package"
     bl_label = "Optimize the built package by compressing the texture files..."
 
+    @classmethod
+    def poll(cls, context):
+        msfs_project = super().poll(context)
+        return os.path.isdir(msfs_project.model_lib_output_folder)
+
     def execute(self, context):
-        # clear and open the system console
-        open_console()
+        super().execute(context)
         compress_built_package(context.scene.settings)
         return {'FINISHED'}
 

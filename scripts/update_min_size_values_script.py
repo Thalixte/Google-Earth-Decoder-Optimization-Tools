@@ -21,7 +21,7 @@ def update_min_size_values(script_settings):
         check_configuration(script_settings, msfs_project)
 
         if script_settings.backup_enabled:
-            msfs_project.backup(Path(os.path.abspath(__file__)).stem)
+            msfs_project.backup(Path(os.path.abspath(__file__)).stem.replace(SCRIPT_PREFIX, str()))
 
         isolated_print(EOL)
         print_title("UPDATE MIN SIZE VALUES")

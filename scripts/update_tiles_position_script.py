@@ -21,7 +21,7 @@ def update_tiles_position(script_settings):
         check_configuration(script_settings, msfs_project)
 
         if script_settings.backup_enabled:
-            msfs_project.backup_files(Path(os.path.abspath(__file__)).stem)
+            msfs_project.backup(Path(os.path.abspath(__file__)).stem.replace(SCRIPT_PREFIX, str()))
 
         msfs_project.update_objects_position(script_settings)
 

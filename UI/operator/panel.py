@@ -1,5 +1,8 @@
+import os
+
 from bpy_types import Operator
 from constants import MAX_PHOTOGRAMMETRY_LOD, PROJECT_INI_SECTION, TILE_INI_SECTION, LODS_INI_SECTION, COMPRESSONATOR_INI_SECTION, MSFS_SDK_INI_SECTION, MERGE_INI_SECTION, BACKUP_INI_SECTION
+from msfs_project import MsfsProject
 from .operator import OT_ProjectPathOperator, OT_MsfsBuildExePathOperator, OT_CompressonatorExePathOperator, OT_ReloadSettingsOperator, \
     OT_SaveSettingsOperator, OT_ProjectsPathOperator, OT_ProjectPathToMergeOperator
 from .tools import reload_setting_props
@@ -30,10 +33,9 @@ class PanelOperator(Operator):
             panel_props.current_operator = self.id_name
             panel_props.setting_sections = self.starting_section
             panel_props.current_section = panel_props.setting_sections
-            if panel_props.first_mouse_x < 0 and panel_props.first_mouse_y < 0:
-                panel_props.first_mouse_x = event.mouse_x
-                panel_props.first_mouse_y = event.mouse_y
-                # context.window.cursor_warp(context.window.width / 2, (context.window.height / 2) + 60)
+            panel_props.first_mouse_x = event.mouse_x
+            panel_props.first_mouse_y = context.window.height - 60
+            context.window.cursor_warp(panel_props.first_mouse_x, panel_props.first_mouse_y)
         panel_props.invocation_type = "INVOKE_DEFAULT"
         context.window_manager.invoke_props_dialog(self, width=1024)
 
@@ -206,7 +208,8 @@ class OT_InitMsfsSceneryPanel(SettingsOperator):
 
     def draw(self, context):
         layout = self.layout
-        box = layout.box()
+        col = self.draw_header(layout)
+        box = col.box()
         col = box.column()
         col.operator(OT_ProjectsPathOperator.bl_idname)
         col.separator()

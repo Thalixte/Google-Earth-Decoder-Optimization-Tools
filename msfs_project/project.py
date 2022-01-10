@@ -65,7 +65,7 @@ class MsfsProject:
     COLLIDER_SUFFIX = "_collider"
     NB_PARALLEL_TASKS = 4
 
-    def __init__(self, projects_path, project_name, author_name, sources_path, init=False, fast_init=False):
+    def __init__(self, projects_path, project_name, author_name, sources_path, init_structure=False, fast_init=False):
         isolated_print(EOL)
         self.parent_path = projects_path
         self.project_name = project_name
@@ -74,7 +74,7 @@ class MsfsProject:
         self.backup_folder = os.path.join(self.project_folder, self.BACKUP_FOLDER)
         self.package_definitions_folder = os.path.join(self.project_folder, self.PACKAGE_DEFINITIONS_FOLDER)
         self.package_sources_folder = os.path.join(self.project_folder, self.PACKAGE_SOURCES_FOLDER)
-        self.model_lib_folder = os.path.join(self.package_sources_folder, self.MODEL_LIB_FOLDER if init else self.project_name.lower() + "-" + self.MODEL_LIB_FOLDER)
+        self.model_lib_folder = os.path.join(self.package_sources_folder, self.MODEL_LIB_FOLDER if init_structure else self.project_name.lower() + "-" + self.MODEL_LIB_FOLDER)
         self.scene_folder = os.path.join(self.package_sources_folder, self.SCENE_FOLDER)
         self.texture_folder = os.path.join(self.model_lib_folder, self.TEXTURE_FOLDER)
         self.scene_folder = os.path.join(self.package_sources_folder, self.SCENE_FOLDER)
@@ -87,7 +87,7 @@ class MsfsProject:
             self.objects_xml = ObjectsXml(self.scene_folder, self.SCENE_OBJECTS_FILE)
         self.min_lod_level = 0
 
-        self.__initialize(sources_path, fast_init)
+        self.__initialize(sources_path, init_structure, fast_init)
 
     def update_objects_position(self, settings):
         isolated_print(EOL)
@@ -179,14 +179,14 @@ class MsfsProject:
             self.objects_xml.save()
             self.__merge_shapes(self.shapes, project_to_merge.shapes)
 
-    def __initialize(self, sources_path, fast_init):
-        self.__init_structure(sources_path)
+    def __initialize(self, sources_path, init_structure, fast_init):
+        self.__init_structure(sources_path, init_structure)
 
         if not fast_init:
             self.__init_components()
             self.__guess_min_lod_level()
 
-    def __init_structure(self, sources_path):
+    def __init_structure(self, sources_path, init_structure):
         self.project_definition_xml = self.project_name + XML_FILE_EXT
         self.package_definitions_xml = self.author_name.lower() + "-" + self.project_definition_xml.lower()
         self.objects = dict()
@@ -194,53 +194,53 @@ class MsfsProject:
         self.shapes = dict()
         self.colliders = dict()
 
-        try:
-            # create the project folder if it does not exist
-            os.makedirs(self.project_folder, exist_ok=True)
-            os.chdir(self.project_folder)
-            # create the backup folder if it does not exist
-            os.makedirs(self.backup_folder, exist_ok=True)
-            # create the PackageSources folder if it does not exist
-            os.makedirs(self.package_sources_folder, exist_ok=True)
-            # rename modelLib folder if it exists
-            if os.path.isdir(os.path.join(self.package_sources_folder, self.MODEL_LIB_FOLDER)) and not os.path.isdir(
-                    self.model_lib_folder):
-                # change modelib folder to fix CTD issues (see
-                # https://flightsim.to/blog/creators-guide-fix-ctd-issues-on-your-scenery/)
-                os.rename(os.path.join(self.package_sources_folder, self.MODEL_LIB_FOLDER), self.model_lib_folder)
-            # create the modelLib folder if it does not exist
-            os.makedirs(self.model_lib_folder, exist_ok=True)
-            # create the scene folder if it does not exist
-            os.makedirs(self.scene_folder, exist_ok=True)
-            # create the texture folder if it does not exist
-            os.makedirs(self.texture_folder, exist_ok=True)
-            # create the PackageDefinitions folder if it does not exist
-            os.makedirs(self.package_definitions_folder, exist_ok=True)
-            # create the business.json folder if it does not exist
-            os.makedirs(self.business_json_folder, exist_ok=True)
-            # create the content info folder if it does not exist
-            os.makedirs(self.content_info_folder, exist_ok=True)
-        except WindowsError:
-            raise ScriptError("Impossible de créer les répertoires du projet")
+        if init_structure:
+            try:
+                # create the project folder if it does not exist
+                os.makedirs(self.project_folder, exist_ok=True)
+                # create the backup folder if it does not exist
+                os.makedirs(self.backup_folder, exist_ok=True)
+                # create the PackageSources folder if it does not exist
+                os.makedirs(self.package_sources_folder, exist_ok=True)
+                # rename modelLib folder if it exists
+                if os.path.isdir(os.path.join(self.package_sources_folder, self.MODEL_LIB_FOLDER)) and not os.path.isdir(
+                        self.model_lib_folder):
+                    # change modelib folder to fix CTD issues (see
+                    # https://flightsim.to/blog/creators-guide-fix-ctd-issues-on-your-scenery/)
+                    os.rename(os.path.join(self.package_sources_folder, self.MODEL_LIB_FOLDER), self.model_lib_folder)
+                # create the modelLib folder if it does not exist
+                os.makedirs(self.model_lib_folder, exist_ok=True)
+                # create the scene folder if it does not exist
+                os.makedirs(self.scene_folder, exist_ok=True)
+                # create the texture folder if it does not exist
+                os.makedirs(self.texture_folder, exist_ok=True)
+                # create the PackageDefinitions folder if it does not exist
+                os.makedirs(self.package_definitions_folder, exist_ok=True)
+                # create the business.json folder if it does not exist
+                os.makedirs(self.business_json_folder, exist_ok=True)
+                # create the content info folder if it does not exist
+                os.makedirs(self.content_info_folder, exist_ok=True)
+            except WindowsError:
+                raise ScriptError("MSFS project folders creation is not possible")
 
         # rename project definition xml file folder if it exists
         old_project_definition_xml_path = os.path.join(self.project_folder, self.package_definitions_xml)
         self.project_definition_xml_path = os.path.join(self.project_folder, self.project_definition_xml)
         if os.path.isfile(old_project_definition_xml_path):
             os.rename(old_project_definition_xml_path, self.project_definition_xml_path)
-        self.__create_project_file(sources_path, PROJECT_DEFINITION_TEMPLATE_PATH, self.project_definition_xml_path, True)
+        if init_structure: self.__create_project_file(sources_path, PROJECT_DEFINITION_TEMPLATE_PATH, self.project_definition_xml_path, True)
 
         # create package xml definition file if it does not exist
         self.package_definitions_xml_path = os.path.join(self.package_definitions_folder, self.package_definitions_xml)
-        self.__create_project_file(sources_path, PACKAGE_DEFINITIONS_TEMPLATE_PATH, self.package_definitions_xml_path, True)
+        if init_structure: self.__create_project_file(sources_path, PACKAGE_DEFINITIONS_TEMPLATE_PATH, self.package_definitions_xml_path, True)
 
         # create business.json file if it does not exist
         self.business_json_path = os.path.join(self.business_json_folder, BUSINESS_JSON_TEMPLATE)
-        self.__create_project_file(sources_path, BUSINESS_JSON_TEMPLATE_PATH, self.business_json_path, True)
+        if init_structure: self.__create_project_file(sources_path, BUSINESS_JSON_TEMPLATE_PATH, self.business_json_path, True)
 
         # create thumbnail file if it does not exist
         self.thumbnail_picture_path = os.path.join(self.content_info_folder, THUMBNAIL_PICTURE_TEMPLATE)
-        self.__create_project_file(sources_path, THUMBNAIL_PICTURE_TEMPLATE_PATH, self.thumbnail_picture_path)
+        if init_structure:  self.__create_project_file(sources_path, THUMBNAIL_PICTURE_TEMPLATE_PATH, self.thumbnail_picture_path)
 
         self.model_lib_output_folder = self.__get_model_lib_output_folder()
 
@@ -415,6 +415,8 @@ class MsfsProject:
                 parent_tile.create_optimization_folders(tiles, dry_mode=False, pbar=pbar)
 
     def __get_model_lib_output_folder(self):
+        if not os.path.isfile(os.path.join(self.package_definitions_folder, self.package_definitions_xml)):
+            return str()
         xml = MsfsPackageDefinitionsXml(self.package_definitions_folder, self.package_definitions_xml)
         return os.path.join(self.built_project_package_folder, xml.find_model_lib_asset_group(self.project_name.lower() + "-" + self.MODEL_LIB_FOLDER))
 

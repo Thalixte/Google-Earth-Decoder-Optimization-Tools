@@ -21,7 +21,7 @@ def compress_built_package(script_settings):
         check_configuration(script_settings, msfs_project, check_built_package=True, check_compressonator=True)
 
         if script_settings.backup_enabled:
-            msfs_project.backup(Path(os.path.abspath(__file__)).stem)
+            msfs_project.backup(Path(os.path.abspath(__file__)).stem.replace(SCRIPT_PREFIX, str()))
 
         isolated_print(EOL)
         print_title("COMPRESS BUILT PACKAGE")

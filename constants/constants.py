@@ -50,6 +50,8 @@ UTILS_FOLDER = "utils"
 SCRIPT_FOLDER = "scripts"
 UI_FOLDER = "UI"
 
+SCRIPT_PREFIX = "_script"
+
 RESOURCE_FOLDER = "resource"
 TEMPLATES_FOLDER = RESOURCE_FOLDER + "\\" + "templates"
 THUMBNAIL_FOLDER = RESOURCE_FOLDER + "\\" + "thumbnail"
