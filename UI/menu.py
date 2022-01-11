@@ -46,7 +46,7 @@ class TOPBAR_MT_google_earth_optimization_menus(Menu):
 
 class TOPBAR_MT_google_earth_optimization_menu(Menu):
     bl_idname = "TOPBAR_MT_google_earth_optimization_menu"
-    bl_label = "Google Earth Optimization Tools"
+    bl_label = "Google Earth Decoder Optimization Tools"
 
     def draw(self, context):
         layout = self.layout
