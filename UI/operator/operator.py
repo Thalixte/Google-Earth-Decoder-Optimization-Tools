@@ -160,6 +160,11 @@ class OT_InitMsfsSceneryProjectOperator(ActionOperator):
     bl_idname = "wm.init_msfs_scenery_project"
     bl_label = "Initialize a new MSFS project scenery..."
 
+    @classmethod
+    def poll(cls, context):
+        msfs_project = super().poll(context)
+        return not os.path.isdir(msfs_project.scene_folder)
+
     def execute(self, context):
         super().execute(context)
         init_msfs_scenery_project(context.scene.settings)

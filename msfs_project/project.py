@@ -66,7 +66,6 @@ class MsfsProject:
     NB_PARALLEL_TASKS = 4
 
     def __init__(self, projects_path, project_name, author_name, sources_path, init_structure=False, fast_init=False):
-        isolated_print(EOL)
         self.parent_path = projects_path
         self.project_name = project_name
         self.author_name = author_name
