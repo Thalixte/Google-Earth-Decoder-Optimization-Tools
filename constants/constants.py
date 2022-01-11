@@ -28,7 +28,6 @@ OK = "OK"
 KO = "KO"
 EOL = "\n"
 INI_FILE = "optimization_tools.ini"
-NODE_JS_SCRIPT="retrievepos.js"
 MSFS_BUILD_EXE="fspackagetool.exe"
 EARTH_RADIUS = 6371010
 
