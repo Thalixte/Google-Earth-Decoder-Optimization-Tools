@@ -121,15 +121,15 @@ def reload_setting_props_property_group(context):
         reverse_idx = (len(bpy.types.Scene.settings.target_min_size_values) - 1) - idx
         cur_lod = MAX_PHOTOGRAMMETRY_LOD - reverse_idx
 
-        SettingsPropertyGroup.__annotations__[TARGET_MIN_SIZE_VALUE_PROPERTY_PREFIX + str(cur_lod)] = (IntProperty, {
-            "name": TARGET_MIN_SIZE_VALUE_PROPERTY_PREFIX + str(cur_lod),
-            "description": "set the min size value for the lod " + str(cur_lod),
-            "default": int(min_size_value),
-            "soft_min": 0,
-            "soft_max": 100,
-            "step": 1,
-            "update": SettingsPropertyGroup.target_min_size_value_updated,
-        })
+        SettingsPropertyGroup.__annotations__[TARGET_MIN_SIZE_VALUE_PROPERTY_PREFIX + str(cur_lod)] = IntProperty(
+            name=TARGET_MIN_SIZE_VALUE_PROPERTY_PREFIX + str(cur_lod),
+            description="set the min size value for the lod " + str(cur_lod),
+            default=int(min_size_value),
+            soft_min=0,
+            soft_max=100,
+            step=1,
+            update=SettingsPropertyGroup.target_min_size_value_updated,
+        )
 
     data = {
         'bl_label': "updatedSettingsPropertyGroup",

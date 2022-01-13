@@ -19,7 +19,7 @@ import importlib
 import os
 
 from msfs_project.lod_resource import MsfsLodResource
-from utils import load_json_file, save_json_file, MsfsGltf
+from utils import MsfsGltf
 
 
 class MsfsTexture(MsfsLodResource):
