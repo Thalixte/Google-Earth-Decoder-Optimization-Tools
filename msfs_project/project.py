@@ -368,7 +368,7 @@ class MsfsProject:
             pbar = ProgressBar(textures, title="CONVERT " + src_format.upper() + " TEXTURE FILES TO " + dest_format.upper())
             for texture in textures:
                 file = texture.file
-                if not texture.convert(src_format, dest_format):
+                if not texture.convert_format(src_format, dest_format):
                     raise ScriptError(src_format + " texture files detected in " + self.texture_folder + " ! Please convert them to " + dest_format + " format prior to launch the script, or remove them")
                 else:
                     pbar.update("%s converted to %s" % (file, dest_format))

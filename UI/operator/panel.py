@@ -160,7 +160,7 @@ class SettingsOperator(PanelOperator):
         col.separator()
         self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "backup_enabled", "Backup enabled")
         col.separator()
-        self.draw_footer(context, context, self.layout, self.operator_name)
+        self.draw_footer(context, self.layout, self.operator_name)
 
     @staticmethod
     def draw_header(layout):

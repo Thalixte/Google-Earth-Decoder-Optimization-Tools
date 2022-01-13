@@ -15,7 +15,7 @@
 #  #
 #
 #  <pep8 compliant>
-
+import importlib
 import os
 
 from msfs_project.lod_resource import MsfsLodResource
@@ -26,18 +26,24 @@ class MsfsTexture(MsfsLodResource):
     idx: str
     mime_type: str
 
+    RGB_FORMAT = "RGB"
+    RGBA_FORMAT = "RGBA"
+
     def __init__(self, idx, model_file_path, folder, file, mime_type=str()):
         super().__init__(model_file_path, folder, file)
         self.idx = idx
         self.mime_type = mime_type
 
-    def convert(self, src_format, dest_format):
+    def convert_format(self, src_format, dest_format):
+        import PIL
+        importlib.reload(PIL)
         from PIL import Image
 
         try:
             file_path = os.path.join(self.folder, self.file)
             image = Image.open(file_path)
             new_file = self.file.replace(src_format, dest_format)
+            if image.mode in (self.RGBA_FORMAT, "P"): image = image.convert(self.RGB_FORMAT)
             image.save(os.path.join(self.folder, new_file))
 
             try: os.remove(file_path)

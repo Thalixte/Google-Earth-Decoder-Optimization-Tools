@@ -29,7 +29,7 @@ import bpy
 ######################################################
 
 from os.path import normpath, join, dirname
-from utils import ScriptError
+from utils import ScriptError, isolated_print
 
 PIP_LIB = "pip"
 WILDCARD = "*"
@@ -43,8 +43,8 @@ def install_python_lib(lib, install_pip=False):
     python_exe = os.path.join(sys.prefix, 'bin', 'python.exe')
 
     # python lib path fallback
-    if bpy.app.binary_path_python is None:
-        python_lib_path = normpath(join(dirname(os_python_path), '..', '..', 'python\\lib'))
+    if not hasattr(bpy.app, "binary_path_python"):
+        python_lib_path = normpath(join(dirname(sys.executable), '..', '..', 'python\\lib'))
     else:
         # path to blender python lib folders
         python_lib_path = normpath(join(dirname(bpy.app.binary_path_python), '..', '..', 'python\\lib'))
