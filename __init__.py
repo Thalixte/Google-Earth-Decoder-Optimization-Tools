@@ -19,7 +19,7 @@
 # <pep8 compliant>
 
 bl_info = {
-    'name': 'Google Earth Optimization Tools Addon',
+    'name': 'Google Earth Decoder Optimization Tools Addon',
     'blender': (2, 83, 0),
     'category': 'Scene',
     'version': (1, 0, 0),
