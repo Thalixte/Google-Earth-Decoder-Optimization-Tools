@@ -11,20 +11,20 @@ This addon is coded in Python, and sources are available here: https://github.co
 
 * Blender 2.83 or superior
 
-* Optional: to reduce the number of texture files, you can get the Lily texture Packer download version 1.1.x if you use Blender 2.83. if you use Blender 3.x, you can use the last version. Reducing the number of texture files reduce the loading time of the scenery, and can reduce stuttering related to texture streaming inside the sim
+* Optional: to reduce the number of texture files, you can get the Lily texture Packer. Download version 1.1.x if you use Blender 2.83. If you use Blender 3.x, you can use the last version. Reducing the number of texture files reduce the loading time of the scenery, and can reduce stuttering related to texture streaming inside the sim
 
 * Optional: once your package has been successfully built, you can further reduce its size by using the "Optimize the bulilt package by compressing the texture files" entry of the addon menu. To do so, you have to download the Compressonator tool from GPUOpen.
 
 3) Installation:
 
-Download the Google-Earth-Decoder-optimisation-tools.zip archive. In Blender, open the preferences window: Edit > Preferences..., the select the Add-ons tab. Click on the Install... button, then browse to the archive you have just downloaded. Once installed, enable the addon.
+Download the Google-Earth-Decoder-optimisation-tools.zip archive. In Blender, open the preferences window: Edit > Preferences..., then select the Add-ons tab. Click on the Install... button, then browse to the archive you have just downloaded. Once installed, enable the addon.
 If everything worked correctly, you should see a new menu in Blender, called "Google Earth Decoder Optimization Tools".
 
 4) Usage:
 
 Open the "Google Earth Decoder Optimization Tools" menu in Blender.
 
-Chose an action from the menu entries:
+Choose an action from the menu entries:
 
 * Initialize a new Msfs scenery project:
 This script creates the MSFS structure of a scenery project, if it does not already exist.
