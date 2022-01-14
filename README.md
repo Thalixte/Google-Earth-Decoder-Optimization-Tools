@@ -1,263 +1,76 @@
 # Google-Earth-Decoder-optimisation-tools
-Python blender scripts designed to be used with Google Earth Decoder Tool sceneries
+Python blender addon designed to be used with Google Earth Decoder Tool sceneries
 
-1) Presentation: 
-The archive contains four python scripts:  
+1) Presentation:
 
-*   scenery_optimisation.py: optimize Google Earth Decoder scenery (textures, Lods, CTD fix)
-*   fix_tiles_altitudes.py: fix wrong tiles altitudes that can occure when moving tiles on the x-y axis
-*   update_objects_LODs.py: update the LOD levels for the tiles of a scenery based on an array of minsizes
-*   merge_sceneries: merge all the files from a source Google Earth Decoder scenery to a destination Google Earth Decoder scenery
+This blender addon is designed to provide tools to help optimizing city sceneries, retrieved via the Google Earth Decoder Tool, made by u/Jonahex111.
 
-The scripts are intended to be used with a Google Earth Decoder min LOD of 17\. I did not test them with another Google Earth Decoder minLod.  
+This addon is coded in Python, and sources are available here: https://github.com/Thalixte/Google-Earth-Decoder-optimisation-tools.
 
 2) Prerequisites:
 
-*   Blender 2.83.16 ([https://www.blender.org/download/Blender2.83/blender-2.83.16-windows-x64.msi](https://www.blender.org/download/Blender2.83/blender-2.83.16-windows-x64.msi)). **The Blender version is IMPORTANT!**
-*   Node js ([https://nodejs.org/dist/v14.15.1/node-v14.15.1-x64.msi](https://nodejs.org/dist/v14.15.1/node-v14.15.1-x64.msi))
-*   Blender2MSFS Toolkit: [https://www.fsdeveloper.com/forum/resources/blender2msfs-toolkit.256/download](https://www.fsdeveloper.com/forum/resources/blender2msfs-toolkit.256/download)
-*   Lily texture Packer: [https://gumroad.com/l/DFExj](https://gumroad.com/l/DFExj) **IMPORTANT! Download version 1.1.x**
+* Blender 2.83 or superior
 
-Newer Blender versions than 2.83x are not going to work! 
-You need to install the version linked above, the LTS version from the Microsoft Store is not going to have enough permissions for the python scripts to work properly, do NOT install it as a Windows app!
+* Optional: to reduce the number of texture files, you can get the Lily texture Packer download version 1.1.x if you use Blender 2.83. if you use Blender 3.x, you can use the last version. Reducing the number of texture files reduce the loading time of the scenery, and can reduce stuttering related to texture streaming inside the sim
 
-3) scenery_optimisation script:  
+* Optional: once your package has been successfully built, you can further reduce its size by using the "Optimize the bulilt package by compressing the texture files" entry of the addon menu. To do so, you have to download the Compressonator tool from GPUOpen.
 
-3.1) Presentation:  
-This script applies the CTD issues fix (see [https://flightsim.to/blog/creators-guide-fix-ctd-issues-on-your-scenery](../../blog/creators-guide-fix-ctd-issues-on-your-scenery)).  
-It bakes the tiles texture files in order to reduce the number of the files in the final package, and reduce the scenery loading time.  
-It fixes an issue with the Google Earth Decoder tool, that breaks the LOD management system.  
-Look at this picture: [https://flic.kr/p/2k3YCrd](https://flic.kr/p/2k3YCrd)  
-This picture shows a wireframe representation of a big scenery created from the Google Earth Decoder tool. You can see that the scenery tiles are dark gray, which means there are a lot of vertices on each tile, because all the tiles are on the max level of detail (which is 19 here). The result is that this scene, from this point of view, displays more than 80M of vertices, which bottlenecks the GPU (and the CPU).  
-Normally, we should have this: [https://flic.kr/p/2kayM52](https://flic.kr/p/2kayM52). In this case, we can see that the tiles have the correct LOD levels, and it leads to a reduced number of vertices (20M in this case, but it can be changed according to the LOD levels that are set in the optimisation script (see chap. 3.3 - Configuration)).  
-The problem here is that the Google Earth Decoder gives all the tiles the same origin, and changes the bounding box to go from this origin point to the last mesh vertice point.  
-Another way to see this problem, is to use the new MSFS SDK Debug LOD feature, that displays the current lod level of each tiles, and the size of the bounding sphere: [https://flic.kr/p/2kautrR](https://flic.kr/p/2kautrR)  
-The more the green or blue is the color, the more detailed is the tile. The more the yellow or red is the color, the less detailed is the tile.  
-Here, we can see that the more detailed tiles are the one that are far from the camera, which is the exact opposite result than the one we want to obtain to optimize our scenery framerate.  
-Now, if each tile has its own origin point, and has a bounding box corresponding to the real tile size, we obtain those results: [https://flic.kr/p/2kayiyp](https://flic.kr/p/2kayiyp) and [https://flic.kr/p/2kayiAo](https://flic.kr/p/2kayiAo), which are far better from a LOD point of view, and better preserve the framerate.  
-This is the fix that the script applies to the tiles: it gives each tile its own origin point, and resizes the bounding boxes according to the real tile size.  
-The script also changes the LOD levels to better suit the LOD management system, and allows (if configured) to convert texture files into jpg format, in order to reduce the texture file size (but with a possible loss in the texture quality).  
-The script also applies ASOBO extension tags to the gltf files, in order to enable the road management and the collisions. It also fixes texture flickering issues.  
-The script automatically removes the orphaned scenery object xml files (scenery object xml files that do not have associated gltf and/or bin files)  
+3) Installation:
 
-3.2) Installation:  
-Just put the scenery_optimisation.py script, and the retrievepos.js script in a folder of your choice.  
+Download the Google-Earth-Decoder-optimisation-tools.zip archive. In Blender, open the preferences window: Edit > Preferences..., the select the Add-ons tab. Click on the Install... button, then browse to the archive you have just downloaded. Once installed, enable the addon.
+If everything worked correctly, you should see a new menu in Blender, called "Google Earth Decoder Optimization Tools".
 
-3.3) Configuration:  
-Change the following settings, according to your project:  
+4) Usage:
 
-*   **bake_textures_enabled:** tells the script to optimize the textures by baking all the textures corresponding to the min Lod levels of the tiles (default is True). For instance, if you have a gltf file for a tile that is named 30604141705340627_LOD00.gltf, all the texture files corresponding to this tile and this LOD level (all the texture files that start with 30604141705340627_LOD00) will be baked into one single texture
-*   **projects_folder:** the parent folder that contains your sceneries
-*   **project_name:** the name of your project
-*   **fspackagetool_folder:** the folder that contains the fspackagetool exe that builds the MSFS packages
-*   **target_lods**: an array representing the minsize values per LOD, starting from a minLod of 17 (from the less detailed lod to the most detailed)
-*   **project_file_name**: the name of the xml file that embeds the project definition (by default, project_name.xml or author_name+project_name.xml)
-*   **scene_file_name**: the name of the xml file that embeds the tile descriptions (by default, objects.xml)
-*   **package_definitions_file_name**: the name of the xml file that embeds the package definitions (by default, project_name.xml or author_name+project_name.xml)
-*   **author_name:** the name of the author of the scenery
-*   **build_package_enabled:** enable the package compilation when the script has finished (default is True)
-*   **output_texture_format:** format of the final texture files (values are PNG_FORMAT, JPG_FORMAT, default is PNG_FORMAT)
-*   **JPG_COMPRESSION_RATIO:** if you choose the jpg format for the output texture files, indicates the compression ratio
+Open the "Google Earth Decoder Optimization Tools" menu in Blender.
 
-3.4) Usage:  
-Open Blender **in administrator mode**.  
-Go in the Scripting view, then click on the Open icon, and choose the scenery_optimisation python script.  
-When the configuration is done, open the Blender system console Window (Window => Toggle System Console). Then, run the script.  
+Chose an action from the menu entries:
 
-3.5) Process:  
-
-*   rename the modelLib folder, in order to fix CTD issues (see [https://flightsim.to/blog/creators-guide-fix-ctd-issues-on-your-scenery](../../blog/creators-guide-fix-ctd-issues-on-your-scenery)/)
-*   if no other backup exists, backup the scenery modelLib files into a backup folder, inside the project folder
-*   if necessary, install the node Js xhr2 module (npm install xhr2)
-*   install the PIP and Pillow libraries to allow texture format conversion
-*   if png texture files output format is selected, convert all remaining jpg texture files to PNG, then remove jpg files
-*   if jpg texture files output format is selected, convert all remaining png texture files to JPG, then remove png files, and compress all jpg texture files
-*   retrieve objects positions from Google earth, via the Google Earth API, and put the results in .pos files corresponding to the scenery tiles
-*   update the tiles position, using those .pos files
-*   place all tiles objects into corresponding sub folders, in order to group the objects corresponding to the same tile
-*   update the LODs of the scenery tiles, according to the target_lods defined in the configuration settings
-*   optimize the tiles, by baking the textures corresponding to LOD levels of the tiles, and by changing the bounding box of the tiles, in order to optimize the LODs
-*   applies ASOBO extension tags to the gltf files, in order to enable the road management and the collisions
-*   fix gltf doublesided attributes, in order to remove texture flickering issues
-*   removes the orphaned scenery object xml files (scenery object xml files that do not have associated gltf and/or bin files)
-*   automatically rebuild the scenery package, if the MSFS SDK is correctly installed, and MSFS 2020 is not running
-
-4) fix_tiles_altitudes script :   
-
-4.1) Presentation:  
-This script applies the CTD issues fix (see [https://flightsim.to/blog/creators-guide-fix-ctd-issues-on-your-scenery/](../../blog/creators-guide-fix-ctd-issues-on-your-scenery/)).  
-When using the scenery_optimisation script, there are chances that the resulting tiles are slightly decaled in the x and/or y axis.  
-This decal can easily be fixed by going into the MSFS SDK, open the project, click on the "Save scenery..." button to order the scenery objects by type, then select all the tiles (not the lights, rectangles or polygons, just the tiles) and move them to the appropriate location. But this move can break some tiles altitude.  
-To fix it, save your scenery after moving the tiles to their appropriate location, then close your project and MSFS 2020, and run the fix_tile_altitudes script. Once the script has finished running and rebuidling your project, reopen the project in the MSFS SDK. The tiles position and altitude should now be correct.  
-
-4.2) Installation:  
-Just put the fix_tile_altitudes.py script, and the retrievepos.js script in a folder of your choice.  
-
-4.3) Configuration:  
-Change the following settings, according to your project:  
-
-*   **projects_folder:** the parent folder that contains your sceneries
-*   **project_name:** the name of your project
-*   **fspackagetool_folder**: the folder that contains the fspackagetool exe that builds the MSFS packages
-*   **project_file_name**: the name of the xml file that embeds the project definition (by default, project_name.xml or author_name+project_name.xml)
-*   **scene_file_name**: the name of the xml file that embeds the tile descriptions (by default, objects.xml)
-*   **package_definitions_file_name**: the name of the xml file that embeds the package definitions (by default, project_name.xml or author_name+project_name.xml)
-*   **author_name**: the name of the author of the scenery
-*   **build_package_enabled**: enable the package compilation when the script has finished (default is True)
-*   **fix_with_googleEarthDecoder_data**: if set to True, tells the script to use the backup of the old objects.xml data (the one produced by the Google Earth Decoder tool) to fix tiles altitude. If set to False, tells the script to directly retrieve tiles altitude from the Google Earth API (default is True)
-
-4.4) Usage:  
-Open Blender **in administrator mode**.  
-Go in the Scripting view, then click on the Open icon, and choose the fix_tile_altitudes python script.  
-When the configuration is done, open the Blender system console Window (Window => Toggle System Console). Then, run the script.  
-The fix comes with two methods: the default one uses the backup of the old objects.xml data (the one produced by the Google Earth Decoder tool)the other method tries to retrieve the altitude directly based on the Google Earth data (using the Google Earth API)  
-
-4.5) Process:  
-
-*   rename the modelLib folder, in order to fix CTD issues (see [https://flightsim.to/blog/creators-guide-fix-ctd-issues-on-your-scenery/](../../blog/creators-guide-fix-ctd-issues-on-your-scenery/))
-*   if necessary, install the node Js xhr2 module (npm install xhr2)
-*   retrieve objects positions from Google earth, via the Google Earth API, and put the results in .pos files corresponding to the scenery tiles
-*   update the tiles altitude, using the backup objects.xml file, if fix_with_googleEarthDecoder_data is set to True, or using the .pos files generated by the Google Earth API, if fix_with_googleEarthDecoder_data is set to False
-*   automatically rebuild the scenery package, if the MSFS SDK is correctly installed, and MSFS 2020 is not running
-
-5) update_objects_LODs script:
-
-5.1) Presentation:  
-This script applies the CTD issues fix (see [https://flightsim.to/blog/creators-guide-fix-ctd-issues-on-your-scenery/](../../blog/creators-guide-fix-ctd-issues-on-your-scenery/)).  
-This script automates the process of changing the LOD levels for all the tiles of a scenery.  
-
-5.2) Installation:  
-Just put the update_object_LODs.py script in a folder of your choice.  
-
-5.3) Configuration:  
-Change the following settings, according to your project:  
-
-*   **projects_folder**: the parent folder that contains your sceneries
-*   **project_name**: the name of your project
-*   **target_lods**: an array representing the minsize values per LOD, starting from a minLod of 17 (from the less detailed lod to the most detailed)
-*   **fspackagetool_folder**: the folder that contains the fspackagetool exe that builds the MSFS packages
-*   **project_file_name**: the name of the xml file that embeds the project definition (by default, project_name.xml or author_name+project_name.xml)
-*   **scene_file_name**: the name of the xml file that embeds the tile descriptions (by default, objects.xml)
-*   **package_definitions_file_name**: the name of the xml file that embeds the package definitions (by default, project_name.xml or author_name+project_name.xml)
-*   **author_name**: the name of the author of the scenery
-*   **build_package_enabled**: enable the package compilation when the script has finished (default is True)
-
-5.4) Usage:  
-Open Blender **in administrator mode**.  
-Go in the Scripting view, then click on the Open icon, and choose the update_object_LODs python script.  
-When the configuration is done, open the Blender system console Window (Window => Toggle System Console). Then, run the script.  
-
-5.5) Process:  
-
-*   rename the modelLib folder, in order to fix CTD issues (see https://flightsim.to/blog/creators-guide-fix-ctd-issues-on-your-scenery/)
-*   update the LOD levels for each tile in the tile_object_name.xml files
-*   automatically rebuild the scenery package, if the MSFS SDK is correctly installed, and MSFS 2020 is not running
-
-6) merge_sceneries script: 
-
-6.1) Presentation:  
-This script applies the CTD issues fix (see [https://flightsim.to/blog/creators-guide-fix-ctd-issues-on-your-scenery/](../../blog/creators-guide-fix-ctd-issues-on-your-scenery/)).  
-This script automates the process of merging a Google Earth Decoder source scenery into another Google Earth Decoder scenery.  
-
-6.2) Installation:  
-Just put the merge_sceneries.py script in a folder of your choice.  
-
-6.3) Configuration:  
-Change the following settings, according to your project:  
-
-*   **projects_folder**: the parent folder that contains your sceneries
-*   **src_project_name**: the name of the scenery that you want to include in the final scenery
-*   **dest_project_name**: the name of the final project that should include both sceneries
-*   **fspackagetool_folder**: the folder that contains the fspackagetool exe that builds the MSFS packages
-*   **src_project_file_name**: the name of the xml file that embeds the source project definition (by default, src_project_name.xml or author_name+src_project_name.xml)
-*   **dest_project_file_name**: the name of the xml file that embeds the destination project definition (by default, dest_project_name.xml or author_name+dest_project_name.xml)
-*   **src_scene_file_name**: the name of the xml file that embeds the tile descriptions (by default, objects.xml) for the scenery that you want to include in the final scenery
-*   **dest_scene_file_name**: the name of the xml file that embeds the tile descriptions (by default, objects.xml) for the final project that should include both sceneries
-*   **src_package_definitions_file_name**: the name of the xml file that embeds the source package definitions (by default, src_project_name.xml or author_name+src_project_name.xml)
-*   **dest_package_definitions_file_name**: the name of the xml file that embeds the destination package definitions (by default, dest_project_name.xml or author_name+dest_project_name.xml)
-*   **author_name**: the name of the author of the scenery
-*   **build_package_enabled**: enable the package compilation when the script has finished (default is True)
-
-6.4) Usage:  
-Open Blender **in administrator mode**.  
-Go in the Scripting view, then click on the Open icon, and choose the update_object_LODs python script.  
-When the configuration is done, open the Blender system console Window (Window => Toggle System Console). Then, run the script.  
-
-6.5) Process:  
-
-*   rename the modelLib folder, in order to fix CTD issues (see [https://flightsim.to/blog/creators-guide-fix-ctd-issues-on-your-scenery/](../../blog/creators-guide-fix-ctd-issues-on-your-scenery/))
-*   backup the modelLib files of the final project that should include both sceneries, into a backup subfolder, so called merge_sceneries
-*   copy all the xml files, gltf files, bin files and texture files from the source scenery to the destination scenery, overwritting the existing ones
-*   update the destination scenery scene xml file (objects.xml by default) to change the tiles guid corresponding to the source scenery tiles
-*   add the guid for the source tiles that does not exist in the destination scenery
-*   automatically rebuild the scenery package, if the MSFS SDK is correctly installed, and MSFS 2020 is not running
-
-7) clean_package_files script:
-
-7.1) Presentation:  
-This script applies the CTD issues fix (see [https://flightsim.to/blog/creators-guide-fix-ctd-issues-on-your-scenery/](../../blog/creators-guide-fix-ctd-issues-on-your-scenery/)).  
-This script automatically removes unused package files (.gltf, .bin and texture files), aka the files that are linked with tiles that have been removed from the scene. It appears that, if this cleaning is not done, the resulting package keep those files.  
-
-7.2) Installation:  
-Just put the clean_package_files.py script in a folder of your choice.  
-
-7.3) Configuration:  
-Change the following settings, according to your project:  
-
-*   **projects_folder**: the parent folder that contains your sceneries
-*   **project_name**: the name of your project
-*   **fspackagetool_folder**: the folder that contains the fspackagetool exe that builds the MSFS packages
-*   **project_file_name**: the name of the xml file that embeds the project definition (by default, project_name.xml or author_name+project_name.xml)
-*   **scene_file_name**: the name of the xml file that embeds the tile descriptions (by default, objects.xml)
-*   **package_definitions_file_name**: the name of the xml file that embeds the package definitions (by default, project_name.xml or author_name+project_name.xml)
-*   **author_name**: the name of the author of the scenery
-*   **build_package_enabled**: enable the package compilation when the script has finished (default is True)
-
-7.4) Usage:  
-Open Blender** in administrator mode**.   
-Go in the Scripting view, then click on the Open icon, and choose the clean_package_files python script.  
-When the configuration is done, open the Blender system console Window (Window => Toggle System Console). Then, run the script.  
-
-7.5) Process:  
-
-*   rename the modelLib folder, in order to fix CTD issues (see https://flightsim.to/blog/creators-guide-fix-ctd-issues-on-your-scenery/)
-*   browse the scenery object xml files in the object folder
-*   check the presence of the corresponding guid in the scene xml file
-*   if the guid is not found in the scene xml file, remove the files associated with this scenery object xml file (.gltf, .bin, and texture files), in order to reduce the resulting package size
-*   if files are associated to a LOD that is not used in the .xml files, those files are now removed
+* Initialize a new Msfs scenery project:
+This script creates the MSFS structure of a scenery project, if it does not already exist.
+Once created, you can copy the result of the Google Earth decoder Output folder into the PackageSources folder of the newly created project. 
+You can also create the structure, then in the Google Earth Decoder tool, point the Output folder to the PackageSources folder of the project.
+The structure is the same as the one provided in the SimpleScenery project of the MSFS SDK samples.
 
 
-8) compress_built_package script:
+* Optimize an existing Msfs scenery project:
+This script optimizes an existing Google Earth Decoder scenery project (textures, Lods, CTD fix).
+If you installed and enabled the Lily Texture Packer Blender addon, and you ticked the "Bake textures enabled" checkbox in the tool menu (section PROJECT), the textures of the project are merged per tile lods, which significantly reduce the number of the project files.
+It fixes the bounding box of each tile in order for them to fit the MSFS lod management system.
+This script also adds Asobo extension tags in order to manage collisions, road traffic, and correct lightning.
+ 
 
-8.1) Prerequisites:
+* Clean the unused files of the msfs project:
+This script clean the unused files of the MSFS scenery project.
+Once you removed some tiles of a project, use this script to clean the gltf, bin and texture files associated to those tiles.
+Merge an existing MSFS scenery project into another one:
 
-This script uses the Compressonator tool from GPUOpen. You can download it here: https://github.com/GPUOpen-Tools/compressonator/releases/download/V4.1.5083/CompressonatorCLI_x64_4.1.5083.exe
-it only works on already built package. So be sure to have built your package correctly first. The package should be in the folder <path_to_projects\project_name\Packages> folder
+
+* Merge the tiles of a MSFS scenery project into another MSFS scenery project.
+In the MERGE section, select the project that you want to merge into the project indicated in the PROJECT section.
+Update the position of the MSFS scenery tiles:
+This script calculates the position of the MSFS scenery tiles.
+If you are not satisfied with the resulting positions, you can setup a latitude correction and/or a longitude correction in the TILE section.
 
 
-8.2) Presentation:
-This script automatically compress DDS texture files from an already built package by applying the DXT1 compression. It can remove transparency component from the textures, but sinc Google Earth tiles do not use it, as far as i know, it is lossless.
+* Update LOD min size values for each tile of the project:
+This script updates the LOD min size values for each tile of the project.
+In the LODS section, you can setup each minsize value of each LOD level.
+According to the MSFS SDK documentation, the selection process is as follows:
+starting from LoD 0, going down, the first LoD with a minSize smaller than the model's current size on screen will be selected for display.
+The selection will also take into account forced and disabled LoDs as configured by the model options.
 
-8.3) Installation:
-First, install the compressonator tool in the folder of your choice. Then, put the clean_package_files.py script in a folder of your choice.
 
-8.4) Configuration:
-Change the following settings, according to your project:
+* Fix lightning issues on tiles at dawn or dusk:
+This script fixes the lightning issues on tiles at dawn or dusk.
+To do so, it adds a specific Asobo extension tag ("ASOBO_material_fake_terrain") in the gltf files corresponding to the tiles Lod levels.
 
-*   **projects_folder**: the parent folder that contains your sceneries
-project_name: the name of your project
-*   **compressonatortool_folder**: the folder that contains the compressonator exe (compressonatorcli.exe) that convert and compress the DDS texture files of the packages. This exe shoud be in the <path_to_compressonator\bin\cli> folder
-*   **author_name**: the name of the author of the scenery
-*   **NB_PARALLEL_TASKS**: number of parallel instance of compressonator running at the same time. If you experiment issues running the script, try lowering this setting
 
-8.5) Usage:
-Open Blender in administrator mode. 
-Go in the Scripting view, then click on the Open icon, and choose the clean_package_files python script.
-When the configuration is done, open the Blender system console Window (Window => Toggle System Console). Then, run the script.
+* Optimize the built package by compressing the texture files:
+This script optimizes the built package of a MSFS scenery project by compressing the DDS texture files.
+For the script to process correctly, the package must have been successfully built prior to executing the script.
 
-8.6) Process:
 
-*   browse the built package for DDS files in the  folder
-*   convert all DDS files to temporary BMP files
-*   convert and compress all BMP files to DXT1 format DDS files, in order to reduce the resulting package size
-*   remove temporary BMP files
+
+
+If you want to donate, you will always be welcome to help me continue with more projects and update the existing ones https://paypal.me/Thalixte.
