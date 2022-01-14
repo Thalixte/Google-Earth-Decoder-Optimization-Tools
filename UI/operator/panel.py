@@ -261,6 +261,8 @@ class OT_OptimizeSceneryPanel(SettingsOperator):
     bl_idname = id_name
     bl_label = "Optimize an existing MSFS scenery project"
     operator_description = """This script optimizes an existing Google Earth Decoder scenery project (textures, Lods, CTD fix).
+        If you installed and enabled the Lily Texture Packer Blender addon, and you ticked the "Bake textures enabled" checkbox in the tool menu (section PROJECT), 
+        the textures of the project are merged per tile lods, which significantly reduce the number of the project files.        
         It fixes the bounding box of each tile in order for them to fit the MSFS lod management system.
         This script also adds Asobo extension tags in order to manage collisions, road traffic, and correct lightning."""
     starting_section = PROJECT_INI_SECTION
