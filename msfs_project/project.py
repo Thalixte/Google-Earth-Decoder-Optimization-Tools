@@ -144,6 +144,8 @@ class MsfsProject:
             lod.prepare_for_msfs()
             pbar.update("%s prepared for msfs" % lod.name)
 
+        self.objects_xml.update_objects_position(self, settings)
+
     def fix_tiles_lightning_issues(self, settings):
         isolated_print(EOL)
         lods = [lod for tile in self.tiles.values() for lod in tile.lods]
