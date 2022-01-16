@@ -124,7 +124,7 @@ class SettingsOperator(PanelOperator):
 
         self.draw_footer(context, self.layout, self.operator_name)
 
-    def draw_build_panel(self, context):
+    def draw_automatic_build_panel(self, context):
         split = self.draw_setting_sections_panel(context)
         col = self.draw_header(split)
         col.separator()

@@ -22,6 +22,7 @@ import os
 
 from constants import ENCODING, PNG_TEXTURE_FORMAT, INI_FILE, MSFS_SDK_INI_SECTION, BUILD_INI_SECTION, \
     COMPRESSONATOR_INI_SECTION, BACKUP_INI_SECTION, PYTHON_INI_SECTION
+from utils import isolated_print
 
 
 class Settings:
@@ -70,10 +71,7 @@ class Settings:
         else:
             config.read(os.path.join(sources_path, INI_FILE), encoding=ENCODING)
 
-        self.rename_section(config, MSFS_SDK_INI_SECTION, BUILD_INI_SECTION)
-        self.rename_section(config, COMPRESSONATOR_INI_SECTION, COMPRESSONATOR_INI_SECTION)
-        self.rename_section(config, BACKUP_INI_SECTION, BACKUP_INI_SECTION)
-        self.rename_section(config, PYTHON_INI_SECTION, PYTHON_INI_SECTION)
+        self.__rename_and_reorder_sections(config)
 
         for section_name in config.sections():
             self.sections.append((section_name, section_name, section_name))
@@ -121,16 +119,29 @@ class Settings:
     def __setattr__(self, attr, value):
         super().__setattr__(attr, value)
 
-    def rename_section(self, config, section_from, section_to):
+    def __rename_and_reorder_sections(self, config):
+        config = self.rename_section(config, MSFS_SDK_INI_SECTION, BUILD_INI_SECTION)
+        config = self.rename_section(config, COMPRESSONATOR_INI_SECTION, COMPRESSONATOR_INI_SECTION)
+        config = self.rename_section(config, BACKUP_INI_SECTION, BACKUP_INI_SECTION)
+        config = self.rename_section(config, PYTHON_INI_SECTION, PYTHON_INI_SECTION)
+
+        if config is not None:
+            with open(os.path.join(self.sources_path, INI_FILE), "w", encoding=ENCODING) as configfile:
+                config.write(configfile)
+
+    @staticmethod
+    def rename_section(config, section_from, section_to):
+        items = []
+
+        if config is None: return
+        if section_from is not section_to and config.has_section(section_to): return
+
         if config.has_section(section_from):
             items = config.items(section_from)
-
-        if section_from is not section_to and config.has_section(section_to): return
 
         config.remove_section(section_from)
         config.add_section(section_to)
         for item in items:
             config.set(section_to, item[0], item[1])
-        with open(os.path.join(self.sources_path, INI_FILE), "w", encoding=ENCODING) as configfile:
-            config.write(configfile)
-            
+
+        return config
