@@ -17,7 +17,7 @@
 #  <pep8 compliant>
 
 from bpy_types import Operator
-from constants import MAX_PHOTOGRAMMETRY_LOD, PROJECT_INI_SECTION, TILE_INI_SECTION, LODS_INI_SECTION, COMPRESSONATOR_INI_SECTION, MSFS_SDK_INI_SECTION, MERGE_INI_SECTION, BACKUP_INI_SECTION, NONE_ICON, FILE_FOLDER_ICON, FILE_REFRESH_ICON, FILE_TICK_ICON, INFO_ICON
+from constants import MAX_PHOTOGRAMMETRY_LOD, PROJECT_INI_SECTION, TILE_INI_SECTION, LODS_INI_SECTION, COMPRESSONATOR_INI_SECTION, MSFS_SDK_INI_SECTION, BUILD_INI_SECTION, MERGE_INI_SECTION, BACKUP_INI_SECTION, NONE_ICON, FILE_FOLDER_ICON, FILE_REFRESH_ICON, FILE_TICK_ICON, INFO_ICON
 from .operator import OT_ProjectPathOperator, OT_MsfsBuildExePathOperator, OT_CompressonatorExePathOperator, OT_ReloadSettingsOperator, \
     OT_SaveSettingsOperator, OT_ProjectsPathOperator, OT_ProjectPathToMergeOperator
 from .tools import reload_setting_props
@@ -124,7 +124,7 @@ class SettingsOperator(PanelOperator):
 
         self.draw_footer(context, self.layout, self.operator_name)
 
-    def draw_msfs_sdk_panel(self, context):
+    def draw_build_panel(self, context):
         split = self.draw_setting_sections_panel(context)
         col = self.draw_header(split)
         col.separator()
@@ -270,7 +270,7 @@ class OT_OptimizeSceneryPanel(SettingsOperator):
         PROJECT_INI_SECTION,
         TILE_INI_SECTION,
         LODS_INI_SECTION,
-        MSFS_SDK_INI_SECTION,
+        BUILD_INI_SECTION,
         BACKUP_INI_SECTION,
     ]
 
@@ -285,7 +285,7 @@ class OT_CleanPackageFilesPanel(SettingsOperator):
     starting_section = PROJECT_INI_SECTION
     displayed_sections = [
         PROJECT_INI_SECTION,
-        MSFS_SDK_INI_SECTION,
+        BUILD_INI_SECTION,
         BACKUP_INI_SECTION,
     ]
 
@@ -301,7 +301,7 @@ class OT_MergeSceneriesPanel(SettingsOperator):
     displayed_sections = [
         PROJECT_INI_SECTION,
         MERGE_INI_SECTION,
-        MSFS_SDK_INI_SECTION,
+        BUILD_INI_SECTION,
         BACKUP_INI_SECTION,
     ]
 
@@ -317,7 +317,7 @@ class OT_UpdateTilesPositionPanel(SettingsOperator):
     displayed_sections = [
         PROJECT_INI_SECTION,
         TILE_INI_SECTION,
-        MSFS_SDK_INI_SECTION,
+        BUILD_INI_SECTION,
         BACKUP_INI_SECTION,
     ]
 
@@ -336,7 +336,7 @@ class OT_UpdateMinSizeValuesPanel(SettingsOperator):
     displayed_sections = [
         PROJECT_INI_SECTION,
         LODS_INI_SECTION,
-        MSFS_SDK_INI_SECTION,
+        BUILD_INI_SECTION,
         BACKUP_INI_SECTION,
     ]
 
@@ -351,7 +351,7 @@ class OT_FixTilesLightningIssuesPanel(SettingsOperator):
     starting_section = PROJECT_INI_SECTION
     displayed_sections = [
         PROJECT_INI_SECTION,
-        MSFS_SDK_INI_SECTION,
+        BUILD_INI_SECTION,
         BACKUP_INI_SECTION,
     ]
 

@@ -20,7 +20,7 @@ import configparser as cp
 import json
 import os
 
-from constants import ENCODING, PNG_TEXTURE_FORMAT, INI_FILE
+from constants import ENCODING, PNG_TEXTURE_FORMAT, INI_FILE, MSFS_SDK_INI_SECTION, BUILD_INI_SECTION
 
 
 class Settings:
@@ -69,6 +69,8 @@ class Settings:
         else:
             config.read(os.path.join(sources_path, INI_FILE), encoding=ENCODING)
 
+        self.rename_section(config, MSFS_SDK_INI_SECTION, BUILD_INI_SECTION)
+
         for section_name in config.sections():
             self.sections.append((section_name, section_name, section_name))
             for name, value in config.items(section_name):
@@ -114,4 +116,17 @@ class Settings:
 
     def __setattr__(self, attr, value):
         super().__setattr__(attr, value)
+
+    def rename_section(self, config, section_from, section_to):
+        if config.has_section(section_from):
+            items = config.items(section_from)
+
+        if config.has_section(BUILD_INI_SECTION): return
+
+        config.add_section(section_to)
+        for item in items:
+            config.set(section_to, item[0], item[1])
+        config.remove_section(section_from)
+        with open(os.path.join(self.sources_path, INI_FILE), "w", encoding=ENCODING) as configfile:
+            config.write(configfile)
             
