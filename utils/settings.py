@@ -20,7 +20,8 @@ import configparser as cp
 import json
 import os
 
-from constants import ENCODING, PNG_TEXTURE_FORMAT, INI_FILE, MSFS_SDK_INI_SECTION, BUILD_INI_SECTION
+from constants import ENCODING, PNG_TEXTURE_FORMAT, INI_FILE, MSFS_SDK_INI_SECTION, BUILD_INI_SECTION, \
+    COMPRESSONATOR_INI_SECTION, BACKUP_INI_SECTION, PYTHON_INI_SECTION
 
 
 class Settings:
@@ -70,6 +71,9 @@ class Settings:
             config.read(os.path.join(sources_path, INI_FILE), encoding=ENCODING)
 
         self.rename_section(config, MSFS_SDK_INI_SECTION, BUILD_INI_SECTION)
+        self.rename_section(config, COMPRESSONATOR_INI_SECTION, COMPRESSONATOR_INI_SECTION)
+        self.rename_section(config, BACKUP_INI_SECTION, BACKUP_INI_SECTION)
+        self.rename_section(config, PYTHON_INI_SECTION, PYTHON_INI_SECTION)
 
         for section_name in config.sections():
             self.sections.append((section_name, section_name, section_name))
@@ -121,12 +125,12 @@ class Settings:
         if config.has_section(section_from):
             items = config.items(section_from)
 
-        if config.has_section(BUILD_INI_SECTION): return
+        if section_from is not section_to and config.has_section(section_to): return
 
+        config.remove_section(section_from)
         config.add_section(section_to)
         for item in items:
             config.set(section_to, item[0], item[1])
-        config.remove_section(section_from)
         with open(os.path.join(self.sources_path, INI_FILE), "w", encoding=ENCODING) as configfile:
             config.write(configfile)
             
