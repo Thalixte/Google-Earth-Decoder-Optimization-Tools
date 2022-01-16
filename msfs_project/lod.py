@@ -150,7 +150,10 @@ class MsfsLod:
         self.textures = []
         file_path = os.path.join(self.folder, self.model_file)
         model_file = MsfsGltf(file_path)
+
         if not model_file.data: return
+        if not MsfsGltf.BUFFERS_TAG in model_file.data: return
+        if not MsfsGltf.IMAGES_TAG in model_file.data: return
 
         for buffer in model_file.data[MsfsGltf.BUFFERS_TAG]:
             self.binaries.append(MsfsBinary(file_path, self.folder, buffer[MsfsGltf.URI_TAG]))
