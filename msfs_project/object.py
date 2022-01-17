@@ -19,7 +19,7 @@
 import os
 
 from msfs_project.object_xml import MsfsObjectXml
-from utils import backup_file
+from utils import backup_file, ScriptError
 
 
 class MsfsObject:
@@ -32,6 +32,7 @@ class MsfsObject:
         self.name = name
         self.folder = path
         self.definition_file = definition_file
+        if not os.path.isfile(os.path.join(self.folder, definition_file)): raise ScriptError("Xml definition file " + os.path.join(self.folder, definition_file) + " does not exist. Check the project folder structure")
         self.xml = MsfsObjectXml(path, definition_file)
 
     def backup_files(self, backup_path, dry_mode=False, pbar=None):
