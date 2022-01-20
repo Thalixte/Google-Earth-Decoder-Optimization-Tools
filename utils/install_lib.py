@@ -37,20 +37,19 @@ WILDCARD = "*"
 
 def install_python_lib(lib, install_pip=False):
     # path to other python folders
-    os_python_path = os.path.expandvars(R"%USERPROFILE%\AppData\Roaming\Python")
-    python_missing_meg = "python interpreter not found on your system"
+    python_missing_msg = "python interpreter not found on your system"
     error_msg = "pip and " + lib + " installation failed in blender lib folder. Please consider running this script as an administrator"
     python_exe = os.path.join(sys.prefix, 'bin', 'python.exe')
 
     # python lib path fallback
-    if not hasattr(bpy.app, "binary_path_python"):
+    if not hasattr(bpy.app, "binary_path_python") or bpy.app.binary_path_python is None:
         python_lib_path = normpath(join(dirname(sys.executable), '..', '..', 'python\\lib'))
     else:
         # path to blender python lib folders
         python_lib_path = normpath(join(dirname(bpy.app.binary_path_python), '..', '..', 'python\\lib'))
 
     if python_lib_path is None:
-        raise ScriptError(python_missing_meg)
+        raise ScriptError(python_missing_msg)
 
     if is_installed(python_lib_path, PIP_LIB) and is_installed(python_lib_path, lib):
         print(PIP_LIB, "and", lib, "correctly installed in blender lib folder")

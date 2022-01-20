@@ -41,13 +41,15 @@ class MsfsTexture(MsfsLodResource):
 
         try:
             file_path = os.path.join(self.folder, self.file)
-            image = Image.open(file_path)
             new_file = self.file.replace(src_format, dest_format)
-            if image.mode in (self.RGBA_FORMAT, "P"): image = image.convert(self.RGB_FORMAT)
-            image.save(os.path.join(self.folder, new_file))
 
-            try: os.remove(file_path)
-            except: pass
+            if os.path.isfile(file_path):
+                image = Image.open(file_path)
+                if image.mode in (self.RGBA_FORMAT, "P"): image = image.convert(self.RGB_FORMAT)
+                image.save(os.path.join(self.folder, new_file))
+
+                try: os.remove(file_path)
+                except: pass
 
             self.file = new_file
             self.mime_type = self.mime_type.replace(src_format, dest_format)

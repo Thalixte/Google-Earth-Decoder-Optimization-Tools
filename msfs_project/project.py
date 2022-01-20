@@ -229,18 +229,18 @@ class MsfsProject:
                 os.makedirs(self.backup_folder, exist_ok=True)
                 # create the PackageSources folder if it does not exist
                 os.makedirs(self.package_sources_folder, exist_ok=True)
+                if not init_structure:
+                    # create the modelLib folder if it does not exist
+                    os.makedirs(self.model_lib_folder, exist_ok=True)
+                    # create the scene folder if it does not exist
+                    os.makedirs(self.scene_folder, exist_ok=True)
+                    # create the texture folder if it does not exist
+                    os.makedirs(self.texture_folder, exist_ok=True)
                 # rename modelLib folder if it exists
-                if os.path.isdir(os.path.join(self.package_sources_folder, self.MODEL_LIB_FOLDER)) and not os.path.isdir(
-                        self.model_lib_folder):
+                if os.path.isdir(os.path.join(self.package_sources_folder, self.MODEL_LIB_FOLDER)) and not os.path.isdir(self.model_lib_folder):
                     # change modelib folder to fix CTD issues (see
                     # https://flightsim.to/blog/creators-guide-fix-ctd-issues-on-your-scenery/)
                     os.rename(os.path.join(self.package_sources_folder, self.MODEL_LIB_FOLDER), self.model_lib_folder)
-                # create the modelLib folder if it does not exist
-                os.makedirs(self.model_lib_folder, exist_ok=True)
-                # create the scene folder if it does not exist
-                os.makedirs(self.scene_folder, exist_ok=True)
-                # create the texture folder if it does not exist
-                os.makedirs(self.texture_folder, exist_ok=True)
                 # create the PackageDefinitions folder if it does not exist
                 os.makedirs(self.package_definitions_folder, exist_ok=True)
                 # create the business.json folder if it does not exist
@@ -379,7 +379,7 @@ class MsfsProject:
             for texture in textures:
                 file = texture.file
                 if not texture.convert_format(src_format, dest_format):
-                    raise ScriptError(src_format + " texture files detected in " + self.texture_folder + " ! Please convert them to " + dest_format + " format prior to launch the script, or remove them")
+                    raise ScriptError("An error was detected while converting texture files in " + self.texture_folder + " ! Please convert them to " + dest_format + " format prior to launch the script, or remove them")
                 else:
                     pbar.update("%s converted to %s" % (file, dest_format))
 
