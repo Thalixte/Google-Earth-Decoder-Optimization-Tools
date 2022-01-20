@@ -18,6 +18,7 @@
 
 import itertools
 import sys
+from os.path import dirname, basename
 
 import io
 import shutil
@@ -26,6 +27,7 @@ import subprocess
 
 import bpy
 from constants import *
+from msfs_project.project_xml import MsfsProjectXml
 from msfs_project.package_definitions_xml import MsfsPackageDefinitionsXml
 from msfs_project.objects_xml import ObjectsXml
 from msfs_project.scene_object import MsfsSceneObject
@@ -215,7 +217,11 @@ class MsfsProject:
 
     def __init_structure(self, sources_path, init_structure):
         self.project_definition_xml = self.project_name + XML_FILE_EXT
-        self.package_definitions_xml = self.author_name.lower() + "-" + self.project_definition_xml.lower()
+        if init_structure:
+            self.package_definitions_xml = self.author_name.lower() + "-" + self.project_definition_xml.lower()
+        else:
+            xml = MsfsProjectXml(self.project_folder, self.project_definition_xml)
+            self.package_definitions_xml = basename(xml.definition_file)
         self.objects = dict()
         self.tiles = dict()
         self.shapes = dict()

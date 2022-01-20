@@ -16,15 +16,24 @@
 #
 #  <pep8 compliant>
 
-from .project import *
-from .object import *
-from .scene_object import *
-from .collider import *
-from .tile import *
-from .shape import *
-from .lod import *
-from .position import *
-from .project_xml import *
-from .objects_xml import *
-from .object_xml import *
-from .package_definitions_xml import *
+from utils import Xml
+
+
+class MsfsProjectXml(Xml):
+    definition_file: str
+    OUTPUT_DIRECTORY_TAG = "OutputDirectory"
+    PACKAGES_TAG = "Packages"
+    PACKAGE_TAG = "Package"
+
+    PACKAGES_SEARCH_PATTERN = "./" + PACKAGES_TAG + "/" + PACKAGE_TAG
+    
+    def __init__(self, file_folder, file_name):
+        super().__init__(file_folder, file_name)
+        self.definition_file = str()
+        for package in self.find_project_packages():
+            self.definition_file = package.text
+
+    def find_project_packages(self):
+        return self.root.findall(self.PACKAGES_SEARCH_PATTERN)
+
+
