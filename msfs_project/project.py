@@ -217,7 +217,7 @@ class MsfsProject:
 
     def __init_structure(self, sources_path, init_structure):
         self.project_definition_xml = self.project_name + XML_FILE_EXT
-        if init_structure:
+        if init_structure or not os.path.isfile(os.path.join(self.project_folder, self.project_definition_xml)):
             self.package_definitions_xml = self.author_name.lower() + "-" + self.project_definition_xml.lower()
         else:
             xml = MsfsProjectXml(self.project_folder, self.project_definition_xml)

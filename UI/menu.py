@@ -31,7 +31,7 @@ from .operator import PanelPropertyGroup, OT_ProjectPathOperator, OT_ProjectsPat
     OT_UpdateMinSizeValuesOperator, OT_CompressBuiltPackageOperator, OT_SaveSettingsOperator, OT_ReloadSettingsOperator, OT_InitMsfsSceneryPanel, \
     OT_OptimizeSceneryPanel, OT_UpdateTilesPositionPanel, OT_UpdateMinSizeValuesPanel, OT_CompressBuiltPackagePanel, OT_ProjectPathToMergeOperator, \
     OT_MergeSceneriesPanel, OT_MergeSceneriesOperator, OT_CleanPackageFilesOperator, OT_CleanPackageFilesPanel, OT_FixTilesLightningIssuesPanel, \
-    OT_FixTilesLightningIssuesOperator
+    OT_FixTilesLightningIssuesOperator, OT_addLodOperator, OT_removeLowerLodOperator, OT_openSettingsFileOperator
 
 
 class TOPBAR_MT_google_earth_optimization_menus(Menu):
@@ -90,6 +90,9 @@ classes = (
     OT_UpdateMinSizeValuesOperator,
     OT_FixTilesLightningIssuesOperator,
     OT_CompressBuiltPackageOperator,
+    OT_openSettingsFileOperator,
+    OT_addLodOperator,
+    OT_removeLowerLodOperator,
     OT_SaveSettingsOperator,
     OT_ReloadSettingsOperator,
     OT_InitMsfsSceneryPanel,

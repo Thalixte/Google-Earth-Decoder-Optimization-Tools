@@ -29,7 +29,7 @@ from scripts.optimize_scenery_script import optimize_scenery
 from scripts.update_min_size_values_script import update_min_size_values
 from scripts.compress_built_package_script import compress_built_package
 from scripts.update_tiles_position_script import update_tiles_position
-from utils import open_console
+from utils import open_console, isolated_print
 from .tools import reload_current_operator, reload_setting_props
 from bpy_extras.io_utils import ImportHelper
 from bpy_types import Operator
@@ -313,4 +313,31 @@ class OT_SaveSettingsOperator(Operator):
 
     def execute(self, context):
         context.scene.settings.save()
+        return {'FINISHED'}
+
+
+class OT_openSettingsFileOperator(Operator):
+    bl_idname = "wm.open_settings_file_operator"
+    bl_label = "Open settings file..."
+
+    def execute(self, context):
+        isolated_print("Open settings file...")
+        return {'FINISHED'}
+
+
+class OT_addLodOperator(Operator):
+    bl_idname = "wm.add_lod_operator"
+    bl_label = "Add a new lod..."
+
+    def execute(self, context):
+        isolated_print("Add a new lod...")
+        return {'FINISHED'}
+
+
+class OT_removeLowerLodOperator(Operator):
+    bl_idname = "wm.remove_lower_lod_operator"
+    bl_label = "Remove the lower lod..."
+
+    def execute(self, context):
+        isolated_print("Remove the lower lod...")
         return {'FINISHED'}
