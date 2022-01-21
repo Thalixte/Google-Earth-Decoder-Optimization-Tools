@@ -22,7 +22,6 @@ import os
 
 from constants import ENCODING, PNG_TEXTURE_FORMAT, INI_FILE, MSFS_SDK_INI_SECTION, BUILD_INI_SECTION, \
     COMPRESSONATOR_INI_SECTION, BACKUP_INI_SECTION, PYTHON_INI_SECTION
-from utils import isolated_print
 
 
 class Settings:
@@ -118,6 +117,12 @@ class Settings:
 
     def __setattr__(self, attr, value):
         super().__setattr__(attr, value)
+
+    def add_lod(self):
+        self.target_min_size_values.insert(0, "0")
+
+    def remove_lower_lod(self):
+        self.target_min_size_values.pop(0)
 
     def __rename_and_reorder_sections(self, config):
         config = self.rename_section(config, MSFS_SDK_INI_SECTION, BUILD_INI_SECTION)

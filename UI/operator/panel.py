@@ -19,7 +19,7 @@
 from bpy_types import Operator
 from constants import MAX_PHOTOGRAMMETRY_LOD, PROJECT_INI_SECTION, TILE_INI_SECTION, LODS_INI_SECTION, COMPRESSONATOR_INI_SECTION, BUILD_INI_SECTION, MERGE_INI_SECTION, BACKUP_INI_SECTION, NONE_ICON, FILE_FOLDER_ICON, FILE_REFRESH_ICON, FILE_TICK_ICON, INFO_ICON, ADD_ICON, REMOVE_ICON
 from .operator import OT_ProjectPathOperator, OT_MsfsBuildExePathOperator, OT_CompressonatorExePathOperator, OT_ReloadSettingsOperator, \
-    OT_SaveSettingsOperator, OT_ProjectsPathOperator, OT_ProjectPathToMergeOperator, OT_addLodOperator, OT_removeLowerLodOperator
+    OT_SaveSettingsOperator, OT_ProjectsPathOperator, OT_ProjectPathToMergeOperator, OT_addLodOperator, OT_removeLowerLodOperator, OT_openSettingsFileOperator
 from .tools import reload_setting_props
 
 
@@ -115,9 +115,11 @@ class SettingsOperator(PanelOperator):
         split = self.draw_setting_sections_panel(context)
         col = self.draw_header(split)
         col.separator()
-        col.operator(OT_addLodOperator.bl_idname, icon=ADD_ICON)
-        col.separator()
-        col.operator(OT_removeLowerLodOperator.bl_idname, icon=REMOVE_ICON)
+        lod_actions_split = col.split(factor=0.75, align=True)
+        lod_actions_col = lod_actions_split.split(factor=0.3, align=True)
+        lod_actions_col.operator(OT_addLodOperator.bl_idname, icon=ADD_ICON)
+        lod_actions_col = lod_actions_split.column()
+        lod_actions_col.operator(OT_removeLowerLodOperator.bl_idname, icon=REMOVE_ICON)
         col.separator()
 
         for idx, min_size_value in enumerate(context.scene.settings.target_min_size_values):
@@ -170,10 +172,12 @@ class SettingsOperator(PanelOperator):
     def draw_header(layout):
         col = layout.column()
         header_box = col.box()
-        header_split = header_box.split(factor=0.75, align=True)
-        header_col = header_split.split(factor=0.3, align=True)
-        header_col.operator(OT_ReloadSettingsOperator.bl_idname, icon=FILE_REFRESH_ICON)
-        header_col = header_split.column()
+        header_split = header_box.split(factor=0.18)
+        header_split.operator(OT_ReloadSettingsOperator.bl_idname, icon=FILE_REFRESH_ICON)
+        header_col = header_split.split(factor=0.25, align=True)
+        header_col.separator()
+        header_col.operator(OT_openSettingsFileOperator.bl_idname, icon=FILE_FOLDER_ICON)
+        header_col.separator()
         header_col.operator(OT_SaveSettingsOperator.bl_idname, icon=FILE_TICK_ICON)
         col.separator()
         box = col.box()

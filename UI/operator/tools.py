@@ -109,10 +109,11 @@ def reload_python_reload_modules(context):
     context.scene.setting_props.python_reload_modules = context.scene.settings.reload_modules
 
 
-def reload_setting_props_property_group(context):
-    sources_path = context.scene.settings.sources_path
-    del bpy.types.Scene.settings
-    bpy.types.Scene.settings = Settings(sources_path)
+def reload_setting_props_property_group(context, reload_settings_file=True):
+    if reload_settings_file:
+        sources_path = context.scene.settings.sources_path
+        del bpy.types.Scene.settings
+        bpy.types.Scene.settings = Settings(sources_path)
 
     if hasattr(bpy.types.Scene, "setting_props"):
         del bpy.types.Scene.setting_props
@@ -143,8 +144,8 @@ def reload_setting_props_property_group(context):
     bpy.types.Scene.setting_props = bpy.props.PointerProperty(type=updatedSettingsPropertyGroup)
 
 
-def reload_setting_props(context):
-    reload_setting_props_property_group(context)
+def reload_setting_props(context, reload_settings_file=True):
+    reload_setting_props_property_group(context, reload_settings_file)
 
     reload_project_path(context)
     reload_project_name(context)

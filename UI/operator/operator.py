@@ -20,6 +20,7 @@ import os
 
 import bpy
 from bpy.props import StringProperty
+from constants import MAX_PHOTOGRAMMETRY_LOD, INI_FILE
 from msfs_project import MsfsProject
 from scripts.clean_package_files_script import clean_package_files
 from scripts.fix_tiles_lightning_issues_script import fix_tiles_lightning_issues
@@ -318,10 +319,10 @@ class OT_SaveSettingsOperator(Operator):
 
 class OT_openSettingsFileOperator(Operator):
     bl_idname = "wm.open_settings_file_operator"
-    bl_label = "Open settings file..."
+    bl_label = "Open ini file..."
 
     def execute(self, context):
-        isolated_print("Open settings file...")
+        os.startfile(os.path.join(context.scene.settings.sources_path, INI_FILE))
         return {'FINISHED'}
 
 
@@ -329,8 +330,13 @@ class OT_addLodOperator(Operator):
     bl_idname = "wm.add_lod_operator"
     bl_label = "Add a new lod..."
 
+    @classmethod
+    def poll(cls, context):
+        return len(context.scene.settings.target_min_size_values) <= MAX_PHOTOGRAMMETRY_LOD
+
     def execute(self, context):
-        isolated_print("Add a new lod...")
+        context.scene.settings.add_lod()
+        reload_setting_props(context, reload_settings_file=False)
         return {'FINISHED'}
 
 
@@ -338,6 +344,11 @@ class OT_removeLowerLodOperator(Operator):
     bl_idname = "wm.remove_lower_lod_operator"
     bl_label = "Remove the lower lod..."
 
+    @classmethod
+    def poll(cls, context):
+        return len(context.scene.settings.target_min_size_values) > 1
+
     def execute(self, context):
-        isolated_print("Remove the lower lod...")
+        context.scene.settings.remove_lower_lod()
+        reload_setting_props(context, reload_settings_file=False)
         return {'FINISHED'}
