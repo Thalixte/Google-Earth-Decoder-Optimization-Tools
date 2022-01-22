@@ -501,21 +501,20 @@ class MsfsProject:
 
     def __merge_tiles(self, tiles, project_to_merge_name, tiles_to_merge, objects_xml_to_merge):
         pbar = ProgressBar(tiles_to_merge.items(), title="MERGE THE TILES")
-        self.__merge_objects(tiles, project_to_merge_name, tiles_to_merge, objects_xml_to_merge, pbar)
+        self.__merge_objects(tiles, project_to_merge_name, objects_xml_to_merge, pbar)
 
     def __merge_colliders(self, colliders, project_to_merge_name, colliders_to_merge, objects_xml_to_merge):
         pbar = ProgressBar(colliders_to_merge.items(), title="MERGE THE COLLIDERS")
-        self.__merge_objects(colliders, project_to_merge_name, colliders_to_merge, objects_xml_to_merge, pbar)
+        self.__merge_objects(colliders, project_to_merge_name, objects_xml_to_merge, pbar)
 
     def __merge_scene_objects(self, scene_objects, project_to_merge_name, scene_objects_to_merge, objects_xml_to_merge):
         pbar = ProgressBar(scene_objects_to_merge.items(), title="MERGE THE OBJECTS")
-        self.__merge_objects(scene_objects, project_to_merge_name, scene_objects_to_merge, objects_xml_to_merge, pbar)
+        self.__merge_objects(scene_objects, project_to_merge_name, objects_xml_to_merge, pbar)
 
-    def __merge_objects(self, objects, project_to_merge_name, objects_to_merge, objects_xml_to_merge, pbar):
+    def __merge_objects(self, objects, project_to_merge_name, objects_xml_to_merge, pbar):
         for guid, object in pbar.iterable:
-            add_guid = False
             # copy or overwrite files
-            add_guid = True if not os.path.isfile(os.path.join(self.model_lib_folder, object.definition_file)) else add_guid
+            add_guid = not os.path.isfile(os.path.join(self.model_lib_folder, object.definition_file))
             shutil.copyfile(os.path.join(object.folder, object.definition_file), os.path.join(self.model_lib_folder, object.definition_file))
             for lod in object.lods:
                 shutil.copyfile(os.path.join(lod.folder, lod.model_file), os.path.join(self.model_lib_folder, lod.model_file))
@@ -526,8 +525,9 @@ class MsfsProject:
 
             # update objects.xml file
             if not add_guid:
-                objects.pop(guid, None)
-                scenery_objects_parents, scenery_objects = self.__find_scenery_objects_and_its_parents(self.objects_xml, guid)
+                old_guid = self.__find_guid_with_definition_file(objects, object.definition_file)
+                objects.pop(old_guid, None)
+                scenery_objects_parents, scenery_objects = self.__find_scenery_objects_and_its_parents(self.objects_xml, old_guid)
                 self.objects_xml.remove_tags(scenery_objects_parents, scenery_objects)
 
             # new guid to add
@@ -550,6 +550,14 @@ class MsfsProject:
                 shutil.copyfile(os.path.join(shape.folder, shape.shx_file_name), os.path.join(self.scene_folder, shape.shx_file_name))
                 shapes[name] = shape
                 pbar.update("%s merged" % shape.name)
+
+    @staticmethod
+    def __find_guid_with_definition_file(objects, definition_file):
+        for key, object in objects.items():
+            if object.definition_file == definition_file:
+                return key
+
+        return str()
 
     @staticmethod
     def __find_scenery_objects_and_its_parents(objects_xml, guid):

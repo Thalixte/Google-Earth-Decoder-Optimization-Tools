@@ -22,7 +22,7 @@ bl_info = {
     'name': 'Google Earth Decoder Optimization Tools Addon',
     'blender': (2, 83, 0),
     'category': 'Scene',
-    'version': (1, 0, 6),
+    'version': (1, 0, 7),
     'author': 'Thalixte',
     'description': 'Bundle of tools to optimize MSFS scenery projects that uses tiles retrieved from the Google Earth Decoder Tool',
 }
