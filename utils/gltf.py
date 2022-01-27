@@ -16,6 +16,7 @@
 #
 #  <pep8 compliant>
 
+from constants import TEXTURE_FOLDER
 from utils import load_json_file, save_json_file
 
 
@@ -23,6 +24,7 @@ class MsfsGltf:
     file_path: str
     data: str
 
+    NODES_TAG = "nodes"
     BUFFERS_TAG = "buffers"
     IMAGES_TAG = "images"
     MATERIALS_TAG = "materials"
@@ -59,14 +61,23 @@ class MsfsGltf:
 
         self.data[self.ASSET_TAG][self.GENERATOR_TAG] = "Scenery optimized Khronos glTF Blender I/O v1.2.75"
 
-    def fix_texture_path(self):
+    def remove_texture_path(self):
         if not self.data: return
+        if not self.IMAGES_TAG in self.data.keys(): return
 
         for image in self.data[self.IMAGES_TAG]:
-            image[self.URI_TAG] = image[self.URI_TAG].replace("texture/", "")
+            image[self.URI_TAG] = image[self.URI_TAG].replace(TEXTURE_FOLDER + "/", str())
+
+    def add_texture_path(self):
+        if not self.data: return
+        if not self.IMAGES_TAG in self.data.keys(): return
+
+        for image in self.data[self.IMAGES_TAG]:
+            image[self.URI_TAG] = TEXTURE_FOLDER + "/" + image[self.URI_TAG]
 
     def fix_doublesided(self):
         if not self.data: return
+        if not self.MATERIALS_TAG in self.data.keys(): return
 
         for material in self.data[self.MATERIALS_TAG]:
             material[self.DOUBLESIDED_TAG] = False

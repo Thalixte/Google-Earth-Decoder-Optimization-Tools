@@ -89,14 +89,12 @@ def import_model_files(model_files):
 ##############################################################################
 # Export and optimize the tile in a new gltf file, with bin file and textures
 ##############################################################################
-def export_to_optimized_gltf_files(file, texture_folder):
+def export_to_optimized_gltf_files(file, texture_folder, use_selection=False):
     isolated_print("export to", file, "with associated textures", EOL)
-    bpy.ops.export_scene.gltf(export_format=GLTF_SEPARATE_EXPORT_FORMAT, export_extras=True, filepath=file, export_texture_dir=texture_folder)
+    bpy.ops.export_scene.gltf(export_format=GLTF_SEPARATE_EXPORT_FORMAT, export_extras=True, filepath=file, export_texture_dir=texture_folder, use_selection=use_selection)
     model_file = MsfsGltf(file)
     model_file.add_optimization_tag()
-    model_file.fix_texture_path()
     model_file.dump()
-    clean_scene()
 
 
 ##################################################################
@@ -185,7 +183,7 @@ def link_materials_to_packed_texture(objects, folder, file_name):
 ##################################################################
 # Fix the tile bounding box
 ##################################################################
-def fix_object_bounding_box():
+def fix_object_bounding_box(resize_box=True):
     if not bpy.context.scene: return
 
     create_collection = bpy.data.collections.new(name=COPY_COLLECTION_NAME)
@@ -237,8 +235,9 @@ def fix_object_bounding_box():
     for c in bpy.context.scene.collection.children:
         bpy.context.scene.collection.children.unlink(c)
 
-    # resize objects to fix spacing between tiles
-    bpy.ops.transform.resize(value=(1.0045, 1.0045, 1))
+    if resize_box:
+        # resize objects to fix spacing between tiles
+        bpy.ops.transform.resize(value=(1.0045, 1.0045, 1))
 
 
 ######################################################
@@ -282,6 +281,18 @@ def center_origin(obj):
 
     # Assuming you're wanting object center to grid
     bpy.ops.object.location_clear(clear_delta=False)
+
+
+def extract_splitted_tile(model_file_path, node, texture_folder):
+    if not bpy.context.scene: return False
+
+    bpy.ops.object.select_all(action=DESELECT_ACTION)
+
+    objs = [obj for obj in bpy.context.scene.objects if obj.name in node]
+    for obj in objs:
+        obj.select_set(True)
+
+    export_to_optimized_gltf_files(model_file_path, texture_folder, use_selection=True)
 
 
 def copy_objects(from_col, to_col, linked):

@@ -21,11 +21,23 @@ from utils.progress_bar import ProgressBar
 
 
 class ObjectsXml(Xml):
+    FS_DATA_TAG = "FSData"
     GROUP_TAG = "Group"
     SCENERY_OBJECT_TAG = "SceneryObject"
     LIBRARY_OBJECT_TAG = "LibraryObject"
-    GUID_TAG = "name"
-    DISPLAY_NAME_TAG = "displayName"
+    GUID_ATTR = "name"
+    DISPLAY_NAME_ATTR = "displayName"
+    ALT_ATTR = "alt"
+    ALTITUDE_IS_AGL_ATTR = "altitudeIsAgl"
+    BANK_ATTR = "bank"
+    HEADING_ATTR = "heading"
+    IMAGE_COMPLEXITY_ATTR = "imageComplexity"
+    LAT_ATTR = "lat"
+    LON_ATTR = "lon"
+    PITCH_ATTR = "pitch"
+    SNAP_TO_GROUND_ATTR = "snapToGround"
+    SNAP_TO_NORMAL_ATTR = "snapToNormal"
+    SCALE_ATTR = "scale"
 
     LIBRARY_OBJECTS_SEARCH_PATTERN = "./" + SCENERY_OBJECT_TAG + "/" + LIBRARY_OBJECT_TAG
     SCENERY_OBJECT_SEARCH_PATTERN = LIBRARY_OBJECTS_SEARCH_PATTERN + "[@name='"
@@ -40,10 +52,17 @@ class ObjectsXml(Xml):
         self.__update_colliders_pos(msfs_project, settings)
         self.save()
 
+    def remove_object(self, guid):
+        for scenery_object in self.find_scenery_objects(guid):
+            self.root.remove(scenery_object)
+        for scenery_object in self.find_scenery_objects_in_group(guid):
+            self.root.remove(scenery_object)
+        self.save()
+
     def __convert_objects_guid_to_upper(self):
         for tag in self.root.findall(self.LIBRARY_OBJECTS_SEARCH_PATTERN):
-            if tag.get(self.GUID_TAG):
-                tag.set(self.GUID_TAG, tag.get(self.GUID_TAG).upper())
+            if tag.get(self.GUID_ATTR):
+                tag.set(self.GUID_ATTR, tag.get(self.GUID_ATTR).upper())
 
         self.save()
 

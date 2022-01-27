@@ -21,11 +21,12 @@ import re
 import shutil
 from pathlib import Path
 
-from blender import import_model_files, bake_texture_files, fix_object_bounding_box, export_to_optimized_gltf_files
-from constants import PNG_TEXTURE_FORMAT, JPG_TEXTURE_FORMAT, GLTF_FILE_PATTERN, GLTF_FILE_EXT
+from blender import import_model_files, bake_texture_files, fix_object_bounding_box, export_to_optimized_gltf_files, clean_scene, extract_splitted_tile
+from constants import PNG_TEXTURE_FORMAT, JPG_TEXTURE_FORMAT, GLTF_FILE_PATTERN, GLTF_FILE_EXT, XML_FILE_EXT, TEXTURE_FOLDER, DUMMY_OBJECT
 from msfs_project.binary import MsfsBinary
 from msfs_project.texture import MsfsTexture
 from utils import backup_file, isolated_print, MsfsGltf
+from utils.minidom_xml import create_new_definition_file, add_new_lod
 
 
 class MsfsLod:
@@ -38,11 +39,12 @@ class MsfsLod:
     folder: str
     binaries: list
     textures: list
+    splitted_nodes: dict
 
-    TEXTURE_FOLDER = "texture"
     OPTIMIZATION_GENERATOR_TAG = "Scenery optimized"
     ALT_OPTIMIZATION_GENERATOR_TAG = "FPS optimized"
     UNBAKED_TEXTURE_NAME_PATTERN = "([a-zA-Z0-9\s_\\.\-\(\):])(LOD)(\d+)(_)(\d+).(" + PNG_TEXTURE_FORMAT + "|" + JPG_TEXTURE_FORMAT + ")"
+    LOD_SUFFIX = "_LOD"
 
     def __init__(self, lod_level, min_size, folder, model_file):
         self.lod_level = lod_level
@@ -53,6 +55,7 @@ class MsfsLod:
         self.folder = self.folder if not self.optimization_in_progress else os.path.join(self.folder, self.name)
         self.model_file = model_file
         self.optimized = self.__is_optimized(self.model_file)
+        self.splitted_nodes = {}
         self.__retrieve_gltf_resources()
 
     def backup_files(self, backup_path, dry_mode=False, pbar=None):
@@ -65,11 +68,12 @@ class MsfsLod:
             texture.backup_file(backup_path, dry_mode=dry_mode, pbar=pbar)
         self.backup_file(backup_path, dry_mode=dry_mode, pbar=pbar)
 
-    def remove_files(self):
+    def remove_files(self, remove_textures=True):
         for binary in self.binaries:
             binary.remove_file()
-        for texture in self.textures:
-            texture.remove_file()
+        if remove_textures:
+            for texture in self.textures:
+                texture.remove_file()
         self.remove_file()
 
     def backup_file(self, backup_path, dry_mode=False, pbar=None):
@@ -131,7 +135,7 @@ class MsfsLod:
 
         isolated_print("fix bounding box for", self.name)
         fix_object_bounding_box()
-        export_to_optimized_gltf_files(new_gltf, self.TEXTURE_FOLDER)
+        export_to_optimized_gltf_files(new_gltf, TEXTURE_FOLDER)
 
         if os.path.isfile(new_gltf):
             shutil.rmtree(self.folder)
@@ -139,11 +143,24 @@ class MsfsLod:
             self.optimization_in_progress = False
             self.__retrieve_gltf_resources()
 
-    def prepare_for_msfs(self):
-        model_file = MsfsGltf(os.path.join(self.folder, self.model_file))
+    def prepare_for_msfs(self, model_file_path=None):
+        model_file = MsfsGltf(os.path.join(self.folder, self.model_file)) if model_file_path is None else MsfsGltf(model_file_path)
         model_file.fix_doublesided()
         model_file.add_asobo_extensions()
+        model_file.remove_texture_path()
         model_file.dump()
+
+    def split(self, tile_name, min_size_value, tile):
+        self.__retrieve_splitted_nodes(tile_name)
+        if self.splitted_nodes:
+            model_file = MsfsGltf(os.path.join(self.folder, self.model_file))
+            model_file.add_texture_path()
+            model_file.dump()
+            self.__extract_splitted_tiles(min_size_value, tile)
+            self.remove_files(remove_textures=False)
+        else:
+            for definition_file in tile.new_tiles.values():
+                add_new_lod(definition_file, self.model_file, min_size_value)
 
     def __retrieve_gltf_resources(self):
         self.binaries = []
@@ -161,10 +178,41 @@ class MsfsLod:
             mime_type = str()
             if MsfsGltf.MIME_TYPE_TAG in image.keys():
                 mime_type = image[MsfsGltf.MIME_TYPE_TAG]
-            self.textures.append(MsfsTexture(idx, file_path, self.folder if self.optimization_in_progress else os.path.join(self.folder, self.TEXTURE_FOLDER), image[MsfsGltf.URI_TAG], mime_type))
+            self.textures.append(MsfsTexture(idx, file_path, self.folder if self.optimization_in_progress else os.path.join(self.folder, TEXTURE_FOLDER), image[MsfsGltf.URI_TAG], mime_type))
 
     def __is_optimized(self, model_file):
         model_file = MsfsGltf(os.path.join(self.folder, model_file))
         if not model_file.data: return
         return self.OPTIMIZATION_GENERATOR_TAG in model_file.data[MsfsGltf.ASSET_TAG][MsfsGltf.GENERATOR_TAG] or self.ALT_OPTIMIZATION_GENERATOR_TAG in model_file.data[MsfsGltf.ASSET_TAG][MsfsGltf.GENERATOR_TAG]
 
+    def __retrieve_splitted_nodes(self, tile_name):
+        file_path = os.path.join(self.folder, self.model_file)
+        model_file = MsfsGltf(file_path)
+
+        if not model_file.data: return
+        if not MsfsGltf.NODES_TAG in model_file.data: return
+
+        for node in model_file.data[MsfsGltf.NODES_TAG]:
+            node_name = node["name"].split("_")[0]
+            if len(node_name) > len(tile_name):
+                key = node_name[0:(len(tile_name) + 1)] + self.LOD_SUFFIX + str(self.lod_level).zfill(2)
+                if not key in self.splitted_nodes:
+                    self.splitted_nodes[key] = []
+                self.splitted_nodes[key].append(node["name"])
+
+    def __extract_splitted_tiles(self, min_size_value, tile):
+        for key, node in self.splitted_nodes.items():
+            splitted_tile_name = key.split("_")[0]
+
+            import_model_files([os.path.join(self.folder, self.model_file)])
+            model_file_path = os.path.join(self.folder, key + GLTF_FILE_EXT)
+            extract_splitted_tile(model_file_path, node, TEXTURE_FOLDER)
+            self.prepare_for_msfs(model_file_path=model_file_path)
+
+            if not os.path.isfile(os.path.join(self.folder, splitted_tile_name + XML_FILE_EXT)):
+                new_guid = create_new_definition_file(os.path.join(self.folder, splitted_tile_name + XML_FILE_EXT))
+                tile.new_tiles[new_guid] = os.path.join(self.folder, splitted_tile_name + XML_FILE_EXT)
+            if self.lod_level < (len(tile.lods) - 1):
+                add_new_lod(os.path.join(self.folder, splitted_tile_name + XML_FILE_EXT), key + GLTF_FILE_EXT, min_size_value)
+
+        clean_scene()

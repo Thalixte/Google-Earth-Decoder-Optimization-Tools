@@ -17,6 +17,7 @@
 #  <pep8 compliant>
 
 import os
+from uuid import uuid4
 
 from msfs_project.object_xml import MsfsObjectXml
 from utils import backup_file, ScriptError
@@ -28,12 +29,12 @@ class MsfsObject:
     definition_file: str
     xml: MsfsObjectXml
 
-    def __init__(self, path, name, definition_file):
+    def __init__(self, folder, name, definition_file):
         self.name = name
-        self.folder = path
+        self.folder = folder
         self.definition_file = definition_file
         if not os.path.isfile(os.path.join(self.folder, definition_file)): raise ScriptError("Xml definition file " + os.path.join(self.folder, definition_file) + " does not exist. Check the project folder structure")
-        self.xml = MsfsObjectXml(path, definition_file)
+        self.xml = MsfsObjectXml(folder, definition_file)
 
     def backup_files(self, backup_path, dry_mode=False, pbar=None):
         self.backup_file(backup_path, dry_mode=dry_mode, pbar=pbar)
@@ -49,3 +50,8 @@ class MsfsObject:
         if os.path.isfile(file_path):
             os.remove(file_path)
             print(self.definition_file, "removed")
+
+    @staticmethod
+    def generate_guid():
+        return uuid4()
+

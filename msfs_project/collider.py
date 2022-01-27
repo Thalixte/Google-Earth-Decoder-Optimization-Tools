@@ -24,8 +24,8 @@ from utils import get_coords_from_file_name, get_position_from_file_name
 class MsfsCollider(MsfsSceneObject):
     associated_tile: str
 
-    def __init__(self, path, name, definition_file):
-        super().__init__(path, name, definition_file)
+    def __init__(self, folder, name, definition_file):
+        super().__init__(folder, name, definition_file)
         self.associated_tile = name.split("_")[0]
         self.coords = get_coords_from_file_name(self.name)
         pos = get_position_from_file_name(self.name)

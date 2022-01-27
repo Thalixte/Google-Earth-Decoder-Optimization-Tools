@@ -24,6 +24,7 @@ import os
 import subprocess
 from pathlib import Path
 
+from constants import TEXTURE_FOLDER
 from utils import ScriptError, chunks
 from utils.progress_bar import ProgressBar
 
@@ -34,7 +35,6 @@ class Compressonator:
     converted_data: list
     compressed_data: list
 
-    TEXTURE_FOLDER = "texture"
     BMP_FORMAT = "BMP"
     DDS_FORMAT = "DDS"
     BMP_EXTENSION = "." + BMP_FORMAT
@@ -47,7 +47,7 @@ class Compressonator:
 
     def __init__(self, path, model_lib_folder):
         self.path = path
-        self.textures_folder = os.path.join(model_lib_folder, self.TEXTURE_FOLDER)
+        self.textures_folder = os.path.join(model_lib_folder, TEXTURE_FOLDER)
         self.converted_data = self.__retrieve_texture_files_to_treat(self.DDS_PATTERN, self.DDS_EXTENSION, self.BMP_EXTENSION)
 
     def compress_texture_files(self):

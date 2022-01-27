@@ -58,39 +58,54 @@ if cwd not in sys.path:
 
 from utils import *
 from blender import clean_scene
-from msfs_project import MsfsLod
+from msfs_project import MsfsTile, ObjectsXml
 
 # clear and open the system console
 # open_console()
 
+# get the args passed to blender after "--", all of which are ignored by
+# blender so scripts may receive their own arguments
+argv = sys.argv
+
+if "--" not in argv:
+    argv = []  # as if no args are passed
+else:
+    argv = argv[argv.index("--") + 1:]  # get all args after "--"
+
+# When --help or no args are given, print this help
+usage_text = (
+        "Run blender in background mode with this script:"
+        "  blender --background --python " + __file__ + " -- [options]"
+)
+
+parser = argparse.ArgumentParser(description=usage_text)
+
+parser.add_argument(
+    "-f", "--folder", dest="folder", type=str, required=True,
+    help="folder of the MsfsTile definition file",
+)
+
+parser.add_argument(
+    "-n", "--name", dest="name", type=str, required=True,
+    help="name of the tile",
+)
+
+parser.add_argument(
+    "-d", "--definition_file", dest="definition_file", type=str, required=True,
+    help="name of the xml definition file of the tile",
+)
+
+parser.add_argument(
+    "-oxf", "--objects_xml_folder", dest="objects_xml_folder", type=str, required=True,
+    help="folder of the xml definition file of the scene",
+)
+
+parser.add_argument(
+    "-oxn", "--objects_xml_file", dest="objects_xml_file", type=str, required=True,
+    help="name of the xml definition file of the scene",
+)
+
 try:
-    # get the args passed to blender after "--", all of which are ignored by
-    # blender so scripts may receive their own arguments
-    argv = sys.argv
-
-    if "--" not in argv:
-        argv = []  # as if no args are passed
-    else:
-        argv = argv[argv.index("--") + 1:]  # get all args after "--"
-
-    # When --help or no args are given, print this help
-    usage_text = (
-            "Run blender in background mode with this script:"
-            "  blender --background --python " + __file__ + " -- [options]"
-    )
-
-    parser = argparse.ArgumentParser(description=usage_text)
-
-    parser.add_argument(
-        "-f", "--folder", dest="folder", type=str, required=True,
-        help="folder of the MsfsLod model file",
-    )
-
-    parser.add_argument(
-        "-m", "--model_file", dest="model_file", type=str, required=True,
-        help="name of the gltf model file",
-    )
-
     args = parser.parse_args(argv)
 
     if not argv:
@@ -99,15 +114,26 @@ try:
     if not args.folder:
         raise ScriptError("Error: --folder=\"some string\" argument not given, aborting.")
 
-    if not args.model_file:
-        raise ScriptError("Error: --model_file=\"some string\" argument not given, aborting.")
+    if not args.name:
+        raise ScriptError("Error: --name=\"some string\" argument not given, aborting.")
+
+    if not args.definition_file:
+        raise ScriptError("Error: --definition_file=\"some string\" argument not given, aborting.")
+
+    if not args.objects_xml_folder:
+        raise ScriptError("Error: --objects_xml_folder=\"some string\" argument not given, aborting.")
+
+    if not args.objects_xml_file:
+        raise ScriptError("Error: --objects_xml_file=\"some string\" argument not given, aborting.")
 
     clean_scene()
 
     settings = Settings(get_sources_path())
     check_lily_texture_packer_availability(settings)
 
-    lod = MsfsLod(int(args.folder[-2:]), 0, args.folder, args.model_file)
-    lod.optimize(settings.bake_textures_enabled, settings.output_texture_format)
+    tile = MsfsTile(args.folder, args.name, args.definition_file)
+    tile.split(settings, args.objects_xml_folder, args.objects_xml_file)
+    objects_xml = ObjectsXml(args.objects_xml_folder, args.objects_xml_file)
+    objects_xml.remove_object(tile.xml.guid)
 except:
     pass

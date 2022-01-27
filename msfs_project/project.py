@@ -79,7 +79,6 @@ class MsfsProject:
     BUILT_PACKAGES_FOLDER = "Packages"
     MODEL_LIB_FOLDER = "modelLib"
     SCENE_FOLDER = "scene"
-    TEXTURE_FOLDER = "texture"
     CONTENT_INFO_FOLDER = "ContentInfo"
     SCENE_OBJECTS_FILE = "objects" + XML_FILE_EXT
     COLLIDER_SUFFIX = "_collider"
@@ -103,7 +102,7 @@ class MsfsProject:
                 os.rename(os.path.join(self.package_sources_folder, self.MODEL_LIB_FOLDER), self.model_lib_folder)
 
         self.scene_folder = os.path.join(self.package_sources_folder, self.SCENE_FOLDER)
-        self.texture_folder = os.path.join(self.model_lib_folder, self.TEXTURE_FOLDER)
+        self.texture_folder = os.path.join(self.model_lib_folder, TEXTURE_FOLDER)
         self.scene_folder = os.path.join(self.package_sources_folder, self.SCENE_FOLDER)
         self.business_json_folder = os.path.join(self.package_definitions_folder, self.author_name.lower() + "-" + self.project_name.lower())
         self.content_info_folder = os.path.join(self.package_definitions_folder, self.business_json_folder, self.CONTENT_INFO_FOLDER)
@@ -145,7 +144,7 @@ class MsfsProject:
         # some tile lods are not optimized
         if self.__optimization_needed():
             self.__create_optimization_folders()
-            self.__optimize_tile_lods(self.__retrieve_lods_to_optimize())
+            self.__optimize_tile_lods(self.__retrieve_lods_to_process())
 
         pbar = ProgressBar(list(lods), title="PREPARE THE TILES FOR MSFS")
         for lod in lods:
@@ -207,6 +206,9 @@ class MsfsProject:
             self.__merge_scene_objects(self.objects, project_to_merge.project_name, project_to_merge.objects, project_to_merge.objects_xml)
             self.objects_xml.save()
             self.__merge_shapes(self.shapes, project_to_merge.shapes)
+
+    def split_tiles(self):
+        self.__split_tiles(self.__retrieve_tiles_to_process())
 
     def __initialize(self, sources_path, init_structure, fast_init):
         self.__init_structure(sources_path, init_structure)
@@ -453,51 +455,17 @@ class MsfsProject:
         xml = MsfsPackageDefinitionsXml(self.package_definitions_folder, self.package_definitions_xml)
         return os.path.join(self.built_project_package_folder, xml.find_model_lib_asset_group(self.project_name.lower() + "-" + self.MODEL_LIB_FOLDER))
 
-    def __retrieve_lods_to_optimize(self):
+    def __retrieve_lods_to_process(self):
         data = []
         for tile in self.tiles.values():
             for lod in tile.lods:
                 if os.path.isdir(lod.folder) and lod.folder != self.model_lib_folder:
-                    data.append({'path': lod.folder, 'model_file': lod.model_file})
+                    data.append({"name": lod.name, "params": ["--folder", str(lod.folder), "--model_file", str(lod.model_file)]})
 
         return chunks(data, self.NB_PARALLEL_TASKS)
 
-    @staticmethod
-    def __optimize_tile_lods(lods_data):
-        ON_POSIX = 'posix' in sys.builtin_module_names
-
-        lods_data, data = itertools.tee(lods_data)
-        pbar = ProgressBar(list(data), title="OPTIMIZE THE TILES")
-
-        try:
-            for chunck in lods_data:
-                # create a pipe to get data
-                input_fd, output_fd = os.pipe()
-
-                for obj in chunck:
-                    print("-------------------------------------------------------------------------------")
-                    print("prepare command line: ", "\"" + str(bpy.app.binary_path) + "\" --background --python \"" + os.path.join(os.path.dirname(os.path.dirname(__file__)), "optimize_tile_lod.py") + "\" -- --path \"" + obj['path'] + "\" --model_file " + obj['model_file'])
-
-                si = subprocess.STARTUPINFO()
-                si.dwFlags = subprocess.STARTF_USESTDHANDLES | subprocess.HIGH_PRIORITY_CLASS
-
-                processes = [subprocess.Popen([str(bpy.app.binary_path), "--background", "--python", os.path.join(os.path.dirname(os.path.dirname(__file__)), "optimize_tile_lod.py"), "--", "--path", obj['path'], "--model_file", obj['model_file']],
-                                              stdout=output_fd, stderr=subprocess.DEVNULL, close_fds=ON_POSIX, startupinfo=si, encoding=ENCODING) for obj in chunck]
-
-                os.close(output_fd)  # close unused end of the pipe
-
-                # read output line by line as soon as it is available
-                with io.open(input_fd, "r", buffering=1) as file:
-                    for line in file:
-                        print(line, end=str())
-
-                for p in processes:
-                    p.wait()
-
-                pbar.update("%s optimized" % os.path.basename(obj['path']))
-
-        except:
-            pass
+    def __optimize_tile_lods(self, lods_data):
+        self.__multithread_process_data(lods_data, "optimize_tile_lod.py", "OPTIMIZE THE TILES", "optimized")
 
     def __merge_tiles(self, tiles, project_to_merge_name, tiles_to_merge, objects_xml_to_merge):
         pbar = ProgressBar(tiles_to_merge.items(), title="MERGE THE TILES")
@@ -533,7 +501,7 @@ class MsfsProject:
             # new guid to add
             new_scenery_objects_parents, new_scenery_objects = self.__find_scenery_objects_and_its_parents(objects_xml_to_merge, guid)
             for new_scenery_object in new_scenery_objects:
-                new_scenery_object.set(self.objects_xml.DISPLAY_NAME_TAG, project_to_merge_name + "_" + object.name)
+                new_scenery_object.set(self.objects_xml.DISPLAY_NAME_ATTR, project_to_merge_name + "_" + object.name)
                 self.objects_xml.root.append(new_scenery_object)
 
             objects[guid] = object
@@ -551,6 +519,17 @@ class MsfsProject:
                 shapes[name] = shape
                 pbar.update("%s merged" % shape.name)
 
+    def __retrieve_tiles_to_process(self):
+        data = []
+        for tile in self.tiles.values():
+            if os.path.isdir(tile.folder):
+                data.append({"name": tile.name, "params": ["--folder", str(tile.folder), "--name", str(tile.name), "--definition_file", str(tile.definition_file), "--objects_xml_folder", str(self.scene_folder), "--objects_xml_file", str(self.SCENE_OBJECTS_FILE)]})
+
+        return chunks(data, 1)
+
+    def __split_tiles(self, tiles_data):
+        self.__multithread_process_data(tiles_data, "split_tile.py", "SPLIT THE TILES", "splitted")
+
     @staticmethod
     def __find_guid_with_definition_file(objects, definition_file):
         for key, object in objects.items():
@@ -565,7 +544,43 @@ class MsfsProject:
             return objects_xml.find_scenery_objects_parents(guid), objects_xml.find_scenery_objects(guid)
 
         if objects_xml.find_scenery_objects_in_group(guid):
-            return objects_xml.find_scenery_objects_in_group_parents(guid), objects_xml.find_scenery_objects_in_group(
-                guid)
+            return objects_xml.find_scenery_objects_in_group_parents(guid), objects_xml.find_scenery_objects_in_group(guid)
 
         return [], []
+
+    @staticmethod
+    def __multithread_process_data(processed_data, script_name, title, update_msg):
+        ON_POSIX = 'posix' in sys.builtin_module_names
+
+        processed_data, data = itertools.tee(processed_data)
+        pbar = ProgressBar(list(data), title=title)
+
+        try:
+            for chunck in processed_data:
+                # create a pipe to get data
+                input_fd, output_fd = os.pipe()
+                params = [str(bpy.app.binary_path), "--background", "--python", os.path.join(os.path.dirname(os.path.dirname(__file__)), script_name), "--"]
+
+                for obj in chunck:
+                    print("-------------------------------------------------------------------------------")
+                    print("prepare command line: ", "\"" + str(bpy.app.binary_path) + "\" --background --python \"" + os.path.join(os.path.dirname(os.path.dirname(__file__)), script_name) + "\" -- " + str(" ").join(obj["params"]))
+
+                si = subprocess.STARTUPINFO()
+                si.dwFlags = subprocess.STARTF_USESTDHANDLES | subprocess.HIGH_PRIORITY_CLASS
+
+                processes = [subprocess.Popen(params + obj["params"],
+                                              stdout=output_fd, stderr=subprocess.DEVNULL, close_fds=ON_POSIX, startupinfo=si, encoding=ENCODING) for obj in chunck]
+
+                os.close(output_fd)  # close unused end of the pipe
+
+                # read output line by line as soon as it is available
+                with io.open(input_fd, "r", buffering=1) as file:
+                    for line in file:
+                        print(line, end=str())
+
+                for p in processes:
+                    p.wait()
+
+                pbar.update("%s %s" % (obj["name"], update_msg))
+        except:
+            pass

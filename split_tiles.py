@@ -16,11 +16,9 @@
 #
 #  <pep8 compliant>
 
-import argparse
 import os
 import site
 import sys
-
 import bpy
 
 CONSTANTS_FOLDER = "constants"
@@ -57,57 +55,14 @@ if cwd not in sys.path:
     sys.path.append(cwd)
 
 from utils import *
-from blender import clean_scene
-from msfs_project import MsfsLod
+from constants import *
 
 # clear and open the system console
-# open_console()
+open_console()
 
-try:
-    # get the args passed to blender after "--", all of which are ignored by
-    # blender so scripts may receive their own arguments
-    argv = sys.argv
+# Specify the script to be included
+script_files = ["split_tiles_script.py"]
 
-    if "--" not in argv:
-        argv = []  # as if no args are passed
-    else:
-        argv = argv[argv.index("--") + 1:]  # get all args after "--"
-
-    # When --help or no args are given, print this help
-    usage_text = (
-            "Run blender in background mode with this script:"
-            "  blender --background --python " + __file__ + " -- [options]"
-    )
-
-    parser = argparse.ArgumentParser(description=usage_text)
-
-    parser.add_argument(
-        "-f", "--folder", dest="folder", type=str, required=True,
-        help="folder of the MsfsLod model file",
-    )
-
-    parser.add_argument(
-        "-m", "--model_file", dest="model_file", type=str, required=True,
-        help="name of the gltf model file",
-    )
-
-    args = parser.parse_args(argv)
-
-    if not argv:
-        raise ScriptError("Error: arguments not given, aborting.")
-
-    if not args.folder:
-        raise ScriptError("Error: --folder=\"some string\" argument not given, aborting.")
-
-    if not args.model_file:
-        raise ScriptError("Error: --model_file=\"some string\" argument not given, aborting.")
-
-    clean_scene()
-
-    settings = Settings(get_sources_path())
-    check_lily_texture_packer_availability(settings)
-
-    lod = MsfsLod(int(args.folder[-2:]), 0, args.folder, args.model_file)
-    lod.optimize(settings.bake_textures_enabled, settings.output_texture_format)
-except:
-    pass
+for script_file in script_files:
+    # Compile and execute script file
+    exec(compile(open(os.path.join(cwd, script_file)).read(), script_file, PYTHON_COMPIL_OPTION))

@@ -32,8 +32,8 @@ class MsfsSceneObject(MsfsObject):
 
     LOD_MODEL_FILES_SEARCH_PATTERN = "_LOD*.gltf"
 
-    def __init__(self, path, name, definition_file):
-        super().__init__(path, name, definition_file)
+    def __init__(self, folder, name, definition_file):
+        super().__init__(folder, name, definition_file)
         self.pos = MsfsPosition(0, 0, 0)
         self.coords = ([0, 0, 0, 0])
         self.lods = self.__retrieve_lods()
@@ -59,7 +59,7 @@ class MsfsSceneObject(MsfsObject):
     def update_min_size_values(self, min_size_values, pbar=None):
         lods_definition = self.xml.find_scenery_lods()
         for i, lod_definition in enumerate(lods_definition):
-            lod_definition.set(self.xml.MIN_SIZE_TAG, str(min_size_values[(len(lods_definition) - 1) - i]))
+            lod_definition.set(self.xml.MIN_SIZE_ATTR, str(min_size_values[(len(lods_definition) - 1) - i]))
 
         self.xml.save()
         pbar.update("%s lod values updated" % self.name)
@@ -78,7 +78,7 @@ class MsfsSceneObject(MsfsObject):
             lods.append(MsfsLod(0, 0, self.folder, self.name + GLTF_FILE_EXT))
 
         for i, lod_definition in enumerate(lods_definition):
-            lods.append(MsfsLod(i, lod_definition.get(self.xml.MIN_SIZE_TAG), self.folder, lod_definition.get(self.xml.MODEL_FILE_TAG)))
+            lods.append(MsfsLod(i, lod_definition.get(self.xml.MIN_SIZE_ATTR), self.folder, lod_definition.get(self.xml.MODEL_FILE_ATTR)))
 
         # check if other lod files exist
         for path in Path(os.path.dirname(self.folder)).rglob(self.name + self.LOD_MODEL_FILES_SEARCH_PATTERN):
