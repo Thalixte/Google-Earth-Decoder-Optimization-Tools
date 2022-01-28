@@ -40,29 +40,31 @@ def add_new_lod(file_path, model_file, min_size_value):
             f.write(xml_str)
 
 
-def add_scenery_object(file_path, tile, template):
+def add_scenery_object(file_path, tile, templates):
     root = parse(file_path)
     fs_data = root.getElementsByTagName(ObjectsXml.FS_DATA_TAG)
+
     if len(fs_data) > 0:
-        fs_data = root.getElementsByTagName(ObjectsXml.FS_DATA_TAG)[0]
-        scenery_object = root.createElement(ObjectsXml.SCENERY_OBJECT_TAG)
-        scenery_object.setAttribute(ObjectsXml.ALT_ATTR, template.get(ObjectsXml.ALT_ATTR))
-        scenery_object.setAttribute(ObjectsXml.ALTITUDE_IS_AGL_ATTR, template.get(ObjectsXml.ALTITUDE_IS_AGL_ATTR))
-        scenery_object.setAttribute(ObjectsXml.BANK_ATTR, template.get(ObjectsXml.BANK_ATTR))
-        scenery_object.setAttribute(ObjectsXml.HEADING_ATTR, template.get(ObjectsXml.HEADING_ATTR))
-        scenery_object.setAttribute(ObjectsXml.IMAGE_COMPLEXITY_ATTR, template.get(ObjectsXml.IMAGE_COMPLEXITY_ATTR))
-        scenery_object.setAttribute(ObjectsXml.LAT_ATTR, template.get(ObjectsXml.LAT_ATTR))
-        scenery_object.setAttribute(ObjectsXml.LON_ATTR, template.get(ObjectsXml.LON_ATTR))
-        scenery_object.setAttribute(ObjectsXml.PITCH_ATTR, template.get(ObjectsXml.PITCH_ATTR))
-        scenery_object.setAttribute(ObjectsXml.SNAP_TO_GROUND_ATTR, template.get(ObjectsXml.SNAP_TO_GROUND_ATTR))
-        scenery_object.setAttribute(ObjectsXml.SNAP_TO_NORMAL_ATTR, template.get(ObjectsXml.SNAP_TO_NORMAL_ATTR))
-        library_object = root.createElement(ObjectsXml.LIBRARY_OBJECT_TAG)
-        library_object.setAttribute(ObjectsXml.GUID_ATTR, tile.xml.guid)
-        library_object.setAttribute(ObjectsXml.SCALE_ATTR, "1")
-        scenery_object.appendChild(library_object)
-        fs_data.appendChild(scenery_object)
+        for template in templates:
+            fs_data = root.getElementsByTagName(ObjectsXml.FS_DATA_TAG)[0]
+            scenery_object = root.createElement(ObjectsXml.SCENERY_OBJECT_TAG)
+            scenery_object.setAttribute(ObjectsXml.ALT_ATTR, template.get(ObjectsXml.ALT_ATTR))
+            scenery_object.setAttribute(ObjectsXml.ALTITUDE_IS_AGL_ATTR, template.get(ObjectsXml.ALTITUDE_IS_AGL_ATTR))
+            scenery_object.setAttribute(ObjectsXml.BANK_ATTR, template.get(ObjectsXml.BANK_ATTR))
+            scenery_object.setAttribute(ObjectsXml.HEADING_ATTR, template.get(ObjectsXml.HEADING_ATTR))
+            scenery_object.setAttribute(ObjectsXml.IMAGE_COMPLEXITY_ATTR, template.get(ObjectsXml.IMAGE_COMPLEXITY_ATTR))
+            scenery_object.setAttribute(ObjectsXml.LAT_ATTR, template.get(ObjectsXml.LAT_ATTR))
+            scenery_object.setAttribute(ObjectsXml.LON_ATTR, template.get(ObjectsXml.LON_ATTR))
+            scenery_object.setAttribute(ObjectsXml.PITCH_ATTR, template.get(ObjectsXml.PITCH_ATTR))
+            scenery_object.setAttribute(ObjectsXml.SNAP_TO_GROUND_ATTR, template.get(ObjectsXml.SNAP_TO_GROUND_ATTR))
+            scenery_object.setAttribute(ObjectsXml.SNAP_TO_NORMAL_ATTR, template.get(ObjectsXml.SNAP_TO_NORMAL_ATTR))
+            library_object = root.createElement(ObjectsXml.LIBRARY_OBJECT_TAG)
+            library_object.setAttribute(ObjectsXml.GUID_ATTR, tile.xml.guid)
+            library_object.setAttribute(ObjectsXml.SCALE_ATTR, "1")
+            scenery_object.appendChild(library_object)
+            fs_data.appendChild(scenery_object)
 
-        xml_str = "\n".join([line for line in root.toprettyxml(indent=" "*2).split('\n') if line.strip()])
+    xml_str = "\n".join([line for line in root.toprettyxml(indent=" "*2).split('\n') if line.strip()])
 
-        with open(file_path, "w") as f:
-            f.write(xml_str)
+    with open(file_path, "w") as f:
+        f.write(xml_str)

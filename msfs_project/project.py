@@ -39,6 +39,7 @@ from utils import replace_in_file, is_octant, backup_file, install_python_lib, S
 from pathlib import Path
 
 from utils.compressonator import Compressonator
+from utils.minidom_xml import add_scenery_object
 from utils.progress_bar import ProgressBar
 
 
@@ -209,6 +210,16 @@ class MsfsProject:
 
     def split_tiles(self):
         self.__split_tiles(self.__retrieve_tiles_to_process())
+        previous_tiles = {guid: tile for guid, tile in self.tiles.items()}
+
+        # reload the project to retrieve the new tiles
+        self.__retrieve_scene_objects()
+
+        pbar = ProgressBar(previous_tiles.items(), title="REPLACE THE OLD TILES BY THE NEW SPLITTED TILES IN THE SCENE DEFINITION FILE")
+        for previous_guid, previous_tile in previous_tiles.items():
+            self.__replace_tiles_in_objects_xml(previous_guid, previous_tile)
+
+            pbar.update("splitted tiles added, replacing the previous %s tile" % previous_tile.name)
 
     def __initialize(self, sources_path, init_structure, fast_init):
         self.__init_structure(sources_path, init_structure)
@@ -525,10 +536,24 @@ class MsfsProject:
             if os.path.isdir(tile.folder):
                 data.append({"name": tile.name, "params": ["--folder", str(tile.folder), "--name", str(tile.name), "--definition_file", str(tile.definition_file), "--objects_xml_folder", str(self.scene_folder), "--objects_xml_file", str(self.SCENE_OBJECTS_FILE)]})
 
-        return chunks(data, 1)
+        return chunks(data, self.NB_PARALLEL_TASKS)
 
     def __split_tiles(self, tiles_data):
         self.__multithread_process_data(tiles_data, "split_tile.py", "SPLIT THE TILES", "splitted")
+
+    def __replace_tiles_in_objects_xml(self, previous_guid, previous_tile):
+        new_tiles = [tile for tile in self.tiles.values() if previous_tile.name in tile.name and previous_tile.name != tile.name]
+
+        for new_tile in new_tiles:
+            self.__replace_tile_in_objects_xml(previous_guid, new_tile)
+
+        # since we added the new tiles with minidom, we have to reload the xml file
+        self.objects_xml = ObjectsXml(self.scene_folder, self.SCENE_OBJECTS_FILE)
+        self.__remove_object(previous_tile)
+
+    def __replace_tile_in_objects_xml(self, previous_guid, new_tile):
+        found_scenery_objects_parent, found_scenery_object = self.__find_scenery_objects_and_its_parents(self.objects_xml, previous_guid)
+        add_scenery_object(self.objects_xml.file_path, new_tile, found_scenery_object)
 
     @staticmethod
     def __find_guid_with_definition_file(objects, definition_file):

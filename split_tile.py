@@ -132,8 +132,6 @@ try:
     check_lily_texture_packer_availability(settings)
 
     tile = MsfsTile(args.folder, args.name, args.definition_file)
-    tile.split(settings, args.objects_xml_folder, args.objects_xml_file)
-    objects_xml = ObjectsXml(args.objects_xml_folder, args.objects_xml_file)
-    objects_xml.remove_object(tile.xml.guid)
+    tile.split(settings)
 except:
     pass

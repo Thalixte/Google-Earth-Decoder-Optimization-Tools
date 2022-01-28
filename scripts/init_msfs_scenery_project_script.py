@@ -44,7 +44,7 @@ def init_msfs_scenery_project(script_settings):
         isolated_print(constants.EOL + error_report)
         pr_bg_red("Script aborted" + constants.CEND)
     except RuntimeError as ex:
-        isolated_print(constants.EOL + ex)
+        isolated_print(constants.EOL + str(ex))
         pr_bg_red("Script aborted" + constants.CEND)
 
 
