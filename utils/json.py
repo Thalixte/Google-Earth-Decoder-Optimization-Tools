@@ -20,6 +20,9 @@ import json
 import os
 
 from constants import ENCODING
+from utils import ScriptError
+
+ERROR_MSG = "A problem occured when loading the json content of "
 
 
 def load_json_file(json_file_path):
@@ -32,6 +35,7 @@ def load_json_file(json_file_path):
         data = json.load(file)
     except:
         data = False
+        raise ScriptError(ERROR_MSG + json_file_path)
     finally:
         file.close()
 
@@ -45,3 +49,14 @@ def save_json_file(json_file_path, data):
     with open(json_file_path, "w") as file:
         file.seek(0)
         json.dump(data, file, indent=4, ensure_ascii=True)
+
+
+def insert_key_value(a_dict, key, pos_key, value):
+    if key in a_dict:
+        a_dict.pop(key)
+    new_dict = {}
+    for k, v in a_dict.items():
+        if k == pos_key:
+            new_dict[key] = value  # insert new key
+        new_dict[k] = v
+    return new_dict

@@ -17,7 +17,7 @@
 #  <pep8 compliant>
 
 from constants import TEXTURE_FOLDER
-from utils import load_json_file, save_json_file
+from utils import load_json_file, save_json_file, insert_key_value
 
 
 class MsfsGltf:
@@ -32,15 +32,20 @@ class MsfsGltf:
     URI_TAG = "uri"
     DOUBLESIDED_TAG = "doubleSided"
     ASSET_TAG = "asset"
+    SCENE_TAG = "scene"
     TAGS_TAG = "tags"
     GENERATOR_TAG = "generator"
     EXTENSIONS_TAG = "extensions"
+    EXTENSIONS_USED_TAG = "extensionsUsed"
     ASOBO_TAGS_TAG = "ASOBO_tags"
     ROAD_TAG = "Road"
     COLLISION_TAG = "Collision"
     ENABLED_TAG = "enabled"
     ASOBO_MATERIAL_DAY_NIGHT_SWITCH_TAG = "ASOBO_material_day_night_switch"
     ASOBO_MATERIAL_FAKE_TERRAIN_TAG = "ASOBO_material_fake_terrain"
+    ASOBO_NORMAL_MAP_CONVENTION_TAG = "ASOBO_normal_map_convention"
+    ASOBO_ASSETS_OPTIMIZED_TAG = "ASOBO_asset_optimized"
+    TANGENT_SPACE_CONVENTION_TAG = "tangent_space_convention"
 
     def __init__(self, file_path):
         self.file_path = file_path
@@ -84,6 +89,24 @@ class MsfsGltf:
 
     def add_asobo_extensions(self):
         if not self.data: return
+
+        map_convention_data = {
+            self.ASOBO_NORMAL_MAP_CONVENTION_TAG: {
+                self.TANGENT_SPACE_CONVENTION_TAG: "DirectX"
+            }
+        }
+
+        self.data[self.ASSET_TAG][self.EXTENSIONS_TAG] = map_convention_data
+
+        extensions_used_data = [
+            self.ASOBO_NORMAL_MAP_CONVENTION_TAG,
+            self.ASOBO_TAGS_TAG,
+            self.ASOBO_MATERIAL_FAKE_TERRAIN_TAG,
+            self.ASOBO_MATERIAL_DAY_NIGHT_SWITCH_TAG,
+            self.ASOBO_ASSETS_OPTIMIZED_TAG
+        ]
+
+        self.data = insert_key_value(self.data, self.EXTENSIONS_USED_TAG, self.SCENE_TAG, extensions_used_data)
 
         material_extensions_data = {
             self.ASOBO_TAGS_TAG: {

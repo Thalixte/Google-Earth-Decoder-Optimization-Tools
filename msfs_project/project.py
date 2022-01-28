@@ -148,7 +148,7 @@ class MsfsProject:
 
         pbar = ProgressBar(list(lods), title="PREPARE THE TILES FOR MSFS")
         for lod in lods:
-            lod.folder = os.path.dirname(lod.folder)
+            lod.folder = os.path.dirname(lod.folder) if self.__optimization_needed() else lod.folder
             lod.optimization_in_progress = False
             lod.prepare_for_msfs()
             pbar.update("%s prepared for msfs" % lod.name)
