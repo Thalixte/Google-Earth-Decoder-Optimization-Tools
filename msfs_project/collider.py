@@ -27,6 +27,6 @@ class MsfsCollider(MsfsSceneObject):
     def __init__(self, folder, name, definition_file):
         super().__init__(folder, name, definition_file)
         self.associated_tile = name.split("_")[0]
-        self.coords = get_coords_from_file_name(self.name)
-        pos = get_position_from_file_name(self.name)
+        self.coords = get_coords_from_file_name(self.associated_tile)
+        pos = get_position_from_file_name(self.associated_tile)
         self.pos = MsfsPosition(pos[0], pos[1], 0)
