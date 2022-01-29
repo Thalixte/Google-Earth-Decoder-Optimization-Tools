@@ -211,13 +211,18 @@ class MsfsProject:
     def split_tiles(self):
         self.__split_tiles(self.__retrieve_tiles_to_process())
         previous_tiles = {guid: tile for guid, tile in self.tiles.items()}
+        new_tiles = {}
 
         # reload the project to retrieve the new tiles
         self.__retrieve_scene_objects()
 
-        pbar = ProgressBar(previous_tiles.items(), title="REPLACE THE OLD TILES BY THE NEW SPLITTED TILES IN THE SCENE DEFINITION FILE")
+        # create the matching dictionary between the previous tiles and the corresponding splitted tiles
         for previous_guid, previous_tile in previous_tiles.items():
-            self.__replace_tiles_in_objects_xml(previous_guid, previous_tile)
+            new_tiles[previous_tile] = [tile for tile in self.tiles.values() if previous_tile.name in tile.name and previous_tile.name != tile.name]
+
+        pbar = ProgressBar(new_tiles.items(), title="REPLACE THE OLD TILES BY THE NEW SPLITTED TILES IN THE SCENE DEFINITION FILE")
+        for previous_tile, new_tiles in new_tiles.items():
+            self.__replace_tiles_in_objects_xml(previous_tile, new_tiles)
 
             pbar.update("splitted tiles added, replacing the previous %s tile" % previous_tile.name)
 
@@ -541,8 +546,8 @@ class MsfsProject:
     def __split_tiles(self, tiles_data):
         self.__multithread_process_data(tiles_data, "split_tile.py", "SPLIT THE TILES", "splitted")
 
-    def __replace_tiles_in_objects_xml(self, previous_guid, previous_tile):
-        new_tiles = [tile for tile in self.tiles.values() if previous_tile.name in tile.name and previous_tile.name != tile.name]
+    def __replace_tiles_in_objects_xml(self, previous_tile, new_tiles):
+        previous_guid = previous_tile.xml.guid
 
         for new_tile in new_tiles:
             self.__replace_tile_in_objects_xml(previous_guid, new_tile)
