@@ -50,6 +50,7 @@ class MsfsSceneObject(MsfsObject):
 
     def clean_lods(self):
         pop_lods = []
+        if not self.xml.find_scenery_lods(): return
         for i, lod in enumerate(self.lods):
             if not self.xml.find_scenery_lod_models(lod.model_file):
                 lod.remove_files()
