@@ -54,8 +54,16 @@ def reload_project_name(context):
     context.scene.setting_props.project_name = context.scene.settings.project_name
 
 
+def reload_definition_file(context):
+    context.scene.setting_props.definition_file = context.scene.settings.definition_file
+
+
 def reload_project_path_to_merge(context):
     context.scene.setting_props.project_path_to_merge = context.scene.settings.project_path_to_merge + os.path.sep
+
+
+def reload_definition_file_to_merge(context):
+    context.scene.setting_props.definition_file_to_merge = context.scene.settings.definition_file_to_merge
 
 
 def reload_author_name(context):
@@ -147,8 +155,10 @@ def reload_setting_props_property_group(context, reload_settings_file=True):
 def reload_setting_props(context, reload_settings_file=True):
     reload_setting_props_property_group(context, reload_settings_file)
 
+    reload_definition_file(context)
     reload_project_path(context)
     reload_project_name(context)
+    reload_definition_file_to_merge(context)
     reload_project_path_to_merge(context)
     reload_author_name(context)
     reload_bake_textures_enabled(context)

@@ -81,6 +81,8 @@ class SettingsOperator(PanelOperator):
         col.separator(factor=2.0)
         self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "project_name", "Project name", enabled=False)
         col.separator(factor=2.0)
+        self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "definition_file", "Xml definition file", enabled=False)
+        col.separator(factor=2.0)
         self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "author_name", "Author of the project")
         col.separator(factor=2.0)
         self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "bake_textures_enabled", "Bake textures enabled")
@@ -99,6 +101,8 @@ class SettingsOperator(PanelOperator):
         col.operator(OT_ProjectPathToMergeOperator.bl_idname, icon=FILE_FOLDER_ICON)
         col.separator()
         self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "project_path_to_merge_readonly", "Path of the project to merge into the final one", enabled=False)
+        col.separator()
+        self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "definition_file_to_merge", "Xml definition file of the project to merge into the final one", enabled=False)
         col.separator()
         self.draw_footer(context, self.layout, self.operator_name)
 

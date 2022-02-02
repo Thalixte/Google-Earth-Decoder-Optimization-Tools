@@ -28,16 +28,20 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         context.scene.settings.projects_path = self.projects_path_readonly = self.projects_path
 
     def project_path_updated(self, context):
-        self.project_path_readonly = os.path.dirname(self.project_path)
-        context.scene.settings.projects_path = self.projects_path = self.projects_path_readonly = os.path.dirname(os.path.dirname(self.project_path)) + os.path.sep
+        context.scene.settings.projects_path = self.projects_path = self.projects_path_readonly = os.path.dirname(os.path.dirname(self.project_path)) + os.sep
+        context.scene.settings.project_path = self.project_path
         context.scene.settings.project_name = self.project_name = os.path.relpath(self.project_path, start=self.projects_path)
+        context.scene.settings.definition_file = self.definition_file
+        self.project_path_readonly = self.project_path
 
     def project_name_updated(self, context):
         context.scene.settings.project_name = self.project_name
         context.scene.settings.project_path = os.path.join(context.scene.settings.projects_path, context.scene.settings.project_name)
 
     def project_path_to_merge_updated(self, context):
-        context.scene.settings.project_path_to_merge = self.project_path_to_merge_readonly = os.path.dirname(self.project_path_to_merge)
+        context.scene.settings.project_path_to_merge = os.path.dirname(self.project_path_to_merge)
+        context.scene.settings.definition_file_to_merge = self.definition_file_to_merge
+        self.project_path_to_merge_readonly = self.project_path_to_merge
 
     def author_name_updated(self, context):
         context.scene.settings.author_name = self.author_name
@@ -97,19 +101,12 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         description="Select the path containing all your MSFS scenery projects",
         default=bpy.types.Scene.settings.projects_path
     )
-    project_name: StringProperty(
-        name="Project name",
-        description="Name of the project to initialize",
-        default=bpy.types.Scene.settings.project_name,
-        maxlen=256,
-        update=project_name_updated
-    )
     project_path: StringProperty(
-        subtype="DIR_PATH",
-        name="Path of the project",
-        description="Select the path containing the MSFS scenery project",
+        subtype="FILE_PATH",
+        name="Path of the xml definition_file of the project",
+        description="Select the path of the xml definition file of the MSFS scenery project",
         maxlen=1024,
-        default=os.path.join(bpy.types.Scene.settings.projects_path, bpy.types.Scene.settings.project_name),
+        default=os.path.join(os.path.join(bpy.types.Scene.settings.projects_path, bpy.types.Scene.settings.project_name), bpy.types.Scene.settings.definition_file),
         update=project_path_updated
     )
     project_path_readonly: bpy.props.StringProperty(
@@ -117,18 +114,37 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         description="Select the path containing the MSFS scenery project",
         default=os.path.join(bpy.types.Scene.settings.projects_path, bpy.types.Scene.settings.project_name)
     )
+    project_name: StringProperty(
+        name="Project name",
+        description="Name of the project to initialize",
+        default=bpy.types.Scene.settings.project_name,
+        maxlen=256,
+        update=project_name_updated
+    )
+    definition_file: StringProperty(
+        name="Definition file",
+        description="Xml definition_file of the MSFS project",
+        default=bpy.types.Scene.settings.definition_file,
+        maxlen=256
+    )
     project_path_to_merge: StringProperty(
-        subtype="DIR_PATH",
-        name="Path of the project you want to merge into the final one",
-        description="Select the path containing the project you want to merge into the final msfs scenery project",
+        subtype="FILE_PATH",
+        name="Path of the xml definition_file of the project you want to merge into the final one",
+        description="Select the path of the xml definition file of the the project you want to merge into the final msfs scenery project",
         maxlen=1024,
-        default=bpy.types.Scene.settings.project_path_to_merge,
+        default=os.path.join(bpy.types.Scene.settings.project_path_to_merge, bpy.types.Scene.settings.definition_file_to_merge),
         update=project_path_to_merge_updated
+    )
+    definition_file_to_merge: StringProperty(
+        name="Definition file",
+        description="Xml definition_file of the project you want to merge into the final one",
+        default=bpy.types.Scene.settings.definition_file_to_merge,
+        maxlen=256
     )
     project_path_to_merge_readonly: bpy.props.StringProperty(
         name="Path of the project you want to merge into the final msfs scenery project",
         description="Select the path containing the project you want to merge into the final msfs scenery project",
-        default=bpy.types.Scene.settings.project_path_to_merge
+        default=os.path.join(bpy.types.Scene.settings.project_path_to_merge, bpy.types.Scene.settings.definition_file_to_merge)
     )
     author_name: StringProperty(
         name="Author name",

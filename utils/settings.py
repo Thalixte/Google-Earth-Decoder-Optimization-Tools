@@ -21,14 +21,16 @@ import json
 import os
 
 from constants import ENCODING, PNG_TEXTURE_FORMAT, INI_FILE, MSFS_SDK_INI_SECTION, BUILD_INI_SECTION, \
-    COMPRESSONATOR_INI_SECTION, BACKUP_INI_SECTION, PYTHON_INI_SECTION
+    COMPRESSONATOR_INI_SECTION, BACKUP_INI_SECTION, PYTHON_INI_SECTION, XML_FILE_EXT
 
 
 class Settings:
     sources_path: str
     projects_path: str
     project_name: str
+    definition_file: str
     project_path_to_merge: str
+    definition_file_to_merge: str
     author_name: str
     msfs_build_exe_path: str
     backup_enabled: str
@@ -48,7 +50,9 @@ class Settings:
         self.sources_path = sources_path
         self.projects_path = str()
         self.project_name = str()
+        self.definition_file = str()
         self.project_path_to_merge = str()
+        self.definition_file_to_merge = str()
         self.author_name = str()
         self.msfs_build_exe_path = str()
         self.backup_enabled = "False"
@@ -77,6 +81,9 @@ class Settings:
             for name, value in config.items(section_name):
                 setattr(self, name, value.replace('"', str()))
 
+        if self.definition_file == str() and self.project_name != str():
+            self.definition_file = self.project_name.capitalize() + XML_FILE_EXT
+
         # reduce the number of texture files (Lily Texture Packer addon is necessary https://gumroad.com/l/DFExj)
         self.bake_textures_enabled = json.loads(self.bake_textures_enabled.lower())
 
@@ -98,6 +105,9 @@ class Settings:
         # ensure to convert float settings values
         self.lat_correction = "{:.9f}".format(float(str(self.lat_correction))).rstrip("0").rstrip(".")
         self.lon_correction = "{:.9f}".format(float(str(self.lon_correction))).rstrip("0").rstrip(".")
+
+        if self.definition_file_to_merge == str() and self.project_path_to_merge != str():
+            self.definition_file_to_merge = os.path.basename(self.project_path_to_merge).capitalize() + XML_FILE_EXT
 
     def save(self):
         config = cp.ConfigParser(comment_prefixes='# ', allow_no_value=True)

@@ -35,7 +35,7 @@ def init_msfs_scenery_project(script_settings):
         print_title("INIT SCENERY PROJECT")
 
         # instantiate the msfsProject and create the necessary resources if it does not exist
-        MsfsProject(script_settings.projects_path, script_settings.project_name, script_settings.author_name, script_settings.sources_path, init_structure=True)
+        MsfsProject(script_settings.projects_path, script_settings.project_name, script_settings.definition_file, script_settings.author_name, script_settings.sources_path, init_structure=True)
 
         pr_bg_green("Script correctly applied" + constants.CEND)
 

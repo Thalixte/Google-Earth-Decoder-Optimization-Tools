@@ -85,9 +85,10 @@ class MsfsProject:
     COLLIDER_SUFFIX = "_collider"
     NB_PARALLEL_TASKS = 4
 
-    def __init__(self, projects_path, project_name, author_name, sources_path, init_structure=False, fast_init=False):
+    def __init__(self, projects_path, project_name, definition_file, author_name, sources_path, init_structure=False, fast_init=False):
         self.parent_path = projects_path
         self.project_name = project_name
+        self.project_definition_xml = definition_file
         self.author_name = author_name
         self.project_folder = os.path.join(self.parent_path, self.project_name.capitalize())
         self.backup_folder = os.path.join(self.project_folder, self.BACKUP_FOLDER)
@@ -234,7 +235,8 @@ class MsfsProject:
             self.__guess_min_lod_level()
 
     def __init_structure(self, sources_path, init_structure):
-        self.project_definition_xml = self.project_name + XML_FILE_EXT
+        if init_structure:
+            self.project_definition_xml = self.project_name.capitalize() + XML_FILE_EXT
         if init_structure or not os.path.isfile(os.path.join(self.project_folder, self.project_definition_xml)):
             self.package_definitions_xml = self.author_name.lower() + "-" + self.project_definition_xml.lower()
         else:

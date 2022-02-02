@@ -35,7 +35,7 @@ from blender import clean_scene
 def optimize_scenery(script_settings):
     try:
         # instantiate the msfsProject and create the necessary resources if it does not exist
-        msfs_project = MsfsProject(script_settings.projects_path, script_settings.project_name, script_settings.author_name, script_settings.sources_path)
+        msfs_project = MsfsProject(script_settings.projects_path, script_settings.project_name, script_settings.definition_file, script_settings.author_name, script_settings.sources_path)
 
         check_configuration(script_settings, msfs_project, check_lily_texture_packer=True)
 

@@ -74,40 +74,54 @@ class OT_ProjectsPathOperator(DirectoryBrowserOperator):
 
 class OT_ProjectPathOperator(DirectoryBrowserOperator):
     bl_idname = "wm.project_path_operator"
-    bl_label = "Path of the MSFS project..."
+    bl_label = "Path of the MSFS project definition file..."
 
-    directory: bpy.props.StringProperty(subtype="DIR_PATH")
+    filter_glob: StringProperty(
+        default="*.xml",
+        options={"HIDDEN"},
+    )
+    filepath: bpy.props.StringProperty(
+        subtype="FILE_PATH"
+    )
 
     def draw(self, context):
         super().draw(context)
 
     def execute(self, context):
-        context.scene.setting_props.project_path = self.directory
+        context.scene.setting_props.definition_file = os.path.basename(self.filepath)
+        context.scene.setting_props.project_path = os.path.dirname(self.filepath) + os.sep
         reload_current_operator(context)
         return {'FINISHED'}
 
     def invoke(self, context, event):
-        self.directory = context.scene.setting_props.project_path
+        self.filepath = os.path.join(context.scene.setting_props.project_path, context.scene.setting_props.definition_file)
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
 
 
 class OT_ProjectPathToMergeOperator(DirectoryBrowserOperator):
     bl_idname = "wm.project_path_to_merge_operator"
-    bl_label = "Path of the project you want to merge into the final one..."
+    bl_label = "Path of the project definition file you want to merge into the final one..."
 
-    directory: bpy.props.StringProperty(subtype="DIR_PATH")
+    filter_glob: StringProperty(
+        default="*.xml",
+        options={"HIDDEN"},
+    )
+    filepath: bpy.props.StringProperty(
+        subtype="FILE_PATH"
+    )
 
     def draw(self, context):
         super().draw(context)
 
     def execute(self, context):
-        context.scene.setting_props.project_path_to_merge = self.directory
+        context.scene.setting_props.definition_file_to_merge = os.path.basename(self.filepath)
+        context.scene.setting_props.project_path_to_merge = os.path.dirname(self.filepath) + os.sep
         reload_current_operator(context)
         return {'FINISHED'}
 
     def invoke(self, context, event):
-        self.directory = context.scene.setting_props.project_path_to_merge
+        self.filepath = os.path.join(context.scene.setting_props.project_path_to_merge, context.scene.setting_props.definition_file_to_merge)
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
 
@@ -168,7 +182,7 @@ class ActionOperator(Operator):
     @classmethod
     def poll(cls, context):
         settings = context.scene.settings
-        return MsfsProject(settings.projects_path, settings.project_name, settings.author_name, settings.sources_path, fast_init=True)
+        return MsfsProject(settings.projects_path, settings.project_name, settings.definition_file, settings.author_name, settings.sources_path, fast_init=True)
 
     def execute(self, context):
         # clear and open the system console
@@ -230,7 +244,8 @@ class OT_MergeSceneriesOperator(ActionOperator):
         settings = context.scene.settings
         project_folder_to_merge = os.path.dirname(settings.project_path_to_merge) + os.path.sep
         project_name_to_merge = os.path.relpath(settings.project_path_to_merge, start=project_folder_to_merge)
-        msfs_project_to_merge = MsfsProject(settings.projects_path, project_name_to_merge, settings.author_name, settings.sources_path, fast_init=True)
+        definition_file_to_merge = settings.definition_file_to_merge
+        msfs_project_to_merge = MsfsProject(settings.projects_path, project_name_to_merge, definition_file_to_merge, settings.author_name, settings.sources_path, fast_init=True)
         return (os.path.isdir(msfs_project.scene_folder) and os.path.isdir(msfs_project_to_merge.scene_folder)) and msfs_project.project_folder != msfs_project_to_merge.project_folder
 
     def execute(self, context):
