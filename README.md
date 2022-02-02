@@ -41,14 +41,16 @@ This script also adds Asobo extension tags in order to manage collisions, road t
  
 
 * **Clean the unused files of the msfs project:**
-This script clean the unused files of the MSFS scenery project.
+This script cleans the unused files of the MSFS scenery project.
 Once you removed some tiles of a project, use this script to clean the gltf, bin and texture files associated to those tiles.
 Merge an existing MSFS scenery project into another one:
 
 
 * **Merge the tiles of a MSFS scenery project into another MSFS scenery project:**
+This script merges the tiles of a MSFS scenery project into another MSFS scenery project.
 In the MERGE section, select the project that you want to merge into the project indicated in the PROJECT section.
-Update the position of the MSFS scenery tiles:
+
+**Update the position of the MSFS scenery tiles:**
 This script calculates the position of the MSFS scenery tiles.
 If you are not satisfied with the resulting positions, you can setup a latitude correction and/or a longitude correction in the TILE section.
 
