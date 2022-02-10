@@ -209,6 +209,14 @@ class MsfsProject:
             self.objects_xml.save()
             self.__merge_shapes(self.shapes, project_to_merge.shapes)
 
+    def add_tile_colliders(self):
+        lods = [lod for tile in self.tiles.values() for lod in tile.lods]
+        pbar = ProgressBar(list(lods), title="REMOVE ROAD AND COLLISION TAGS IN THE TILE LODS")
+        for lod in lods:
+            lod.optimization_in_progress = False
+            lod.remove_road_and_collision_tags()
+            pbar.update("road and collision tags removed from %s" % lod.name)
+
     def split_tiles(self):
         self.__split_tiles(self.__retrieve_tiles_to_process())
         previous_tiles = {guid: tile for guid, tile in self.tiles.items()}

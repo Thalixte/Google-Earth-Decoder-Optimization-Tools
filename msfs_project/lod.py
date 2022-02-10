@@ -150,6 +150,12 @@ class MsfsLod:
         model_file.remove_texture_path()
         model_file.dump()
 
+    def remove_road_and_collision_tags(self):
+        model_file = MsfsGltf(os.path.join(self.folder, self.model_file))
+        model_file.remove_asobo_extension(model_file.ROAD_TAG)
+        model_file.remove_asobo_extension(model_file.COLLISION_TAG)
+        model_file.dump()
+
     def split(self, tile_name, min_size_value, tile):
         self.__retrieve_splitted_nodes(tile_name)
         if self.splitted_nodes:

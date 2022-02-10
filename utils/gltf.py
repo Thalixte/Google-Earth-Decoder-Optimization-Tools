@@ -123,5 +123,30 @@ class MsfsGltf:
         for material in self.data[self.MATERIALS_TAG]:
             material[self.EXTENSIONS_TAG] = material_extensions_data
 
+    def remove_asobo_extension(self, extension_name):
+        if not self.MATERIALS_TAG in self.data.keys(): return
+
+        other_tag_exists = False
+
+        for material in self.data[self.MATERIALS_TAG]:
+            if not self.EXTENSIONS_TAG in material.keys(): continue
+            if not self.ASOBO_TAGS_TAG in material[self.EXTENSIONS_TAG].keys(): continue
+            if not self.TAGS_TAG in material[self.EXTENSIONS_TAG][self.ASOBO_TAGS_TAG].keys(): continue
+
+            if extension_name in material[self.EXTENSIONS_TAG][self.ASOBO_TAGS_TAG][self.TAGS_TAG]:
+                material[self.EXTENSIONS_TAG][self.ASOBO_TAGS_TAG][self.TAGS_TAG].remove(extension_name)
+
+            if len(material[self.EXTENSIONS_TAG][self.ASOBO_TAGS_TAG][self.TAGS_TAG]):
+                other_tag_exists = True
+            else:
+                material[self.EXTENSIONS_TAG][self.ASOBO_TAGS_TAG].pop(self.TAGS_TAG)
+                material[self.EXTENSIONS_TAG].pop(self.ASOBO_TAGS_TAG)
+
+        if self.EXTENSIONS_USED_TAG in self.data.keys():
+            if self.ASOBO_TAGS_TAG in self.data[self.EXTENSIONS_USED_TAG] and not other_tag_exists:
+                self.data[self.EXTENSIONS_USED_TAG].remove(self.ASOBO_TAGS_TAG)
+
+
+
     def dump(self):
         save_json_file(self.file_path, self.data)
