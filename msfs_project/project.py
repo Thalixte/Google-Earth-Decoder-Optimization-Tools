@@ -18,7 +18,7 @@
 
 import itertools
 import sys
-from os.path import dirname, basename
+from os.path import basename
 
 import io
 import shutil
@@ -208,7 +208,21 @@ class MsfsProject:
             self.objects_xml.save()
             self.__merge_shapes(self.shapes, project_to_merge.shapes)
 
+    def remove_colliders(self):
+        # clean previous colliders
+        self.__remove_colliders()
+
+        lods = [lod for tile in self.tiles.values() for lod in tile.lods]
+        pbar = ProgressBar(list(lods), title="ADD ROAD AND COLLISION TAGS IN THE TILE LODS")
+        for lod in lods:
+            lod.optimization_in_progress = False
+            lod.prepare_for_msfs()
+            pbar.update("road and collision tags added from %s" % lod.name)
+
     def add_tile_colliders(self):
+        # clean previous colliders
+        self.__remove_colliders()
+
         lods = [lod for tile in self.tiles.values() for lod in tile.lods]
         pbar = ProgressBar(list(lods), title="REMOVE ROAD AND COLLISION TAGS IN THE TILE LODS")
         for lod in lods:
@@ -218,7 +232,9 @@ class MsfsProject:
 
         pbar = ProgressBar(list(self.tiles.values()), title="ADD TILE COLLIDERS")
         for tile in self.tiles.values():
-            tile.add_collider()
+            tile_guid = tile.xml.guid
+            new_collider = tile.add_collider()
+            self.__add_object_in_objects_xml(tile_guid, new_collider)
             pbar.update("collider added for %s tile" % tile.name)
 
     def split_tiles(self):
@@ -371,11 +387,11 @@ class MsfsProject:
             for guid, object in objects.items():
                 object.backup_files(backup_path, pbar=pbar)
 
-    def __clean_objects(self, objects: dict):
+    def __clean_objects(self, objects: dict, all_objects=False):
         pop_objects = []
         for guid, object in objects.items():
             # first, check if the object is unused
-            if not self.objects_xml.find_scenery_objects(guid) and not self.objects_xml.find_scenery_objects_in_group(guid):
+            if all_objects or (not self.objects_xml.find_scenery_objects(guid) and not self.objects_xml.find_scenery_objects_in_group(guid)):
                 # unused object, so remove the files related to it
                 object.remove_files()
                 pop_objects.append(guid)
@@ -564,15 +580,22 @@ class MsfsProject:
         previous_guid = previous_tile.xml.guid
 
         for new_tile in new_tiles:
-            self.__replace_tile_in_objects_xml(previous_guid, new_tile)
+            self.__add_object_in_objects_xml(previous_guid, new_tile)
 
         # since we added the new tiles with minidom, we have to reload the xml file
         self.objects_xml = ObjectsXml(self.scene_folder, self.SCENE_OBJECTS_FILE)
         self.__remove_object(previous_tile)
 
-    def __replace_tile_in_objects_xml(self, previous_guid, new_tile):
+    def __add_object_in_objects_xml(self, previous_guid, new_object):
         found_scenery_objects_parent, found_scenery_object = self.__find_scenery_objects_and_its_parents(self.objects_xml, previous_guid)
-        add_scenery_object(self.objects_xml.file_path, new_tile, found_scenery_object)
+        add_scenery_object(self.objects_xml.file_path, new_object, found_scenery_object)
+
+    def __remove_colliders(self):
+        pbar = ProgressBar(list(self.colliders.values()), title="REMOVE TILE COLLIDERS")
+        for guid, collider in self.colliders.items():
+            self.objects_xml.remove_object(guid)
+            pbar.update("%s removed" % collider.name)
+        self.__clean_objects(self.colliders)
 
     @staticmethod
     def __find_guid_with_definition_file(objects, definition_file):

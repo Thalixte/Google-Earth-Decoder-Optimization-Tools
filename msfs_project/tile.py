@@ -19,9 +19,11 @@
 import os
 
 from constants import GLTF_FILE_EXT, COLLIDER_SUFFIX, XML_FILE_EXT
+from msfs_project.collider import MsfsCollider
 from msfs_project.scene_object import MsfsSceneObject
 from msfs_project.position import MsfsPosition
 from utils import get_coords_from_file_name, get_position_from_file_name
+from utils.minidom_xml import create_new_definition_file
 
 
 class MsfsTile(MsfsSceneObject):
@@ -47,11 +49,16 @@ class MsfsTile(MsfsSceneObject):
                     pbar.update("folder %s created" % lod.name)
 
     def add_collider(self):
+        new_collider = None
         for idx, lod in enumerate(self.lods):
             if idx < (len(self.lods) - 1): continue
             collider_model_file = self.name + COLLIDER_SUFFIX + GLTF_FILE_EXT
             collider_definition_file_name = self.name + COLLIDER_SUFFIX + XML_FILE_EXT
             lod.create_collider(collider_model_file)
+            create_new_definition_file(os.path.join(self.folder, collider_definition_file_name))
+            new_collider = MsfsCollider(self.folder, self.name + COLLIDER_SUFFIX, os.path.join(self.folder, collider_definition_file_name))
+
+        return new_collider
 
     def split(self, settings):
         for i, lod in enumerate(self.lods):

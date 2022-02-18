@@ -42,7 +42,7 @@ def clean_package_files(script_settings):
             msfs_project.backup(Path(os.path.abspath(__file__)).stem.replace(SCRIPT_PREFIX, str()))
 
         isolated_print(EOL)
-        msfs_project.add_tile_colliders()
+        msfs_project.remove_colliders()
 
         if script_settings.build_package_enabled:
             build_package(msfs_project, script_settings)
