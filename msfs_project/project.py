@@ -82,7 +82,6 @@ class MsfsProject:
     SCENE_FOLDER = "scene"
     CONTENT_INFO_FOLDER = "ContentInfo"
     SCENE_OBJECTS_FILE = "objects" + XML_FILE_EXT
-    COLLIDER_SUFFIX = "_collider"
     NB_PARALLEL_TASKS = 4
 
     def __init__(self, projects_path, project_name, definition_file, author_name, sources_path, init_structure=False, fast_init=False):
@@ -217,6 +216,11 @@ class MsfsProject:
             lod.remove_road_and_collision_tags()
             pbar.update("road and collision tags removed from %s" % lod.name)
 
+        pbar = ProgressBar(list(self.tiles.values()), title="ADD TILE COLLIDERS")
+        for tile in self.tiles.values():
+            tile.add_collider()
+            pbar.update("collider added for %s tile" % tile.name)
+
     def split_tiles(self):
         self.__split_tiles(self.__retrieve_tiles_to_process())
         previous_tiles = {guid: tile for guid, tile in self.tiles.items()}
@@ -342,7 +346,7 @@ class MsfsProject:
                 pbar.update("%s" % path.name)
                 continue
 
-            if self.COLLIDER_SUFFIX in path.stem:
+            if COLLIDER_SUFFIX in path.stem:
                 msfs_collider = MsfsCollider(self.model_lib_folder, path.stem, path.name)
                 self.colliders[msfs_collider.xml.guid] = msfs_collider
                 pbar.update("%s" % path.name)

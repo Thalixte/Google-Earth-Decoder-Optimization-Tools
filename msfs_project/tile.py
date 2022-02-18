@@ -18,6 +18,7 @@
 
 import os
 
+from constants import GLTF_FILE_EXT, COLLIDER_SUFFIX, XML_FILE_EXT
 from msfs_project.scene_object import MsfsSceneObject
 from msfs_project.position import MsfsPosition
 from utils import get_coords_from_file_name, get_position_from_file_name
@@ -44,6 +45,13 @@ class MsfsTile(MsfsSceneObject):
                     pbar.range += 1
                 else:
                     pbar.update("folder %s created" % lod.name)
+
+    def add_collider(self):
+        for idx, lod in enumerate(self.lods):
+            if idx < (len(self.lods) - 1): continue
+            collider_model_file = self.name + COLLIDER_SUFFIX + GLTF_FILE_EXT
+            collider_definition_file_name = self.name + COLLIDER_SUFFIX + XML_FILE_EXT
+            lod.create_collider(collider_model_file)
 
     def split(self, settings):
         for i, lod in enumerate(self.lods):

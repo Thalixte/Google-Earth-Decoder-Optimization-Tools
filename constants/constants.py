@@ -69,6 +69,7 @@ UI_FOLDER = "UI"
 TEXTURE_FOLDER = "texture"
 
 SCRIPT_PREFIX = "_script"
+COLLIDER_SUFFIX = "_collider"
 
 RESOURCE_FOLDER = "resource"
 TEMPLATES_FOLDER = RESOURCE_FOLDER + "\\" + "templates"

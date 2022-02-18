@@ -15,6 +15,8 @@
 #  #
 #
 #  <pep8 compliant>
+import os.path
+import shutil
 
 from constants import TEXTURE_FOLDER
 from utils import load_json_file, save_json_file, insert_key_value
@@ -43,6 +45,7 @@ class MsfsGltf:
     ENABLED_TAG = "enabled"
     ASOBO_MATERIAL_DAY_NIGHT_SWITCH_TAG = "ASOBO_material_day_night_switch"
     ASOBO_MATERIAL_FAKE_TERRAIN_TAG = "ASOBO_material_fake_terrain"
+    ASOBO_MATERIAL_INVISIBLE_TAG = "ASOBO_material_invisible"
     ASOBO_NORMAL_MAP_CONVENTION_TAG = "ASOBO_normal_map_convention"
     ASOBO_ASSETS_OPTIMIZED_TAG = "ASOBO_asset_optimized"
     TANGENT_SPACE_CONVENTION_TAG = "tangent_space_convention"
@@ -123,7 +126,17 @@ class MsfsGltf:
         for material in self.data[self.MATERIALS_TAG]:
             material[self.EXTENSIONS_TAG] = material_extensions_data
 
-    def remove_asobo_extension(self, extension_name):
+    def add_extension_tag(self, extension_tag):
+        if not self.data: return
+
+        self.data[self.EXTENSIONS_USED_TAG].append(extension_tag)
+
+        for material in self.data[self.MATERIALS_TAG]:
+            material[self.EXTENSIONS_TAG][extension_tag] = {
+                self.ENABLED_TAG: True
+            }
+
+    def remove_asobo_tag(self, asobo_tag_name):
         if not self.MATERIALS_TAG in self.data.keys(): return
 
         other_tag_exists = False
@@ -133,8 +146,8 @@ class MsfsGltf:
             if not self.ASOBO_TAGS_TAG in material[self.EXTENSIONS_TAG].keys(): continue
             if not self.TAGS_TAG in material[self.EXTENSIONS_TAG][self.ASOBO_TAGS_TAG].keys(): continue
 
-            if extension_name in material[self.EXTENSIONS_TAG][self.ASOBO_TAGS_TAG][self.TAGS_TAG]:
-                material[self.EXTENSIONS_TAG][self.ASOBO_TAGS_TAG][self.TAGS_TAG].remove(extension_name)
+            if asobo_tag_name in material[self.EXTENSIONS_TAG][self.ASOBO_TAGS_TAG][self.TAGS_TAG]:
+                material[self.EXTENSIONS_TAG][self.ASOBO_TAGS_TAG][self.TAGS_TAG].remove(asobo_tag_name)
 
             if len(material[self.EXTENSIONS_TAG][self.ASOBO_TAGS_TAG][self.TAGS_TAG]):
                 other_tag_exists = True
@@ -146,7 +159,18 @@ class MsfsGltf:
             if self.ASOBO_TAGS_TAG in self.data[self.EXTENSIONS_USED_TAG] and not other_tag_exists:
                 self.data[self.EXTENSIONS_USED_TAG].remove(self.ASOBO_TAGS_TAG)
 
+    def remove_asobo_extension(self, extension_name):
+        if not self.MATERIALS_TAG in self.data.keys(): return
 
+        for material in self.data[self.MATERIALS_TAG]:
+            if not self.EXTENSIONS_TAG in material.keys(): continue
+
+            if extension_name in material[self.EXTENSIONS_TAG]:
+                material[self.EXTENSIONS_TAG].pop(extension_name)
+
+        if self.EXTENSIONS_USED_TAG in self.data.keys():
+            if extension_name in self.data[self.EXTENSIONS_USED_TAG]:
+                self.data[self.EXTENSIONS_USED_TAG].remove(extension_name)
 
     def dump(self):
         save_json_file(self.file_path, self.data)

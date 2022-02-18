@@ -152,9 +152,18 @@ class MsfsLod:
 
     def remove_road_and_collision_tags(self):
         model_file = MsfsGltf(os.path.join(self.folder, self.model_file))
-        model_file.remove_asobo_extension(model_file.ROAD_TAG)
-        model_file.remove_asobo_extension(model_file.COLLISION_TAG)
+        model_file.remove_asobo_tag(model_file.ROAD_TAG)
+        model_file.remove_asobo_tag(model_file.COLLISION_TAG)
         model_file.dump()
+
+    def create_collider(self, collider_model_file_name):
+        shutil.copyfile(os.path.join(self.folder, self.model_file), os.path.join(self.folder, collider_model_file_name))
+        collider_model_file = MsfsGltf(os.path.join(self.folder, collider_model_file_name))
+        collider_model_file.add_asobo_extensions()
+        collider_model_file.remove_asobo_extension(collider_model_file.ASOBO_MATERIAL_FAKE_TERRAIN_TAG)
+        collider_model_file.remove_asobo_extension(collider_model_file.ASOBO_MATERIAL_DAY_NIGHT_SWITCH_TAG)
+        collider_model_file.add_extension_tag(collider_model_file.ASOBO_MATERIAL_INVISIBLE_TAG)
+        collider_model_file.dump()
 
     def split(self, tile_name, min_size_value, tile):
         self.__retrieve_splitted_nodes(tile_name)
