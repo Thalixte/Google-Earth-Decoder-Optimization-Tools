@@ -20,7 +20,8 @@ import os
 import site
 import subprocess
 import sys
-from importlib import reload, import_module
+from glob import glob1
+from importlib import import_module
 
 import bpy
 
@@ -29,7 +30,7 @@ import bpy
 ######################################################
 
 from os.path import normpath, join, dirname
-from utils import ScriptError, isolated_print
+from utils.script_errors import ScriptError
 
 PIP_LIB = "pip"
 WILDCARD = "*"
@@ -53,7 +54,7 @@ def install_python_lib(lib, install_pip=False):
 
     if is_installed(python_lib_path, PIP_LIB) and is_installed(python_lib_path, lib):
         print(PIP_LIB, "and", lib, "correctly installed in blender lib folder")
-        return
+        return True
 
     try:
         if install_pip:
@@ -69,7 +70,10 @@ def install_python_lib(lib, install_pip=False):
 
     if is_installed(python_lib_path, PIP_LIB) and is_installed(python_lib_path, lib):
         print(PIP_LIB, "and", lib, "correctly installed in blender lib folder")
+        return True
+
+    return True
 
 
 def is_installed(python_lib_path, lib):
-    return os.path.isdir(os.path.join(python_lib_path, lib)) or os.path.isdir(os.path.join(site.USER_SITE, lib))
+    return os.path.isdir(os.path.join(python_lib_path, lib)) or len(glob1(python_lib_path, lib + WILDCARD)) > 0 or os.path.isdir(os.path.join(site.USER_SITE, lib)) or len(glob1(site.USER_SITE, lib + WILDCARD)) > 0

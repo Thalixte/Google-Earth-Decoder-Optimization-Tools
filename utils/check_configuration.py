@@ -21,6 +21,7 @@ import os
 import bpy
 from constants import *
 from utils import pr_ko_red, pr_ok_green, pr_ko_orange, isolated_print
+from utils.install_lib import install_python_lib
 from utils.console import print_title
 from utils.script_errors import ScriptError
 
@@ -30,7 +31,7 @@ RESULT_MSG_LENGTH = 40
 ######################################################
 # check configuration methods
 ######################################################
-def check_configuration(settings, msfs_project, check_lily_texture_packer=False, check_built_package=False, check_compressonator=False):
+def check_configuration(settings, msfs_project, check_optimisation=False, check_lily_texture_packer=False, check_built_package=False, check_compressonator=False):
     error_msg = "Configuration error found ! "
     warning_msg = "Configuration warning ! "
 
@@ -45,8 +46,7 @@ def check_configuration(settings, msfs_project, check_lily_texture_packer=False,
     # check the projects name
     if not os.path.isdir(msfs_project.project_folder):
         pr_ko_red(str("project_name value").ljust(RESULT_MSG_LENGTH))
-        raise ScriptError(
-            error_msg + "Project folder " + msfs_project.project_folder + " not found. Please check the project_name value")
+        raise ScriptError(error_msg + "Project folder " + msfs_project.project_folder + " not found. Please check the project_name value")
     pr_ok_green(str("project_name value").ljust(RESULT_MSG_LENGTH))
 
     # check if the msfs_project file is reachable
@@ -98,6 +98,12 @@ def check_configuration(settings, msfs_project, check_lily_texture_packer=False,
         pr_ko_red(str("textures_folder value").ljust(RESULT_MSG_LENGTH))
         raise ScriptError(error_msg + "The folder containing the textures of the scene (" + msfs_project.texture_folder + ") was not found. Please check the textures_folder value")
     pr_ok_green(str("textures_folder value").ljust(RESULT_MSG_LENGTH))
+
+    if check_optimisation:
+        if not install_python_lib("Pillow"):
+            pr_ko_red(str("Pillow lib installation").ljust(RESULT_MSG_LENGTH))
+            raise ScriptError(error_msg + "Pillow python lib is not correctly installed. Please check what can prevent this library to be installed correctly")
+    pr_ok_green(str("Pillow lib installation").ljust(RESULT_MSG_LENGTH))
 
     # check if Lily texture packer is installed
     if check_lily_texture_packer and settings.bake_textures_enabled:

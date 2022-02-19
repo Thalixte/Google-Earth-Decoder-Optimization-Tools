@@ -37,7 +37,7 @@ def optimize_scenery(script_settings):
         # instantiate the msfsProject and create the necessary resources if it does not exist
         msfs_project = MsfsProject(script_settings.projects_path, script_settings.project_name, script_settings.definition_file, script_settings.author_name, script_settings.sources_path)
 
-        check_configuration(script_settings, msfs_project, check_lily_texture_packer=True)
+        check_configuration(script_settings, msfs_project, check_optimisation=True, check_lily_texture_packer=script_settings.bake_textures_enabled)
 
         if script_settings.backup_enabled:
             msfs_project.backup(Path(os.path.abspath(__file__)).stem.replace(SCRIPT_PREFIX, str()))
