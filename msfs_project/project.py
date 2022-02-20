@@ -387,11 +387,11 @@ class MsfsProject:
             for guid, object in objects.items():
                 object.backup_files(backup_path, pbar=pbar)
 
-    def __clean_objects(self, objects: dict, all_objects=False):
+    def __clean_objects(self, objects: dict):
         pop_objects = []
         for guid, object in objects.items():
             # first, check if the object is unused
-            if all_objects or (not self.objects_xml.find_scenery_objects(guid) and not self.objects_xml.find_scenery_objects_in_group(guid)):
+            if not self.objects_xml.find_scenery_objects(guid) and not self.objects_xml.find_scenery_objects_in_group(guid):
                 # unused object, so remove the files related to it
                 object.remove_files()
                 pop_objects.append(guid)

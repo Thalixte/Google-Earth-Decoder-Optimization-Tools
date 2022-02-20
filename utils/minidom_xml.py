@@ -6,15 +6,16 @@ from msfs_project.objects_xml import ObjectsXml
 from msfs_project.object_xml import MsfsObjectXml
 
 
-def create_new_definition_file(file_path):
+def create_new_definition_file(file_path, has_lods=True):
     new_guid = "{" + str(uuid4()) + "}"
     root = minidom.Document()
     model_info = root.createElement(MsfsObjectXml.MODEL_INFO_TAG)
     model_info.setAttribute(MsfsObjectXml.GUID_ATTR, new_guid)
     model_info.setAttribute(MsfsObjectXml.VERSION_ATTR, MsfsObjectXml.MODEL_INFO_VERSION)
     root.appendChild(model_info)
-    lods = root.createElement(MsfsObjectXml.LODS_TAG)
-    model_info.appendChild(lods)
+    if has_lods:
+        lods = root.createElement(MsfsObjectXml.LODS_TAG)
+        model_info.appendChild(lods)
 
     xml_str = "\n".join([line for line in root.toprettyxml(indent=" "*2).split('\n') if line.strip()])
 

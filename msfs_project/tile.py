@@ -55,7 +55,7 @@ class MsfsTile(MsfsSceneObject):
             collider_model_file = self.name + COLLIDER_SUFFIX + GLTF_FILE_EXT
             collider_definition_file_name = self.name + COLLIDER_SUFFIX + XML_FILE_EXT
             lod.create_collider(collider_model_file)
-            create_new_definition_file(os.path.join(self.folder, collider_definition_file_name))
+            create_new_definition_file(os.path.join(self.folder, collider_definition_file_name), has_lods=False)
             new_collider = MsfsCollider(self.folder, self.name + COLLIDER_SUFFIX, os.path.join(self.folder, collider_definition_file_name))
 
         return new_collider

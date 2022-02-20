@@ -30,3 +30,8 @@ class MsfsCollider(MsfsSceneObject):
         self.coords = get_coords_from_file_name(self.associated_tile)
         pos = get_position_from_file_name(self.associated_tile)
         self.pos = MsfsPosition(pos[0], pos[1], 0)
+
+    def remove_files(self):
+        for lod in self.lods:
+            lod.remove_file()
+        self.remove_file()
