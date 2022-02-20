@@ -22,15 +22,17 @@ import bpy
 from bpy.props import StringProperty
 from constants import MAX_PHOTOGRAMMETRY_LOD, INI_FILE
 from msfs_project import MsfsProject
+from scripts.add_tile_colliders_script import add_tile_colliders
 from scripts.clean_package_files_script import clean_package_files
 from scripts.fix_tiles_lightning_issues_script import fix_tiles_lightning_issues
 from scripts.init_msfs_scenery_project_script import init_msfs_scenery_project
 from scripts.merge_sceneries_script import merge_sceneries
 from scripts.optimize_scenery_script import optimize_scenery
+from scripts.remove_tile_colliders_script import remove_tile_colliders
 from scripts.update_min_size_values_script import update_min_size_values
 from scripts.compress_built_package_script import compress_built_package
 from scripts.update_tiles_position_script import update_tiles_position
-from utils import open_console, isolated_print
+from utils import open_console
 from .tools import reload_current_operator, reload_setting_props
 from bpy_extras.io_utils import ImportHelper
 from bpy_types import Operator
@@ -296,6 +298,36 @@ class OT_FixTilesLightningIssuesOperator(ActionOperator):
     def execute(self, context):
         super().execute(context)
         fix_tiles_lightning_issues(context.scene.settings)
+        return {'FINISHED'}
+
+
+class OT_AddTileCollidersOperator(ActionOperator):
+    bl_idname = "wm.add_tile_colliders"
+    bl_label = "Add a collider for each tile of the project..."
+
+    @classmethod
+    def poll(cls, context):
+        msfs_project = super().poll(context)
+        return os.path.isdir(msfs_project.scene_folder)
+
+    def execute(self, context):
+        super().execute(context)
+        add_tile_colliders(context.scene.settings)
+        return {'FINISHED'}
+
+
+class OT_RemoveTileCollidersOperator(ActionOperator):
+    bl_idname = "wm.remove_tile_colliders"
+    bl_label = "Remove the colliders for each tile of the project..."
+
+    @classmethod
+    def poll(cls, context):
+        msfs_project = super().poll(context)
+        return os.path.isdir(msfs_project.scene_folder)
+
+    def execute(self, context):
+        super().execute(context)
+        remove_tile_colliders(context.scene.settings)
         return {'FINISHED'}
 
 

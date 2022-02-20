@@ -31,7 +31,7 @@ from utils import check_configuration, ScriptError, build_package, pr_bg_green, 
 from msfs_project import MsfsProject
 
 
-def clean_package_files(script_settings):
+def remove_tile_colliders(script_settings):
     try:
         # instantiate the msfsProject and create the necessary resources if it does not exist
         msfs_project = MsfsProject(script_settings.projects_path, script_settings.project_name, script_settings.definition_file, script_settings.author_name, script_settings.sources_path)
@@ -63,4 +63,4 @@ def clean_package_files(script_settings):
 ##################################################################
 
 if __name__ == "__main__":
-    clean_package_files(settings)
+    remove_tile_colliders(settings)

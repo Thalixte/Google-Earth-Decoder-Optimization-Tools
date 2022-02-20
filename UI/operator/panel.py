@@ -368,6 +368,34 @@ class OT_FixTilesLightningIssuesPanel(SettingsOperator):
     ]
 
 
+class OT_AddTileCollidersPanel(SettingsOperator):
+    operator_name = "wm.add_tile_colliders"
+    id_name = "wm.add_tile_colliders_panel"
+    bl_idname = id_name
+    bl_label = "Add a collider for each tile of the project"
+    operator_description = """This script adds a collider for each tile of the project. """
+    starting_section = PROJECT_INI_SECTION
+    displayed_sections = [
+        PROJECT_INI_SECTION,
+        BUILD_INI_SECTION,
+        BACKUP_INI_SECTION,
+    ]
+
+
+class OT_RemoveTileCollidersPanel(SettingsOperator):
+    operator_name = "wm.remove_tile_colliders"
+    id_name = "wm.remove_tile_colliders_panel"
+    bl_idname = id_name
+    bl_label = "Remove the colliders for each tile of the project"
+    operator_description = """This script removes the colliders for each tile of the project. """
+    starting_section = PROJECT_INI_SECTION
+    displayed_sections = [
+        PROJECT_INI_SECTION,
+        BUILD_INI_SECTION,
+        BACKUP_INI_SECTION,
+    ]
+
+
 class OT_CompressBuiltPackagePanel(SettingsOperator):
     operator_name = "wm.compress_built_package"
     id_name = "wm.compress_built_package_panel"
