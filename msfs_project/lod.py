@@ -92,6 +92,12 @@ class MsfsLod:
         if self.optimization_in_progress:
             return
 
+        if not self.binaries:
+            return
+
+        if not self.textures:
+            return
+
         optimization_folder_path = os.path.join(self.folder, self.name)
         os.makedirs(optimization_folder_path, exist_ok=True)
         self.move_resources(optimization_folder_path)
