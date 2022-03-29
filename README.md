@@ -73,5 +73,11 @@ This script optimizes the built package of a MSFS scenery project by compressing
 For the script to process correctly, the package must have been successfully built prior to executing the script.
 
 
+* **Add a collider for each tile of the project:**
+This is an extra optimization of the scenery, wich is totally optional. When the scenery is optimized using the "Optimize an existing Msfs scenery project" script, the collision detection tags and the road tags are included in all the lods, which can produce CPU overload (even if my tests indicate that this is not really significant, in my config with a relatively old Intel(R) Core(TM) i7-4790K CPU @ 4.00GHz). This script removes the collision and road tags for all the LODs, and creates a specific transparent collider that embeds those tags for each tile of the project. Each collider object is created from the less detailed lod tile to decrease the CPU overload.
+
+
+* **Remove the colliders for each tile of the project:**
+This script removes all the colliders objects that have been created with the "Add a collider for each tile of the project" script. It also reverts back the road and collision tags for all the lods.
 
 If you want to donate, you will always be welcome to help me continue with more projects and update the existing ones https://paypal.me/Thalixte.
