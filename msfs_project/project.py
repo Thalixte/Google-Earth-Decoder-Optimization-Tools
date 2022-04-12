@@ -255,6 +255,14 @@ class MsfsProject:
 
             pbar.update("splitted tiles added, replacing the previous %s tile" % previous_tile.name)
 
+    def keep_common_tiles(self, project_to_compare):
+        tiles_to_remove = []
+        if self.objects_xml and project_to_compare.objects_xml:
+            tiles_to_remove = self.__find_different_tiles(self.tiles, project_to_compare.project_name, project_to_compare.tiles, project_to_compare.objects_xml)
+            for tile in tiles_to_remove:
+                tile.remove_files()
+            self.objects_xml.save()
+
     def __initialize(self, sources_path, init_structure, fast_init):
         self.__init_structure(sources_path, init_structure)
 
@@ -369,7 +377,10 @@ class MsfsProject:
                 continue
 
             msfs_tile = MsfsTile(self.model_lib_folder, path.stem, path.name)
-            self.tiles[msfs_tile.xml.guid] = msfs_tile
+            if not msfs_tile.lods:
+                msfs_tile.remove_files()
+            else:
+                self.tiles[msfs_tile.xml.guid] = msfs_tile
             pbar.update("%s" % path.name)
 
     def __retrieve_shapes(self):
@@ -377,15 +388,6 @@ class MsfsProject:
         for i, path in enumerate(pbar.iterable):
             self.shapes[path.stem] = MsfsShape(self.scene_folder, path.stem, path.stem + XML_FILE_EXT, path.name, path.stem + SHP_FILE_EXT, path.stem + SHX_FILE_EXT)
             pbar.update("%s" % path.name)
-
-    def __backup_objects(self, objects: dict, backup_path, pbar_title="backup files"):
-        pbar = ProgressBar(list())
-        for guid, object in objects.items():
-            object.backup_files(backup_path, dry_mode=True, pbar=pbar)
-        if pbar.range > 0:
-            pbar.display_title(pbar_title)
-            for guid, object in objects.items():
-                object.backup_files(backup_path, pbar=pbar)
 
     def __clean_objects(self, objects: dict):
         pop_objects = []
@@ -597,6 +599,30 @@ class MsfsProject:
             pbar.update("%s removed" % collider.name)
         self.__clean_objects(self.colliders)
 
+    def __find_different_tiles(self, tiles, project_to_compare_name, tiles_to_compare, objects_xml_to_compare):
+        different_tiles = []
+        pbar = ProgressBar(tiles.items(), title="FIND THE DIFFERENT TILES")
+        for guid, tile in pbar.iterable:
+            found_tile = self.__find_by_tile_name(tile, tiles_to_compare)
+            if not found_tile:
+                different_tiles.append(tile)
+            elif len(tile.lods) != len(found_tile.lods):
+                different_tiles.append(tile)
+
+            pbar.update("%s checked" % tile.name)
+
+        return different_tiles
+
+    @staticmethod
+    def __backup_objects(objects: dict, backup_path, pbar_title="backup files"):
+        pbar = ProgressBar(list())
+        for guid, object in objects.items():
+            object.backup_files(backup_path, dry_mode=True, pbar=pbar)
+        if pbar.range > 0:
+            pbar.display_title(pbar_title)
+            for guid, object in objects.items():
+                object.backup_files(backup_path, pbar=pbar)
+
     @staticmethod
     def __find_guid_with_definition_file(objects, definition_file):
         for key, object in objects.items():
@@ -651,3 +677,11 @@ class MsfsProject:
                 pbar.update("%s %s" % (obj["name"], update_msg))
         except:
             pass
+
+    @staticmethod
+    def __find_by_tile_name(tile, tiles_to_compare):
+        for guid, tile_to_compare in tiles_to_compare.items():
+            if tile.name == tile_to_compare.name:
+                return tile_to_compare
+
+        return False

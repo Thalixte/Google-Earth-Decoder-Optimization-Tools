@@ -32,11 +32,11 @@ class MsfsSceneObject(MsfsObject):
 
     LOD_MODEL_FILES_SEARCH_PATTERN = "_LOD*.gltf"
 
-    def __init__(self, folder, name, definition_file):
+    def __init__(self, folder, name, definition_file, is_collider=False):
         super().__init__(folder, name, definition_file)
         self.pos = MsfsPosition(0, 0, 0)
         self.coords = ([0, 0, 0, 0])
-        self.lods = self.__retrieve_lods()
+        self.lods = self.__retrieve_lods(is_collider)
 
     def backup_files(self, backup_path, dry_mode=False, pbar=None):
         for lod in self.lods:
@@ -71,11 +71,11 @@ class MsfsSceneObject(MsfsObject):
 
         return (n1 >= n2) and (s1 <= s2) and (w1 <= w2) and (e1 >= e2)
 
-    def __retrieve_lods(self):
+    def __retrieve_lods(self, is_collider=False):
         lods = []
         lods_definition = self.xml.find_scenery_lods()
 
-        if not lods_definition:
+        if not lods_definition and is_collider:
             lods.append(MsfsLod(0, 0, self.folder, self.name + GLTF_FILE_EXT))
 
         for i, lod_definition in enumerate(lods_definition):
