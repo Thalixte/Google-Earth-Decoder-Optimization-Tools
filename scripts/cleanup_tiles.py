@@ -41,17 +41,24 @@ from msfs_project import MsfsProject
 
 def cleanup_tiles(script_settings):
     try:
-        bbox_coords = [49.8944091796875, 49.89166259765625, 2.2576904296875, 2.26318359375]
-        # bbox_coords = [49.89715576171875, 49.8944091796875, 2.2576904296875, 2.26318359375]
+        # bbox_coords = [49.8944091796875, 49.89166259765625, 2.2576904296875, 2.26318359375]
+        bbox_coords = [49.89715576171875, 49.8944091796875, 2.2576904296875, 2.26318359375]
         # bbox_coords = [49.89532, 49.89177, 2.25461, 2.26551]
         b = bbox_to_poly(bbox_coords[1], bbox_coords[0], bbox_coords[2], bbox_coords[3])
-        bbox = gpd.GeoDataFrame(pd.DataFrame(["boundary"], index=[("bbox", 1)], columns=["geom"]), crs={"init": "epsg:4326"}, geometry=[b])
-        landuse = ox.geometries_from_bbox(bbox_coords[0], bbox_coords[1], bbox_coords[2], bbox_coords[3], tags={"landuse": True, "leisure": True, "natural": True, "water": True})
+        bbox = gpd.GeoDataFrame(pd.DataFrame(["box"], index=[("bbox", 1)], columns=["boundary"]), crs={"init": "epsg:4326"}, geometry=[b])
+        landuse = ox.geometries_from_bbox(bbox_coords[0], bbox_coords[1], bbox_coords[2], bbox_coords[3], tags={"landuse": True})
+        leisure = ox.geometries_from_bbox(bbox_coords[0], bbox_coords[1], bbox_coords[2], bbox_coords[3], tags={"leisure": True})
+        natural = ox.geometries_from_bbox(bbox_coords[0], bbox_coords[1], bbox_coords[2], bbox_coords[3], tags={"natural": True})
+        water = ox.geometries_from_bbox(bbox_coords[0], bbox_coords[1], bbox_coords[2], bbox_coords[3], tags={"water": True})
 
-        green = landuse[landuse["landuse"].isin(["forest", "grass", "nature_reserve"])].drop(labels="nodes", axis=1)
-        parks = landuse[landuse["leisure"].isin(["park", "playground"])].drop(labels="nodes", axis=1)
-        natural = landuse[landuse["natural"].isin(["wood", "woods", "water", "river", "stream", "sea"])].drop(labels="nodes", axis=1)
-        water = landuse[landuse["water"].isin(["river", "stream", "sea", "water"])].drop(labels="nodes", axis=1)
+        green = landuse[~landuse["landuse"].isin(["forest", "grass", "nature_reserve"])].drop(labels="nodes", axis=1)
+        # ox.plot_footprints(green)
+        parks = leisure[~leisure["leisure"].isin(["park", "playground"])].drop(labels="nodes", axis=1)
+        # ox.plot_footprints(parks)
+        natural = natural[~natural["natural"].isin(["wood", "woods", "water", "river", "stream", "sea"])].drop(labels="nodes", axis=1)
+        # ox.plot_footprints(natural)
+        water = water[~water["water"].isin(["river", "stream", "sea", "water"])].drop(labels="nodes", axis=1)
+        # ox.plot_footprints(water)
         isolated_print("Coordinate system:", green.crs)
         ox.project_gdf(green, to_crs="epsg:3857", to_latlong=True)
         # ox.plot_footprints(green)
