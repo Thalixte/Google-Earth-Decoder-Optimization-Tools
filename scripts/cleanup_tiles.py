@@ -41,9 +41,8 @@ from msfs_project import MsfsProject
 
 def cleanup_tiles(script_settings):
     try:
-        bbox_coords = [49.8944091796875, 49.89166259765625, 2.2576904296875, 2.26318359375]
-        # bbox_coords = [49.89715576171875, 49.8944091796875, 2.2576904296875, 2.26318359375]
-        # bbox_coords = [49.89532, 49.89177, 2.25461, 2.26551]
+        # bbox_coords = [49.8944091796875, 49.89166259765625, 2.2576904296875, 2.26318359375]
+        bbox_coords = [49.89715576171875, 49.8944091796875, 2.2576904296875, 2.26318359375]
         b = bbox_to_poly(bbox_coords[1], bbox_coords[0], bbox_coords[2], bbox_coords[3])
         bbox = gpd.GeoDataFrame(pd.DataFrame(["box"], index=[("bbox", 1)], columns=["boundary"]), crs={"init": "epsg:4326"}, geometry=[b])
         landuse = ox.geometries_from_bbox(bbox_coords[0], bbox_coords[1], bbox_coords[2], bbox_coords[3], tags={"landuse": True})
@@ -62,7 +61,6 @@ def cleanup_tiles(script_settings):
         # ox.plot_footprints(water)
         # ox.plot_footprints(aeroway)
         isolated_print("Coordinate system:", green.crs)
-        ox.project_gdf(green, to_crs="epsg:3857", to_latlong=True)
         # ox.plot_footprints(green)
         export_geopandas_to_osm_xml([green, parks, natural, water], b, "exclude")
         export_geopandas_to_osm_xml([bbox], b, "bbox", [("height", 100)])
