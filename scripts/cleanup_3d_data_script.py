@@ -44,35 +44,35 @@ from msfs_project import MsfsProject
 
 def cleanup_tiles(script_settings):
     try:
-        # bbox_coords = [49.8944091796875, 49.89166259765625, 2.2576904296875, 2.26318359375]
-        bbox_coords = [49.89715576171875, 49.8944091796875, 2.2576904296875, 2.26318359375]
-        b = bbox_to_poly(bbox_coords[1], bbox_coords[0], bbox_coords[2], bbox_coords[3])
-        bbox = gpd.GeoDataFrame(pd.DataFrame(["box"], index=[("bbox", 1)], columns=["boundary"]), crs={"init": "epsg:4326"}, geometry=[b])
-        landuse = ox.geometries_from_bbox(bbox_coords[0], bbox_coords[1], bbox_coords[2], bbox_coords[3], tags={"landuse": True})
-        leisure = ox.geometries_from_bbox(bbox_coords[0], bbox_coords[1], bbox_coords[2], bbox_coords[3], tags={"leisure": True})
-        natural = ox.geometries_from_bbox(bbox_coords[0], bbox_coords[1], bbox_coords[2], bbox_coords[3], tags={"natural": True})
-        water = ox.geometries_from_bbox(bbox_coords[0], bbox_coords[1], bbox_coords[2], bbox_coords[3], tags={"water": True})
-        aeroway = ox.geometries_from_bbox(bbox_coords[0], bbox_coords[1], bbox_coords[2], bbox_coords[3], tags={"aeroway": True})
-
-        green = landuse[landuse["landuse"].isin(["forest", "nature_reserve", "farmland", "meadow", "vineyard"])].drop(labels="nodes", axis=1)
-        # ox.plot_footprints(green)
-        parks = leisure[leisure["leisure"].isin(["park", "playground"])].drop(labels="nodes", axis=1)
-        # ox.plot_footprints(parks)
-        natural = natural[natural["natural"].isin(["wood", "woods", "water", "river", "stream", "sea", "grassland", "scrub"])].drop(labels="nodes", axis=1)
-        # ox.plot_footprints(natural)
-        water = water[water["water"].isin(["river", "stream", "sea", "water"])].drop(labels="nodes", axis=1)
-        # ox.plot_footprints(water)
-        # ox.plot_footprints(aeroway)
-        isolated_print("Coordinate system:", green.crs)
-        # ox.plot_footprints(green)
-        export_geopandas_to_osm_xml([green, parks, natural, water], b, "exclude")
-        export_geopandas_to_osm_xml([bbox], b, "bbox", [("height", 100)])
-
-        shape_files = glob.glob("inverted*.shp")
-        inverted = gpd.GeoDataFrame(pd.concat([gpd.read_file(file) for file in shape_files], ignore_index=True), crs=gpd.read_file(shape_files[0]).crs)
-        geom = inverted.pop('geometry')
-        geom = geom.apply(lambda x: list(x) if isinstance(x, MultiPolygon) else x).explode()
-        inverted.join(geom, how='inner').to_file('inverted.shp')
+        # bbox_coords = [49.89715576171875, 49.8944091796875, 2.2576904296875, 2.26318359375]
+        # b = bbox_to_poly(bbox_coords[1], bbox_coords[0], bbox_coords[2], bbox_coords[3])
+        # bbox = gpd.GeoDataFrame(pd.DataFrame(["box"], index=[("bbox", 1)], columns=["boundary"]), crs={"init": "epsg:4326"}, geometry=[b])
+        # landuse = ox.geometries_from_bbox(bbox_coords[0], bbox_coords[1], bbox_coords[2], bbox_coords[3], tags={"landuse": True})
+        # leisure = ox.geometries_from_bbox(bbox_coords[0], bbox_coords[1], bbox_coords[2], bbox_coords[3], tags={"leisure": True})
+        # natural = ox.geometries_from_bbox(bbox_coords[0], bbox_coords[1], bbox_coords[2], bbox_coords[3], tags={"natural": True})
+        # water = ox.geometries_from_bbox(bbox_coords[0], bbox_coords[1], bbox_coords[2], bbox_coords[3], tags={"water": True})
+        # aeroway = ox.geometries_from_bbox(bbox_coords[0], bbox_coords[1], bbox_coords[2], bbox_coords[3], tags={"aeroway": True})
+        #
+        # green = landuse[landuse["landuse"].isin(["forest", "nature_reserve", "farmland", "meadow", "vineyard"])].drop(labels="nodes", axis=1)
+        # # ox.plot_footprints(green)
+        # parks = leisure[leisure["leisure"].isin(["park", "playground"])].drop(labels="nodes", axis=1)
+        # # ox.plot_footprints(parks)
+        # natural = natural[natural["natural"].isin(["wood", "water", "river", "stream", "sea", "grassland", "scrub"])].drop(labels="nodes", axis=1)
+        # # ox.plot_footprints(natural)
+        # water = water[water["water"].isin(["river", "stream", "sea", "water"])].drop(labels="nodes", axis=1)
+        # # ox.plot_footprints(water)
+        # # ox.plot_footprints(aeroway)
+        # isolated_print("Coordinate system:", green.crs)
+        # # ox.plot_footprints(green)
+        # export_geopandas_to_osm_xml([green, parks, natural, water], b, "exclude")
+        # export_geopandas_to_osm_xml([bbox], b, "bbox", [("height", 100)])
+        #
+        # shape_files = glob.glob("inverted*.shp")
+        # if shape_files:
+        #     inverted = gpd.GeoDataFrame(pd.concat([gpd.read_file(file) for file in shape_files], ignore_index=True), crs=gpd.read_file(shape_files[0]).crs)
+        #     geom = inverted.pop('geometry')
+        #     geom = geom.apply(lambda x: list(x) if isinstance(x, MultiPolygon) else x).explode()
+        #     inverted.join(geom, how='inner').to_file('inverted.shp')
 
         # instantiate the msfsProject and create the necessary resources if it does not exist
         msfs_project = MsfsProject(script_settings.projects_path, script_settings.project_name, script_settings.definition_file, script_settings.author_name, script_settings.sources_path)
@@ -83,7 +83,9 @@ def cleanup_tiles(script_settings):
             msfs_project.backup(Path(os.path.abspath(__file__)).stem.replace(SCRIPT_PREFIX, str()))
 
         isolated_print(EOL)
-        print_title("CLEANUP TILES")
+        print_title("CLEANUP 3D DATA")
+
+        msfs_project.clean_3d_data()
 
         if script_settings.build_package_enabled:
             build_package(msfs_project, script_settings)

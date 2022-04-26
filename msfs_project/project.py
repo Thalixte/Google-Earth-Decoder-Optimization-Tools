@@ -25,6 +25,12 @@ import shutil
 import os
 import subprocess
 
+import osmnx as ox
+import pandas as pd
+import geopandas as gpd
+import xml.etree.ElementTree as ET
+from osmnx.utils_geo import bbox_to_poly
+
 import bpy
 from constants import *
 from msfs_project.project_xml import MsfsProjectXml
@@ -55,6 +61,8 @@ class MsfsProject:
     scene_folder: str
     business_json_folder: str
     content_info_folder: str
+    osmfiles_folder: str
+    shapefiles_folder: str
     project_definition_xml: str
     project_definition_xml_path: str
     package_definitions_xml: str
@@ -71,6 +79,7 @@ class MsfsProject:
     shapes: dict
     colliders: dict
     objects_xml: ObjectsXml
+    coords: tuple
 
     DUMMY_STRING = "dummy"
     AUTHOR_STRING = "author"
@@ -80,6 +89,8 @@ class MsfsProject:
     BUILT_PACKAGES_FOLDER = "Packages"
     MODEL_LIB_FOLDER = "modelLib"
     SCENE_FOLDER = "scene"
+    OSMFILES_FOLDER = "osm"
+    SHAPEFILES_FOLDER = "shapes"
     CONTENT_INFO_FOLDER = "ContentInfo"
     SCENE_OBJECTS_FILE = "objects" + XML_FILE_EXT
     NB_PARALLEL_TASKS = 4
@@ -91,6 +102,8 @@ class MsfsProject:
         self.author_name = author_name
         self.project_folder = os.path.join(self.parent_path, self.project_name.capitalize())
         self.backup_folder = os.path.join(self.project_folder, self.BACKUP_FOLDER)
+        self.osmfiles_folder = os.path.join(self.project_folder, self.OSMFILES_FOLDER)
+        self.shapefiles_folder = os.path.join(self.project_folder, self.SHAPEFILES_FOLDER)
         self.package_definitions_folder = os.path.join(self.project_folder, self.PACKAGE_DEFINITIONS_FOLDER)
         self.package_sources_folder = os.path.join(self.project_folder, self.PACKAGE_SOURCES_FOLDER)
 
@@ -255,6 +268,9 @@ class MsfsProject:
 
             pbar.update("splitted tiles added, replacing the previous %s tile" % previous_tile.name)
 
+    def clean_3d_data(self):
+        self.__create_osm_files()
+
     def keep_common_tiles(self, project_to_compare):
         tiles_to_remove = []
         if self.objects_xml and project_to_compare.objects_xml:
@@ -269,6 +285,7 @@ class MsfsProject:
         if not fast_init:
             self.__init_components()
             self.__guess_min_lod_level()
+            self.__calculate_coords()
 
     def __init_structure(self, sources_path, init_structure):
         if init_structure:
@@ -291,13 +308,6 @@ class MsfsProject:
                 os.makedirs(self.backup_folder, exist_ok=True)
                 # create the PackageSources folder if it does not exist
                 os.makedirs(self.package_sources_folder, exist_ok=True)
-                if not init_structure:
-                    # create the modelLib folder if it does not exist
-                    os.makedirs(self.model_lib_folder, exist_ok=True)
-                    # create the scene folder if it does not exist
-                    os.makedirs(self.scene_folder, exist_ok=True)
-                    # create the texture folder if it does not exist
-                    os.makedirs(self.texture_folder, exist_ok=True)
                 # rename modelLib folder if it exists
                 if os.path.isdir(os.path.join(self.package_sources_folder, self.MODEL_LIB_FOLDER)) and not os.path.isdir(self.model_lib_folder):
                     # change modelib folder to fix CTD issues (see
@@ -317,21 +327,30 @@ class MsfsProject:
         self.project_definition_xml_path = os.path.join(self.project_folder, self.project_definition_xml)
         if os.path.isfile(old_project_definition_xml_path):
             os.rename(old_project_definition_xml_path, self.project_definition_xml_path)
-        if init_structure: self.__create_project_file(sources_path, PROJECT_DEFINITION_TEMPLATE_PATH, self.project_definition_xml_path, True)
+        if init_structure:
+            self.__create_project_file(sources_path, PROJECT_DEFINITION_TEMPLATE_PATH, self.project_definition_xml_path, True)
 
         # create package xml definition file if it does not exist
         self.package_definitions_xml_path = os.path.join(self.package_definitions_folder, self.package_definitions_xml)
-        if init_structure: self.__create_project_file(sources_path, PACKAGE_DEFINITIONS_TEMPLATE_PATH, self.package_definitions_xml_path, True)
+        if init_structure:
+            self.__create_project_file(sources_path, PACKAGE_DEFINITIONS_TEMPLATE_PATH, self.package_definitions_xml_path, True)
 
         # create business.json file if it does not exist
         self.business_json_path = os.path.join(self.business_json_folder, BUSINESS_JSON_TEMPLATE)
-        if init_structure: self.__create_project_file(sources_path, BUSINESS_JSON_TEMPLATE_PATH, self.business_json_path, True)
+        if init_structure:
+            self.__create_project_file(sources_path, BUSINESS_JSON_TEMPLATE_PATH, self.business_json_path, True)
 
         # create thumbnail file if it does not exist
         self.thumbnail_picture_path = os.path.join(self.content_info_folder, THUMBNAIL_PICTURE_TEMPLATE)
-        if init_structure:  self.__create_project_file(sources_path, THUMBNAIL_PICTURE_TEMPLATE_PATH, self.thumbnail_picture_path)
+        if init_structure:
+            self.__create_project_file(sources_path, THUMBNAIL_PICTURE_TEMPLATE_PATH, self.thumbnail_picture_path)
 
         self.model_lib_output_folder = self.__get_model_lib_output_folder()
+
+        # create the osm folder if it does not exist
+        os.makedirs(self.osmfiles_folder, exist_ok=True)
+        # create the shape folder if it does not exist
+        os.makedirs(self.shapefiles_folder, exist_ok=True)
 
     def __init_components(self):
         self.__retrieve_objects()
@@ -457,6 +476,14 @@ class MsfsProject:
             res += len(tile.lods)
 
         return res
+
+    def __calculate_coords(self):
+        self.coords = tuple([0, 180, 180, 0])
+
+        for tile in self.tiles.values():
+            self.coords = tile.define_max_coords(self.coords)
+
+        return self.coords
 
     def __optimization_needed(self):
         for tile in self.tiles.values():
@@ -599,6 +626,42 @@ class MsfsProject:
             pbar.update("%s removed" % collider.name)
         self.__clean_objects(self.colliders)
 
+    def __create_osm_files(self):
+        self.__create_osm_exclusion_file()
+        pbar = ProgressBar(list(self.tiles.values()), title="CREATE OSM FILES")
+        for tile in self.tiles.values():
+            tile.create_osm_files(self.osmfiles_folder)
+            pbar.update("osm files created for %s tile" % tile.name)
+
+    def __create_osm_exclusion_file(self):
+        # landuse = ox.geometries_from_place("Amiens, France", tags={LANDUSE_OSM_KEY: True})
+        # leisure = ox.geometries_from_place("Amiens, France", tags={LEISURE_OSM_KEY: True})
+        # natural = ox.geometries_from_place("Amiens, France", tags={NATURAL_OSM_KEY: True})
+        # water = ox.geometries_from_place("Amiens, France", tags={WATER_OSM_KEY: True})
+        # aeroway = ox.geometries_from_place("Amiens, France", tags={AEROWAY_OSM_KEY: True})
+
+        landuse = ox.geometries_from_bbox(self.coords[0], self.coords[1], self.coords[2], self.coords[3], tags={LANDUSE_OSM_KEY: True})
+        leisure = ox.geometries_from_bbox(self.coords[0], self.coords[1], self.coords[2], self.coords[3], tags={LEISURE_OSM_KEY: True})
+        natural = ox.geometries_from_bbox(self.coords[0], self.coords[1], self.coords[2], self.coords[3], tags={NATURAL_OSM_KEY: True})
+        water = ox.geometries_from_bbox(self.coords[0], self.coords[1], self.coords[2], self.coords[3], tags={WATER_OSM_KEY: True})
+        aeroway = ox.geometries_from_bbox(self.coords[0], self.coords[1], self.coords[2], self.coords[3], tags={AEROWAY_OSM_KEY: True})
+
+        if not landuse.empty:
+            landuse = landuse[landuse[LANDUSE_OSM_KEY].isin(OSM_TAGS[LANDUSE_OSM_KEY])].drop(labels="nodes", axis=1)
+        # ox.plot_footprints(landuse)
+        if not leisure.empty:
+            leisure = leisure[leisure[LEISURE_OSM_KEY].isin(OSM_TAGS[LEISURE_OSM_KEY])].drop(labels="nodes", axis=1)
+        # ox.plot_footprints(leisure)
+        if not natural.empty:
+            natural = natural[natural[NATURAL_OSM_KEY].isin(OSM_TAGS[NATURAL_OSM_KEY])].drop(labels="nodes", axis=1)
+        # ox.plot_footprints(natural)
+        if not water.empty:
+            water = water[water[WATER_OSM_KEY].isin(OSM_TAGS[WATER_OSM_KEY])].drop(labels="nodes", axis=1)
+        # ox.plot_footprints(water)
+        # ox.plot_footprints(aeroway)
+        b = bbox_to_poly(self.coords[1], self.coords[0], self.coords[2], self.coords[3])
+        self.__export_geopandas_to_osm_xml(self.osmfiles_folder, [landuse, leisure, natural, water], b, EXCLUSION_OSM_FILE_PREFIX + OSM_FILE_EXT)
+
     def __find_different_tiles(self, tiles, project_to_compare_name, tiles_to_compare, objects_xml_to_compare):
         different_tiles = []
         pbar = ProgressBar(tiles.items(), title="FIND THE DIFFERENT TILES")
@@ -685,3 +748,69 @@ class MsfsProject:
                 return tile_to_compare
 
         return False
+
+    @staticmethod
+    def __export_geopandas_to_osm_xml(osm_path, geopandas_data_frames, bbox_poly, file_name, additional_tags=[]):
+        osm_root = ET.Element("osm", attrib={
+            "version": "0.6",
+            "generator": "custom python script"
+        })
+
+        ET.SubElement(osm_root, "bounds", attrib={
+            "minlat": str(bbox_poly.bounds[0]),
+            "minlon": str(bbox_poly.bounds[1]),
+            "maxlat": str(bbox_poly.bounds[2]),
+            "maxlon": str(bbox_poly.bounds[3])})
+
+        for geopandas_data_frame in geopandas_data_frames:
+            for index, row in geopandas_data_frame.iterrows():
+                if not row.geometry.geom_type is 'Polygon':
+                    continue
+
+                i = -1
+                current_way = ET.SubElement(osm_root, "way", attrib={
+                    "id": str(index[1]),
+                    "visible": "true",
+                    "version": "1",
+                    "uid": str(index[1]),
+                    "changeset": "false"})
+
+                for point in row.geometry.exterior.coords:
+                    i = i + 1
+                    current_node = ET.SubElement(osm_root, "node", attrib={
+                        "id": str(index[1]) + str(i),
+                        "visible": "true",
+                        "version": "1",
+                        "uid": str(index[1]),
+                        "lat": str(point[1]),
+                        "lon": str(point[0]),
+                        "changeset": "false"})
+
+                    ET.SubElement(current_way, "nd", attrib={
+                        "ref": str(index[1]) + str(i)})
+
+                i = 0
+                ET.SubElement(current_way, "nd", attrib={
+                    "ref": str(index[1]) + str(i)})
+
+                for column in geopandas_data_frame.columns:
+                    if column != "geometry" and str(row[column]) != "nan":
+                        ET.SubElement(current_node, "tag", attrib={
+                            "k": column,
+                            "v": str(row[column])})
+
+                        ET.SubElement(current_way, "tag", attrib={
+                            "k": column,
+                            "v": str(row[column])})
+
+                for additional_tag in additional_tags:
+                    ET.SubElement(current_node, "tag", attrib={
+                        "k": additional_tag[0],
+                        "v": str(additional_tag[1])})
+
+                    ET.SubElement(current_way, "tag", attrib={
+                        "k": additional_tag[0],
+                        "v": str(additional_tag[1])})
+
+        output_file = ET.ElementTree(element=osm_root)
+        output_file.write(os.path.join(osm_path, file_name))
