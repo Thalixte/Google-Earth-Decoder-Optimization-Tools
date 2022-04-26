@@ -15,7 +15,10 @@
 #  #
 #
 #  <pep8 compliant>
+import glob
+
 from osmnx.utils_geo import bbox_to_poly
+from shapely.geometry import MultiPolygon
 
 from utils import Settings, get_sources_path, reload_modules, print_title, isolated_print
 
@@ -64,6 +67,12 @@ def cleanup_tiles(script_settings):
         # ox.plot_footprints(green)
         export_geopandas_to_osm_xml([green, parks, natural, water], b, "exclude")
         export_geopandas_to_osm_xml([bbox], b, "bbox", [("height", 100)])
+
+        shape_files = glob.glob("inverted*.shp")
+        inverted = gpd.GeoDataFrame(pd.concat([gpd.read_file(file) for file in shape_files], ignore_index=True), crs=gpd.read_file(shape_files[0]).crs)
+        geom = inverted.pop('geometry')
+        geom = geom.apply(lambda x: list(x) if isinstance(x, MultiPolygon) else x).explode()
+        inverted.join(geom, how='inner').to_file('inverted.shp')
 
         # instantiate the msfsProject and create the necessary resources if it does not exist
         msfs_project = MsfsProject(script_settings.projects_path, script_settings.project_name, script_settings.definition_file, script_settings.author_name, script_settings.sources_path)
