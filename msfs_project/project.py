@@ -660,7 +660,7 @@ class MsfsProject:
         # ox.plot_footprints(water)
         # ox.plot_footprints(aeroway)
         b = bbox_to_poly(self.coords[1], self.coords[0], self.coords[2], self.coords[3])
-        self.__export_geopandas_to_osm_xml(self.osmfiles_folder, [landuse, leisure, natural, water], b, EXCLUSION_OSM_FILE_PREFIX + OSM_FILE_EXT)
+        self.__export_geopandas_to_osm_xml(self.osmfiles_folder, [landuse, leisure, natural, water, aeroway], b, EXCLUSION_OSM_FILE_PREFIX + OSM_FILE_EXT)
 
     def __find_different_tiles(self, tiles, project_to_compare_name, tiles_to_compare, objects_xml_to_compare):
         different_tiles = []

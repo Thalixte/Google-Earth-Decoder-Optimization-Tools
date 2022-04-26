@@ -136,6 +136,13 @@ STREAM_OSM_TAG = "stream"
 SEA_OSM_TAG = "sea"
 GRASSLAND_OSM_TAG = "grassland"
 SCRUB_OSM_TAG = "scrub"
+POND_OSM_TAG = "pond"
+WASTEWATER_OSM_TAG = "wastewater"
+CANAL_OSM_TAG = "canal"
+BASIN_OSM_TAG = "basin"
+ALLOTMENTS_OSM_TAG = "allotment"
+HEATH_OSM_TAG = "heath"
+WETLAND_OSM_TAG = "wetland"
 
 EXCLUSION_OSM_FILE_PREFIX = "exclusion"
 BOUNDING_BOX_OSM_FILE_PREFIX = "bbox"
@@ -146,7 +153,8 @@ OSM_TAGS = {
         NATURE_RESERVE_OSM_TAG,
         FARMLAND_OSM_TAG,
         MEADOW_OSM_TAG,
-        VINEYARD_OSM_TAG
+        VINEYARD_OSM_TAG,
+        ALLOTMENTS_OSM_TAG
     ],
     LEISURE_OSM_KEY: [
         PARK_OSM_TAG,
@@ -159,13 +167,19 @@ OSM_TAGS = {
         STREAM_OSM_TAG,
         SEA_OSM_TAG,
         GRASSLAND_OSM_TAG,
-        SCRUB_OSM_TAG
+        SCRUB_OSM_TAG,
+        HEATH_OSM_TAG,
+        WETLAND_OSM_TAG
     ],
     WATER_OSM_KEY: [
         RIVER_OSM_TAG,
         STREAM_OSM_TAG,
         SEA_OSM_TAG,
-        WATER_OSM_KEY
+        WATER_OSM_KEY,
+        POND_OSM_TAG,
+        WASTEWATER_OSM_TAG,
+        CANAL_OSM_TAG,
+        BASIN_OSM_TAG
     ],
     AEROWAY_OSM_KEY: []
 }
