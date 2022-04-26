@@ -134,6 +134,7 @@ WATER_OSM_TAG = "water"
 RIVER_OSM_TAG = "river"
 STREAM_OSM_TAG = "stream"
 SEA_OSM_TAG = "sea"
+LAKE_TAG = "lake"
 GRASSLAND_OSM_TAG = "grassland"
 SCRUB_OSM_TAG = "scrub"
 POND_OSM_TAG = "pond"
@@ -175,6 +176,7 @@ OSM_TAGS = {
         RIVER_OSM_TAG,
         STREAM_OSM_TAG,
         SEA_OSM_TAG,
+        LAKE_TAG,
         WATER_OSM_KEY,
         POND_OSM_TAG,
         WASTEWATER_OSM_TAG,

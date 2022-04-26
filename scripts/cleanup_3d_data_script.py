@@ -30,6 +30,8 @@ reload_modules(settings)
 import os
 import warnings
 
+warnings.simplefilter(action='ignore', category=FutureWarning)
+
 from shapely.errors import ShapelyDeprecationWarning
 warnings.filterwarnings("ignore", category=ShapelyDeprecationWarning)
 

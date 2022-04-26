@@ -16,6 +16,7 @@
 #
 #  <pep8 compliant>
 
+from constants import DUMMY_OBJECT
 from utils import Xml
 import xml.etree.ElementTree as Et
 
@@ -96,8 +97,8 @@ class OsmXml(Xml):
 
                 for column in geopandas_data_frame.columns:
                     if column != self.GEOMETRY_COL and str(row[column]) != self.NAN:
-                        self.__add_tag(current_node, column, str(row[column]))
-                        self.__add_tag(current_way, column, str(row[column]))
+                        self.__add_tag(current_node, column, DUMMY_OBJECT)
+                        self.__add_tag(current_way, column, DUMMY_OBJECT)
 
                 for additional_tag in additional_tags:
                     self.__add_tag(current_node, additional_tag[0], str(additional_tag[1]))
