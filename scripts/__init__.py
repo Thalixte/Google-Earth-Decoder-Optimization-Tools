@@ -24,3 +24,7 @@ from .update_tiles_position_script import *
 from .fix_tiles_lightning_issues_script import *
 from .init_msfs_scenery_project_script import *
 from .update_min_size_values_script import *
+from .split_tiles_script import *
+from .add_tile_colliders_script import *
+from .remove_tile_colliders_script import *
+from .cleanup_3d_data_script import *

@@ -28,9 +28,6 @@ settings = Settings(get_sources_path())
 reload_modules(settings)
 
 import os
-import osmnx as ox
-import pandas as pd
-import geopandas as gpd
 import warnings
 
 from shapely.errors import ShapelyDeprecationWarning
@@ -42,31 +39,8 @@ from utils import check_configuration, ScriptError, build_package, pr_bg_green, 
 from msfs_project import MsfsProject
 
 
-def cleanup_tiles(script_settings):
+def cleanup_3d_data(script_settings):
     try:
-        # bbox_coords = [49.89715576171875, 49.8944091796875, 2.2576904296875, 2.26318359375]
-        # b = bbox_to_poly(bbox_coords[1], bbox_coords[0], bbox_coords[2], bbox_coords[3])
-        # bbox = gpd.GeoDataFrame(pd.DataFrame(["box"], index=[("bbox", 1)], columns=["boundary"]), crs={"init": "epsg:4326"}, geometry=[b])
-        # landuse = ox.geometries_from_bbox(bbox_coords[0], bbox_coords[1], bbox_coords[2], bbox_coords[3], tags={"landuse": True})
-        # leisure = ox.geometries_from_bbox(bbox_coords[0], bbox_coords[1], bbox_coords[2], bbox_coords[3], tags={"leisure": True})
-        # natural = ox.geometries_from_bbox(bbox_coords[0], bbox_coords[1], bbox_coords[2], bbox_coords[3], tags={"natural": True})
-        # water = ox.geometries_from_bbox(bbox_coords[0], bbox_coords[1], bbox_coords[2], bbox_coords[3], tags={"water": True})
-        # aeroway = ox.geometries_from_bbox(bbox_coords[0], bbox_coords[1], bbox_coords[2], bbox_coords[3], tags={"aeroway": True})
-        #
-        # green = landuse[landuse["landuse"].isin(["forest", "nature_reserve", "farmland", "meadow", "vineyard"])].drop(labels="nodes", axis=1)
-        # # ox.plot_footprints(green)
-        # parks = leisure[leisure["leisure"].isin(["park", "playground"])].drop(labels="nodes", axis=1)
-        # # ox.plot_footprints(parks)
-        # natural = natural[natural["natural"].isin(["wood", "water", "river", "stream", "sea", "grassland", "scrub"])].drop(labels="nodes", axis=1)
-        # # ox.plot_footprints(natural)
-        # water = water[water["water"].isin(["river", "stream", "sea", "water"])].drop(labels="nodes", axis=1)
-        # # ox.plot_footprints(water)
-        # # ox.plot_footprints(aeroway)
-        # isolated_print("Coordinate system:", green.crs)
-        # # ox.plot_footprints(green)
-        # export_geopandas_to_osm_xml([green, parks, natural, water], b, "exclude")
-        # export_geopandas_to_osm_xml([bbox], b, "bbox", [("height", 100)])
-        #
         # shape_files = glob.glob("inverted*.shp")
         # if shape_files:
         #     inverted = gpd.GeoDataFrame(pd.concat([gpd.read_file(file) for file in shape_files], ignore_index=True), crs=gpd.read_file(shape_files[0]).crs)
@@ -85,7 +59,7 @@ def cleanup_tiles(script_settings):
         isolated_print(EOL)
         print_title("CLEANUP 3D DATA")
 
-        msfs_project.clean_3d_data()
+        msfs_project.cleanup_3d_data()
 
         if script_settings.build_package_enabled:
             build_package(msfs_project, script_settings)
@@ -101,76 +75,10 @@ def cleanup_tiles(script_settings):
         pr_bg_red("Script aborted" + constants.CEND)
 
 
-import xml.etree.ElementTree as ET
-
-
-def export_geopandas_to_osm_xml(geopandas_data_frames, bbox_poly, file_name, additional_tags=[]):
-    osm_root = ET.Element("osm", attrib={
-        "version": "0.6",
-        "generator": "custom python script"
-        })
-
-    ET.SubElement(osm_root, "bounds", attrib={
-        "minlat": str(bbox_poly.bounds[0]),
-        "minlon": str(bbox_poly.bounds[1]),
-        "maxlat": str(bbox_poly.bounds[2]),
-        "maxlon": str(bbox_poly.bounds[3])})
-
-    for geopandas_data_frame in geopandas_data_frames:
-        for index, row in geopandas_data_frame.iterrows():
-            i = -1
-            current_way = ET.SubElement(osm_root, "way", attrib={
-                "id": str(index[1]),
-                "visible": "true",
-                "version": "1",
-                "uid": str(index[1]),
-                "changeset": "false"})
-
-            for point in row.geometry.exterior.coords:
-                i = i+1
-                current_node = ET.SubElement(osm_root, "node", attrib={
-                    "id": str(index[1])+str(i),
-                    "visible": "true",
-                    "version": "1",
-                    "uid": str(index[1]),
-                    "lat": str(point[1]),
-                    "lon": str(point[0]),
-                    "changeset": "false"})
-
-                ET.SubElement(current_way, "nd", attrib={
-                    "ref": str(index[1])+str(i)})
-
-            i = 0
-            ET.SubElement(current_way, "nd", attrib={
-                "ref": str(index[1])+str(i)})
-
-            for column in geopandas_data_frame.columns:
-                if column != "geometry" and str(row[column]) != "nan":
-                    ET.SubElement(current_node, "tag", attrib={
-                        "k": column,
-                        "v": str(row[column])})
-
-                    ET.SubElement(current_way, "tag", attrib={
-                        "k": column,
-                        "v": str(row[column])})
-
-            for additional_tag in additional_tags:
-                ET.SubElement(current_node, "tag", attrib={
-                    "k": additional_tag[0],
-                    "v": str(additional_tag[1])})
-
-                ET.SubElement(current_way, "tag", attrib={
-                    "k": additional_tag[0],
-                    "v": str(additional_tag[1])})
-
-    output_file = ET.ElementTree(element=osm_root)
-    output_file.write(file_name + ".osm")
-    output_file.write(file_name + ".osm.xml")
-
 ##################################################################
 #                        Main process
 ##################################################################
 
 
 if __name__ == "__main__":
-    cleanup_tiles(settings)
+    cleanup_3d_data(settings)

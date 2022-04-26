@@ -35,8 +35,12 @@ class Xml:
     def __init__(self, file_folder, file_name):
         self.file_path = os.path.join(file_folder, file_name)
         self.file_name = file_name
-        self.tree = Et.parse(self.file_path, parser=Et.XMLParser(encoding=ENCODING))
-        self.root = self.tree.getroot()
+        if os.path.isfile(self.file_path):
+            self.tree = Et.parse(self.file_path, parser=Et.XMLParser(encoding=ENCODING))
+            self.root = self.tree.getroot()
+        else:
+            self.tree = None
+            self.root = None
 
     def save(self):
         self.tree.write(self.file_path, encoding=ENCODING)

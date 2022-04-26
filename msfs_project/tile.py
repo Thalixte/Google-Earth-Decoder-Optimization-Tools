@@ -20,7 +20,6 @@ import os
 
 import pandas as pd
 import geopandas as gpd
-import xml.etree.ElementTree as ET
 from osmnx.utils_geo import bbox_to_poly
 
 from constants import GLTF_FILE_EXT, COLLIDER_SUFFIX, XML_FILE_EXT, EPSG_KEY, EPSG_VALUE, \
@@ -30,6 +29,7 @@ from msfs_project.scene_object import MsfsSceneObject
 from msfs_project.position import MsfsPosition
 from utils import get_coords_from_file_name, get_position_from_file_name
 from utils.minidom_xml import create_new_definition_file
+from msfs_project.osm_xml import OsmXml
 
 
 class MsfsTile(MsfsSceneObject):
@@ -86,69 +86,5 @@ class MsfsTile(MsfsSceneObject):
     def __create_bbox_osm_file(self, osm_path):
         b = bbox_to_poly(self.coords[1], self.coords[0], self.coords[2], self.coords[3])
         bbox = gpd.GeoDataFrame(pd.DataFrame(["box"], index=[("bbox", 1)], columns=[BOUNDARY_OSM_KEY]), crs={"init": EPSG_KEY + str(EPSG_VALUE)}, geometry=[b])
-        self.__export_geopandas_to_osm_xml(osm_path, [bbox], b, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + self.name + OSM_FILE_EXT, [("height", 100)])
-
-    def __export_geopandas_to_osm_xml(self, osm_path, geopandas_data_frames, bbox_poly, file_name, additional_tags=[]):
-        osm_root = ET.Element("osm", attrib={
-            "version": "0.6",
-            "generator": "custom python script"
-            })
-
-        ET.SubElement(osm_root, "bounds", attrib={
-            "minlat": str(bbox_poly.bounds[0]),
-            "minlon": str(bbox_poly.bounds[1]),
-            "maxlat": str(bbox_poly.bounds[2]),
-            "maxlon": str(bbox_poly.bounds[3])})
-
-        for geopandas_data_frame in geopandas_data_frames:
-            for index, row in geopandas_data_frame.iterrows():
-                if not row.geometry.geom_type is 'Polygon':
-                    continue
-
-                i = -1
-                current_way = ET.SubElement(osm_root, "way", attrib={
-                    "id": str(index[1]),
-                    "visible": "true",
-                    "version": "1",
-                    "uid": str(index[1]),
-                    "changeset": "false"})
-
-                for point in row.geometry.exterior.coords:
-                    i = i+1
-                    current_node = ET.SubElement(osm_root, "node", attrib={
-                        "id": str(index[1])+str(i),
-                        "visible": "true",
-                        "version": "1",
-                        "uid": str(index[1]),
-                        "lat": str(point[1]),
-                        "lon": str(point[0]),
-                        "changeset": "false"})
-
-                    ET.SubElement(current_way, "nd", attrib={
-                        "ref": str(index[1])+str(i)})
-
-                i = 0
-                ET.SubElement(current_way, "nd", attrib={
-                    "ref": str(index[1])+str(i)})
-
-                for column in geopandas_data_frame.columns:
-                    if column != "geometry" and str(row[column]) != "nan":
-                        ET.SubElement(current_node, "tag", attrib={
-                            "k": column,
-                            "v": str(row[column])})
-
-                        ET.SubElement(current_way, "tag", attrib={
-                            "k": column,
-                            "v": str(row[column])})
-
-                for additional_tag in additional_tags:
-                    ET.SubElement(current_node, "tag", attrib={
-                        "k": additional_tag[0],
-                        "v": str(additional_tag[1])})
-
-                    ET.SubElement(current_way, "tag", attrib={
-                        "k": additional_tag[0],
-                        "v": str(additional_tag[1])})
-
-        output_file = ET.ElementTree(element=osm_root)
-        output_file.write(os.path.join(osm_path, file_name))
+        osm_xml = OsmXml(osm_path, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + self.name + OSM_FILE_EXT)
+        osm_xml.create_from_geodataframes([bbox], b, [("height", 100)])
