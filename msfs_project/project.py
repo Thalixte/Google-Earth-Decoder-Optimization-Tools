@@ -632,17 +632,17 @@ class MsfsProject:
             pbar.update("osm files created for %s tile" % tile.name)
 
     def __create_osm_exclusion_file(self):
-        # landuse = ox.geometries_from_place("Annecy, France", tags={LANDUSE_OSM_KEY: True})
-        # leisure = ox.geometries_from_place("Annecy, France", tags={LEISURE_OSM_KEY: True})
-        # natural = ox.geometries_from_place("Annecy, France", tags={NATURAL_OSM_KEY: True})
-        # water = ox.geometries_from_place("Annecy, France", tags={WATER_OSM_KEY: True})
-        # aeroway = ox.geometries_from_place("Annecy, France", tags={AEROWAY_OSM_KEY: True})
+        landuse = ox.geometries_from_place("Dinard, France", tags={LANDUSE_OSM_KEY: True})
+        leisure = ox.geometries_from_place("Dinard, France", tags={LEISURE_OSM_KEY: True})
+        natural = ox.geometries_from_place("Dinard, France", tags={NATURAL_OSM_KEY: True})
+        water = ox.geometries_from_place("Dinard, France", tags={WATER_OSM_KEY: True})
+        aeroway = ox.geometries_from_place("Dinard, France", tags={AEROWAY_OSM_KEY: True})
 
-        landuse = ox.geometries_from_bbox(self.coords[0], self.coords[1], self.coords[2], self.coords[3], tags={LANDUSE_OSM_KEY: True})
-        leisure = ox.geometries_from_bbox(self.coords[0], self.coords[1], self.coords[2], self.coords[3], tags={LEISURE_OSM_KEY: True})
-        natural = ox.geometries_from_bbox(self.coords[0], self.coords[1], self.coords[2], self.coords[3], tags={NATURAL_OSM_KEY: True})
-        water = ox.geometries_from_bbox(self.coords[0], self.coords[1], self.coords[2], self.coords[3], tags={WATER_OSM_KEY: True})
-        aeroway = ox.geometries_from_bbox(self.coords[0], self.coords[1], self.coords[2], self.coords[3], tags={AEROWAY_OSM_KEY: True})
+        # landuse = ox.geometries_from_bbox(self.coords[0], self.coords[1], self.coords[2], self.coords[3], tags={LANDUSE_OSM_KEY: True})
+        # leisure = ox.geometries_from_bbox(self.coords[0], self.coords[1], self.coords[2], self.coords[3], tags={LEISURE_OSM_KEY: True})
+        # natural = ox.geometries_from_bbox(self.coords[0], self.coords[1], self.coords[2], self.coords[3], tags={NATURAL_OSM_KEY: True})
+        # water = ox.geometries_from_bbox(self.coords[0], self.coords[1], self.coords[2], self.coords[3], tags={WATER_OSM_KEY: True})
+        # aeroway = ox.geometries_from_bbox(self.coords[0], self.coords[1], self.coords[2], self.coords[3], tags={AEROWAY_OSM_KEY: True})
 
         if not landuse.empty:
             landuse = landuse[landuse[LANDUSE_OSM_KEY].isin(OSM_TAGS[LANDUSE_OSM_KEY])].drop(labels="nodes", axis=1)
