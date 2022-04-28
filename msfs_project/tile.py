@@ -36,6 +36,7 @@ class MsfsTile(MsfsSceneObject):
     new_tiles: dict
     exclusion_osm_file: str
     bbox_osm_file: str
+    bbox_gdf: gpd.GeoDataFrame
 
     def __init__(self, folder, name, definition_file):
         super().__init__(folder, name, definition_file)
@@ -88,6 +89,6 @@ class MsfsTile(MsfsSceneObject):
 
     def __create_bbox_osm_file(self, osm_path):
         b = bbox_to_poly(self.coords[1], self.coords[0], self.coords[2], self.coords[3])
-        bbox = gpd.GeoDataFrame(pd.DataFrame(["box"], index=[("bbox", 1)], columns=[BOUNDARY_OSM_KEY]), crs={"init": EPSG_KEY + str(EPSG_VALUE)}, geometry=[b])
+        self.bbox_gdf = gpd.GeoDataFrame(pd.DataFrame(["box"], index=[("bbox", 1)], columns=[BOUNDARY_OSM_KEY]), crs={"init": EPSG_KEY + str(EPSG_VALUE)}, geometry=[b])
         osm_xml = OsmXml(osm_path, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + self.name + OSM_FILE_EXT)
-        osm_xml.create_from_geodataframes([bbox], b, [("height", 100)])
+        osm_xml.create_from_geodataframes([self.bbox_gdf], b, [("height", 100)])

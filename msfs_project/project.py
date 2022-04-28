@@ -648,14 +648,11 @@ class MsfsProject:
         water = ox.geometries_from_bbox(self.coords[0], self.coords[1], self.coords[2], self.coords[3], tags={WATER_OSM_KEY: OSM_TAGS[WATER_OSM_KEY]})
         aeroway = ox.geometries_from_bbox(self.coords[0], self.coords[1], self.coords[2], self.coords[3], tags={AEROWAY_OSM_KEY: True})
 
-        # ox.plot_footprints(water)
-        # ox.plot_footprints(aeroway)
-
         b = bbox_to_poly(self.coords[1], self.coords[0], self.coords[2], self.coords[3])
         bbox = gpd.GeoDataFrame(pd.DataFrame(["box"], index=[("bbox", 1)], columns=[BOUNDARY_OSM_KEY]), crs={"init": EPSG_KEY + str(EPSG_VALUE)}, geometry=[b])
 
         osm_xml = OsmXml(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + OSM_FILE_EXT)
-        osm_xml.create_from_geodataframes([bbox], b, True, [("height", 1000)])
+        osm_xml.create_from_geodataframes([bbox], b)
 
         landuse[GEOMETRY_OSM_COLUMN] = landuse[GEOMETRY_OSM_COLUMN].clip(b)
         leisure[GEOMETRY_OSM_COLUMN] = leisure[GEOMETRY_OSM_COLUMN].clip(b)
@@ -663,28 +660,8 @@ class MsfsProject:
         water[GEOMETRY_OSM_COLUMN] = water[GEOMETRY_OSM_COLUMN].clip(b)
         aeroway[GEOMETRY_OSM_COLUMN] = aeroway[GEOMETRY_OSM_COLUMN].clip(b)
 
-        final = landuse.copy()
-        for index, row in leisure.iterrows():
-            if isinstance(row.geometry, Polygon):
-                final.loc[index, GEOMETRY_OSM_COLUMN] = row.geometry
-        for index, row in natural.iterrows():
-            if isinstance(row.geometry, Polygon):
-                final.loc[index, GEOMETRY_OSM_COLUMN] = row.geometry
-        for index, row in water.iterrows():
-            if isinstance(row.geometry, Polygon):
-                final.loc[index, GEOMETRY_OSM_COLUMN] = row.geometry
-        for index, row in aeroway.iterrows():
-            if isinstance(row.geometry, Polygon):
-                final.loc[index, GEOMETRY_OSM_COLUMN] = row.geometry
-
         osm_xml = OsmXml(self.osmfiles_folder, EXCLUSION_OSM_FILE_PREFIX + OSM_FILE_EXT)
-        osm_xml.create_from_geodataframes([final], b, True, [("height", 1000)])
-
-        final[GEOMETRY_OSM_COLUMN] = final[GEOMETRY_OSM_COLUMN].unary_union
-        final[GEOMETRY_OSM_COLUMN] = final.geometry.symmetric_difference(b)
-
-        osm_xml = OsmXml(self.osmfiles_folder, "final" + OSM_FILE_EXT)
-        osm_xml.create_from_geodataframes([final], b)
+        osm_xml.create_from_geodataframes([landuse, leisure, natural, water, aeroway], b, True, [("height", 1000)])
 
     def __find_different_tiles(self, tiles, project_to_compare_name, tiles_to_compare, objects_xml_to_compare):
         different_tiles = []
