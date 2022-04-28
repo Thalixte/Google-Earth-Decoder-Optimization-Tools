@@ -60,6 +60,10 @@ from constants import *
 # clear and open the system console
 open_console()
 
+install_python_lib("gdal")
+install_python_lib("fiona")
+install_python_lib("osmnx")
+
 # Specify the script to be included
 script_files = ["cleanup_3d_data_script.py"]
 

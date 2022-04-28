@@ -72,6 +72,9 @@ class MsfsTile(MsfsSceneObject):
         n1, s1, w1, e1 = self.coords
         n2, s2, w2, e2 = max_coords
 
+        if n2 == 0 or s2 == 0 or w2 == 0 or e2 == 0:
+            return self.coords
+
         return tuple([n1 if n1 >= n2 else n2, s1 if s1 <= s2 else s2, w1 if w1 <= w2 else w2, e1 if e1 >= e2 else e2])
 
     def create_osm_files(self, osm_path):

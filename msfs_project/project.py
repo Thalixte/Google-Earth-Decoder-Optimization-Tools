@@ -26,7 +26,11 @@ import os
 import subprocess
 
 import osmnx as ox
+import pandas as pd
+import geopandas as gpd
 from osmnx.utils_geo import bbox_to_poly
+from shapely.geometry import Polygon, MultiPolygon
+from shapely.ops import unary_union
 
 import bpy
 from constants import *
@@ -476,7 +480,7 @@ class MsfsProject:
         return res
 
     def __calculate_coords(self):
-        self.coords = tuple([0, 180, 180, 0])
+        self.coords = tuple([0, 0, 0, 0])
 
         for tile in self.tiles.values():
             self.coords = tile.define_max_coords(self.coords)
@@ -632,34 +636,55 @@ class MsfsProject:
             pbar.update("osm files created for %s tile" % tile.name)
 
     def __create_osm_exclusion_file(self):
-        landuse = ox.geometries_from_place("Dinard, France", tags={LANDUSE_OSM_KEY: True})
-        leisure = ox.geometries_from_place("Dinard, France", tags={LEISURE_OSM_KEY: True})
-        natural = ox.geometries_from_place("Dinard, France", tags={NATURAL_OSM_KEY: True})
-        water = ox.geometries_from_place("Dinard, France", tags={WATER_OSM_KEY: True})
-        aeroway = ox.geometries_from_place("Dinard, France", tags={AEROWAY_OSM_KEY: True})
+        # landuse = ox.geometries_from_place("Dinard, France", tags={LANDUSE_OSM_KEY: OSM_TAGS[LANDUSE_OSM_KEY]})
+        # leisure = ox.geometries_from_place("Dinard, France", tags={LEISURE_OSM_KEY: OSM_TAGS[LEISURE_OSM_KEY]})
+        # natural = ox.geometries_from_place("Dinard, France", tags={NATURAL_OSM_KEY: OSM_TAGS[NATURAL_OSM_KEY]})
+        # water = ox.geometries_from_place("Dinard, France", tags={WATER_OSM_KEY: OSM_TAGS[WATER_OSM_KEY]})
+        # aeroway = ox.geometries_from_place("Dinard, France", tags={AEROWAY_OSM_KEY: True})
 
-        # landuse = ox.geometries_from_bbox(self.coords[0], self.coords[1], self.coords[2], self.coords[3], tags={LANDUSE_OSM_KEY: True})
-        # leisure = ox.geometries_from_bbox(self.coords[0], self.coords[1], self.coords[2], self.coords[3], tags={LEISURE_OSM_KEY: True})
-        # natural = ox.geometries_from_bbox(self.coords[0], self.coords[1], self.coords[2], self.coords[3], tags={NATURAL_OSM_KEY: True})
-        # water = ox.geometries_from_bbox(self.coords[0], self.coords[1], self.coords[2], self.coords[3], tags={WATER_OSM_KEY: True})
-        # aeroway = ox.geometries_from_bbox(self.coords[0], self.coords[1], self.coords[2], self.coords[3], tags={AEROWAY_OSM_KEY: True})
+        landuse = ox.geometries_from_bbox(self.coords[0], self.coords[1], self.coords[2], self.coords[3], tags={LANDUSE_OSM_KEY: OSM_TAGS[LANDUSE_OSM_KEY]})
+        leisure = ox.geometries_from_bbox(self.coords[0], self.coords[1], self.coords[2], self.coords[3], tags={LEISURE_OSM_KEY: OSM_TAGS[LEISURE_OSM_KEY]})
+        natural = ox.geometries_from_bbox(self.coords[0], self.coords[1], self.coords[2], self.coords[3], tags={NATURAL_OSM_KEY: OSM_TAGS[NATURAL_OSM_KEY]})
+        water = ox.geometries_from_bbox(self.coords[0], self.coords[1], self.coords[2], self.coords[3], tags={WATER_OSM_KEY: OSM_TAGS[WATER_OSM_KEY]})
+        aeroway = ox.geometries_from_bbox(self.coords[0], self.coords[1], self.coords[2], self.coords[3], tags={AEROWAY_OSM_KEY: True})
 
-        if not landuse.empty:
-            landuse = landuse[landuse[LANDUSE_OSM_KEY].isin(OSM_TAGS[LANDUSE_OSM_KEY])].drop(labels="nodes", axis=1)
-        # ox.plot_footprints(landuse)
-        if not leisure.empty:
-            leisure = leisure[leisure[LEISURE_OSM_KEY].isin(OSM_TAGS[LEISURE_OSM_KEY])].drop(labels="nodes", axis=1)
-        # ox.plot_footprints(leisure)
-        if not natural.empty:
-            natural = natural[natural[NATURAL_OSM_KEY].isin(OSM_TAGS[NATURAL_OSM_KEY])].drop(labels="nodes", axis=1)
-        # ox.plot_footprints(natural)
-        if not water.empty:
-            water = water[water[WATER_OSM_KEY].isin(OSM_TAGS[WATER_OSM_KEY])].drop(labels="nodes", axis=1)
         # ox.plot_footprints(water)
         # ox.plot_footprints(aeroway)
+
         b = bbox_to_poly(self.coords[1], self.coords[0], self.coords[2], self.coords[3])
+        bbox = gpd.GeoDataFrame(pd.DataFrame(["box"], index=[("bbox", 1)], columns=[BOUNDARY_OSM_KEY]), crs={"init": EPSG_KEY + str(EPSG_VALUE)}, geometry=[b])
+
+        osm_xml = OsmXml(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + OSM_FILE_EXT)
+        osm_xml.create_from_geodataframes([bbox], b, True, [("height", 1000)])
+
+        landuse[GEOMETRY_OSM_COLUMN] = landuse[GEOMETRY_OSM_COLUMN].clip(b)
+        leisure[GEOMETRY_OSM_COLUMN] = leisure[GEOMETRY_OSM_COLUMN].clip(b)
+        natural[GEOMETRY_OSM_COLUMN] = natural[GEOMETRY_OSM_COLUMN].clip(b)
+        water[GEOMETRY_OSM_COLUMN] = water[GEOMETRY_OSM_COLUMN].clip(b)
+        aeroway[GEOMETRY_OSM_COLUMN] = aeroway[GEOMETRY_OSM_COLUMN].clip(b)
+
+        final = landuse.copy()
+        for index, row in leisure.iterrows():
+            if isinstance(row.geometry, Polygon):
+                final.loc[index, GEOMETRY_OSM_COLUMN] = row.geometry
+        for index, row in natural.iterrows():
+            if isinstance(row.geometry, Polygon):
+                final.loc[index, GEOMETRY_OSM_COLUMN] = row.geometry
+        for index, row in water.iterrows():
+            if isinstance(row.geometry, Polygon):
+                final.loc[index, GEOMETRY_OSM_COLUMN] = row.geometry
+        for index, row in aeroway.iterrows():
+            if isinstance(row.geometry, Polygon):
+                final.loc[index, GEOMETRY_OSM_COLUMN] = row.geometry
+
         osm_xml = OsmXml(self.osmfiles_folder, EXCLUSION_OSM_FILE_PREFIX + OSM_FILE_EXT)
-        osm_xml.create_from_geodataframes([landuse, leisure, natural, water, aeroway], b)
+        osm_xml.create_from_geodataframes([final], b, True, [("height", 1000)])
+
+        final[GEOMETRY_OSM_COLUMN] = final[GEOMETRY_OSM_COLUMN].unary_union
+        final[GEOMETRY_OSM_COLUMN] = final.geometry.symmetric_difference(b)
+
+        osm_xml = OsmXml(self.osmfiles_folder, "final" + OSM_FILE_EXT)
+        osm_xml.create_from_geodataframes([final], b)
 
     def __find_different_tiles(self, tiles, project_to_compare_name, tiles_to_compare, objects_xml_to_compare):
         different_tiles = []

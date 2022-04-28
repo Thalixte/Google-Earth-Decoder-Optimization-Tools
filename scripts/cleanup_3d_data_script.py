@@ -29,15 +29,15 @@ reload_modules(settings)
 
 import os
 import warnings
-
-warnings.simplefilter(action='ignore', category=FutureWarning)
-
 from shapely.errors import ShapelyDeprecationWarning
-warnings.filterwarnings("ignore", category=ShapelyDeprecationWarning)
+
+warnings.simplefilter(action="ignore", category=FutureWarning)
+warnings.simplefilter(action="ignore", category=DeprecationWarning)
+warnings.simplefilter(action="ignore", category=ShapelyDeprecationWarning)
 
 from pathlib import Path
 from constants import *
-from utils import check_configuration, ScriptError, build_package, pr_bg_green, pr_bg_red, install_python_lib
+from utils import check_configuration, ScriptError, build_package, pr_bg_green, pr_bg_red
 from msfs_project import MsfsProject
 
 

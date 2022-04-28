@@ -145,6 +145,8 @@ ALLOTMENTS_OSM_TAG = "allotment"
 HEATH_OSM_TAG = "heath"
 WETLAND_OSM_TAG = "wetland"
 BARE_ROCK_OSM_TAG = "bare_rock"
+COASTLINE_OSM_TAG = "coastline"
+GEOMETRY_OSM_COLUMN = "geometry"
 
 EXCLUSION_OSM_FILE_PREFIX = "exclusion"
 BOUNDING_BOX_OSM_FILE_PREFIX = "bbox"
@@ -156,7 +158,8 @@ OSM_TAGS = {
         FARMLAND_OSM_TAG,
         MEADOW_OSM_TAG,
         VINEYARD_OSM_TAG,
-        ALLOTMENTS_OSM_TAG
+        ALLOTMENTS_OSM_TAG,
+        COASTLINE_OSM_TAG
     ],
     LEISURE_OSM_KEY: [
         PARK_OSM_TAG,
@@ -173,7 +176,8 @@ OSM_TAGS = {
         SCRUB_OSM_TAG,
         HEATH_OSM_TAG,
         WETLAND_OSM_TAG,
-        BARE_ROCK_OSM_TAG
+        BARE_ROCK_OSM_TAG,
+        COASTLINE_OSM_TAG
     ],
     WATER_OSM_KEY: [
         RIVER_OSM_TAG,

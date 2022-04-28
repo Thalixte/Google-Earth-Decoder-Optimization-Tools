@@ -105,6 +105,24 @@ def check_configuration(settings, msfs_project, check_optimisation=False, check_
             raise ScriptError(error_msg + "Pillow python lib is not correctly installed. Please check what can prevent this library to be installed correctly")
     pr_ok_green(str("Pillow lib installation").ljust(RESULT_MSG_LENGTH))
 
+    if check_optimisation:
+        if not install_python_lib("gdal"):
+            pr_ko_red(str("Gdal lib installation").ljust(RESULT_MSG_LENGTH))
+            raise ScriptError(error_msg + "Gdal python lib is not correctly installed. Please check what can prevent this library to be installed correctly")
+    pr_ok_green(str("Gdal lib installation").ljust(RESULT_MSG_LENGTH))
+
+    if check_optimisation:
+        if not install_python_lib("fiona"):
+            pr_ko_red(str("fiona lib installation").ljust(RESULT_MSG_LENGTH))
+            raise ScriptError(error_msg + "Gdal python lib is not correctly installed. Please check what can prevent this library to be installed correctly")
+    pr_ok_green(str("fiona lib installation").ljust(RESULT_MSG_LENGTH))
+
+    if check_optimisation:
+        if not install_python_lib("osmnx"):
+            pr_ko_red(str("Osmnx lib installation").ljust(RESULT_MSG_LENGTH))
+            raise ScriptError(error_msg + "Osmnx python lib is not correctly installed. Please check what can prevent this library to be installed correctly")
+    pr_ok_green(str("Osmnx lib installation").ljust(RESULT_MSG_LENGTH))
+
     # check if Lily texture packer is installed
     if check_lily_texture_packer and settings.bake_textures_enabled:
         check_lily_texture_packer_availability(settings, warning_msg=warning_msg)

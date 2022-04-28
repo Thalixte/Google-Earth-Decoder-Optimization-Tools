@@ -15,14 +15,17 @@
 #  #
 #
 #  <pep8 compliant>
+from pandas import isna
+from shapely.geometry import Polygon, MultiPolygon
 
-from constants import DUMMY_OBJECT
+from constants import DUMMY_OBJECT, GEOMETRY_OSM_COLUMN
 from utils import Xml
 import xml.etree.ElementTree as Et
 
 
 class OsmXml(Xml):
     POLYGON_TYPE = "Polygon"
+    LINESTRING_TYPE = "LineString"
     OSM_TAG = "osm"
     BOUNDS_TAG = "bounds"
     WAY_TAG = "way"
@@ -45,14 +48,14 @@ class OsmXml(Xml):
     KEY_ATTR = "k"
     VALUE_ATTR = "v"
     GENERATOR_VERSION = "1.0"
-    NAN = "nan"
-    GEOMETRY_COL = "geometry"
+    GEOMETRY_OSM_COLUMN = "geometry"
     APP_NAME = "G.E.D.O.T."
+    EXTRUDE_TYPE = "building"
 
     def __init__(self, file_folder, file_name):
         super().__init__(file_folder, file_name)
 
-    def create_from_geodataframes(self, geopandas_data_frames, bbox_poly, additional_tags=[]):
+    def create_from_geodataframes(self, geopandas_data_frames, bbox_poly, extrude=False, additional_tags=[]):
         osm_root = Et.Element(self.OSM_TAG, attrib={
             self.VERSION_ATTR: self.GENERATOR_VERSION,
             self.GENERATOR_ATTR: self.APP_NAME
@@ -66,43 +69,53 @@ class OsmXml(Xml):
 
         for geopandas_data_frame in geopandas_data_frames:
             for index, row in geopandas_data_frame.iterrows():
-                if not row.geometry.geom_type is self.POLYGON_TYPE:
+                if not isinstance(row.geometry, Polygon) and not isinstance(row.geometry, MultiPolygon):
                     continue
 
-                i = -1
-                current_way = Et.SubElement(osm_root, self.WAY_TAG, attrib={
-                    self.ID_ATTR: str(index[1]),
-                    self.VISIBLE_ATTR: str(True),
-                    self.VERSION_ATTR: "1",
-                    self.UID_ATTR: str(index[1]),
-                    self.CHANGES_ET_ATTR: str(False)})
+                if isinstance(row.geometry, Polygon):
+                    polygons = [row.geometry]
+                else:
+                    polygons = row.geometry
 
-                for point in row.geometry.exterior.coords:
-                    i = i + 1
-                    current_node = Et.SubElement(osm_root, self.NODE_TAG, attrib={
-                        self.ID_ATTR: str(index[1]) + str(i),
+                for k, polygon in enumerate(polygons):
+                    if len(polygon.exterior.coords) <= 0:
+                        continue
+
+                    i = -1
+                    current_way = Et.SubElement(osm_root, self.WAY_TAG, attrib={
+                        self.ID_ATTR: str(index[1]) + str(k),
                         self.VISIBLE_ATTR: str(True),
                         self.VERSION_ATTR: "1",
                         self.UID_ATTR: str(index[1]),
-                        self.LAT_ATTR: str(point[1]),
-                        self.LON_ATTR: str(point[0]),
                         self.CHANGES_ET_ATTR: str(False)})
 
+                    for point in polygon.exterior.coords:
+                        i = i + 1
+                        current_node = Et.SubElement(osm_root, self.NODE_TAG, attrib={
+                            self.ID_ATTR: str(index[1]) + str(k) + str(i),
+                            self.VISIBLE_ATTR: str(True),
+                            self.VERSION_ATTR: "1",
+                            self.UID_ATTR: str(index[1]),
+                            self.LAT_ATTR: str(point[1]),
+                            self.LON_ATTR: str(point[0]),
+                            self.CHANGES_ET_ATTR: str(False)})
+
+                        Et.SubElement(current_way, self.ND_TAG, attrib={
+                            self.REF_ATTR: str(index[1]) + str(k) + str(i)})
+
+                    i = 0
                     Et.SubElement(current_way, self.ND_TAG, attrib={
-                        self.REF_ATTR: str(index[1]) + str(i)})
+                        self.REF_ATTR: str(index[1]) + str(k) + str(i)})
 
-                i = 0
-                Et.SubElement(current_way, self.ND_TAG, attrib={
-                    self.REF_ATTR: str(index[1]) + str(i)})
+                    for column in geopandas_data_frame.columns:
+                        if column != self.GEOMETRY_OSM_COLUMN and not isna(str(row[column])):
+                            code = self.EXTRUDE_TYPE if extrude else column
+                            self.__add_tag(current_node, code, DUMMY_OBJECT)
+                            self.__add_tag(current_way, code, DUMMY_OBJECT)
 
-                for column in geopandas_data_frame.columns:
-                    if column != self.GEOMETRY_COL and str(row[column]) != self.NAN:
-                        self.__add_tag(current_node, column, DUMMY_OBJECT)
-                        self.__add_tag(current_way, column, DUMMY_OBJECT)
-
-                for additional_tag in additional_tags:
-                    self.__add_tag(current_node, additional_tag[0], str(additional_tag[1]))
-                    self.__add_tag(current_way, additional_tag[0], str(additional_tag[1]))
+                    for additional_tag in additional_tags:
+                        self.__add_tag(current_node, additional_tag[0], str(additional_tag[1]))
+                        self.__add_tag(current_way, additional_tag[0], str(additional_tag[1]))
 
         self.tree = Et.ElementTree(element=osm_root)
         self.root = self.tree.getroot()

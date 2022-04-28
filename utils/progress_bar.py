@@ -70,6 +70,7 @@ class ProgressBar:
         description = DONE_PROCESS if progress >= 1 else description
         msg = self.__get_color(progress) + "\r[{0}] {1}%: {2}".format("\u25A0" * block + "-" * (self.length - block), round(progress * 100, 2), description + CEND)
 
+        sys.stdout.close()
         sys.stdout = sys.__stdout__
         sys.stdout.write(msg.ljust(MSG_LENGTH))
         sys.stdout.flush()
