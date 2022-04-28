@@ -67,6 +67,7 @@ class OsmXml(Xml):
             self.MAX_LAT_ATTR: str(bbox_poly.bounds[2]),
             self.MAX_LON_ATTR: str(bbox_poly.bounds[3])})
 
+        i = 0
         for geopandas_data_frame in geopandas_data_frames:
             for index, row in geopandas_data_frame.iterrows():
                 if not isinstance(row.geometry, Polygon) and not isinstance(row.geometry, MultiPolygon):
@@ -81,9 +82,8 @@ class OsmXml(Xml):
                     if len(polygon.exterior.coords) <= 0:
                         continue
 
-                    i = -1
                     current_way = Et.SubElement(osm_root, self.WAY_TAG, attrib={
-                        self.ID_ATTR: str(index[1]) + str(k),
+                        self.ID_ATTR: str(i),
                         self.VISIBLE_ATTR: str(True),
                         self.VERSION_ATTR: "1",
                         self.UID_ATTR: str(index[1]),
@@ -92,7 +92,7 @@ class OsmXml(Xml):
                     for point in polygon.exterior.coords:
                         i = i + 1
                         current_node = Et.SubElement(osm_root, self.NODE_TAG, attrib={
-                            self.ID_ATTR: str(index[1]) + str(k) + str(i),
+                            self.ID_ATTR: str(i),
                             self.VISIBLE_ATTR: str(True),
                             self.VERSION_ATTR: "1",
                             self.UID_ATTR: str(index[1]),
@@ -101,11 +101,7 @@ class OsmXml(Xml):
                             self.CHANGES_ET_ATTR: str(False)})
 
                         Et.SubElement(current_way, self.ND_TAG, attrib={
-                            self.REF_ATTR: str(index[1]) + str(k) + str(i)})
-
-                    i = 0
-                    Et.SubElement(current_way, self.ND_TAG, attrib={
-                        self.REF_ATTR: str(index[1]) + str(k) + str(i)})
+                            self.REF_ATTR: str(i)})
 
                     for column in geopandas_data_frame.columns:
                         if column != self.GEOMETRY_OSM_COLUMN and not isna(str(row[column])):
@@ -116,6 +112,8 @@ class OsmXml(Xml):
                     for additional_tag in additional_tags:
                         self.__add_tag(current_node, additional_tag[0], str(additional_tag[1]))
                         self.__add_tag(current_way, additional_tag[0], str(additional_tag[1]))
+
+                    i = i + 1
 
         self.tree = Et.ElementTree(element=osm_root)
         self.root = self.tree.getroot()

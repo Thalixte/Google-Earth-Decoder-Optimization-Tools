@@ -631,9 +631,17 @@ class MsfsProject:
     def __create_osm_files(self):
         self.__create_osm_exclusion_file()
         pbar = ProgressBar(list(self.tiles.values()), title="CREATE OSM FILES")
+        bbox_gdfs = []
         for tile in self.tiles.values():
             tile.create_osm_files(self.osmfiles_folder)
             pbar.update("osm files created for %s tile" % tile.name)
+            bbox_gdfs.append(tile.bbox_gdf)
+
+        b = bbox_to_poly(self.coords[1], self.coords[0], self.coords[2], self.coords[3])
+        osm_xml = OsmXml(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + OSM_FILE_EXT)
+        osm_xml.create_from_geodataframes(bbox_gdfs, b)
+        osm_xml = OsmXml(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + OSM_FILE_EXT + XML_FILE_EXT)
+        osm_xml.create_from_geodataframes(bbox_gdfs, b)
 
     def __create_osm_exclusion_file(self):
         # landuse = ox.geometries_from_place("Dinard, France", tags={LANDUSE_OSM_KEY: OSM_TAGS[LANDUSE_OSM_KEY]})
@@ -650,9 +658,6 @@ class MsfsProject:
 
         b = bbox_to_poly(self.coords[1], self.coords[0], self.coords[2], self.coords[3])
         bbox = gpd.GeoDataFrame(pd.DataFrame(["box"], index=[("bbox", 1)], columns=[BOUNDARY_OSM_KEY]), crs={"init": EPSG_KEY + str(EPSG_VALUE)}, geometry=[b])
-
-        osm_xml = OsmXml(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + OSM_FILE_EXT)
-        osm_xml.create_from_geodataframes([bbox], b)
 
         landuse[GEOMETRY_OSM_COLUMN] = landuse[GEOMETRY_OSM_COLUMN].clip(b)
         leisure[GEOMETRY_OSM_COLUMN] = leisure[GEOMETRY_OSM_COLUMN].clip(b)
