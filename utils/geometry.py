@@ -1,6 +1,19 @@
 import geopandas as gpd
 from shapely.geometry import MultiPolygon, Polygon
 
+from constants import GEOMETRY_OSM_COLUMN
+
+
+def copy_geometry(source, dest, start_index=-1):
+    source = source[source.geometry != None].explode()
+    i = 1
+    for index, row in source.iterrows():
+        if isinstance(row.geometry, Polygon):
+            dest.loc[index if start_index <=0 else start_index + i, GEOMETRY_OSM_COLUMN] = row.geometry
+            i = i+1
+
+    return dest
+
 
 def remove_interiors(poly):
     if poly.interiors:

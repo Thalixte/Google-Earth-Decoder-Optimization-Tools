@@ -86,7 +86,7 @@ class OsmXml(Xml):
                         self.ID_ATTR: str(i),
                         self.VISIBLE_ATTR: str(True),
                         self.VERSION_ATTR: "1",
-                        self.UID_ATTR: str(index[1]),
+                        self.UID_ATTR: str(i),
                         self.CHANGES_ET_ATTR: str(False)})
 
                     for point in polygon.exterior.coords:
@@ -95,7 +95,7 @@ class OsmXml(Xml):
                             self.ID_ATTR: str(i),
                             self.VISIBLE_ATTR: str(True),
                             self.VERSION_ATTR: "1",
-                            self.UID_ATTR: str(index[1]),
+                            self.UID_ATTR: str(i),
                             self.LAT_ATTR: str(point[1]),
                             self.LON_ATTR: str(point[0]),
                             self.CHANGES_ET_ATTR: str(False)})

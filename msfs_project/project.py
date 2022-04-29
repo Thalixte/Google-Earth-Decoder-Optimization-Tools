@@ -42,7 +42,7 @@ from msfs_project.collider import MsfsCollider
 from msfs_project.tile import MsfsTile
 from msfs_project.shape import MsfsShape
 from utils import replace_in_file, is_octant, backup_file, install_python_lib, ScriptError, print_title, \
-    get_backup_file_path, isolated_print, chunks, close_holes
+    get_backup_file_path, isolated_print, chunks, close_holes, copy_geometry
 from pathlib import Path
 
 from utils.compressonator import Compressonator
@@ -638,9 +638,7 @@ class MsfsProject:
             if i <= 0:
                 bbox_union = tile.bbox_gdf.copy()
             else:
-                for index, row in tile.bbox_gdf.iterrows():
-                    bbox_union.loc[BOUNDING_BOX_OSM_FILE_PREFIX + "/" + str(i + 1), BOUNDARY_OSM_KEY] = BOUNDING_BOX_OSM_FILE_PREFIX + "/1"
-                    bbox_union.loc[BOUNDING_BOX_OSM_FILE_PREFIX + "/" + str(i+1), GEOMETRY_OSM_COLUMN] = row.geometry
+                bbox_union = copy_geometry(tile.bbox_gdf, bbox_union, i)
 
         self.__create_osm_exclusion_file(b, bbox_union)
 
@@ -648,9 +646,10 @@ class MsfsProject:
         boundary = ox.geometries_from_bbox(self.coords[0], self.coords[1], self.coords[2], self.coords[3], tags={BOUNDARY_OSM_KEY: True})
         union = boundary.unary_union
 
-        bbox = bbox.dissolve(BOUNDARY_OSM_KEY).assign(boundary=BOUNDING_BOX_OSM_KEY)
+        bbox = bbox.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)
         bbox[GEOMETRY_OSM_COLUMN] = bbox[GEOMETRY_OSM_COLUMN].apply(lambda p: close_holes(p))
         bbox[GEOMETRY_OSM_COLUMN] = bbox[GEOMETRY_OSM_COLUMN].clip(union)
+
         osm_xml = OsmXml(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + OSM_FILE_EXT)
         osm_xml.create_from_geodataframes([bbox], b)
 
@@ -670,37 +669,16 @@ class MsfsProject:
 
         landuse = landuse[landuse.geometry != None].explode()
         exclusion = landuse.copy()
-        for index, row in landuse.iterrows():
-            if isinstance(row.geometry, Polygon):
-                exclusion.loc[index, LANDUSE_OSM_KEY] = BOUNDING_BOX_OSM_FILE_PREFIX + "/1"
-                exclusion.loc[index, GEOMETRY_OSM_COLUMN] = row.geometry
-        leisure = leisure[leisure.geometry != None].explode()
-        for index, row in leisure.iterrows():
-            if isinstance(row.geometry, Polygon):
-                exclusion.loc[index, LANDUSE_OSM_KEY] = BOUNDING_BOX_OSM_FILE_PREFIX + "/1"
-                exclusion.loc[index, GEOMETRY_OSM_COLUMN] = row.geometry
-        natural = natural[natural.geometry != None].explode()
-        for index, row in natural.iterrows():
-            if isinstance(row.geometry, Polygon):
-                exclusion.loc[index, LANDUSE_OSM_KEY] = BOUNDING_BOX_OSM_FILE_PREFIX + "/1"
-                exclusion.loc[index, GEOMETRY_OSM_COLUMN] = row.geometry
-        water = water[water.geometry != None].explode()
-        for index, row in water.iterrows():
-            if isinstance(row.geometry, Polygon):
-                exclusion.loc[index, BOUNDARY_OSM_KEY] = BOUNDING_BOX_OSM_KEY
-                exclusion.loc[index, GEOMETRY_OSM_COLUMN] = row.geometry
-        aeroway = aeroway[aeroway.geometry != None].explode()
-        for index, row in aeroway.iterrows():
-            if isinstance(row.geometry, Polygon):
-                exclusion.loc[index, LANDUSE_OSM_KEY] = BOUNDING_BOX_OSM_FILE_PREFIX + "/1"
-                exclusion.loc[index, GEOMETRY_OSM_COLUMN] = row.geometry
+        exclusion = copy_geometry(leisure, exclusion)
+        exclusion = copy_geometry(natural, exclusion)
+        exclusion = copy_geometry(water, exclusion)
+        exclusion = copy_geometry(aeroway, exclusion)
+        exclusion = copy_geometry(leisure, exclusion)
 
-        exclusion = exclusion.dissolve(LANDUSE_OSM_KEY)
+        exclusion = exclusion.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)
 
-        final = gpd.GeoDataFrame(pd.DataFrame([BOUNDING_BOX_OSM_KEY], index=[(BOUNDING_BOX_OSM_FILE_PREFIX, 1)], columns=[BOUNDARY_OSM_KEY]), crs={"init": EPSG_KEY + str(EPSG_VALUE)}, geometry=[exclusion.geometry.unary_union])
+        final = gpd.GeoDataFrame(pd.DataFrame([], index=[0]), crs={"init": EPSG_KEY + str(EPSG_VALUE)}, geometry=[exclusion.geometry.unary_union]).assign(boundary=BOUNDING_BOX_OSM_KEY)
         final[GEOMETRY_OSM_COLUMN] = bbox.symmetric_difference(final)
-
-        ox.plot_footprints(final)
 
         osm_xml = OsmXml(self.osmfiles_folder, EXCLUSION_OSM_FILE_PREFIX + OSM_FILE_EXT)
         osm_xml.create_from_geodataframes([exclusion], b, True, [("height", 1000)])
