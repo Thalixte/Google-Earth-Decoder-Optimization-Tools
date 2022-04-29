@@ -646,6 +646,10 @@ class MsfsProject:
         boundary = ox.geometries_from_bbox(self.coords[0], self.coords[1], self.coords[2], self.coords[3], tags={BOUNDARY_OSM_KEY: True})
         union = boundary.unary_union
 
+        boundary = gpd.GeoDataFrame(pd.DataFrame([], index=[0]), crs={"init": EPSG_KEY + str(EPSG_VALUE)}, geometry=[union]).assign(boundary=BOUNDING_BOX_OSM_KEY)
+        osm_xml = OsmXml(self.osmfiles_folder, "boundary" + OSM_FILE_EXT)
+        osm_xml.create_from_geodataframes([boundary], b)
+
         bbox = bbox.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)
         bbox[GEOMETRY_OSM_COLUMN] = bbox[GEOMETRY_OSM_COLUMN].apply(lambda p: close_holes(p))
         bbox[GEOMETRY_OSM_COLUMN] = bbox[GEOMETRY_OSM_COLUMN].clip(union)
@@ -677,7 +681,7 @@ class MsfsProject:
 
         exclusion = exclusion.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)
 
-        final = gpd.GeoDataFrame(pd.DataFrame([], index=[0]), crs={"init": EPSG_KEY + str(EPSG_VALUE)}, geometry=[exclusion.geometry.unary_union]).assign(boundary=BOUNDING_BOX_OSM_KEY)
+        final = gpd.GeoDataFrame(pd.DataFrame([], index=[0]), crs={"init": EPSG_KEY + str(EPSG_VALUE)}, geometry=[exclusion.unary_union]).assign(boundary=BOUNDING_BOX_OSM_KEY)
         final[GEOMETRY_OSM_COLUMN] = bbox.symmetric_difference(final)
 
         osm_xml = OsmXml(self.osmfiles_folder, EXCLUSION_OSM_FILE_PREFIX + OSM_FILE_EXT)
