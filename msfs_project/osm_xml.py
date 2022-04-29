@@ -78,7 +78,7 @@ class OsmXml(Xml):
                 else:
                     polygons = row.geometry
 
-                for k, polygon in enumerate(polygons):
+                for polygon in polygons:
                     if len(polygon.exterior.coords) <= 0:
                         continue
 

@@ -120,6 +120,7 @@ NATURAL_OSM_KEY = "natural"
 WATER_OSM_KEY = "water"
 AEROWAY_OSM_KEY = "aeroway"
 BOUNDARY_OSM_KEY = "boundary"
+BOUNDING_BOX_OSM_KEY = "box"
 
 FOREST_OSM_TAG = "forest"
 NATURE_RESERVE_OSM_TAG = "nature_reserve"
@@ -147,11 +148,19 @@ WETLAND_OSM_TAG = "wetland"
 BARE_ROCK_OSM_TAG = "bare_rock"
 COASTLINE_OSM_TAG = "coastline"
 GEOMETRY_OSM_COLUMN = "geometry"
+MARITIME_OSM_KEY = "maritime"
+NATIONAL_PARK_OSM_KEY = "national_park"
+PROTECTED_AREA_OSM_KEY = "protected_area"
 
 EXCLUSION_OSM_FILE_PREFIX = "exclusion"
 BOUNDING_BOX_OSM_FILE_PREFIX = "bbox"
 
 OSM_TAGS = {
+    BOUNDARY_OSM_KEY: [
+        FOREST_OSM_TAG,
+        MARITIME_OSM_KEY,
+        NATIONAL_PARK_OSM_KEY
+    ],
     LANDUSE_OSM_KEY: [
         FOREST_OSM_TAG,
         NATURE_RESERVE_OSM_TAG,

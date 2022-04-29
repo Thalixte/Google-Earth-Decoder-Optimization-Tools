@@ -23,7 +23,7 @@ import geopandas as gpd
 from osmnx.utils_geo import bbox_to_poly
 
 from constants import GLTF_FILE_EXT, COLLIDER_SUFFIX, XML_FILE_EXT, EPSG_KEY, EPSG_VALUE, \
-    BOUNDARY_OSM_KEY, OSM_FILE_EXT, BOUNDING_BOX_OSM_FILE_PREFIX
+    BOUNDARY_OSM_KEY, OSM_FILE_EXT, BOUNDING_BOX_OSM_FILE_PREFIX, BOUNDING_BOX_OSM_KEY
 from msfs_project.collider import MsfsCollider
 from msfs_project.scene_object import MsfsSceneObject
 from msfs_project.position import MsfsPosition
@@ -89,6 +89,6 @@ class MsfsTile(MsfsSceneObject):
 
     def __create_bbox_osm_file(self, osm_path):
         b = bbox_to_poly(self.coords[1], self.coords[0], self.coords[2], self.coords[3])
-        self.bbox_gdf = gpd.GeoDataFrame(pd.DataFrame(["box"], index=[("bbox", 1)], columns=[BOUNDARY_OSM_KEY]), crs={"init": EPSG_KEY + str(EPSG_VALUE)}, geometry=[b])
+        self.bbox_gdf = gpd.GeoDataFrame(pd.DataFrame([BOUNDING_BOX_OSM_FILE_PREFIX + "/1"], index=[(BOUNDING_BOX_OSM_FILE_PREFIX, 1)], columns=[BOUNDARY_OSM_KEY]), crs={"init": EPSG_KEY + str(EPSG_VALUE)}, geometry=[b])
         osm_xml = OsmXml(osm_path, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + self.name + OSM_FILE_EXT)
         osm_xml.create_from_geodataframes([self.bbox_gdf], b, [("height", 100)])

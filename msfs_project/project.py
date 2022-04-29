@@ -26,11 +26,10 @@ import os
 import subprocess
 
 import osmnx as ox
-import pandas as pd
-import geopandas as gpd
 from osmnx.utils_geo import bbox_to_poly
+import geopandas as gpd
+import pandas as pd
 from shapely.geometry import Polygon, MultiPolygon
-from shapely.ops import unary_union
 
 import bpy
 from constants import *
@@ -43,7 +42,7 @@ from msfs_project.collider import MsfsCollider
 from msfs_project.tile import MsfsTile
 from msfs_project.shape import MsfsShape
 from utils import replace_in_file, is_octant, backup_file, install_python_lib, ScriptError, print_title, \
-    get_backup_file_path, isolated_print, chunks
+    get_backup_file_path, isolated_print, chunks, close_holes
 from pathlib import Path
 
 from utils.compressonator import Compressonator
@@ -629,26 +628,31 @@ class MsfsProject:
         self.__clean_objects(self.colliders)
 
     def __create_osm_files(self):
-        self.__create_osm_exclusion_file()
         pbar = ProgressBar(list(self.tiles.values()), title="CREATE OSM FILES")
-        bbox_gdfs = []
-        for tile in self.tiles.values():
+        b = bbox_to_poly(self.coords[1], self.coords[0], self.coords[2], self.coords[3])
+        bbox_union = None
+        for i, tile in enumerate(self.tiles.values()):
             tile.create_osm_files(self.osmfiles_folder)
             pbar.update("osm files created for %s tile" % tile.name)
-            bbox_gdfs.append(tile.bbox_gdf)
 
-        b = bbox_to_poly(self.coords[1], self.coords[0], self.coords[2], self.coords[3])
+            if i <= 0:
+                bbox_union = tile.bbox_gdf.copy()
+            else:
+                for index, row in tile.bbox_gdf.iterrows():
+                    bbox_union.loc[BOUNDING_BOX_OSM_FILE_PREFIX + "/" + str(i + 1), BOUNDARY_OSM_KEY] = BOUNDING_BOX_OSM_FILE_PREFIX + "/1"
+                    bbox_union.loc[BOUNDING_BOX_OSM_FILE_PREFIX + "/" + str(i+1), GEOMETRY_OSM_COLUMN] = row.geometry
+
+        self.__create_osm_exclusion_file(b, bbox_union)
+
+    def __create_osm_exclusion_file(self, b, bbox):
+        boundary = ox.geometries_from_bbox(self.coords[0], self.coords[1], self.coords[2], self.coords[3], tags={BOUNDARY_OSM_KEY: True})
+        union = boundary.unary_union
+
+        bbox = bbox.dissolve(BOUNDARY_OSM_KEY).assign(boundary=BOUNDING_BOX_OSM_KEY)
+        bbox[GEOMETRY_OSM_COLUMN] = bbox[GEOMETRY_OSM_COLUMN].apply(lambda p: close_holes(p))
+        bbox[GEOMETRY_OSM_COLUMN] = bbox[GEOMETRY_OSM_COLUMN].clip(union)
         osm_xml = OsmXml(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + OSM_FILE_EXT)
-        osm_xml.create_from_geodataframes(bbox_gdfs, b)
-        osm_xml = OsmXml(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + OSM_FILE_EXT + XML_FILE_EXT)
-        osm_xml.create_from_geodataframes(bbox_gdfs, b)
-
-    def __create_osm_exclusion_file(self):
-        # landuse = ox.geometries_from_place("Dinard, France", tags={LANDUSE_OSM_KEY: OSM_TAGS[LANDUSE_OSM_KEY]})
-        # leisure = ox.geometries_from_place("Dinard, France", tags={LEISURE_OSM_KEY: OSM_TAGS[LEISURE_OSM_KEY]})
-        # natural = ox.geometries_from_place("Dinard, France", tags={NATURAL_OSM_KEY: OSM_TAGS[NATURAL_OSM_KEY]})
-        # water = ox.geometries_from_place("Dinard, France", tags={WATER_OSM_KEY: OSM_TAGS[WATER_OSM_KEY]})
-        # aeroway = ox.geometries_from_place("Dinard, France", tags={AEROWAY_OSM_KEY: True})
+        osm_xml.create_from_geodataframes([bbox], b)
 
         landuse = ox.geometries_from_bbox(self.coords[0], self.coords[1], self.coords[2], self.coords[3], tags={LANDUSE_OSM_KEY: OSM_TAGS[LANDUSE_OSM_KEY]})
         leisure = ox.geometries_from_bbox(self.coords[0], self.coords[1], self.coords[2], self.coords[3], tags={LEISURE_OSM_KEY: OSM_TAGS[LEISURE_OSM_KEY]})
@@ -656,17 +660,53 @@ class MsfsProject:
         water = ox.geometries_from_bbox(self.coords[0], self.coords[1], self.coords[2], self.coords[3], tags={WATER_OSM_KEY: OSM_TAGS[WATER_OSM_KEY]})
         aeroway = ox.geometries_from_bbox(self.coords[0], self.coords[1], self.coords[2], self.coords[3], tags={AEROWAY_OSM_KEY: True})
 
-        b = bbox_to_poly(self.coords[1], self.coords[0], self.coords[2], self.coords[3])
-        bbox = gpd.GeoDataFrame(pd.DataFrame(["box"], index=[("bbox", 1)], columns=[BOUNDARY_OSM_KEY]), crs={"init": EPSG_KEY + str(EPSG_VALUE)}, geometry=[b])
+        bbox_union = bbox.unary_union
 
-        landuse[GEOMETRY_OSM_COLUMN] = landuse[GEOMETRY_OSM_COLUMN].clip(b)
-        leisure[GEOMETRY_OSM_COLUMN] = leisure[GEOMETRY_OSM_COLUMN].clip(b)
-        natural[GEOMETRY_OSM_COLUMN] = natural[GEOMETRY_OSM_COLUMN].clip(b)
-        water[GEOMETRY_OSM_COLUMN] = water[GEOMETRY_OSM_COLUMN].clip(b)
-        aeroway[GEOMETRY_OSM_COLUMN] = aeroway[GEOMETRY_OSM_COLUMN].clip(b)
+        landuse[GEOMETRY_OSM_COLUMN] = landuse[GEOMETRY_OSM_COLUMN].clip(bbox_union)
+        leisure[GEOMETRY_OSM_COLUMN] = leisure[GEOMETRY_OSM_COLUMN].clip(bbox_union)
+        natural[GEOMETRY_OSM_COLUMN] = natural[GEOMETRY_OSM_COLUMN].clip(bbox_union)
+        water[GEOMETRY_OSM_COLUMN] = water[GEOMETRY_OSM_COLUMN].clip(bbox_union)
+        aeroway[GEOMETRY_OSM_COLUMN] = aeroway[GEOMETRY_OSM_COLUMN].clip(bbox_union)
+
+        landuse = landuse[landuse.geometry != None].explode()
+        exclusion = landuse.copy()
+        for index, row in landuse.iterrows():
+            if isinstance(row.geometry, Polygon):
+                exclusion.loc[index, LANDUSE_OSM_KEY] = BOUNDING_BOX_OSM_FILE_PREFIX + "/1"
+                exclusion.loc[index, GEOMETRY_OSM_COLUMN] = row.geometry
+        leisure = leisure[leisure.geometry != None].explode()
+        for index, row in leisure.iterrows():
+            if isinstance(row.geometry, Polygon):
+                exclusion.loc[index, LANDUSE_OSM_KEY] = BOUNDING_BOX_OSM_FILE_PREFIX + "/1"
+                exclusion.loc[index, GEOMETRY_OSM_COLUMN] = row.geometry
+        natural = natural[natural.geometry != None].explode()
+        for index, row in natural.iterrows():
+            if isinstance(row.geometry, Polygon):
+                exclusion.loc[index, LANDUSE_OSM_KEY] = BOUNDING_BOX_OSM_FILE_PREFIX + "/1"
+                exclusion.loc[index, GEOMETRY_OSM_COLUMN] = row.geometry
+        water = water[water.geometry != None].explode()
+        for index, row in water.iterrows():
+            if isinstance(row.geometry, Polygon):
+                exclusion.loc[index, BOUNDARY_OSM_KEY] = BOUNDING_BOX_OSM_KEY
+                exclusion.loc[index, GEOMETRY_OSM_COLUMN] = row.geometry
+        aeroway = aeroway[aeroway.geometry != None].explode()
+        for index, row in aeroway.iterrows():
+            if isinstance(row.geometry, Polygon):
+                exclusion.loc[index, LANDUSE_OSM_KEY] = BOUNDING_BOX_OSM_FILE_PREFIX + "/1"
+                exclusion.loc[index, GEOMETRY_OSM_COLUMN] = row.geometry
+
+        exclusion = exclusion.dissolve(LANDUSE_OSM_KEY)
+
+        final = gpd.GeoDataFrame(pd.DataFrame([BOUNDING_BOX_OSM_KEY], index=[(BOUNDING_BOX_OSM_FILE_PREFIX, 1)], columns=[BOUNDARY_OSM_KEY]), crs={"init": EPSG_KEY + str(EPSG_VALUE)}, geometry=[exclusion.geometry.unary_union])
+        final[GEOMETRY_OSM_COLUMN] = bbox.symmetric_difference(final)
+
+        ox.plot_footprints(final)
 
         osm_xml = OsmXml(self.osmfiles_folder, EXCLUSION_OSM_FILE_PREFIX + OSM_FILE_EXT)
-        osm_xml.create_from_geodataframes([landuse, leisure, natural, water, aeroway], b, True, [("height", 1000)])
+        osm_xml.create_from_geodataframes([exclusion], b, True, [("height", 1000)])
+
+        osm_xml = OsmXml(self.osmfiles_folder, "final" + OSM_FILE_EXT)
+        osm_xml.create_from_geodataframes([final], b, True, [("height", 1000)])
 
     def __find_different_tiles(self, tiles, project_to_compare_name, tiles_to_compare, objects_xml_to_compare):
         different_tiles = []

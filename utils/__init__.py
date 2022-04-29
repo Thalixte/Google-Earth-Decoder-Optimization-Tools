@@ -36,3 +36,4 @@ from .chunks import *
 from .progress_bar import *
 from .compressonator import *
 from .script import *
+from .geometry import *
