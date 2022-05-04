@@ -806,15 +806,12 @@ class MsfsProject:
 
         osm_xml = OsmXml(self.osmfiles_folder, EXCLUSION_OSM_FILE_PREFIX + OSM_FILE_EXT)
         osm_xml.create_from_geodataframes([exclusion], b, True, [("height", 1000)])
-        exclusion = exclusion.explode()
-        exclusion.to_file(os.path.join(self.shapefiles_folder, EXCLUSION_OSM_FILE_PREFIX + SHP_FILE_EXT))
 
         # if draw_border_lines:
         #     final[GEOMETRY_OSM_COLUMN] = MultiLineString(draw_border_lines).buffer(0.00001)
         #     final.dissolve()
         #     osm_xml = OsmXml(self.osmfiles_folder, "split_lines" + OSM_FILE_EXT)
         #     osm_xml.create_from_geodataframes([final.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')], b)
-        #     final.to_file(os.path.join(self.shapefiles_folder, "split_lines" + SHP_FILE_EXT))
 
         if keep_polys:
             final[GEOMETRY_OSM_COLUMN] = MultiPolygon(keep_polys)
