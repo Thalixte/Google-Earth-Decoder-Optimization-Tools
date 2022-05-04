@@ -18,9 +18,16 @@
 
 import sys
 import os
+import warnings
 
 
 def isolated_print(*args, **kwargs):
+    warnings.simplefilter("ignore")
+    os.environ["PYTHONWARNINGS"] = "ignore"
     sys.stdout = sys.__stdout__
     print(*args, **kwargs)
+    warnings.simplefilter("ignore")
+    os.environ["PYTHONWARNINGS"] = "ignore"
     sys.stdout = open(os.devnull, 'w')
+    warnings.simplefilter("ignore")
+    os.environ["PYTHONWARNINGS"] = "ignore"

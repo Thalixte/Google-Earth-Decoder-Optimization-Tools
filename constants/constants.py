@@ -74,6 +74,7 @@ COLLIDER_SUFFIX = "_collider"
 RESOURCE_FOLDER = "resource"
 TEMPLATES_FOLDER = RESOURCE_FOLDER + "\\" + "templates"
 THUMBNAIL_FOLDER = RESOURCE_FOLDER + "\\" + "thumbnail"
+SHAPE_TEMPLATES_FOLDER = RESOURCE_FOLDER + "\\" + "shapes"
 
 BUSINESS_JSON_TEMPLATE = "Business.json"
 PACKAGE_DEFINITIONS_TEMPLATE = "package-definition.xml"

@@ -91,4 +91,4 @@ class MsfsTile(MsfsSceneObject):
         b = bbox_to_poly(self.coords[1], self.coords[0], self.coords[2], self.coords[3])
         self.bbox_gdf = gpd.GeoDataFrame(pd.DataFrame([], index=[0]), crs={"init": EPSG_KEY + str(EPSG_VALUE)}, geometry=[b])
         osm_xml = OsmXml(osm_path, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + self.name + OSM_FILE_EXT)
-        osm_xml.create_from_geodataframes([self.bbox_gdf], b, [("height", 100)])
+        osm_xml.create_from_geodataframes([self.bbox_gdf.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')], b)
