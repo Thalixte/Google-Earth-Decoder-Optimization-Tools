@@ -1,5 +1,5 @@
 import geopandas as gpd
-from shapely.geometry import MultiPolygon, Polygon, MultiLineString
+from shapely.geometry import MultiPolygon, Polygon, MultiLineString, LineString
 from shapely.ops import linemerge, unary_union, polygonize
 
 from constants import GEOMETRY_OSM_COLUMN
@@ -54,9 +54,6 @@ def cut_polygon_by_line(polygon, line):
 
 
 def convert_3D_2D(geometry):
-    '''
-    Takes a GeoSeries of 3D Multi/Polygons (has_z) and returns a list of 2D Multi/Polygons
-    '''
     new_geo = []
     for p in geometry:
         if p.has_z:
@@ -72,5 +69,12 @@ def convert_3D_2D(geometry):
                     new_multi_p.append(new_p)
                 new_geo.append(MultiPolygon(new_multi_p))
     return new_geo
+
+
+def extend_line(p1, p2, ratio):
+    # Creates a line extrapoled in p1->p2 direction
+    a = p1
+    b = (p1[0]+ratio*(p2[0]-p1[0]), p1[1]+ratio*(p2[1]-p1[1]) )
+    return LineString([a, b])
 
     

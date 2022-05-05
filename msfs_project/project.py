@@ -20,9 +20,6 @@ import itertools
 import sys
 from os.path import basename
 
-from global_land_mask import globe
-from mpl_toolkits.basemap import Basemap
-
 import io
 import shutil
 import os
@@ -33,8 +30,7 @@ from osmnx.utils_geo import bbox_to_poly
 import geopandas as gpd
 import pandas as pd
 from shapely.geometry import MultiPolygon, LineString, Point, MultiPoint, MultiLineString
-from shapely.ops import polygonize, nearest_points, linemerge, unary_union, polygonize_full
-from shapely.prepared import prep
+from shapely.ops import polygonize, nearest_points, linemerge, unary_union
 
 import bpy
 from constants import *
@@ -47,7 +43,7 @@ from msfs_project.collider import MsfsCollider
 from msfs_project.tile import MsfsTile
 from msfs_project.shape import MsfsShape
 from utils import replace_in_file, is_octant, backup_file, install_python_lib, ScriptError, print_title, \
-    get_backup_file_path, isolated_print, chunks, close_holes, copy_geometry, convert_3D_2D, cut_polygon_by_line
+    get_backup_file_path, isolated_print, chunks, close_holes, copy_geometry, convert_3D_2D, cut_polygon_by_line, extend_line
 from pathlib import Path
 
 from utils.compressonator import Compressonator
@@ -651,7 +647,7 @@ class MsfsProject:
     def __create_osm_exclusion_file(self, b, bbox):
         keep_polys = []
         draw_lines = []
-        # draw_border_lines = []
+        draw_border_lines = []
 
         bbox = bbox.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)
         bbox[GEOMETRY_OSM_COLUMN] = bbox[GEOMETRY_OSM_COLUMN].apply(lambda p: close_holes(p))
@@ -743,7 +739,7 @@ class MsfsProject:
                 pts = nearest_points(centroid_pt, input_p.exterior)
                 input_l = LineString(pts[0].coords[:] + pts[1].coords[:])
                 lines.append(input_l)
-                # draw_lines.append(input_l)
+                draw_lines.append(input_l)
 
                 while centroid_pts:
                     other_centroid_pts = MultiPoint([pt for pt in centroid_pts if pt != centroid_pt])
@@ -762,32 +758,14 @@ class MsfsProject:
 
                 pts = nearest_points(centroid_pt, input_p.exterior)
                 input_l = LineString(pts[0].coords[:] + pts[1].coords[:])
-
-                minx, miny, maxx, maxy = input_p.bounds
-                a, b = input_l.boundary
-
-                if a.x == b.x:  # vertical line
-                    input_l = LineString([(a.x, miny), (a.x, maxy)])
-                elif a.y == b.y:  # horizontal line
-                    input_l = LineString([(minx, a.y), (maxx, a.y)])
-                else:
-                    # linear equation: y = k*x + m
-                    k = (b.y - a.y) / (b.x - a.x)
-                    m = a.y - k * a.x
-                    y0 = k * minx + m
-                    y1 = k * maxx + m
-                    x0 = (miny - m) / k
-                    x1 = (maxy - m) / k
-                    points_on_boundary_lines = [Point(minx, y0), Point(maxx, y1),
-                                                Point(x0, miny), Point(x1, maxy)]
-                    points_sorted_by_distance = sorted(points_on_boundary_lines, key=input_p.distance)
-                    input_l = LineString(points_sorted_by_distance[:2])
+                l_coords = list(input_l.coords)
+                input_l = extend_line(*l_coords[-2:], 1.5)
 
                 lines.append(input_l)
-                # draw_lines.append(input_l)
+                draw_lines.append(input_l)
 
-                # draw_merged_lines = linemerge(draw_lines)
-                # draw_border_lines = unary_union(draw_merged_lines)
+                draw_merged_lines = linemerge(draw_lines)
+                draw_border_lines = unary_union(draw_merged_lines)
 
                 if input_p.boundary.geom_type == "MultiLineString":
                     for line in input_p.boundary:
@@ -807,11 +785,11 @@ class MsfsProject:
         osm_xml = OsmXml(self.osmfiles_folder, EXCLUSION_OSM_FILE_PREFIX + OSM_FILE_EXT)
         osm_xml.create_from_geodataframes([exclusion], b, True, [("height", 1000)])
 
-        # if draw_border_lines:
-        #     final[GEOMETRY_OSM_COLUMN] = MultiLineString(draw_border_lines).buffer(0.00001)
-        #     final.dissolve()
-        #     osm_xml = OsmXml(self.osmfiles_folder, "split_lines" + OSM_FILE_EXT)
-        #     osm_xml.create_from_geodataframes([final.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')], b)
+        if draw_border_lines:
+            final[GEOMETRY_OSM_COLUMN] = MultiLineString(draw_border_lines).buffer(0.00001)
+            final.dissolve()
+            osm_xml = OsmXml(self.osmfiles_folder, "split_lines" + OSM_FILE_EXT)
+            osm_xml.create_from_geodataframes([final.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')], b)
 
         if keep_polys:
             final[GEOMETRY_OSM_COLUMN] = MultiPolygon(keep_polys)
