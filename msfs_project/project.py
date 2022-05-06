@@ -29,8 +29,9 @@ import osmnx as ox
 from osmnx.utils_geo import bbox_to_poly
 import geopandas as gpd
 import pandas as pd
-from shapely.geometry import MultiPolygon, LineString, Point, MultiPoint, MultiLineString
+from shapely.geometry import MultiPolygon, LineString, Point, MultiPoint, MultiLineString, Polygon
 from shapely.ops import polygonize, nearest_points, linemerge, unary_union
+from shapely.validation import make_valid
 
 import bpy
 from constants import *
@@ -43,7 +44,7 @@ from msfs_project.collider import MsfsCollider
 from msfs_project.tile import MsfsTile
 from msfs_project.shape import MsfsShape
 from utils import replace_in_file, is_octant, backup_file, install_python_lib, ScriptError, print_title, \
-    get_backup_file_path, isolated_print, chunks, close_holes, copy_geometry, convert_3D_2D, cut_polygon_by_line, extend_line
+    get_backup_file_path, isolated_print, chunks, close_holes, copy_geometry, extend_line
 from pathlib import Path
 
 from utils.compressonator import Compressonator
@@ -729,17 +730,19 @@ class MsfsProject:
 
         final = bbox.overlay(exclusion, how="difference")
 
-        for i, input_p in enumerate(final.geometry.unary_union):
+        for input_p in final.geometry.unary_union:
             lines = []
 
             if input_p.interiors:
                 centroid_pts = [p.centroid for p in input_p.interiors]
                 centroid_pt = centroid_pts[0]
 
-                pts = nearest_points(centroid_pt, input_p.exterior)
+                pts = nearest_points(input_p.exterior, centroid_pt)
                 input_l = LineString(pts[0].coords[:] + pts[1].coords[:])
                 lines.append(input_l)
                 draw_lines.append(input_l)
+
+                centroid_pts = [pt for pt in centroid_pts if pt != centroid_pt]
 
                 while centroid_pts:
                     other_centroid_pts = MultiPoint([pt for pt in centroid_pts if pt != centroid_pt])
@@ -749,6 +752,20 @@ class MsfsProject:
 
                     pts = nearest_points(centroid_pt, other_centroid_pts)
                     next_centroid_pt = pts[1]
+
+                    proj_centroid_pt = Point([centroid_pt.x, 0])
+                    proj_other_centroid_pts = []
+                    for pt in other_centroid_pts:
+                        proj_other_centroid_pts.append(Point([pt.x, 0]))
+
+                    proj_pts = nearest_points(proj_centroid_pt, MultiPoint(proj_other_centroid_pts))
+                    next_proj_centroid_pt = proj_pts[1]
+
+                    if next_proj_centroid_pt.x != next_centroid_pt.x:
+                        for pt in other_centroid_pts:
+                            if pt.x == next_proj_centroid_pt.x:
+                                next_centroid_pt = pt
+
                     centroid_pts = [pt for pt in centroid_pts if pt != next_centroid_pt]
                     input_l = LineString((centroid_pt, next_centroid_pt))
 
@@ -786,6 +803,8 @@ class MsfsProject:
         osm_xml.create_from_geodataframes([exclusion], b, True, [("height", 1000)])
 
         if draw_border_lines:
+            if draw_border_lines.type == "LineString":
+                draw_border_lines = [draw_border_lines]
             final[GEOMETRY_OSM_COLUMN] = MultiLineString(draw_border_lines).buffer(0.00001)
             final.dissolve()
             osm_xml = OsmXml(self.osmfiles_folder, "split_lines" + OSM_FILE_EXT)
