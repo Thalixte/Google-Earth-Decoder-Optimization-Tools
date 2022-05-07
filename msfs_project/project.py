@@ -730,7 +730,11 @@ class MsfsProject:
 
         final = bbox.overlay(exclusion, how="difference")
 
-        for input_p in final.geometry.unary_union:
+        final_p = final.geometry.unary_union
+        if final_p.type == "Polygon":
+            final_p = [final_p]
+
+        for input_p in final_p:
             lines = []
 
             if input_p.interiors:
@@ -761,7 +765,7 @@ class MsfsProject:
                     proj_pts = nearest_points(proj_centroid_pt, MultiPoint(proj_other_centroid_pts))
                     next_proj_centroid_pt = proj_pts[1]
 
-                    if next_proj_centroid_pt.x != next_centroid_pt.x:
+                    if next_proj_centroid_pt.x > next_centroid_pt.x:
                         for pt in other_centroid_pts:
                             if pt.x == next_proj_centroid_pt.x:
                                 next_centroid_pt = pt
@@ -806,16 +810,16 @@ class MsfsProject:
             if draw_border_lines.type == "LineString":
                 draw_border_lines = [draw_border_lines]
             final[GEOMETRY_OSM_COLUMN] = MultiLineString(draw_border_lines).buffer(0.00001)
-            final.dissolve()
+            final = final.dissolve()
             osm_xml = OsmXml(self.osmfiles_folder, "split_lines" + OSM_FILE_EXT)
             osm_xml.create_from_geodataframes([final.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')], b)
 
         if keep_polys:
             final[GEOMETRY_OSM_COLUMN] = MultiPolygon(keep_polys)
-            final.dissolve()
+            final = final.explode()
             osm_xml = OsmXml(self.osmfiles_folder, "final" + OSM_FILE_EXT)
             osm_xml.create_from_geodataframes([final], b)
-            final.to_file(os.path.join(self.shapefiles_folder, "final" + SHP_FILE_EXT))
+            final.to_file(os.path.join(self.shapefiles_folder, self.project_name + "SHP" + SHP_FILE_EXT))
 
     def __find_different_tiles(self, tiles, tiles_to_compare):
         different_tiles = []
