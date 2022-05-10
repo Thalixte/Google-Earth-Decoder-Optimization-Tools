@@ -28,10 +28,8 @@ import subprocess
 import osmnx as ox
 from osmnx.utils_geo import bbox_to_poly
 import geopandas as gpd
-import pandas as pd
-from shapely.geometry import MultiPolygon, LineString, Point, MultiPoint, MultiLineString, Polygon
-from shapely.ops import polygonize, nearest_points, linemerge, unary_union
-from shapely.validation import make_valid
+from shapely.geometry import MultiPolygon, MultiPoint, Polygon
+from shapely.ops import nearest_points
 
 import bpy
 from constants import *
@@ -44,7 +42,7 @@ from msfs_project.collider import MsfsCollider
 from msfs_project.tile import MsfsTile
 from msfs_project.shape import MsfsShape
 from utils import replace_in_file, is_octant, backup_file, install_python_lib, ScriptError, print_title, \
-    get_backup_file_path, isolated_print, chunks, close_holes, copy_geometry, extend_line
+    get_backup_file_path, isolated_print, chunks, create_bounding_box_from_tiles, create_gdf_from_osm_data, clip_gdf, create_exclusion_gdf, create_scenery_shape_gdf, create_sea_gdf, create_land_mass_gdf
 from pathlib import Path
 
 from utils.compressonator import Compressonator
@@ -630,49 +628,16 @@ class MsfsProject:
 
     def __create_osm_files(self):
         ox.config(use_cache=True, log_console=True)
-        pbar = ProgressBar(list(self.tiles.values()), title="CREATE OSM FILES")
-        b = bbox_to_poly(self.coords[1], self.coords[0], self.coords[2], self.coords[3])
-
-        bbox_union = None
-        for i, tile in enumerate(self.tiles.values()):
-            tile.create_osm_files(self.osmfiles_folder)
-            pbar.update("osm files created for %s tile" % tile.name)
-
-            if i <= 0:
-                bbox_union = tile.bbox_gdf.copy()
-            else:
-                bbox_union = copy_geometry(tile.bbox_gdf, bbox_union, i)
-
-        self.__create_osm_exclusion_file(b, bbox_union)
+        self.__create_osm_exclusion_file(bbox_to_poly(self.coords[1], self.coords[0], self.coords[2], self.coords[3]), create_bounding_box_from_tiles(self.tiles, self.osmfiles_folder))
 
     def __create_osm_exclusion_file(self, b, bbox):
-        keep_polys = []
-        draw_lines = []
-        draw_border_lines = []
+        land_mass = create_land_mass_gdf(bbox, b)
+        sea = create_sea_gdf(land_mass, bbox)
 
-        bbox = bbox.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)
-        bbox[GEOMETRY_OSM_COLUMN] = bbox[GEOMETRY_OSM_COLUMN].apply(lambda p: close_holes(p))
+        bbox = clip_gdf(bbox, land_mass)
+        bbox = clip_gdf(bbox, create_gdf_from_osm_data(self.coords, BOUNDARY_OSM_KEY, True))
 
-        land_mass = gpd.read_file(os.path.join(SHAPE_TEMPLATES_FOLDER, "land_polygons" + SHP_FILE_EXT), bbox=b).clip(bbox.geometry)
-        land_mass = land_mass.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)
-        # osm_xml = OsmXml(self.osmfiles_folder, "land_mass" + OSM_FILE_EXT)
-        # osm_xml.create_from_geodataframes([land_mass], b)
-
-        sea = land_mass.overlay(bbox, how="symmetric_difference").assign(boundary=BOUNDING_BOX_OSM_KEY)
-        # osm_xml = OsmXml(self.osmfiles_folder, "sea" + OSM_FILE_EXT)
-        # osm_xml.create_from_geodataframes([sea], b)
-
-        boundary = ox.geometries_from_bbox(self.coords[0], self.coords[1], self.coords[2], self.coords[3], tags={BOUNDARY_OSM_KEY: True})
-        boundary = boundary.unary_union
-
-        boundary = gpd.GeoDataFrame(pd.DataFrame([], index=[0]), crs={"init": EPSG_KEY + str(EPSG_VALUE)}, geometry=[boundary]).assign(boundary=BOUNDING_BOX_OSM_KEY)
-        # osm_xml = OsmXml(self.osmfiles_folder, "boundary" + OSM_FILE_EXT)
-        # osm_xml.create_from_geodataframes([boundary], b)
-
-        bbox[GEOMETRY_OSM_COLUMN] = bbox[GEOMETRY_OSM_COLUMN].clip(land_mass)
-        bbox[GEOMETRY_OSM_COLUMN] = bbox[GEOMETRY_OSM_COLUMN].clip(boundary)
-
-        # multicoords = [list(line.coords) for line in coastlines.geometry if line.geom_type != "Polygon"]
+        # multicoords = [list(line.coords) for line in coastlines.geometry if line.geom_type != SHAPELY_TYPE.polygon]
         # # Making a flat list -> LineString
         # input_l = LineString([item for sublist in multicoords for item in sublist])
         #
@@ -691,135 +656,20 @@ class MsfsProject:
         # osm_xml.create_from_geodataframes([bbox], b)
         # bbox.to_file(os.path.join(self.shapefiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + SHP_FILE_EXT))
 
-        landuse = ox.geometries_from_bbox(self.coords[0], self.coords[1], self.coords[2], self.coords[3], tags={LANDUSE_OSM_KEY: OSM_TAGS[LANDUSE_OSM_KEY]})
-        leisure = ox.geometries_from_bbox(self.coords[0], self.coords[1], self.coords[2], self.coords[3], tags={LEISURE_OSM_KEY: OSM_TAGS[LEISURE_OSM_KEY]})
-        natural = ox.geometries_from_bbox(self.coords[0], self.coords[1], self.coords[2], self.coords[3], tags={NATURAL_OSM_KEY: OSM_TAGS[NATURAL_OSM_KEY]})
-        water = ox.geometries_from_bbox(self.coords[0], self.coords[1], self.coords[2], self.coords[3], tags={WATER_OSM_KEY: OSM_TAGS[WATER_OSM_KEY]})
-        aeroway = ox.geometries_from_bbox(self.coords[0], self.coords[1], self.coords[2], self.coords[3], tags={AEROWAY_OSM_KEY: True})
+        landuse = clip_gdf(create_gdf_from_osm_data(self.coords, LANDUSE_OSM_KEY, OSM_TAGS[LANDUSE_OSM_KEY]), bbox)
+        leisure = clip_gdf(create_gdf_from_osm_data(self.coords, LEISURE_OSM_KEY, OSM_TAGS[LEISURE_OSM_KEY]), bbox)
+        natural = clip_gdf(create_gdf_from_osm_data(self.coords, NATURAL_OSM_KEY, OSM_TAGS[NATURAL_OSM_KEY]), bbox)
+        water = clip_gdf(create_gdf_from_osm_data(self.coords, WATER_OSM_KEY, OSM_TAGS[WATER_OSM_KEY]), bbox)
+        aeroway = clip_gdf(create_gdf_from_osm_data(self.coords, AEROWAY_OSM_KEY, True), bbox)
 
-        bbox_union = bbox.unary_union
-
-        landuse[GEOMETRY_OSM_COLUMN] = landuse[GEOMETRY_OSM_COLUMN].clip(bbox_union)
-        leisure[GEOMETRY_OSM_COLUMN] = leisure[GEOMETRY_OSM_COLUMN].clip(bbox_union)
-        natural[GEOMETRY_OSM_COLUMN] = natural[GEOMETRY_OSM_COLUMN].clip(bbox_union)
-        water[GEOMETRY_OSM_COLUMN] = water[GEOMETRY_OSM_COLUMN].clip(bbox_union)
-        aeroway[GEOMETRY_OSM_COLUMN] = aeroway[GEOMETRY_OSM_COLUMN].clip(bbox_union)
-
-        landuse = landuse[(landuse.geom_type == "Polygon") | (landuse.geom_type == "MultiPolygon")].dissolve()
-        leisure = leisure[(leisure.geom_type == "Polygon") | (leisure.geom_type == "MultiPolygon")].dissolve()
-        natural = natural[(natural.geom_type == "Polygon") | (natural.geom_type == "MultiPolygon")].dissolve()
-        water = water[(water.geom_type == "Polygon") | (water.geom_type == "MultiPolygon")].dissolve()
-        aeroway = aeroway[(aeroway.geom_type == "Polygon") | (aeroway.geom_type == "MultiPolygon")].dissolve()
-
-        exclusion = landuse.copy()
-        if not leisure.empty:
-            exclusion[GEOMETRY_OSM_COLUMN] = exclusion[GEOMETRY_OSM_COLUMN].union(leisure[GEOMETRY_OSM_COLUMN])
-        if not natural.empty:
-            exclusion[GEOMETRY_OSM_COLUMN] = exclusion[GEOMETRY_OSM_COLUMN].union(natural[GEOMETRY_OSM_COLUMN])
-        if not water.empty:
-            exclusion[GEOMETRY_OSM_COLUMN] = exclusion[GEOMETRY_OSM_COLUMN].union(water[GEOMETRY_OSM_COLUMN])
-        if not aeroway.empty:
-            exclusion[GEOMETRY_OSM_COLUMN] = exclusion[GEOMETRY_OSM_COLUMN].union(aeroway[GEOMETRY_OSM_COLUMN])
-
-        exclusion = exclusion.drop(labels="nodes", axis=1, errors='ignore')
-        exclusion = exclusion.drop(labels="ways", axis=1, errors='ignore')
-        sea = sea.dissolve()
-        if not sea.empty:
-            exclusion[GEOMETRY_OSM_COLUMN] = exclusion[GEOMETRY_OSM_COLUMN].union(sea[GEOMETRY_OSM_COLUMN])
-        exclusion = exclusion.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)
-
-        final = bbox.overlay(exclusion, how="difference")
-
-        final_p = final.geometry.unary_union
-        if final_p.type == "Polygon":
-            final_p = [final_p]
-
-        for input_p in final_p:
-            lines = []
-
-            if input_p.interiors:
-                centroid_pts = [p.centroid for p in input_p.interiors]
-                centroid_pt = centroid_pts[0]
-
-                pts = nearest_points(input_p.exterior, centroid_pt)
-                input_l = LineString(pts[0].coords[:] + pts[1].coords[:])
-                lines.append(input_l)
-                draw_lines.append(input_l)
-
-                centroid_pts = [pt for pt in centroid_pts if pt != centroid_pt]
-
-                while centroid_pts:
-                    other_centroid_pts = MultiPoint([pt for pt in centroid_pts if pt != centroid_pt])
-
-                    if not other_centroid_pts:
-                        break
-
-                    pts = nearest_points(centroid_pt, other_centroid_pts)
-                    next_centroid_pt = pts[1]
-
-                    proj_centroid_pt = Point([centroid_pt.x, 0])
-                    proj_other_centroid_pts = []
-                    for pt in other_centroid_pts:
-                        proj_other_centroid_pts.append(Point([pt.x, 0]))
-
-                    proj_pts = nearest_points(proj_centroid_pt, MultiPoint(proj_other_centroid_pts))
-                    next_proj_centroid_pt = proj_pts[1]
-
-                    if next_proj_centroid_pt.x > next_centroid_pt.x:
-                        for pt in other_centroid_pts:
-                            if pt.x == next_proj_centroid_pt.x:
-                                next_centroid_pt = pt
-
-                    centroid_pts = [pt for pt in centroid_pts if pt != next_centroid_pt]
-                    input_l = LineString((centroid_pt, next_centroid_pt))
-
-                    lines.append(input_l)
-                    draw_lines.append(input_l)
-                    centroid_pt = next_centroid_pt
-
-                pts = nearest_points(centroid_pt, input_p.exterior)
-                input_l = LineString(pts[0].coords[:] + pts[1].coords[:])
-                l_coords = list(input_l.coords)
-                input_l = extend_line(*l_coords[-2:], 1.5)
-
-                lines.append(input_l)
-                draw_lines.append(input_l)
-
-                draw_merged_lines = linemerge(draw_lines)
-                draw_border_lines = unary_union(draw_merged_lines)
-
-                if input_p.boundary.geom_type == "MultiLineString":
-                    for line in input_p.boundary:
-                        lines.append(line)
-                else:
-                    lines.append(input_p.boundary)
-
-                merged_lines = linemerge(lines)
-                border_lines = unary_union(merged_lines)
-
-                polys = [poly for poly in polygonize(border_lines) if poly.representative_point().within(input_p)]
-                for p in polys:
-                    keep_polys.append(p)
-            else:
-                keep_polys.append(input_p)
-
+        exclusion = create_exclusion_gdf(landuse, leisure, natural, water, aeroway, sea)
         osm_xml = OsmXml(self.osmfiles_folder, EXCLUSION_OSM_FILE_PREFIX + OSM_FILE_EXT)
-        osm_xml.create_from_geodataframes([exclusion], b, True, [("height", 1000)])
+        osm_xml.create_from_geodataframes([exclusion], b, True, [(HEIGHT_OSM_TAG, 1000)])
 
-        if draw_border_lines:
-            if draw_border_lines.type == "LineString":
-                draw_border_lines = [draw_border_lines]
-            final[GEOMETRY_OSM_COLUMN] = MultiLineString(draw_border_lines).buffer(0.00001)
-            final = final.dissolve()
-            osm_xml = OsmXml(self.osmfiles_folder, "split_lines" + OSM_FILE_EXT)
-            osm_xml.create_from_geodataframes([final.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')], b)
-
-        if keep_polys:
-            final[GEOMETRY_OSM_COLUMN] = MultiPolygon(keep_polys)
-            final = final.explode()
-            osm_xml = OsmXml(self.osmfiles_folder, "final" + OSM_FILE_EXT)
-            osm_xml.create_from_geodataframes([final], b)
-            final.to_file(os.path.join(self.shapefiles_folder, self.project_name + "SHP" + SHP_FILE_EXT))
+        scenery_shape = create_scenery_shape_gdf(bbox, exclusion)
+        osm_xml = OsmXml(self.osmfiles_folder, self.project_name + OSM_FILE_EXT)
+        osm_xml.create_from_geodataframes([scenery_shape], b)
+        scenery_shape.to_file(os.path.join(self.shapefiles_folder, self.project_name + SHP_FILE_EXT))
 
     def __find_different_tiles(self, tiles, tiles_to_compare):
         different_tiles = []

@@ -18,16 +18,13 @@
 
 import os
 
-import pandas as pd
 import geopandas as gpd
-from osmnx.utils_geo import bbox_to_poly
 
-from constants import GLTF_FILE_EXT, COLLIDER_SUFFIX, XML_FILE_EXT, EPSG_KEY, EPSG_VALUE, \
-    BOUNDARY_OSM_KEY, OSM_FILE_EXT, BOUNDING_BOX_OSM_FILE_PREFIX, BOUNDING_BOX_OSM_KEY
+from constants import GLTF_FILE_EXT, COLLIDER_SUFFIX, XML_FILE_EXT, BOUNDARY_OSM_KEY, OSM_FILE_EXT, BOUNDING_BOX_OSM_FILE_PREFIX
 from msfs_project.collider import MsfsCollider
 from msfs_project.scene_object import MsfsSceneObject
 from msfs_project.position import MsfsPosition
-from utils import get_coords_from_file_name, get_position_from_file_name
+from utils import get_coords_from_file_name, get_position_from_file_name, create_tile_bounding_box
 from utils.minidom_xml import create_new_definition_file
 from msfs_project.osm_xml import OsmXml
 
@@ -88,7 +85,6 @@ class MsfsTile(MsfsSceneObject):
         self.remove_file()
 
     def __create_bbox_osm_file(self, osm_path):
-        b = bbox_to_poly(self.coords[1], self.coords[0], self.coords[2], self.coords[3])
-        self.bbox_gdf = gpd.GeoDataFrame(pd.DataFrame([], index=[0]), crs={"init": EPSG_KEY + str(EPSG_VALUE)}, geometry=[b])
+        self.bbox_gdf, b = create_tile_bounding_box(self)
         osm_xml = OsmXml(osm_path, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + self.name + OSM_FILE_EXT)
         osm_xml.create_from_geodataframes([self.bbox_gdf.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')], b)

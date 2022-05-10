@@ -1,19 +1,24 @@
+#  #
+#   This program is free software; you can redistribute it and/or
+#   modify it under the terms of the GNU General Public License
+#   as published by the Free Software Foundation; either version 2
+#   of the License, or (at your option) any later version.
+#  #
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#  #
+#   You should have received a copy of the GNU General Public License
+#   along with this program; if not, write to the Free Software Foundation,
+#   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+#  #
+#
+#  <pep8 compliant>
+
 import geopandas as gpd
-from shapely.geometry import MultiPolygon, Polygon, MultiLineString, LineString
+from shapely.geometry import MultiPolygon, Polygon, LineString
 from shapely.ops import linemerge, unary_union, polygonize
-
-from constants import GEOMETRY_OSM_COLUMN
-
-
-def copy_geometry(source, dest, start_index=-1):
-    source = source[source.geometry != None].explode()
-    i = 1
-    for index, row in source.iterrows():
-        if isinstance(row.geometry, Polygon):
-            dest.loc[index if start_index < 0 else start_index + i, GEOMETRY_OSM_COLUMN] = row.geometry
-            i = i+1
-
-    return dest
 
 
 def remove_interiors(poly):
