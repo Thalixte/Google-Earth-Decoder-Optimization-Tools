@@ -100,6 +100,25 @@ def create_land_mass_gdf(bbox, b):
 
 
 def create_sea_gdf(land_mass, bbox):
+    # multicoords = [list(line.coords) for line in coastlines.geometry if line.geom_type != SHAPELY_TYPE.polygon]
+    # # Making a flat list -> LineString
+    # input_l = LineString([item for sublist in multicoords for item in sublist])
+    #
+    # keep_polys = []
+
+    # for input_p in bbox.geometry:
+    #     unioned = input_p.boundary.union(input_l)
+    #     for poly in polygonize(unioned):
+    #         if poly.representative_point().within(input_p):
+    #             if globe.is_land(poly.centroid.y, poly.centroid.x):
+    #                 keep_polys.append(poly)
+
+    # remaining polygons are the split polys of original shape
+    # bbox[GEOMETRY_OSM_COLUMN] = MultiPolygon(keep_polys)
+    # osm_xml = OsmXml(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + OSM_FILE_EXT)
+    # osm_xml.create_from_geodataframes([bbox], b)
+    # bbox.to_file(os.path.join(self.shapefiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + SHP_FILE_EXT))
+
     result = land_mass.overlay(bbox, how=OVERLAY_OPERATOR.symmetric_difference).assign(boundary=BOUNDING_BOX_OSM_KEY)
     return result[[GEOMETRY_OSM_COLUMN]].dissolve()
 

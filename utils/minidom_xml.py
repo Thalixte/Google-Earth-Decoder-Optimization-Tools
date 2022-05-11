@@ -60,7 +60,7 @@ def add_scenery_object(file_path, tile, templates):
             scenery_object.setAttribute(ObjectsXml.SNAP_TO_GROUND_ATTR, template.get(ObjectsXml.SNAP_TO_GROUND_ATTR))
             scenery_object.setAttribute(ObjectsXml.SNAP_TO_NORMAL_ATTR, template.get(ObjectsXml.SNAP_TO_NORMAL_ATTR))
             library_object = root.createElement(ObjectsXml.LIBRARY_OBJECT_TAG)
-            library_object.setAttribute(ObjectsXml.GUID_ATTR, tile.xml.guid)
+            library_object.setAttribute(ObjectsXml.NAME_ATTR, tile.xml.guid)
             library_object.setAttribute(ObjectsXml.SCALE_ATTR, "1")
             scenery_object.appendChild(library_object)
             fs_data.appendChild(scenery_object)

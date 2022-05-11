@@ -15,9 +15,10 @@
 #  #
 #
 #  <pep8 compliant>
-
-from utils import Xml
+from constants import SHAPE_DISPLAY_NAME
 from utils.progress_bar import ProgressBar
+from utils import Xml
+import xml.etree.ElementTree as Et
 
 
 class ObjectsXml(Xml):
@@ -25,7 +26,11 @@ class ObjectsXml(Xml):
     GROUP_TAG = "Group"
     SCENERY_OBJECT_TAG = "SceneryObject"
     LIBRARY_OBJECT_TAG = "LibraryObject"
-    GUID_ATTR = "name"
+    POLYGON_TAG = "Polygon"
+    ATTRIBUTE_TAG = "Attribute"
+    VERTEX_TAG = "Vertex"
+    NAME_ATTR = "name"
+    GUID_ATTR = "guid"
     DISPLAY_NAME_ATTR = "displayName"
     ALT_ATTR = "alt"
     ALTITUDE_IS_AGL_ATTR = "altitudeIsAgl"
@@ -38,10 +43,23 @@ class ObjectsXml(Xml):
     SNAP_TO_GROUND_ATTR = "snapToGround"
     SNAP_TO_NORMAL_ATTR = "snapToNormal"
     SCALE_ATTR = "scale"
+    PARENT_GROUP_ID_ATTR = "parentGroupID"
+    GROUP_INDEX_ATTR = "groupIndex"
+    ALTITUDE_ATTR = "altitude"
+    TYPE_ATTR = "type"
+    VALUE_ATTR = "value"
+    GROUP_ID_ATTR = "groupID"
+    GROUP_GENERATED_ATTR = "groupGenerated"
 
     LIBRARY_OBJECTS_SEARCH_PATTERN = "./" + SCENERY_OBJECT_TAG + "/" + LIBRARY_OBJECT_TAG
-    SCENERY_OBJECT_SEARCH_PATTERN = LIBRARY_OBJECTS_SEARCH_PATTERN + "[@name='"
-    SCENERY_OBJECT_GROUP_SEARCH_PATTERN = "./" + GROUP_TAG + "/" + SCENERY_OBJECT_TAG + "/" + LIBRARY_OBJECT_TAG + "[@name='"
+    SCENERY_OBJECT_SEARCH_PATTERN = LIBRARY_OBJECTS_SEARCH_PATTERN + "[@" + NAME_ATTR + "='"
+    SCENERY_OBJECT_GROUP_SEARCH_PATTERN = "./" + GROUP_TAG + "/" + SCENERY_OBJECT_TAG + "/" + LIBRARY_OBJECT_TAG + "[@" + NAME_ATTR + "='"
+    POLYGONS_SEARCH_PATTERN = "./" + POLYGON_TAG
+    POLYGON_ATTRIBUTES_SEARCH_PATTERN = "./" + ATTRIBUTE_TAG
+    POLYGON_VERTICES_SEARCH_PATTERN = "./" + VERTEX_TAG
+    GROUPS_SEARCH_PATTERN = "./" + GROUP_TAG
+    PARENT_GROUP_SEARCH_PATTERN = GROUPS_SEARCH_PATTERN + "[@" + GROUP_ID_ATTR + "='"
+    SHAPE_GROUP_SEARCH_PATTERN = GROUPS_SEARCH_PATTERN + "[@" + DISPLAY_NAME_ATTR + "='"
 
     def __init__(self, file_folder, file_name):
         super().__init__(file_folder, file_name)
@@ -59,10 +77,34 @@ class ObjectsXml(Xml):
             self.root.remove(scenery_object)
         self.save()
 
-    def __convert_objects_guid_to_upper(self):
-        for tag in self.root.findall(self.LIBRARY_OBJECTS_SEARCH_PATTERN):
-            if tag.get(self.GUID_ATTR):
-                tag.set(self.GUID_ATTR, tag.get(self.GUID_ATTR).upper())
+    def remove_shape(self):
+        pattern = self.SHAPE_GROUP_SEARCH_PATTERN + SHAPE_DISPLAY_NAME + self.PATTERN_SUFFIX
+        groups = self.root.findall(pattern)
+        for group in groups:
+            self.root.remove(group)
+
+        for polygon in self.find_polygons():
+            parent_group_id = polygon.get(self.PARENT_GROUP_ID_ATTR)
+            self.root.remove(polygon)
+            pattern = self.GROUPS_SEARCH_PATTERN if parent_group_id is None else self.PARENT_GROUP_SEARCH_PATTERN + polygon.get(self.PARENT_GROUP_ID_ATTR) + self.PATTERN_SUFFIX
+
+        groups = self.root.findall(pattern)
+        for group in groups:
+            self.root.remove(group)
+
+        self.save()
+
+    def add_shape(self, shape):
+        for polygon in shape.polygons:
+            polygon_elem = self.__add_shape_polygon(polygon)
+
+            for attribute in polygon.attributes:
+                self.__add_shape_polygon_attribute(polygon_elem, attribute)
+
+            for vertex in polygon.vertices:
+                self.__add_shape_polygon_vertex(polygon_elem, vertex)
+
+        self.__add_shape_group(shape.group)
 
         self.save()
 
@@ -77,6 +119,32 @@ class ObjectsXml(Xml):
 
     def find_scenery_objects_in_group_parents(self, guid):
         return self.root.findall(self.SCENERY_OBJECT_GROUP_SEARCH_PATTERN + guid.upper() + self.PARENT_PATTERN_SUFFIX + self.PARENT_SUFFIX)
+
+    def find_polygons(self):
+        return self.root.findall(self.POLYGONS_SEARCH_PATTERN)
+
+    def find_polygon_attributes(self, root):
+        return root.findall(self.POLYGON_ATTRIBUTES_SEARCH_PATTERN)
+
+    def find_polygon_vertices(self, root):
+        return root.findall(self.POLYGON_VERTICES_SEARCH_PATTERN)
+
+    def get_new_group_id(self):
+        result = 0
+        groups = self.root.findall(self.GROUPS_SEARCH_PATTERN)
+
+        for group in groups:
+            group_id = int(group.get(self.GROUP_ID_ATTR))
+            result = group_id if group_id > result else result
+
+        return result+1
+
+    def __convert_objects_guid_to_upper(self):
+        for tag in self.root.findall(self.LIBRARY_OBJECTS_SEARCH_PATTERN):
+            if tag.get(self.NAME_ATTR):
+                tag.set(self.NAME_ATTR, tag.get(self.NAME_ATTR).upper())
+
+        self.save()
 
     def __update_tiles_pos(self, msfs_project, settings):
         if not msfs_project.tiles.items():
@@ -99,6 +167,31 @@ class ObjectsXml(Xml):
             self.__update_scenery_object_pos(collider, self.find_scenery_objects_in_group(guid), settings)
 
             pbar.update("%s" % collider.name + " : new lat: " + str(collider.pos.lat + float(settings.lat_correction)) + " : new lon: " + str(collider.pos.lon + float(settings.lon_correction)))
+
+    def __add_shape_group(self, group):
+        return Et.SubElement(self.root, group.tag, attrib={
+            self.DISPLAY_NAME_ATTR: group.display_name,
+            self.GROUP_INDEX_ATTR: str(group.group_index),
+            self.GROUP_ID_ATTR: str(group.group_id),
+            self.GROUP_GENERATED_ATTR: str(group.group_generated).upper()})
+
+    def __add_shape_polygon(self, polygon):
+        return Et.SubElement(self.root, polygon.tag, attrib={
+            self.PARENT_GROUP_ID_ATTR: str(polygon.parent_group_id),
+            self.GROUP_INDEX_ATTR: str(polygon.group_index),
+            self.ALTITUDE_ATTR: str(polygon.altitude)})
+
+    def __add_shape_polygon_attribute(self, polygon, attribute):
+        return Et.SubElement(polygon, attribute.tag, attrib={
+            self.NAME_ATTR: attribute.name,
+            self.GUID_ATTR: attribute.guid,
+            self.TYPE_ATTR: attribute.type,
+            self.VALUE_ATTR: str(attribute.value)})
+
+    def __add_shape_polygon_vertex(self, polygon, vertex):
+        return Et.SubElement(polygon, vertex.tag, attrib={
+            self.LAT_ATTR: str(vertex.lat),
+            self.LON_ATTR: str(vertex.lon)})
 
     @staticmethod
     def __update_scenery_object_pos(tile, found_scenery_objects, settings):

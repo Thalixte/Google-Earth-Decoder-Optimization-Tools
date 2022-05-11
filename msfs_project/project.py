@@ -27,9 +27,6 @@ import subprocess
 
 import osmnx as ox
 from osmnx.utils_geo import bbox_to_poly
-import geopandas as gpd
-from shapely.geometry import MultiPolygon, MultiPoint, Polygon
-from shapely.ops import nearest_points
 
 import bpy
 from constants import *
@@ -141,7 +138,6 @@ class MsfsProject:
             self.backup_tiles(backup_subfolder)
             self.backup_colliders(backup_subfolder)
         self.backup_scene_objects(backup_subfolder)
-        self.backup_shapes(backup_subfolder)
 
     def clean(self):
         isolated_print(EOL)
@@ -191,10 +187,6 @@ class MsfsProject:
         backup_path = os.path.join(self.backup_folder, backup_subfolder)
         self.__backup_objects(self.objects, backup_path, "backup scene objects")
 
-    def backup_shapes(self, backup_subfolder):
-        backup_path = os.path.join(self.backup_folder, backup_subfolder)
-        self.__backup_objects(self.shapes, backup_path, "backup shapes")
-
     def backup_files(self, backup_subfolder):
         backup_path = os.path.join(self.backup_folder, backup_subfolder)
         if not os.path.isfile(get_backup_file_path(backup_path, self.scene_folder, self.SCENE_OBJECTS_FILE)):
@@ -220,7 +212,6 @@ class MsfsProject:
             self.__merge_colliders(self.colliders, project_to_merge.project_name, project_to_merge.colliders, project_to_merge.objects_xml)
             self.__merge_scene_objects(self.objects, project_to_merge.project_name, project_to_merge.objects, project_to_merge.objects_xml)
             self.objects_xml.save()
-            self.__merge_shapes(self.shapes, project_to_merge.shapes)
 
     def remove_colliders(self):
         # clean previous colliders
@@ -403,10 +394,8 @@ class MsfsProject:
             pbar.update("%s" % path.name)
 
     def __retrieve_shapes(self):
-        pbar = ProgressBar(list(Path(self.scene_folder).rglob(DBF_FILE_PATTERN)), title="Retrieve shapes")
-        for i, path in enumerate(pbar.iterable):
-            self.shapes[path.stem] = MsfsShape(self.scene_folder, path.stem, path.stem + XML_FILE_EXT, path.name, path.stem + SHP_FILE_EXT, path.stem + SHX_FILE_EXT)
-            pbar.update("%s" % path.name)
+        self.shapes = {SHAPE_DISPLAY_NAME: MsfsShape(xml=self.objects_xml)}
+        isolated_print(EOL)
 
     def __clean_objects(self, objects: dict):
         pop_objects = []
@@ -582,18 +571,6 @@ class MsfsProject:
             objects[guid] = object
             pbar.update("%s merged" % object.name)
 
-    def __merge_shapes(self, shapes, shapes_to_merge):
-        pbar = ProgressBar(shapes_to_merge.items())
-        for name, shape in pbar.iterable:
-            if not os.path.isfile(os.path.join(self.scene_folder, shape.definition_file)):
-                pbar.display_title("MERGE THE SHAPES")
-                shutil.copyfile(os.path.join(shape.folder, shape.definition_file), os.path.join(self.scene_folder, shape.definition_file))
-                shutil.copyfile(os.path.join(shape.folder, shape.dbf_file_name), os.path.join(self.scene_folder, shape.dbf_file_name))
-                shutil.copyfile(os.path.join(shape.folder, shape.shp_file_name), os.path.join(self.scene_folder, shape.shp_file_name))
-                shutil.copyfile(os.path.join(shape.folder, shape.shx_file_name), os.path.join(self.scene_folder, shape.shx_file_name))
-                shapes[name] = shape
-                pbar.update("%s merged" % shape.name)
-
     def __retrieve_tiles_to_process(self):
         data = []
         for tile in self.tiles.values():
@@ -637,25 +614,6 @@ class MsfsProject:
         bbox = clip_gdf(bbox, land_mass)
         bbox = clip_gdf(bbox, create_gdf_from_osm_data(self.coords, BOUNDARY_OSM_KEY, True))
 
-        # multicoords = [list(line.coords) for line in coastlines.geometry if line.geom_type != SHAPELY_TYPE.polygon]
-        # # Making a flat list -> LineString
-        # input_l = LineString([item for sublist in multicoords for item in sublist])
-        #
-        # keep_polys = []
-
-        # for input_p in bbox.geometry:
-        #     unioned = input_p.boundary.union(input_l)
-        #     for poly in polygonize(unioned):
-        #         if poly.representative_point().within(input_p):
-        #             if globe.is_land(poly.centroid.y, poly.centroid.x):
-        #                 keep_polys.append(poly)
-
-        # remaining polygons are the split polys of original shape
-        # bbox[GEOMETRY_OSM_COLUMN] = MultiPolygon(keep_polys)
-        # osm_xml = OsmXml(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + OSM_FILE_EXT)
-        # osm_xml.create_from_geodataframes([bbox], b)
-        # bbox.to_file(os.path.join(self.shapefiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + SHP_FILE_EXT))
-
         landuse = clip_gdf(create_gdf_from_osm_data(self.coords, LANDUSE_OSM_KEY, OSM_TAGS[LANDUSE_OSM_KEY]), bbox)
         leisure = clip_gdf(create_gdf_from_osm_data(self.coords, LEISURE_OSM_KEY, OSM_TAGS[LEISURE_OSM_KEY]), bbox)
         natural = clip_gdf(create_gdf_from_osm_data(self.coords, NATURAL_OSM_KEY, OSM_TAGS[NATURAL_OSM_KEY]), bbox)
@@ -667,9 +625,11 @@ class MsfsProject:
         osm_xml.create_from_geodataframes([exclusion], b, True, [(HEIGHT_OSM_TAG, 1000)])
 
         scenery_shape = create_scenery_shape_gdf(bbox, exclusion)
-        osm_xml = OsmXml(self.osmfiles_folder, self.project_name + OSM_FILE_EXT)
-        osm_xml.create_from_geodataframes([scenery_shape], b)
-        scenery_shape.to_file(os.path.join(self.shapefiles_folder, self.project_name + SHP_FILE_EXT))
+        self.objects_xml.remove_shape()
+        new_group_id = self.objects_xml.get_new_group_id()
+        self.shapes[SHAPE_DISPLAY_NAME] = MsfsShape(shape_gdf=scenery_shape, group_id=new_group_id)
+        for shape in self.shapes.values():
+            shape.to_xml(self.objects_xml)
 
     def __find_different_tiles(self, tiles, tiles_to_compare):
         different_tiles = []

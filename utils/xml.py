@@ -43,8 +43,14 @@ class Xml:
             self.root = None
 
     def save(self):
+        try:
+            Et.indent(self.tree)
+        except ValueError:
+            pass
+
         self.tree.write(self.file_path, encoding=ENCODING)
         pretty_print(element=self.root)
+
         line_prepender(self.file_path, XML_HEADER)
 
     @staticmethod
