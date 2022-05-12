@@ -45,7 +45,7 @@ class Xml:
     def save(self):
         try:
             Et.indent(self.tree)
-        except ValueError:
+        except AttributeError:
             pass
 
         self.tree.write(self.file_path, encoding=ENCODING)

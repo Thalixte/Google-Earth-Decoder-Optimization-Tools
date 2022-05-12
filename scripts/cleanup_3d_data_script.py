@@ -31,6 +31,7 @@ import os
 import warnings
 from shapely.errors import ShapelyDeprecationWarning
 
+warnings.simplefilter(action="ignore", category=UserWarning)
 warnings.simplefilter(action="ignore", category=FutureWarning)
 warnings.simplefilter(action="ignore", category=DeprecationWarning)
 warnings.simplefilter(action="ignore", category=ShapelyDeprecationWarning)

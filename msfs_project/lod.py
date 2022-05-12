@@ -21,8 +21,9 @@ import re
 import shutil
 from pathlib import Path
 
-from blender import import_model_files, bake_texture_files, fix_object_bounding_box, export_to_optimized_gltf_files, clean_scene, extract_splitted_tile
-from constants import PNG_TEXTURE_FORMAT, JPG_TEXTURE_FORMAT, GLTF_FILE_PATTERN, GLTF_FILE_EXT, XML_FILE_EXT, TEXTURE_FOLDER, DUMMY_OBJECT
+import bpy
+from blender import import_model_files, bake_texture_files, fix_object_bounding_box, export_to_optimized_gltf_files, clean_scene, extract_splitted_tile, align_model_with_mask, cleanup_3d_data
+from constants import PNG_TEXTURE_FORMAT, JPG_TEXTURE_FORMAT, GLTF_FILE_PATTERN, GLTF_FILE_EXT, XML_FILE_EXT, TEXTURE_FOLDER
 from msfs_project.binary import MsfsBinary
 from msfs_project.texture import MsfsTexture
 from utils import backup_file, isolated_print, MsfsGltf
@@ -182,6 +183,18 @@ class MsfsLod:
         else:
             for definition_file in tile.new_tiles.values():
                 add_new_lod(definition_file, self.model_file, min_size_value)
+
+    def cleanup_3d_data(self, positioning_file_path, mask_file_path):
+        # Import the gltf files located in the object folder
+        isolated_print("align", self.name, "model with mask")
+        model_file = MsfsGltf(os.path.join(self.folder, self.model_file))
+        model_file.remove_texture_path()
+        model_file.add_texture_path()
+        model_file.dump()
+        align_model_with_mask(os.path.join(self.folder, self.model_file), positioning_file_path, mask_file_path)
+        cleanup_3d_data(os.path.join(self.folder, self.model_file))
+        export_to_optimized_gltf_files(os.path.join(self.folder, self.model_file), TEXTURE_FOLDER, use_selection=True)
+        clean_scene()
 
     def __retrieve_gltf_resources(self):
         self.binaries = []

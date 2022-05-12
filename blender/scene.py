@@ -19,6 +19,7 @@
 import os
 
 import bpy
+from blender.blender_gis import import_osm_file
 from blender.image import get_image_node, fix_texture_size_for_package_compilation
 from blender.memory import remove_mesh_from_memory
 from constants import EOL
@@ -76,8 +77,10 @@ def clean_scene():
 ##################################################################
 # Import the gltf files located in a specific folder
 ##################################################################
-def import_model_files(model_files):
-    clean_scene()
+def import_model_files(model_files, clean=True):
+    if clean:
+        clean_scene()
+
     for model_file in model_files:
         try:
             print("import ", model_file)
@@ -91,7 +94,7 @@ def import_model_files(model_files):
 ##############################################################################
 def export_to_optimized_gltf_files(file, texture_folder, use_selection=False):
     isolated_print("export to", file, "with associated textures", EOL)
-    bpy.ops.export_scene.gltf(export_format=GLTF_SEPARATE_EXPORT_FORMAT, export_extras=True, filepath=file, export_texture_dir=texture_folder, use_selection=use_selection)
+    bpy.ops.export_scene.gltf(export_format=GLTF_SEPARATE_EXPORT_FORMAT, export_extras=True, export_keep_originals=True, filepath=file, export_texture_dir=texture_folder, use_selection=use_selection)
     model_file = MsfsGltf(file)
     model_file.add_optimization_tag()
     model_file.dump()
@@ -281,6 +284,71 @@ def center_origin(obj):
 
     # Assuming you're wanting object center to grid
     bpy.ops.object.location_clear(clear_delta=False)
+
+
+def align_model_with_mask(model_file_path, positioning_file_path, mask_file_path):
+    if not bpy.context.scene: return False
+
+    import_model_files([model_file_path])
+    bpy.ops.object.select_all(action=SELECT_ACTION)
+    bpy.ops.object.join()
+
+    import_osm_file(positioning_file_path)
+
+    bpy.ops.object.select_all(action=SELECT_ACTION)
+
+    bpy.ops.object.align(bb_quality=True, align_mode='OPT_1', relative_to='OPT_4', align_axis={'X', 'Y'})
+
+    bpy.ops.object.select_all(action=DESELECT_ACTION)
+
+    src = bpy.context.scene.objects.get("Ways")
+
+    transform_x = src.matrix_world.translation[0]
+    transform_y = src.matrix_world.translation[1]
+    clean_scene()
+
+    bpy.ops.object.select_all(action=DESELECT_ACTION)
+
+    import_osm_file(mask_file_path)
+    target = bpy.context.scene.objects.get("Areas")
+    bpy.ops.object.select_all(action=SELECT_ACTION)
+    bpy.context.view_layer.objects.active = target
+    bpy.ops.object.join()
+
+    bpy.ops.transform.mirror(constraint_axis=(True, True, False), orient_type='GLOBAL')
+    for obj in bpy.context.selected_objects:
+        obj_loc_x = obj.location.x
+        obj.location.x = obj_loc_x * -1
+
+    target.location[0] = transform_x
+    target.location[1] = transform_y
+
+    bpy.ops.object.select_all(action=DESELECT_ACTION)
+
+
+def cleanup_3d_data(model_file_path):
+    import_model_files([model_file_path], clean=False)
+    objects = bpy.context.scene.objects
+
+    mask = bpy.context.scene.objects.get("Areas")
+
+    if mask:
+        for obj in objects:
+            if obj != mask:
+                bpy.context.view_layer.objects.active = obj
+                bool = obj.modifiers.new(name='booly', type='BOOLEAN')
+                bool.object = mask
+                bool.operation = 'DIFFERENCE'
+                bool.solver = 'EXACT'
+                bool.use_hole_tolerant = True
+                bool.use_self = True
+                for modifier in obj.modifiers:
+                    bpy.ops.object.modifier_apply(modifier=modifier.name)
+
+    bpy.ops.object.select_all(action=DESELECT_ACTION)
+    mask.select_set(True)
+    bpy.ops.object.delete()
+    bpy.ops.object.select_all(action=SELECT_ACTION)
 
 
 def extract_splitted_tile(model_file_path, node, texture_folder):

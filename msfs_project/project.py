@@ -26,6 +26,7 @@ import os
 import subprocess
 
 import osmnx as ox
+import logging as lg
 from osmnx.utils_geo import bbox_to_poly
 
 import bpy
@@ -60,7 +61,6 @@ class MsfsProject:
     business_json_folder: str
     content_info_folder: str
     osmfiles_folder: str
-    shapefiles_folder: str
     project_definition_xml: str
     project_definition_xml_path: str
     package_definitions_xml: str
@@ -88,7 +88,6 @@ class MsfsProject:
     MODEL_LIB_FOLDER = "modelLib"
     SCENE_FOLDER = "scene"
     OSMFILES_FOLDER = "osm"
-    SHAPEFILES_FOLDER = "shapes"
     CONTENT_INFO_FOLDER = "ContentInfo"
     SCENE_OBJECTS_FILE = "objects" + XML_FILE_EXT
     NB_PARALLEL_TASKS = 4
@@ -101,7 +100,6 @@ class MsfsProject:
         self.project_folder = os.path.join(self.parent_path, self.project_name.capitalize())
         self.backup_folder = os.path.join(self.project_folder, self.BACKUP_FOLDER)
         self.osmfiles_folder = os.path.join(self.project_folder, self.OSMFILES_FOLDER)
-        self.shapefiles_folder = os.path.join(self.project_folder, self.SHAPEFILES_FOLDER)
         self.package_definitions_folder = os.path.join(self.project_folder, self.PACKAGE_DEFINITIONS_FOLDER)
         self.package_sources_folder = os.path.join(self.project_folder, self.PACKAGE_SOURCES_FOLDER)
 
@@ -261,7 +259,8 @@ class MsfsProject:
             pbar.update("splitted tiles added, replacing the previous %s tile" % previous_tile.name)
 
     def cleanup_3d_data(self):
-        self.__create_osm_files()
+        # self.__create_osm_files()
+        self.__cleanup_lods_3d_data()
 
     def keep_common_tiles(self, project_to_compare):
         if self.objects_xml and project_to_compare.objects_xml:
@@ -340,8 +339,6 @@ class MsfsProject:
 
         # create the osm folder if it does not exist
         os.makedirs(self.osmfiles_folder, exist_ok=True)
-        # create the shape folder if it does not exist
-        os.makedirs(self.shapefiles_folder, exist_ok=True)
 
     def __init_components(self):
         self.__retrieve_objects()
@@ -604,7 +601,7 @@ class MsfsProject:
         self.__clean_objects(self.colliders)
 
     def __create_osm_files(self):
-        ox.config(use_cache=True, log_console=True)
+        ox.config(use_cache=True, log_level=lg.DEBUG)
         self.__create_osm_exclusion_file(bbox_to_poly(self.coords[1], self.coords[0], self.coords[2], self.coords[3]), create_bounding_box_from_tiles(self.tiles, self.osmfiles_folder))
 
     def __create_osm_exclusion_file(self, b, bbox):
@@ -630,6 +627,12 @@ class MsfsProject:
         self.shapes[SHAPE_DISPLAY_NAME] = MsfsShape(shape_gdf=scenery_shape, group_id=new_group_id)
         for shape in self.shapes.values():
             shape.to_xml(self.objects_xml)
+
+    def __cleanup_lods_3d_data(self, settings):
+        isolated_print(EOL)
+        # some tile lods are not optimized
+        lods_data = self.__retrieve_lods_to_process()
+        self.__multithread_process_data(lods_data, "cleanup_tile_lod_3d_data.py", "CLEANUP LODS 3D DATA TILES", "optimized")
 
     def __find_different_tiles(self, tiles, tiles_to_compare):
         different_tiles = []

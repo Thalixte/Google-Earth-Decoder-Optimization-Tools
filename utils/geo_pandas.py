@@ -78,11 +78,13 @@ def create_bounding_box_from_tiles(tiles, dest_folder):
 
     result = result.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)
     result[GEOMETRY_OSM_COLUMN] = result[GEOMETRY_OSM_COLUMN].apply(lambda p: close_holes(p))
-    result = result.to_crs(EPSG.key + str(EPSG.WGS84_meter_unit))
-    result[GEOMETRY_OSM_COLUMN] = result[GEOMETRY_OSM_COLUMN].buffer(-100, cap_style=CAP_STYLE.flat, join_style=JOIN_STYLE.mitre, single_sided=True)
-    result = result.to_crs(EPSG.key + str(EPSG.WGS84_degree_unit))
-
     return result
+
+
+def crop_gdf(gdf, crop_distance):
+    gdf = gdf.to_crs(EPSG.key + str(EPSG.WGS84_meter_unit))
+    gdf[GEOMETRY_OSM_COLUMN] = gdf[GEOMETRY_OSM_COLUMN].buffer(crop_distance, cap_style=CAP_STYLE.flat, join_style=JOIN_STYLE.mitre, single_sided=True)
+    return gdf.to_crs(EPSG.key + str(EPSG.WGS84_degree_unit))
 
 
 def create_gdf_from_osm_data(coords, key, tags):
@@ -117,7 +119,7 @@ def create_sea_gdf(land_mass, bbox):
     # bbox[GEOMETRY_OSM_COLUMN] = MultiPolygon(keep_polys)
     # osm_xml = OsmXml(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + OSM_FILE_EXT)
     # osm_xml.create_from_geodataframes([bbox], b)
-    # bbox.to_file(os.path.join(self.shapefiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + SHP_FILE_EXT))
+    # bbox.to_file(os.path.join(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + SHP_FILE_EXT))
 
     result = land_mass.overlay(bbox, how=OVERLAY_OPERATOR.symmetric_difference).assign(boundary=BOUNDING_BOX_OSM_KEY)
     return result[[GEOMETRY_OSM_COLUMN]].dissolve()
@@ -141,6 +143,7 @@ def create_exclusion_gdf(landuse, leisure, natural, water, aeroway, sea):
 
 
 def create_scenery_shape_gdf(bbox, exclusion):
+    bbox = crop_gdf(bbox, -100)
     return preserve_holes(bbox.overlay(exclusion, how=OVERLAY_OPERATOR.difference), split_method=PRESERVE_HOLES_METHOD.derivation_split)
 
 
