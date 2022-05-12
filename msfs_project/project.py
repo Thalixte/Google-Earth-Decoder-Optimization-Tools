@@ -153,7 +153,7 @@ class MsfsProject:
         # some tile lods are not optimized
         if self.__optimization_needed():
             self.__create_optimization_folders()
-            self.__optimize_tile_lods(self.__retrieve_lods_to_process())
+            self.__optimize_tile_lods(self.__retrieve_lods_to_optimize())
 
         pbar = ProgressBar(list(lods), title="PREPARE THE TILES FOR MSFS")
         for lod in lods:
@@ -259,7 +259,7 @@ class MsfsProject:
             pbar.update("splitted tiles added, replacing the previous %s tile" % previous_tile.name)
 
     def cleanup_3d_data(self):
-        # self.__create_osm_files()
+        self.__create_osm_files()
         self.__cleanup_lods_3d_data()
 
     def keep_common_tiles(self, project_to_compare):
@@ -516,12 +516,23 @@ class MsfsProject:
         xml = MsfsPackageDefinitionsXml(self.package_definitions_folder, self.package_definitions_xml)
         return os.path.join(self.built_project_package_folder, xml.find_model_lib_asset_group(self.project_name.lower() + "-" + self.MODEL_LIB_FOLDER))
 
-    def __retrieve_lods_to_process(self):
+    def __retrieve_lods_to_optimize(self):
         data = []
         for tile in self.tiles.values():
             for lod in tile.lods:
                 if os.path.isdir(lod.folder) and lod.folder != self.model_lib_folder:
                     data.append({"name": lod.name, "params": ["--folder", str(lod.folder), "--model_file", str(lod.model_file)]})
+
+        return chunks(data, self.NB_PARALLEL_TASKS)
+
+    def __retrieve_lods_to_cleanup(self):
+        data = []
+        for tile in self.tiles.values():
+            for lod in tile.lods:
+                if os.path.isdir(lod.folder):
+                    data.append({"name": lod.name, "params": ["--folder", str(lod.folder), "--model_file", str(lod.model_file),
+                                                              "--positioning_file_path", str(os.path.join(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + lod.name + OSM_FILE_EXT)),
+                                                              "--mask_file_path", str(os.path.join(self.osmfiles_folder, EXCLUSION_OSM_FILE_PREFIX + OSM_FILE_EXT))]})
 
         return chunks(data, self.NB_PARALLEL_TASKS)
 
@@ -628,11 +639,11 @@ class MsfsProject:
         for shape in self.shapes.values():
             shape.to_xml(self.objects_xml)
 
-    def __cleanup_lods_3d_data(self, settings):
+    def __cleanup_lods_3d_data(self):
         isolated_print(EOL)
         # some tile lods are not optimized
-        lods_data = self.__retrieve_lods_to_process()
-        self.__multithread_process_data(lods_data, "cleanup_tile_lod_3d_data.py", "CLEANUP LODS 3D DATA TILES", "optimized")
+        lods_data = self.__retrieve_lods_to_cleanup()
+        self.__multithread_process_data(lods_data, "cleanup_lod_3d_data.py", "CLEANUP LODS 3D DATA TILES", "cleaned")
 
     def __find_different_tiles(self, tiles, tiles_to_compare):
         different_tiles = []

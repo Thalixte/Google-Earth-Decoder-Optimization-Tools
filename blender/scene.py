@@ -92,9 +92,9 @@ def import_model_files(model_files, clean=True):
 ##############################################################################
 # Export and optimize the tile in a new gltf file, with bin file and textures
 ##############################################################################
-def export_to_optimized_gltf_files(file, texture_folder, use_selection=False):
+def export_to_optimized_gltf_files(file, texture_folder, use_selection=False, export_extras=True):
     isolated_print("export to", file, "with associated textures", EOL)
-    bpy.ops.export_scene.gltf(export_format=GLTF_SEPARATE_EXPORT_FORMAT, export_extras=True, export_keep_originals=True, filepath=file, export_texture_dir=texture_folder, use_selection=use_selection)
+    bpy.ops.export_scene.gltf(export_format=GLTF_SEPARATE_EXPORT_FORMAT, export_extras=export_extras, export_keep_originals=True, filepath=file, export_texture_dir=texture_folder, use_selection=use_selection)
     model_file = MsfsGltf(file)
     model_file.add_optimization_tag()
     model_file.dump()
@@ -294,6 +294,8 @@ def align_model_with_mask(model_file_path, positioning_file_path, mask_file_path
     bpy.ops.object.join()
 
     import_osm_file(positioning_file_path)
+    for obj in bpy.context.selected_objects:
+        obj.name = "Ways"
 
     bpy.ops.object.select_all(action=SELECT_ACTION)
 
@@ -310,6 +312,8 @@ def align_model_with_mask(model_file_path, positioning_file_path, mask_file_path
     bpy.ops.object.select_all(action=DESELECT_ACTION)
 
     import_osm_file(mask_file_path)
+    for obj in bpy.context.selected_objects:
+        obj.name = "Areas"
     target = bpy.context.scene.objects.get("Areas")
     bpy.ops.object.select_all(action=SELECT_ACTION)
     bpy.context.view_layer.objects.active = target
@@ -360,7 +364,7 @@ def extract_splitted_tile(model_file_path, node, texture_folder):
     for obj in objs:
         obj.select_set(True)
 
-    export_to_optimized_gltf_files(model_file_path, texture_folder, use_selection=True)
+    export_to_optimized_gltf_files(model_file_path, texture_folder, use_selection=True, export_extras=False)
 
 
 def copy_objects(from_col, to_col, linked):

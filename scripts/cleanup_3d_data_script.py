@@ -44,13 +44,6 @@ from msfs_project import MsfsProject
 
 def cleanup_3d_data(script_settings):
     try:
-        # shape_files = glob.glob("inverted*.shp")
-        # if shape_files:
-        #     inverted = gpd.GeoDataFrame(pd.concat([gpd.read_file(file) for file in shape_files], ignore_index=True), crs=gpd.read_file(shape_files[0]).crs)
-        #     geom = inverted.pop('geometry')
-        #     geom = geom.apply(lambda x: list(x) if isinstance(x, MultiPolygon) else x).explode()
-        #     inverted.join(geom, how='inner').to_file('inverted.shp')
-
         # instantiate the msfsProject and create the necessary resources if it does not exist
         msfs_project = MsfsProject(script_settings.projects_path, script_settings.project_name, script_settings.definition_file, script_settings.author_name, script_settings.sources_path)
 
