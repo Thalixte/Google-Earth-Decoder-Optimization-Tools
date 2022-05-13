@@ -40,7 +40,7 @@ from msfs_project.collider import MsfsCollider
 from msfs_project.tile import MsfsTile
 from msfs_project.shape import MsfsShape
 from utils import replace_in_file, is_octant, backup_file, install_python_lib, ScriptError, print_title, \
-    get_backup_file_path, isolated_print, chunks, create_bounding_box_from_tiles, create_gdf_from_osm_data, clip_gdf, create_exclusion_gdf, create_scenery_shape_gdf, create_sea_gdf, create_land_mass_gdf
+    get_backup_file_path, isolated_print, chunks, create_bounding_box_from_tiles, create_gdf_from_osm_data, clip_gdf, create_exclusion_gdf, create_scenery_shape_gdf, create_sea_gdf, create_land_mass_gdf, resize_gdf, create_exclusion_masks_from_tiles
 from pathlib import Path
 
 from utils.compressonator import Compressonator
@@ -259,8 +259,17 @@ class MsfsProject:
             pbar.update("splitted tiles added, replacing the previous %s tile" % previous_tile.name)
 
     def cleanup_3d_data(self):
+        self.__remove_colliders()
         self.__create_osm_files()
         self.__cleanup_lods_3d_data()
+
+        lods = [lod for tile in self.tiles.values() for lod in tile.lods]
+        pbar = ProgressBar(list(lods), title="PREPARE THE TILES FOR MSFS")
+        for lod in lods:
+            lod.folder = os.path.dirname(lod.folder) if self.__optimization_needed() else lod.folder
+            lod.optimization_in_progress = False
+            lod.prepare_for_msfs()
+            pbar.update("%s prepared for msfs" % lod.name)
 
     def keep_common_tiles(self, project_to_compare):
         if self.objects_xml and project_to_compare.objects_xml:
@@ -528,11 +537,14 @@ class MsfsProject:
     def __retrieve_lods_to_cleanup(self):
         data = []
         for tile in self.tiles.values():
+            if tile.exclusion_mask_gdf.empty:
+                continue
+
             for lod in tile.lods:
                 if os.path.isdir(lod.folder):
                     data.append({"name": lod.name, "params": ["--folder", str(lod.folder), "--model_file", str(lod.model_file),
-                                                              "--positioning_file_path", str(os.path.join(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + lod.name + OSM_FILE_EXT)),
-                                                              "--mask_file_path", str(os.path.join(self.osmfiles_folder, EXCLUSION_OSM_FILE_PREFIX + OSM_FILE_EXT))]})
+                                                              "--positioning_file_path", str(os.path.join(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)),
+                                                              "--mask_file_path", str(os.path.join(self.osmfiles_folder, EXCLUSION_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT))]})
 
         return chunks(data, self.NB_PARALLEL_TASKS)
 
@@ -621,6 +633,7 @@ class MsfsProject:
 
         bbox = clip_gdf(bbox, land_mass)
         bbox = clip_gdf(bbox, create_gdf_from_osm_data(self.coords, BOUNDARY_OSM_KEY, True))
+        bbox = resize_gdf(bbox, 10)
 
         landuse = clip_gdf(create_gdf_from_osm_data(self.coords, LANDUSE_OSM_KEY, OSM_TAGS[LANDUSE_OSM_KEY]), bbox)
         leisure = clip_gdf(create_gdf_from_osm_data(self.coords, LEISURE_OSM_KEY, OSM_TAGS[LEISURE_OSM_KEY]), bbox)
@@ -631,6 +644,8 @@ class MsfsProject:
         exclusion = create_exclusion_gdf(landuse, leisure, natural, water, aeroway, sea)
         osm_xml = OsmXml(self.osmfiles_folder, EXCLUSION_OSM_FILE_PREFIX + OSM_FILE_EXT)
         osm_xml.create_from_geodataframes([exclusion], b, True, [(HEIGHT_OSM_TAG, 1000)])
+
+        create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, exclusion)
 
         scenery_shape = create_scenery_shape_gdf(bbox, exclusion)
         self.objects_xml.remove_shape()

@@ -194,9 +194,6 @@ class MsfsLod:
         align_model_with_mask(os.path.join(self.folder, self.model_file), positioning_file_path, mask_file_path)
         cleanup_3d_data(os.path.join(self.folder, self.model_file))
         export_to_optimized_gltf_files(os.path.join(self.folder, self.model_file), TEXTURE_FOLDER, use_selection=True, export_extras=False)
-        model_file = MsfsGltf(os.path.join(self.folder, self.model_file))
-        model_file.remove_texture_path()
-        model_file.dump()
         clean_scene()
 
     def __retrieve_gltf_resources(self):

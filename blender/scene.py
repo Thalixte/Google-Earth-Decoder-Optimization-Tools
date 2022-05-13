@@ -343,9 +343,7 @@ def cleanup_3d_data(model_file_path):
                 bool = obj.modifiers.new(name='booly', type='BOOLEAN')
                 bool.object = mask
                 bool.operation = 'DIFFERENCE'
-                bool.solver = 'EXACT'
-                bool.use_hole_tolerant = True
-                bool.use_self = True
+                bool.solver = 'FAST'
                 for modifier in obj.modifiers:
                     bpy.ops.object.modifier_apply(modifier=modifier.name)
 

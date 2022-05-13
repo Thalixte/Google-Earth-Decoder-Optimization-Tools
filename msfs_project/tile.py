@@ -20,11 +20,11 @@ import os
 
 import geopandas as gpd
 
-from constants import GLTF_FILE_EXT, COLLIDER_SUFFIX, XML_FILE_EXT, BOUNDARY_OSM_KEY, OSM_FILE_EXT, BOUNDING_BOX_OSM_FILE_PREFIX
+from constants import GLTF_FILE_EXT, COLLIDER_SUFFIX, XML_FILE_EXT, BOUNDARY_OSM_KEY, OSM_FILE_EXT, BOUNDING_BOX_OSM_FILE_PREFIX, GEOMETRY_OSM_COLUMN, EXCLUSION_OSM_FILE_PREFIX, HEIGHT_OSM_TAG
 from msfs_project.collider import MsfsCollider
 from msfs_project.scene_object import MsfsSceneObject
 from msfs_project.position import MsfsPosition
-from utils import get_coords_from_file_name, get_position_from_file_name, create_tile_bounding_box
+from utils import get_coords_from_file_name, get_position_from_file_name, create_tile_bounding_box, resize_gdf
 from utils.minidom_xml import create_new_definition_file
 from msfs_project.osm_xml import OsmXml
 
@@ -34,6 +34,7 @@ class MsfsTile(MsfsSceneObject):
     exclusion_osm_file: str
     bbox_osm_file: str
     bbox_gdf: gpd.GeoDataFrame
+    exclusion_mask_gdf: gpd.GeoDataFrame
 
     def __init__(self, folder, name, definition_file):
         super().__init__(folder, name, definition_file)
@@ -75,16 +76,21 @@ class MsfsTile(MsfsSceneObject):
 
         return tuple([n1 if n1 >= n2 else n2, s1 if s1 <= s2 else s2, w1 if w1 <= w2 else w2, e1 if e1 >= e2 else e2])
 
-    def create_osm_files(self, osm_path):
-        self.__create_bbox_osm_file(osm_path)
+    def create_bbox_osm_file(self, dest_folder):
+        self.bbox_gdf, b = create_tile_bounding_box(self)
+        osm_xml = OsmXml(dest_folder, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + self.name + OSM_FILE_EXT)
+        osm_xml.create_from_geodataframes([self.bbox_gdf.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')], b)
+
+    def create_exclusion_mask_osm_file(self, dest_folder, b, exclusion_mask):
+        self.exclusion_mask_gdf = exclusion_mask.clip(self.bbox_gdf)
+
+        if not self.exclusion_mask_gdf.empty:
+            bbox_gdf = resize_gdf(self.bbox_gdf, 10)
+            osm_xml = OsmXml(dest_folder, EXCLUSION_OSM_FILE_PREFIX + "_" + self.name + OSM_FILE_EXT)
+            osm_xml.create_from_geodataframes([exclusion_mask.clip(bbox_gdf).drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')], b, True, [(HEIGHT_OSM_TAG, 1000)])
 
     def split(self, settings):
         for i, lod in enumerate(self.lods):
             lod.split(self.name, str(settings.target_min_size_values[(len(self.lods) - 1) - i]), self)
 
         self.remove_file()
-
-    def __create_bbox_osm_file(self, osm_path):
-        self.bbox_gdf, b = create_tile_bounding_box(self)
-        osm_xml = OsmXml(osm_path, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + self.name + OSM_FILE_EXT)
-        osm_xml.create_from_geodataframes([self.bbox_gdf.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')], b)

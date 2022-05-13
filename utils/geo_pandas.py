@@ -68,7 +68,7 @@ def create_bounding_box_from_tiles(tiles, dest_folder):
     result = None
     pbar = ProgressBar(list(tiles.values()), title="CREATE OSM FILES")
     for i, tile in enumerate(tiles.values()):
-        tile.create_osm_files(dest_folder)
+        tile.create_bbox_osm_file(dest_folder)
         pbar.update("osm files created for %s tile" % tile.name)
 
         if i <= 0:
@@ -78,12 +78,20 @@ def create_bounding_box_from_tiles(tiles, dest_folder):
 
     result = result.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)
     result[GEOMETRY_OSM_COLUMN] = result[GEOMETRY_OSM_COLUMN].apply(lambda p: close_holes(p))
+    result = resize_gdf(result, 10)
     return result
 
 
-def crop_gdf(gdf, crop_distance):
+def create_exclusion_masks_from_tiles(tiles, dest_folder, b, exclusion_mask):
+    pbar = ProgressBar(list(tiles.values()), title="CREATE EXCLUSION MASKS OSM FILES")
+    for i, tile in enumerate(tiles.values()):
+        tile.create_exclusion_mask_osm_file(dest_folder, b, exclusion_mask)
+        pbar.update("exclusion mask created for %s tile" % tile.name)
+
+
+def resize_gdf(gdf, resize_distance):
     gdf = gdf.to_crs(EPSG.key + str(EPSG.WGS84_meter_unit))
-    gdf[GEOMETRY_OSM_COLUMN] = gdf[GEOMETRY_OSM_COLUMN].buffer(crop_distance, cap_style=CAP_STYLE.flat, join_style=JOIN_STYLE.mitre, single_sided=True)
+    gdf[GEOMETRY_OSM_COLUMN] = gdf[GEOMETRY_OSM_COLUMN].buffer(resize_distance, cap_style=CAP_STYLE.flat, join_style=JOIN_STYLE.mitre, single_sided=True)
     return gdf.to_crs(EPSG.key + str(EPSG.WGS84_degree_unit))
 
 
@@ -143,7 +151,7 @@ def create_exclusion_gdf(landuse, leisure, natural, water, aeroway, sea):
 
 
 def create_scenery_shape_gdf(bbox, exclusion):
-    bbox = crop_gdf(bbox, -100)
+    bbox = resize_gdf(bbox, -100)
     return preserve_holes(bbox.overlay(exclusion, how=OVERLAY_OPERATOR.difference), split_method=PRESERVE_HOLES_METHOD.derivation_split)
 
 
