@@ -22,7 +22,7 @@ import shutil
 from pathlib import Path
 
 import bpy
-from blender import import_model_files, bake_texture_files, fix_object_bounding_box, export_to_optimized_gltf_files, clean_scene, extract_splitted_tile, align_model_with_mask, cleanup_3d_data
+from blender import import_model_files, bake_texture_files, fix_object_bounding_box, export_to_optimized_gltf_files, clean_scene, extract_splitted_tile, align_model_with_mask, cleanup_3d_data, generate_model_height_data
 from constants import PNG_TEXTURE_FORMAT, JPG_TEXTURE_FORMAT, GLTF_FILE_PATTERN, GLTF_FILE_EXT, XML_FILE_EXT, TEXTURE_FOLDER
 from msfs_project.binary import MsfsBinary
 from msfs_project.texture import MsfsTexture
@@ -194,6 +194,12 @@ class MsfsLod:
         align_model_with_mask(os.path.join(self.folder, self.model_file), positioning_file_path, mask_file_path)
         cleanup_3d_data(os.path.join(self.folder, self.model_file))
         export_to_optimized_gltf_files(os.path.join(self.folder, self.model_file), TEXTURE_FOLDER, use_selection=True, export_extras=False)
+        clean_scene()
+
+    def generate_lod_height_data(self):
+        # Import the gltf files located in the object folder
+        model_file = MsfsGltf(os.path.join(self.folder, self.model_file))
+        generate_model_height_data(os.path.join(self.folder, self.model_file))
         clean_scene()
 
     def __retrieve_gltf_resources(self):
