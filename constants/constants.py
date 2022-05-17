@@ -188,9 +188,7 @@ OSM_TAGS = {
         SEA_OSM_TAG,
         GRASSLAND_OSM_TAG,
         SCRUB_OSM_TAG,
-        HEATH_OSM_TAG,
         WETLAND_OSM_TAG,
-        BARE_ROCK_OSM_TAG,
         COASTLINE_OSM_TAG
     ],
     WATER_OSM_KEY: [

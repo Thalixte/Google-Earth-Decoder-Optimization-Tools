@@ -19,6 +19,7 @@
 import os
 
 import bpy
+import mathutils
 from blender.blender_gis import import_osm_file
 from blender.image import get_image_node, fix_texture_size_for_package_compilation
 from blender.memory import remove_mesh_from_memory
@@ -292,10 +293,23 @@ def align_model_with_mask(model_file_path, positioning_file_path, mask_file_path
     import_model_files([model_file_path])
     bpy.ops.object.select_all(action=SELECT_ACTION)
     bpy.ops.object.join()
+    rot_z = 0.0
 
     import_osm_file(positioning_file_path)
+
     for obj in bpy.context.selected_objects:
         obj.name = "Ways"
+        coords = [v.co for v in obj.data.vertices]
+        p1 = coords[0]
+        p2 = coords[1]
+        Vector1 = (p1 - p2).normalized()
+        proj_coords = [corner for corner in obj.bound_box]
+        b2 = mathutils.Vector((proj_coords[2][0], proj_coords[2][1], proj_coords[2][2]))
+        b4 = mathutils.Vector((proj_coords[6][0], proj_coords[6][1], proj_coords[6][2]))
+        Vector2 = (b4 - b2).normalized()
+        rot_z = Vector1.rotation_difference(Vector2).to_euler()
+        obj.select_set(True)
+        obj.rotation_euler = rot_z
 
     bpy.ops.object.select_all(action=SELECT_ACTION)
 
@@ -307,6 +321,7 @@ def align_model_with_mask(model_file_path, positioning_file_path, mask_file_path
 
     transform_x = src.matrix_world.translation[0]
     transform_y = src.matrix_world.translation[1]
+
     clean_scene()
 
     bpy.ops.object.select_all(action=DESELECT_ACTION)
@@ -324,6 +339,7 @@ def align_model_with_mask(model_file_path, positioning_file_path, mask_file_path
         obj_loc_x = obj.location.x
         obj.location.x = obj_loc_x * -1
 
+    target.rotation_euler = rot_z
     target.location[0] = transform_x
     target.location[1] = transform_y
 
@@ -340,10 +356,31 @@ def cleanup_3d_data(model_file_path):
         for obj in objects:
             if obj != mask:
                 bpy.context.view_layer.objects.active = obj
-                bool = obj.modifiers.new(name='booly', type='BOOLEAN')
-                bool.object = mask
-                bool.operation = 'DIFFERENCE'
-                bool.solver = 'FAST'
+                booly = obj.modifiers.new(name='booly', type='BOOLEAN')
+
+                if not booly:
+                    continue
+
+                booly.object = mask
+                booly.operation = 'DIFFERENCE'
+                booly.solver = 'EXACT'
+                booly.use_hole_tolerant = True
+                for modifier in obj.modifiers:
+                    bpy.ops.object.modifier_apply(modifier=modifier.name)
+
+    if mask:
+        for obj in objects:
+            if obj != mask:
+                bpy.context.view_layer.objects.active = obj
+                weighted_normal = obj.modifiers.new(name='weighty', type='WEIGHTED_NORMAL')
+
+                if not weighted_normal:
+                    continue
+
+                weighted_normal.weight = 100
+                weighted_normal.thresh = 10.0
+                weighted_normal.keep_sharp = True
+                weighted_normal.use_face_influence = True
                 for modifier in obj.modifiers:
                     bpy.ops.object.modifier_apply(modifier=modifier.name)
 

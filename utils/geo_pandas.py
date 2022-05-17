@@ -147,7 +147,7 @@ def create_exclusion_gdf(landuse, leisure, natural, water, aeroway, sea):
     if not sea.empty:
         result = result.overlay(sea, how=OVERLAY_OPERATOR.union)
 
-    return preserve_holes(result.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY))
+    return result.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)
 
 
 def create_scenery_shape_gdf(bbox, exclusion):

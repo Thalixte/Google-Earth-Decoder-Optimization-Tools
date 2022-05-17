@@ -123,8 +123,11 @@ class MsfsGltf:
             }
         }
 
-        for material in self.data[self.MATERIALS_TAG]:
-            material[self.EXTENSIONS_TAG] = material_extensions_data
+        try:
+            for material in self.data[self.MATERIALS_TAG]:
+                material[self.EXTENSIONS_TAG] = material_extensions_data
+        except:
+            pass
 
     def add_extension_tag(self, extension_tag):
         if not self.data: return

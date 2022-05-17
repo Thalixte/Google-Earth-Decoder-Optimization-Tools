@@ -34,7 +34,6 @@ from constants import *
 from msfs_project.project_xml import MsfsProjectXml
 from msfs_project.package_definitions_xml import MsfsPackageDefinitionsXml
 from msfs_project.objects_xml import ObjectsXml
-from msfs_project.osm_xml import OsmXml
 from msfs_project.scene_object import MsfsSceneObject
 from msfs_project.collider import MsfsCollider
 from msfs_project.tile import MsfsTile
@@ -266,7 +265,6 @@ class MsfsProject:
         lods = [lod for tile in self.tiles.values() for lod in tile.lods]
         pbar = ProgressBar(list(lods), title="PREPARE THE TILES FOR MSFS")
         for lod in lods:
-            lod.folder = os.path.dirname(lod.folder) if self.__optimization_needed() else lod.folder
             lod.optimization_in_progress = False
             lod.prepare_for_msfs()
             pbar.update("%s prepared for msfs" % lod.name)
@@ -633,7 +631,7 @@ class MsfsProject:
 
         bbox = clip_gdf(bbox, land_mass)
         bbox = clip_gdf(bbox, create_gdf_from_osm_data(self.coords, BOUNDARY_OSM_KEY, True))
-        bbox = resize_gdf(bbox, 10)
+        bbox = resize_gdf(bbox, 20)
 
         landuse = clip_gdf(create_gdf_from_osm_data(self.coords, LANDUSE_OSM_KEY, OSM_TAGS[LANDUSE_OSM_KEY]), bbox)
         leisure = clip_gdf(create_gdf_from_osm_data(self.coords, LEISURE_OSM_KEY, OSM_TAGS[LEISURE_OSM_KEY]), bbox)
@@ -642,11 +640,8 @@ class MsfsProject:
         aeroway = clip_gdf(create_gdf_from_osm_data(self.coords, AEROWAY_OSM_KEY, True), bbox)
 
         exclusion = create_exclusion_gdf(landuse, leisure, natural, water, aeroway, sea)
-        osm_xml = OsmXml(self.osmfiles_folder, EXCLUSION_OSM_FILE_PREFIX + OSM_FILE_EXT)
-        osm_xml.create_from_geodataframes([exclusion], b, True, [(HEIGHT_OSM_TAG, 1000)])
-
         create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, exclusion)
-
+        exclusion = resize_gdf(exclusion, 20)
         scenery_shape = create_scenery_shape_gdf(bbox, exclusion)
         self.objects_xml.remove_shape()
         new_group_id = self.objects_xml.get_new_group_id()
