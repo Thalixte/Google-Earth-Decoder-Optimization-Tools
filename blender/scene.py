@@ -412,8 +412,6 @@ def generate_model_height_data(model_file_path):
         grid_dimensions = obj.dimensions
         tile = obj
 
-    bpy.ops.transform.mirror(constraint_axis=(False, True, False), orient_type='GLOBAL')
-
     # create the grid
     me = bpy.data.meshes.new("Grid")
     bm = bmesh.new()
@@ -448,17 +446,17 @@ def generate_model_height_data(model_file_path):
         p1 = co
         p2 = mathutils.Vector((co[0], co[1], 500))
         ray_direction = (p2 - p1).normalized()
-        ray_direction_inverted = (p1 - p2).normalized()
+        # ray_direction_inverted = (p1 - p2).normalized()
 
         ray_begin_local = tile.matrix_world.inverted() @ p1
-        ray_begin_local_inverted = tile.matrix_world.inverted() @ p2
-        # result = tile.ray_cast(ray_begin_local, ray_direction, distance=1000, depsgraph=depsgraph)
-        result = tile.ray_cast(ray_begin_local_inverted, ray_direction_inverted, distance=1000, depsgraph=depsgraph)
+        # ray_begin_local_inverted = tile.matrix_world.inverted() @ p2
+        result = tile.ray_cast(ray_begin_local, ray_direction, distance=1000, depsgraph=depsgraph)
+        # result = tile.ray_cast(ray_begin_local_inverted, ray_direction_inverted, distance=1000, depsgraph=depsgraph)
         if result[0]:
             i = i + 1
             p = point_cloud("p" + str(i), [result[1]])
             bpy.context.collection.objects.link(p)
-            key = result[1][0]
+            key = result[1][1]
             if not key in results:
                 results[key] = []
             results[key].append((result[1][2] - 106.67))

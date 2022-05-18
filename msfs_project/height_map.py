@@ -17,7 +17,6 @@
 #  <pep8 compliant>
 from constants import HEIGHT_MAPS_DISPLAY_NAME
 from msfs_project.position import MsfsPosition
-from utils import isolated_print
 from utils.octant import get_latlonbox_from_file_name
 
 
@@ -55,7 +54,7 @@ class HeightMap:
         self.pos = get_latlonbox_from_file_name(tile.name).bl_point
         self.pos2 = get_latlonbox_from_file_name(tile.name).tl_point
         self.mid = get_latlonbox_from_file_name(tile.name).mid_point
-        self.size = min([len(x_height_data) for x_height_data in height_data.values()])
+        self.size = max([len(x_height_data) for x_height_data in height_data.values()])
         self.height_data = self.__serialize_height_data(height_data)
         self.width = width
         self.altitude = altitude
@@ -67,8 +66,11 @@ class HeightMap:
     def __serialize_height_data(self, height_data):
         result = ""
         for i, x_data in enumerate(height_data.values()):
+            if len(x_data) != self.size:
+                continue
+
             for j, y_data in enumerate(x_data):
                 if j < self.size:
-                    result += " " + str(y_data)
+                    result = str(y_data) + " " + result
 
         return result.strip()

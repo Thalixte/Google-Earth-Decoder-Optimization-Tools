@@ -132,7 +132,11 @@ class ObjectsXml(Xml):
             for vertex in polygon.vertices:
                 self.__add_shape_polygon_vertex(polygon_elem, vertex)
 
-        self.__add_generated_group(shape.group)
+        pattern = self.GROUP_SEARCH_PATTERN + HEIGHT_MAPS_DISPLAY_NAME + self.PATTERN_SUFFIX
+        groups = self.root.findall(pattern)
+
+        if not groups:
+            self.__add_generated_group(shape.group)
 
         self.save()
 
