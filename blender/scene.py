@@ -18,6 +18,7 @@
 
 import os
 from collections import defaultdict
+from math import floor
 
 import bmesh
 import bpy
@@ -415,7 +416,8 @@ def generate_model_height_data(model_file_path):
     # create the grid
     me = bpy.data.meshes.new("Grid")
     bm = bmesh.new()
-    bmesh.ops.create_grid(bm, x_segments=round(grid_dimensions.x / 10.0), y_segments=round(grid_dimensions.x / 10.0), size=round(grid_dimensions.x / 2))
+    grid_dimension = round(grid_dimensions.x / 10.0)
+    bmesh.ops.create_grid(bm, x_segments=grid_dimension, y_segments=grid_dimension, size=round(grid_dimensions.x / 2))
     bmesh.ops.delete(bm, geom=bm.faces, context="FACES_ONLY")
     bm.to_mesh(me)
     ob = bpy.data.objects.new("Grid", me)
@@ -459,7 +461,8 @@ def generate_model_height_data(model_file_path):
             key = result[1][1]
             if not key in results:
                 results[key] = []
-            results[key].append((result[1][2] - 106.67))
+            if len(results[key]) < (grid_dimension-1):
+                results[key].append((result[1][2] - 106.67))
 
     bpy.ops.object.select_all(action=DESELECT_ACTION)
     grid.select_set(True)
@@ -468,7 +471,7 @@ def generate_model_height_data(model_file_path):
     bpy.ops.object.select_all(action=SELECT_ACTION)
     clean_scene()
 
-    return results, width, altitude
+    return results, width, altitude, (grid_dimension-1)
 
 
 def extract_splitted_tile(model_file_path, node, texture_folder):

@@ -17,6 +17,7 @@
 #  <pep8 compliant>
 from constants import HEIGHT_MAPS_DISPLAY_NAME
 from msfs_project.position import MsfsPosition
+from utils import isolated_print
 from utils.octant import get_latlonbox_from_file_name
 
 
@@ -48,14 +49,14 @@ class HeightMap:
     altitude: str
     group: MsfsHeightMapGroup
 
-    def __init__(self, tile, height_data, width, altitude, group_id=None):
+    def __init__(self, tile, height_data, width, altitude, grid_limit, group_id=None):
         self.falloff = 100
         self.priority = 0
         self.pos = get_latlonbox_from_file_name(tile.name).bl_point
         self.pos2 = get_latlonbox_from_file_name(tile.name).tl_point
         self.mid = get_latlonbox_from_file_name(tile.name).mid_point
-        self.size = max([len(x_height_data) for x_height_data in height_data.values()])
-        self.height_data = self.__serialize_height_data(height_data)
+        self.size = grid_limit
+        self.height_data = self.__serialize_height_data(height_data, grid_limit)
         self.width = width
         self.altitude = altitude
         self.group = MsfsHeightMapGroup(group_id=group_id)
@@ -63,14 +64,13 @@ class HeightMap:
     def to_xml(self, xml):
         xml.add_height_map(self)
 
-    def __serialize_height_data(self, height_data):
+    def __serialize_height_data(self, height_data, grid_limit):
         result = ""
         for i, x_data in enumerate(height_data.values()):
             if len(x_data) != self.size:
                 continue
 
             for j, y_data in enumerate(x_data):
-                if j < self.size:
-                    result = str(y_data) + " " + result
+                result = str(y_data) + " " + result
 
         return result.strip()

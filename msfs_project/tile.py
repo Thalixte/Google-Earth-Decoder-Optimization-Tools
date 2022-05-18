@@ -99,8 +99,8 @@ class MsfsTile(MsfsSceneObject):
         lod = self.lods[0]
 
         if os.path.isdir(lod.folder):
-            height_data, width, altitude = lod.calculate_height_data()
-            self.height_map = HeightMap(self, height_data, width, altitude, group_id=group_id)
+            height_data, width, altitude, grid_limit = lod.calculate_height_data()
+            self.height_map = HeightMap(self, height_data, width, altitude, grid_limit, group_id=group_id)
             self.height_map.to_xml(xml)
 
     def split(self, settings):
