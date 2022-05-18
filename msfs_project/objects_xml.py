@@ -15,7 +15,7 @@
 #  #
 #
 #  <pep8 compliant>
-from constants import SHAPE_DISPLAY_NAME
+from constants import SHAPE_DISPLAY_NAME, HEIGHT_MAPS_DISPLAY_NAME
 from utils.progress_bar import ProgressBar
 from utils import Xml
 import xml.etree.ElementTree as Et
@@ -29,6 +29,8 @@ class ObjectsXml(Xml):
     POLYGON_TAG = "Polygon"
     ATTRIBUTE_TAG = "Attribute"
     VERTEX_TAG = "Vertex"
+    RECTANGLE_TAG = "Rectangle"
+    HEIGHT_MAP_TAG = "Heightmap"
     NAME_ATTR = "name"
     GUID_ATTR = "guid"
     DISPLAY_NAME_ATTR = "displayName"
@@ -38,7 +40,11 @@ class ObjectsXml(Xml):
     HEADING_ATTR = "heading"
     IMAGE_COMPLEXITY_ATTR = "imageComplexity"
     LAT_ATTR = "lat"
+    LATITUDE_ATTR = "latitude"
+    LATITUDE2_ATTR = "latitude2"
     LON_ATTR = "lon"
+    LONGITUDE_ATTR = "longitude"
+    LONGITUDE2_ATTR = "longitude2"
     PITCH_ATTR = "pitch"
     SNAP_TO_GROUND_ATTR = "snapToGround"
     SNAP_TO_NORMAL_ATTR = "snapToNormal"
@@ -46,10 +52,16 @@ class ObjectsXml(Xml):
     PARENT_GROUP_ID_ATTR = "parentGroupID"
     GROUP_INDEX_ATTR = "groupIndex"
     ALTITUDE_ATTR = "altitude"
+    ALTITUDE2_ATTR = "altitude2"
     TYPE_ATTR = "type"
     VALUE_ATTR = "value"
     GROUP_ID_ATTR = "groupID"
     GROUP_GENERATED_ATTR = "groupGenerated"
+    WIDTH_ATTR = "width"
+    FALLOFF_ATTR = "falloff"
+    SURFACE_ATTR = "surface"
+    PRIORITY_ATTR = "priority"
+    DATA_ATTR = "data"
 
     LIBRARY_OBJECTS_SEARCH_PATTERN = "./" + SCENERY_OBJECT_TAG + "/" + LIBRARY_OBJECT_TAG
     SCENERY_OBJECT_SEARCH_PATTERN = LIBRARY_OBJECTS_SEARCH_PATTERN + "[@" + NAME_ATTR + "='"
@@ -58,8 +70,10 @@ class ObjectsXml(Xml):
     POLYGON_ATTRIBUTES_SEARCH_PATTERN = "./" + ATTRIBUTE_TAG
     POLYGON_VERTICES_SEARCH_PATTERN = "./" + VERTEX_TAG
     GROUPS_SEARCH_PATTERN = "./" + GROUP_TAG
+    RECTANGLES_SEARCH_PATTERN = "./" + RECTANGLE_TAG
     PARENT_GROUP_SEARCH_PATTERN = GROUPS_SEARCH_PATTERN + "[@" + GROUP_ID_ATTR + "='"
-    SHAPE_GROUP_SEARCH_PATTERN = GROUPS_SEARCH_PATTERN + "[@" + DISPLAY_NAME_ATTR + "='"
+    GROUP_SEARCH_PATTERN = GROUPS_SEARCH_PATTERN + "[@" + DISPLAY_NAME_ATTR + "='"
+    HEIGHT_MAP_SEARCH_PATTERN = RECTANGLES_SEARCH_PATTERN + "[@" + PARENT_GROUP_ID_ATTR + "='"
 
     def __init__(self, file_folder, file_name):
         super().__init__(file_folder, file_name)
@@ -78,7 +92,7 @@ class ObjectsXml(Xml):
         self.save()
 
     def remove_shape(self):
-        pattern = self.SHAPE_GROUP_SEARCH_PATTERN + SHAPE_DISPLAY_NAME + self.PATTERN_SUFFIX
+        pattern = self.GROUP_SEARCH_PATTERN + SHAPE_DISPLAY_NAME + self.PATTERN_SUFFIX
         groups = self.root.findall(pattern)
         for group in groups:
             self.root.remove(group)
@@ -94,6 +108,20 @@ class ObjectsXml(Xml):
 
         self.save()
 
+    def remove_height_maps(self):
+        group_id = -1
+
+        pattern = self.GROUP_SEARCH_PATTERN + HEIGHT_MAPS_DISPLAY_NAME + self.PATTERN_SUFFIX
+        groups = self.root.findall(pattern)
+        for group in groups:
+            group_id = group.get(self.GROUP_ID_ATTR)
+            self.root.remove(group)
+
+        for height_map in self.find_height_maps(group_id):
+            self.root.remove(height_map)
+
+        self.save()
+
     def add_shape(self, shape):
         for polygon in shape.polygons:
             polygon_elem = self.__add_shape_polygon(polygon)
@@ -104,7 +132,15 @@ class ObjectsXml(Xml):
             for vertex in polygon.vertices:
                 self.__add_shape_polygon_vertex(polygon_elem, vertex)
 
-        self.__add_shape_group(shape.group)
+        self.__add_generated_group(shape.group)
+
+        self.save()
+
+    def add_height_map(self, height_map):
+        rectangle_elem = self.__add_height_map_rectangle(height_map)
+        self.__add_height_map(rectangle_elem, height_map)
+
+        self.__add_generated_group(height_map.group)
 
         self.save()
 
@@ -128,6 +164,10 @@ class ObjectsXml(Xml):
 
     def find_polygon_vertices(self, root):
         return root.findall(self.POLYGON_VERTICES_SEARCH_PATTERN)
+
+    def find_height_maps(self, group_id):
+        pattern = self.HEIGHT_MAP_SEARCH_PATTERN + str(group_id) + self.PATTERN_SUFFIX
+        return self.root.findall(pattern)
 
     def get_new_group_id(self):
         result = 0
@@ -168,7 +208,7 @@ class ObjectsXml(Xml):
 
             pbar.update("%s" % collider.name + " : new lat: " + str(collider.pos.lat + float(settings.lat_correction)) + " : new lon: " + str(collider.pos.lon + float(settings.lon_correction)))
 
-    def __add_shape_group(self, group):
+    def __add_generated_group(self, group):
         return Et.SubElement(self.root, group.tag, attrib={
             self.DISPLAY_NAME_ATTR: group.display_name,
             self.GROUP_INDEX_ATTR: str(group.group_index),
@@ -192,6 +232,25 @@ class ObjectsXml(Xml):
         return Et.SubElement(polygon, vertex.tag, attrib={
             self.LAT_ATTR: str(vertex.lat),
             self.LON_ATTR: str(vertex.lon)})
+
+    def __add_height_map_rectangle(self, height_map):
+        return Et.SubElement(self.root, self.RECTANGLE_TAG, attrib={
+            self.PARENT_GROUP_ID_ATTR: str(height_map.group.group_id),
+            self.WIDTH_ATTR: str(height_map.width),
+            self.FALLOFF_ATTR: str(height_map.falloff),
+            self.SURFACE_ATTR: height_map.surface,
+            self.PRIORITY_ATTR: str(height_map.priority),
+            self.LATITUDE_ATTR: str(height_map.pos.lat),
+            self.LONGITUDE_ATTR: str(height_map.mid.lon),
+            self.ALTITUDE_ATTR: str(height_map.altitude),
+            self.LATITUDE2_ATTR: str(height_map.pos2.lat),
+            self.LONGITUDE2_ATTR: str(height_map.mid.lon),
+            self.ALTITUDE2_ATTR: str(height_map.altitude)})
+
+    def __add_height_map(self, rectangle, height_map):
+        return Et.SubElement(rectangle, self.HEIGHT_MAP_TAG, attrib={
+            self.WIDTH_ATTR: str(height_map.size),
+            self.DATA_ATTR: str(height_map.height_data)})
 
     @staticmethod
     def __update_scenery_object_pos(tile, found_scenery_objects, settings):

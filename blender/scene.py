@@ -397,6 +397,9 @@ def generate_model_height_data(model_file_path):
     if not bpy.context.scene: return False
 
     grid_dimensions = []
+    results = {}
+    width = 0.0
+    altitude = 0.0
     tile = None
 
     import_model_files([model_file_path])
@@ -404,14 +407,17 @@ def generate_model_height_data(model_file_path):
     bpy.ops.object.join()
 
     for obj in bpy.context.selected_objects:
+        width = obj.dimensions.x
+        altitude = obj.dimensions.z
         grid_dimensions = obj.dimensions
         tile = obj
+
+    bpy.ops.transform.mirror(constraint_axis=(False, True, False), orient_type='GLOBAL')
 
     # create the grid
     me = bpy.data.meshes.new("Grid")
     bm = bmesh.new()
     bmesh.ops.create_grid(bm, x_segments=round(grid_dimensions.x / 10.0), y_segments=round(grid_dimensions.x / 10.0), size=round(grid_dimensions.x / 2))
-    isolated_print("grid size", "[", round(grid_dimensions.x / 10.0), "x", round(grid_dimensions.x / 10.0), "]")
     bmesh.ops.delete(bm, geom=bm.faces, context="FACES_ONLY")
     bm.to_mesh(me)
     ob = bpy.data.objects.new("Grid", me)
@@ -437,43 +443,34 @@ def generate_model_height_data(model_file_path):
     depsgraph.update()
 
     i = 0
-    results = defaultdict(dict)
 
     for co in coords:
-        me = bpy.data.meshes.new("ray")
-        bm = bmesh.new()
         p1 = co
         p2 = mathutils.Vector((co[0], co[1], 500))
-        v1 = bm.verts.new(p1)
-        v2 = bm.verts.new((co[0], co[1], 500))
         ray_direction = (p2 - p1).normalized()
-        # ray_direction_inverted = (p1 - p2).normalized()
+        ray_direction_inverted = (p1 - p2).normalized()
 
         ray_begin_local = tile.matrix_world.inverted() @ p1
-        # ray_begin_local_inverted = tile.matrix_world.inverted() @ p2
-        result = tile.ray_cast(ray_begin_local, ray_direction, distance=1000, depsgraph=depsgraph)
-        # result = tile.ray_cast(ray_begin_local_inverted, ray_direction_inverted, distance=1000, depsgraph=depsgraph)
+        ray_begin_local_inverted = tile.matrix_world.inverted() @ p2
+        # result = tile.ray_cast(ray_begin_local, ray_direction, distance=1000, depsgraph=depsgraph)
+        result = tile.ray_cast(ray_begin_local_inverted, ray_direction_inverted, distance=1000, depsgraph=depsgraph)
         if result[0]:
             i = i + 1
             p = point_cloud("p" + str(i), [result[1]])
             bpy.context.collection.objects.link(p)
-            results[result[1][0]][result[1][1]] = [result[1][2]]
-
-    for x, x_results in results.items():
-        isolated_print(x, len(x_results))
-
-        for y, height in x_results.items():
-            isolated_print(y, height)
-
+            key = result[1][1]
+            if not key in results:
+                results[key] = []
+            results[key].append((result[1][2] - 106.67))
 
     bpy.ops.object.select_all(action=DESELECT_ACTION)
-
-    grid = bpy.context.scene.objects.get("Grid")
     grid.select_set(True)
+    tile.select_set(True)
+    bpy.ops.object.delete()
+    bpy.ops.object.select_all(action=SELECT_ACTION)
+    # clean_scene()
 
-    stop
-
-    bpy.ops.object.select_all(action=DESELECT_ACTION)
+    return results, width, altitude
 
 
 def extract_splitted_tile(model_file_path, node, texture_folder):
@@ -494,44 +491,6 @@ def copy_objects(from_col, to_col, linked):
         if not linked and o.data:
             dupe.data = dupe.data.copy()
         to_col.objects.link(dupe)
-
-
-def find_intersection_point(obj1, obj2):
-    result = (0.0, 0.0, 0.0)
-
-    if not bpy.context.scene:
-        return result
-
-    if obj1 == obj2:
-        return result
-
-    # create bmesh objects
-    bm1 = bmesh.new()
-    bm2 = bmesh.new()
-
-    # fill bmesh data from objects
-    bm1.from_mesh(obj1.data)
-    bm2.from_mesh(obj2.data)
-
-    bm1.transform(obj1.matrix_world)
-    bm2.transform(obj2.matrix_world)
-
-    # make BVH tree from BMesh of objects
-    BVHtree1 = BVHTree.FromBMesh(bm1)
-    BVHtree2 = BVHTree.FromBMesh(bm2)
-
-    # get intersecting pairs
-    inter = BVHtree1.overlap(BVHtree2)
-
-    isolated_print(inter)
-
-    # if list is empty, no objects are touching
-    if not inter:
-        isolated_print(obj1.name + " and " + obj2.name + " are NOT crossing!")
-    else:
-        isolated_print(obj1.name + " and " + obj2.name + " crossing!")
-
-    return result
 
 
 def point_cloud(ob_name, coords, edges=[], faces=[]):

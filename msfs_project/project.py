@@ -259,6 +259,8 @@ class MsfsProject:
 
     def cleanup_3d_data(self):
         self.__remove_colliders()
+        self.__generate_height_map_data()
+        stop
         self.__create_osm_files()
         self.__cleanup_lods_3d_data()
 
@@ -532,6 +534,14 @@ class MsfsProject:
 
         return chunks(data, self.NB_PARALLEL_TASKS)
 
+    def __retrieve_tiles_to_calculate_height_map(self):
+        data = []
+        for tile in self.tiles.values():
+            if os.path.isdir(lod.folder):
+                data.append({"name": lod.name, "params": ["--folder", str(lod.folder), "--model_file", str(lod.model_file)]})
+
+        return chunks(data, self.NB_PARALLEL_TASKS)
+
     def __retrieve_lods_to_cleanup(self):
         data = []
         for tile in self.tiles.values():
@@ -591,11 +601,14 @@ class MsfsProject:
 
     def __retrieve_tiles_to_process(self):
         data = []
+        self.objects_xml.remove_height_maps()
+        new_group_id = self.objects_xml.get_new_group_id()
+
         for tile in self.tiles.values():
             if os.path.isdir(tile.folder):
-                data.append({"name": tile.name, "params": ["--folder", str(tile.folder), "--name", str(tile.name), "--definition_file", str(tile.definition_file), "--objects_xml_folder", str(self.scene_folder), "--objects_xml_file", str(self.SCENE_OBJECTS_FILE)]})
+                data.append({"name": tile.name, "params": ["--folder", str(tile.folder), "--name", str(tile.name), "--definition_file", str(tile.definition_file), "--objects_xml_folder", str(self.scene_folder), "--objects_xml_file", str(self.SCENE_OBJECTS_FILE), "--group_id", str(new_group_id)]})
 
-        return chunks(data, self.NB_PARALLEL_TASKS)
+        return chunks(data, 1)
 
     def __split_tiles(self, tiles_data):
         self.__multithread_process_data(tiles_data, "split_tile.py", "SPLIT THE TILES", "splitted")
@@ -620,6 +633,11 @@ class MsfsProject:
             self.objects_xml.remove_object(guid)
             pbar.update("%s removed" % collider.name)
         self.__clean_objects(self.colliders)
+
+    def __generate_height_map_data(self):
+        isolated_print(EOL)
+        tiles_data = self.__retrieve_tiles_to_process()
+        self.__multithread_process_data(tiles_data, "calculate_tile_height_data.py", "CALCULATE HEIGHT MAPS FOR EACH TILE", "height map calculated")
 
     def __create_osm_files(self):
         ox.config(use_cache=True, log_level=lg.DEBUG)

@@ -48,6 +48,21 @@ class LatLonBox(namedtuple('LatLonBox', ['north', 'south', 'west', 'east'])):
         n, s, w, e = tuple(self)
         return LatLon(s, w)
 
+    @property
+    def tl_point(self):
+        n, s, w, e = tuple(self)
+        return LatLon(n, w)
+
+    @property
+    def br_point(self):
+        n, s, w, e = tuple(self)
+        return LatLon(s, e)
+
+    @property
+    def tr_point(self):
+        n, s, w, e = tuple(self)
+        return LatLon(n, e)
+
     def get_child(self, octant):
         try:
             oct_x, oct_y, oct_z = octant_dict[octant]

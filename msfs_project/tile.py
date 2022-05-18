@@ -21,10 +21,11 @@ import os
 import geopandas as gpd
 
 from constants import GLTF_FILE_EXT, COLLIDER_SUFFIX, XML_FILE_EXT, BOUNDARY_OSM_KEY, OSM_FILE_EXT, BOUNDING_BOX_OSM_FILE_PREFIX, EXCLUSION_OSM_FILE_PREFIX, HEIGHT_OSM_TAG
+from msfs_project.height_map import HeightMap
 from msfs_project.collider import MsfsCollider
 from msfs_project.scene_object import MsfsSceneObject
 from msfs_project.position import MsfsPosition
-from utils import get_coords_from_file_name, get_position_from_file_name, create_tile_bounding_box, resize_gdf, preserve_holes
+from utils import get_coords_from_file_name, get_position_from_file_name, create_tile_bounding_box, resize_gdf, preserve_holes, isolated_print
 from utils.minidom_xml import create_new_definition_file
 from msfs_project.osm_xml import OsmXml
 
@@ -35,6 +36,7 @@ class MsfsTile(MsfsSceneObject):
     bbox_osm_file: str
     bbox_gdf: gpd.GeoDataFrame
     exclusion_mask_gdf: gpd.GeoDataFrame
+    height_map: HeightMap | None
 
     def __init__(self, folder, name, definition_file):
         super().__init__(folder, name, definition_file)
@@ -42,6 +44,7 @@ class MsfsTile(MsfsSceneObject):
         pos = get_position_from_file_name(self.name)
         self.pos = MsfsPosition(pos[0], pos[1], 0)
         self.new_tiles = {}
+        self.height_map = None
 
     def create_optimization_folders(self, linked_tiles, dry_mode=False, pbar=None):
         other_tiles = [tile for tile in linked_tiles if tile.name != self.name]
@@ -89,6 +92,16 @@ class MsfsTile(MsfsSceneObject):
 
             osm_xml = OsmXml(dest_folder, EXCLUSION_OSM_FILE_PREFIX + "_" + self.name + OSM_FILE_EXT)
             osm_xml.create_from_geodataframes([preserve_holes(exclusion_mask.clip(bbox_gdf).drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore'))], b, True, [(HEIGHT_OSM_TAG, 1000)])
+
+    def generate_height_data(self, xml, group_id):
+        if not self.lods: return
+
+        lod = self.lods[0]
+
+        if os.path.isdir(lod.folder):
+            height_data, width, altitude = lod.calculate_height_data()
+            self.height_map = HeightMap(self, height_data, width, altitude, group_id=group_id)
+            self.height_map.to_xml(xml)
 
     def split(self, settings):
         for i, lod in enumerate(self.lods):

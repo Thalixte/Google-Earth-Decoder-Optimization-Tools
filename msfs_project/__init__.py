@@ -22,6 +22,7 @@ from .scene_object import *
 from .collider import *
 from .tile import *
 from .shape import *
+from .height_map import *
 from .lod import *
 from .position import *
 from .project_xml import *

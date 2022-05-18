@@ -16,8 +16,6 @@
 #
 #  <pep8 compliant>
 
-# 21615171614242537
-
 import argparse
 import os
 import site
@@ -60,7 +58,7 @@ if cwd not in sys.path:
 
 from utils import *
 from blender import clean_scene
-from msfs_project import MsfsLod
+from msfs_project import MsfsLod, MsfsTile, ObjectsXml
 
 # clear and open the system console
 # open_console()
@@ -85,12 +83,32 @@ parser = argparse.ArgumentParser(description=usage_text)
 
 parser.add_argument(
     "-f", "--folder", dest="folder", type=str, required=True,
-    help="folder of the MsfsLod model file",
+    help="folder of the MsfsTile definition file",
 )
 
 parser.add_argument(
-    "-m", "--model_file", dest="model_file", type=str, required=True,
-    help="name of the gltf model file",
+    "-n", "--name", dest="name", type=str, required=True,
+    help="name of the tile",
+)
+
+parser.add_argument(
+    "-d", "--definition_file", dest="definition_file", type=str, required=True,
+    help="name of the xml definition file of the tile",
+)
+
+parser.add_argument(
+    "-oxf", "--objects_xml_folder", dest="objects_xml_folder", type=str, required=True,
+    help="folder of the xml definition file of the scene",
+)
+
+parser.add_argument(
+    "-oxn", "--objects_xml_file", dest="objects_xml_file", type=str, required=True,
+    help="name of the xml definition file of the scene",
+)
+
+parser.add_argument(
+    "-gi", "--group_id", dest="group_id", type=str, required=True,
+    help="group id for the group containing the height maps",
 )
 
 args = parser.parse_args(argv)
@@ -101,14 +119,26 @@ if not argv:
 if not args.folder:
     raise ScriptError("Error: --folder=\"some string\" argument not given, aborting.")
 
-if not args.model_file:
-    raise ScriptError("Error: --model_file=\"some string\" argument not given, aborting.")
+if not args.name:
+    raise ScriptError("Error: --name=\"some string\" argument not given, aborting.")
+
+if not args.definition_file:
+    raise ScriptError("Error: --definition_file=\"some string\" argument not given, aborting.")
+
+if not args.objects_xml_folder:
+    raise ScriptError("Error: --objects_xml_folder=\"some string\" argument not given, aborting.")
+
+if not args.objects_xml_file:
+    raise ScriptError("Error: --objects_xml_file=\"some string\" argument not given, aborting.")
+
+if not args.group_id:
+    raise ScriptError("Error: -group_id=\"some string\" argument not given, aborting.")
 
 clean_scene()
 
 settings = Settings(get_sources_path())
 
-lod = MsfsLod(os.path.splitext(args.model_file)[0][-2:], 0, args.folder, args.model_file)
-lod.generate_lod_height_data()
+tile = MsfsTile(args.folder, args.name, args.definition_file)
+tile.generate_height_data(ObjectsXml(args.objects_xml_folder, args.objects_xml_file), args.group_id)
 # except:
 #     pass
