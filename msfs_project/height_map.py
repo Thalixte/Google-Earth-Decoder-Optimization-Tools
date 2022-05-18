@@ -69,6 +69,6 @@ class HeightMap:
         for i, x_data in enumerate(height_data.values()):
             for j, y_data in enumerate(x_data):
                 if j < self.size:
-                    result = str(y_data) + " " + result
+                    result += " " + str(y_data)
 
         return result.strip()

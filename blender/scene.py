@@ -458,7 +458,7 @@ def generate_model_height_data(model_file_path):
             i = i + 1
             p = point_cloud("p" + str(i), [result[1]])
             bpy.context.collection.objects.link(p)
-            key = result[1][1]
+            key = result[1][0]
             if not key in results:
                 results[key] = []
             results[key].append((result[1][2] - 106.67))
@@ -468,7 +468,7 @@ def generate_model_height_data(model_file_path):
     tile.select_set(True)
     bpy.ops.object.delete()
     bpy.ops.object.select_all(action=SELECT_ACTION)
-    # clean_scene()
+    clean_scene()
 
     return results, width, altitude
 
