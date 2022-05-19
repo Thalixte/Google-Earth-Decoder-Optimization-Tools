@@ -73,6 +73,7 @@ class ObjectsXml(Xml):
     RECTANGLES_SEARCH_PATTERN = "./" + RECTANGLE_TAG
     PARENT_GROUP_SEARCH_PATTERN = GROUPS_SEARCH_PATTERN + "[@" + GROUP_ID_ATTR + "='"
     GROUP_SEARCH_PATTERN = GROUPS_SEARCH_PATTERN + "[@" + DISPLAY_NAME_ATTR + "='"
+    POLYGON_SEARCH_PATTERN = POLYGONS_SEARCH_PATTERN + "[@" + PARENT_GROUP_ID_ATTR + "='"
     HEIGHT_MAP_SEARCH_PATTERN = RECTANGLES_SEARCH_PATTERN + "[@" + PARENT_GROUP_ID_ATTR + "='"
 
     def __init__(self, file_folder, file_name):
@@ -105,16 +106,11 @@ class ObjectsXml(Xml):
         pattern = self.GROUP_SEARCH_PATTERN + SHAPE_DISPLAY_NAME + self.PATTERN_SUFFIX
         groups = self.root.findall(pattern)
         for group in groups:
+            group_id = group.get(self.GROUP_ID_ATTR)
             self.root.remove(group)
 
-        for polygon in self.find_polygons():
-            parent_group_id = polygon.get(self.PARENT_GROUP_ID_ATTR)
+        for polygon in self.find_polygons(group_id):
             self.root.remove(polygon)
-            pattern = self.GROUPS_SEARCH_PATTERN if parent_group_id is None else self.PARENT_GROUP_SEARCH_PATTERN + polygon.get(self.PARENT_GROUP_ID_ATTR) + self.PATTERN_SUFFIX
-
-        groups = self.root.findall(pattern)
-        for group in groups:
-            self.root.remove(group)
 
         self.save()
 
@@ -174,7 +170,8 @@ class ObjectsXml(Xml):
     def find_scenery_objects_in_group_parents(self, guid):
         return self.root.findall(self.SCENERY_OBJECT_GROUP_SEARCH_PATTERN + guid.upper() + self.PARENT_PATTERN_SUFFIX + self.PARENT_SUFFIX)
 
-    def find_polygons(self):
+    def find_polygons(self, group_id):
+        pattern = self.POLYGON_SEARCH_PATTERN + str(group_id) + self.PATTERN_SUFFIX
         return self.root.findall(self.POLYGONS_SEARCH_PATTERN)
 
     def find_polygon_attributes(self, root):
