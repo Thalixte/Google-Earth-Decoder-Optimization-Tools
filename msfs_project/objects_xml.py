@@ -142,7 +142,7 @@ class ObjectsXml(Xml):
             for vertex in polygon.vertices:
                 self.__add_shape_polygon_vertex(polygon_elem, vertex)
 
-        pattern = self.GROUP_SEARCH_PATTERN + HEIGHT_MAPS_DISPLAY_NAME + self.PATTERN_SUFFIX
+        pattern = self.GROUP_SEARCH_PATTERN + SHAPE_DISPLAY_NAME + self.PATTERN_SUFFIX
         groups = self.root.findall(pattern)
 
         if not groups:
@@ -154,7 +154,11 @@ class ObjectsXml(Xml):
         rectangle_elem = self.__add_height_map_rectangle(height_map)
         self.__add_height_map(rectangle_elem, height_map)
 
-        self.__add_generated_group(height_map.group)
+        pattern = self.GROUP_SEARCH_PATTERN + HEIGHT_MAPS_DISPLAY_NAME + self.PATTERN_SUFFIX
+        groups = self.root.findall(pattern)
+
+        if not groups:
+            self.__add_generated_group(height_map.group)
 
         self.save()
 
