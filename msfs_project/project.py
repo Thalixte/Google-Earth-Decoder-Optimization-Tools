@@ -260,6 +260,9 @@ class MsfsProject:
     def cleanup_3d_data(self):
         self.__remove_colliders()
         self.__generate_height_map_data()
+
+        stop
+
         self.__create_osm_files()
         self.__cleanup_lods_3d_data()
 

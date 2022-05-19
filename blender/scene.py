@@ -457,7 +457,8 @@ def generate_model_height_data(model_file_path, altitude):
             if not key in results:
                 results[key] = []
             if len(results[key]) < (grid_dimension-1):
-                results[key].append((result[1][2]))
+                height = result[1][2]-106.67 if result[1][2]-106.67 >= 49 else 49
+                results[key].append(height)
 
     bpy.ops.object.select_all(action=DESELECT_ACTION)
     grid.select_set(True)
