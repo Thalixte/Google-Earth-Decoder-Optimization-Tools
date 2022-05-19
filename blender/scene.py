@@ -26,7 +26,7 @@ import mathutils
 from blender.blender_gis import import_osm_file
 from blender.image import get_image_node, fix_texture_size_for_package_compilation
 from blender.memory import remove_mesh_from_memory
-from constants import EOL
+from constants import EOL, FEET_TO_METER_RATIO
 from mathutils.bvhtree import BVHTree
 from utils import ScriptError, isolated_print, MsfsGltf
 from utils.progress_bar import ProgressBar
@@ -394,13 +394,13 @@ def cleanup_3d_data(model_file_path):
     bpy.ops.object.select_all(action=SELECT_ACTION)
 
 
-def generate_model_height_data(model_file_path):
-    if not bpy.context.scene: return False
+def generate_model_height_data(model_file_path, altitude):
+    if not bpy.context.scene:
+        return False
 
     grid_dimensions = []
     results = {}
     width = 0.0
-    altitude = 0.0
     tile = None
 
     import_model_files([model_file_path])
@@ -409,7 +409,6 @@ def generate_model_height_data(model_file_path):
 
     for obj in bpy.context.selected_objects:
         width = obj.dimensions.x
-        altitude = obj.dimensions.z
         grid_dimensions = obj.dimensions
         tile = obj
 
@@ -431,11 +430,7 @@ def generate_model_height_data(model_file_path):
     bpy.ops.object.select_all(action=SELECT_ACTION)
 
     bpy.ops.object.align(bb_quality=True, align_mode='OPT_1', relative_to='OPT_4', align_axis={'X', 'Y'})
-
-    matrix = grid.matrix_world.copy()
-    for vert in grid.data.vertices:
-        vert.co = matrix @ vert.co
-    grid.matrix_world.identity()
+    apply_transform(grid, use_location=True, use_rotation=False, use_scale=False)
 
     coords = [v.co for v in grid.data.vertices]
 
@@ -462,11 +457,11 @@ def generate_model_height_data(model_file_path):
             if not key in results:
                 results[key] = []
             if len(results[key]) < (grid_dimension-1):
-                results[key].append((result[1][2] - 106.67))
+                results[key].append((result[1][2]))
 
     bpy.ops.object.select_all(action=DESELECT_ACTION)
     grid.select_set(True)
-    tile.select_set(True)
+    # tile.select_set(True)
     bpy.ops.object.delete()
     bpy.ops.object.select_all(action=SELECT_ACTION)
     clean_scene()
@@ -513,3 +508,35 @@ def point_cloud(ob_name, coords, edges=[], faces=[]):
     ob.show_name = True
     me.update()
     return ob
+
+
+def apply_transform(ob, use_location=False, use_rotation=False, use_scale=False):
+    mb = ob.matrix_basis
+    I = mathutils.Matrix()
+    loc, rot, scale = mb.decompose()
+
+    # rotation
+    T = mathutils.Matrix.Translation(loc)
+    R = mb.to_3x3().normalized().to_4x4()
+    S = mathutils.Matrix.Diagonal(scale).to_4x4()
+
+    transform = [I, I, I]
+    basis = [T, R, S]
+
+    def swap(i):
+        transform[i], basis[i] = basis[i], transform[i]
+
+    if use_location:
+        swap(0)
+    if use_rotation:
+        swap(1)
+    if use_scale:
+        swap(2)
+
+    M = transform[0] @ transform[1] @ transform[2]
+    if hasattr(ob.data, "transform"):
+        ob.data.transform(M)
+    for c in ob.children:
+        c.matrix_local = M @ c.matrix_local
+
+    ob.matrix_basis = basis[0] @ basis[1] @ basis[2]

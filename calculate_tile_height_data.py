@@ -139,6 +139,6 @@ clean_scene()
 settings = Settings(get_sources_path())
 
 tile = MsfsTile(args.folder, args.name, args.definition_file)
-tile.generate_height_data(ObjectsXml(args.objects_xml_folder, args.objects_xml_file), args.group_id)
+tile.generate_height_data(args.name, ObjectsXml(args.objects_xml_folder, args.objects_xml_file), args.group_id)
 # except:
 #     pass

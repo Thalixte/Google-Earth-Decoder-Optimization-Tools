@@ -79,6 +79,16 @@ class ObjectsXml(Xml):
         super().__init__(file_folder, file_name)
         self.__convert_objects_guid_to_upper()
 
+    def get_object_altitude(self, guid):
+        result = 0
+
+        for scenery_object in self.find_scenery_objects(guid):
+            result = scenery_object.get(self.ALT_ATTR)
+        for scenery_object in self.find_scenery_objects_in_group(guid):
+            result = scenery_object.get(self.ALT_ATTR)
+
+        return result
+
     def update_objects_position(self, msfs_project, settings):
         self.__update_tiles_pos(msfs_project, settings)
         self.__update_colliders_pos(msfs_project, settings)

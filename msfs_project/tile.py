@@ -38,6 +38,8 @@ class MsfsTile(MsfsSceneObject):
     exclusion_mask_gdf: gpd.GeoDataFrame
     height_map: HeightMap | None
 
+    GE_TILE_ROOF_LIMIT = 19
+
     def __init__(self, folder, name, definition_file):
         super().__init__(folder, name, definition_file)
         self.coords = get_coords_from_file_name(self.name)
@@ -93,13 +95,19 @@ class MsfsTile(MsfsSceneObject):
             osm_xml = OsmXml(dest_folder, EXCLUSION_OSM_FILE_PREFIX + "_" + self.name + OSM_FILE_EXT)
             osm_xml.create_from_geodataframes([preserve_holes(exclusion_mask.clip(bbox_gdf).drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore'))], b, True, [(HEIGHT_OSM_TAG, 1000)])
 
-    def generate_height_data(self, xml, group_id):
-        if not self.lods: return
+    def generate_height_data(self, name, xml, group_id):
+        if not self.lods:
+            return
 
-        lod = self.lods[0]
+        altitude = float(xml.get_object_altitude(self.xml.guid))
+
+        min_lod = len(name)
+        max_lod = len(self.lods) - 1
+        lod_limit_diff = self.GE_TILE_ROOF_LIMIT - min_lod
+        lod = self.lods[max_lod - lod_limit_diff]
 
         if os.path.isdir(lod.folder):
-            height_data, width, altitude, grid_limit = lod.calculate_height_data()
+            height_data, width, altitude, grid_limit = lod.calculate_height_data(altitude)
             self.height_map = HeightMap(self, height_data, width, altitude, grid_limit, group_id=group_id)
             self.height_map.to_xml(xml)
 
