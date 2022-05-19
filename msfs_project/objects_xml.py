@@ -170,9 +170,11 @@ class ObjectsXml(Xml):
     def find_scenery_objects_in_group_parents(self, guid):
         return self.root.findall(self.SCENERY_OBJECT_GROUP_SEARCH_PATTERN + guid.upper() + self.PARENT_PATTERN_SUFFIX + self.PARENT_SUFFIX)
 
-    def find_polygons(self, group_id):
-        pattern = self.POLYGON_SEARCH_PATTERN + str(group_id) + self.PATTERN_SUFFIX
-        return self.root.findall(self.POLYGONS_SEARCH_PATTERN)
+    def find_polygons(self, group_id=None):
+        pattern = self.POLYGONS_SEARCH_PATTERN
+        if not group_id is None:
+            pattern = self.POLYGON_SEARCH_PATTERN + str(group_id) + self.PATTERN_SUFFIX
+        return self.root.findall(pattern)
 
     def find_polygon_attributes(self, root):
         return root.findall(self.POLYGON_ATTRIBUTES_SEARCH_PATTERN)
