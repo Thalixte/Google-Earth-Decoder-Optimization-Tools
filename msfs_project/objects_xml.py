@@ -109,7 +109,7 @@ class ObjectsXml(Xml):
             group_id = group.get(self.GROUP_ID_ATTR)
             self.root.remove(group)
 
-        for polygon in self.find_polygons(group_id):
+        for polygon in self.find_polygons(group_id=group_id):
             self.root.remove(polygon)
 
         self.save()
