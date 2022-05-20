@@ -591,7 +591,7 @@ class MsfsProject:
             objects[guid] = object
             pbar.update("%s merged" % object.name)
 
-    def __retrieve_tiles_to_process(self):
+    def __retrieve_tiles_to_process(self, parallel=True):
         data = []
         self.objects_xml.remove_height_maps()
         new_group_id = self.objects_xml.get_new_group_id()
@@ -600,7 +600,7 @@ class MsfsProject:
             if os.path.isdir(tile.folder):
                 data.append({"name": tile.name, "params": ["--folder", str(tile.folder), "--name", str(tile.name), "--definition_file", str(tile.definition_file), "--objects_xml_folder", str(self.scene_folder), "--objects_xml_file", str(self.SCENE_OBJECTS_FILE), "--group_id", str(new_group_id)]})
 
-        return chunks(data, 1)
+        return chunks(data, self.NB_PARALLEL_TASKS if parallel else 1)
 
     def __split_tiles(self, tiles_data):
         self.__multithread_process_data(tiles_data, "split_tile.py", "SPLIT THE TILES", "splitted")
@@ -628,7 +628,7 @@ class MsfsProject:
 
     def __generate_height_map_data(self):
         isolated_print(EOL)
-        tiles_data = self.__retrieve_tiles_to_process()
+        tiles_data = self.__retrieve_tiles_to_process(parallel=False)
         self.__multithread_process_data(tiles_data, "calculate_tile_height_data.py", "CALCULATE HEIGHT MAPS FOR EACH TILE", "height map calculated")
 
     def __create_osm_files(self):
