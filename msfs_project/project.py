@@ -31,6 +31,7 @@ from osmnx.utils_geo import bbox_to_poly
 
 import bpy
 from constants import *
+from msfs_project.osm_xml import OsmXml
 from msfs_project.project_xml import MsfsProjectXml
 from msfs_project.package_definitions_xml import MsfsPackageDefinitionsXml
 from msfs_project.objects_xml import ObjectsXml
@@ -39,7 +40,7 @@ from msfs_project.collider import MsfsCollider
 from msfs_project.tile import MsfsTile
 from msfs_project.shape import MsfsShape
 from utils import replace_in_file, is_octant, backup_file, install_python_lib, ScriptError, print_title, \
-    get_backup_file_path, isolated_print, chunks, create_bounding_box_from_tiles, create_gdf_from_osm_data, clip_gdf, create_exclusion_gdf, create_scenery_shape_gdf, create_sea_gdf, create_land_mass_gdf, resize_gdf, create_exclusion_masks_from_tiles
+    get_backup_file_path, isolated_print, chunks, create_bounding_box_from_tiles, create_gdf_from_osm_data, clip_gdf, create_exclusion_gdf, create_scenery_shape_gdf, create_sea_gdf, create_land_mass_gdf, resize_gdf, create_exclusion_masks_from_tiles, preserve_holes
 from pathlib import Path
 
 from utils.compressonator import Compressonator
@@ -533,14 +534,6 @@ class MsfsProject:
 
         return chunks(data, self.NB_PARALLEL_TASKS)
 
-    def __retrieve_tiles_to_calculate_height_map(self):
-        data = []
-        for tile in self.tiles.values():
-            if os.path.isdir(lod.folder):
-                data.append({"name": lod.name, "params": ["--folder", str(lod.folder), "--model_file", str(lod.model_file)]})
-
-        return chunks(data, self.NB_PARALLEL_TASKS)
-
     def __retrieve_lods_to_cleanup(self):
         data = []
         for tile in self.tiles.values():
@@ -643,6 +636,8 @@ class MsfsProject:
         self.__create_osm_exclusion_file(bbox_to_poly(self.coords[1], self.coords[0], self.coords[2], self.coords[3]), create_bounding_box_from_tiles(self.tiles, self.osmfiles_folder))
 
     def __create_osm_exclusion_file(self, b, bbox):
+        print_title("RETRIEVE OSM (MAY TAKE SOME TIME TO COMPLETE, BE PATIENT...)")
+
         land_mass = create_land_mass_gdf(bbox, b)
         sea = create_sea_gdf(land_mass, bbox)
 
@@ -657,6 +652,10 @@ class MsfsProject:
         aeroway = clip_gdf(create_gdf_from_osm_data(self.coords, AEROWAY_OSM_KEY, True), bbox)
 
         exclusion = create_exclusion_gdf(landuse, leisure, natural, water, aeroway, sea)
+        # for debugging purpose, generate the whole exclusion osm file
+        osm_xml = OsmXml(self.osmfiles_folder, EXCLUSION_OSM_FILE_PREFIX + OSM_FILE_EXT)
+        osm_xml.create_from_geodataframes([preserve_holes(exclusion.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore'))], b, True, [(HEIGHT_OSM_TAG, 1000)])
+
         create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, exclusion)
         exclusion = resize_gdf(exclusion, 20)
         scenery_shape = create_scenery_shape_gdf(bbox, exclusion)
