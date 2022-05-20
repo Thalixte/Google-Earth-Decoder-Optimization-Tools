@@ -70,7 +70,7 @@ class HeightMap:
             if len(x_data) != self.size:
                 continue
 
-            for j, y_data in enumerate(x_data):
-                result = str(y_data) + " " + result
+            x_data.reverse()
+            result = (" ".join([str(h) for h in x_data])) + " " + result
 
         return result.strip()
