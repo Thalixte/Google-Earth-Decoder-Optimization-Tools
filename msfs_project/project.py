@@ -260,9 +260,6 @@ class MsfsProject:
     def cleanup_3d_data(self):
         self.__remove_colliders()
         self.__generate_height_map_data()
-
-        stop
-
         self.__create_osm_files()
         self.__cleanup_lods_3d_data()
 
@@ -663,6 +660,8 @@ class MsfsProject:
         create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, exclusion)
         exclusion = resize_gdf(exclusion, 20)
         scenery_shape = create_scenery_shape_gdf(bbox, exclusion)
+        # reload the xml file to retrieve the last updates
+        self.objects_xml = ObjectsXml(self.scene_folder, self.SCENE_OBJECTS_FILE)
         self.objects_xml.remove_shape()
         new_group_id = self.objects_xml.get_new_group_id()
         self.shapes[SHAPE_DISPLAY_NAME] = MsfsShape(shape_gdf=scenery_shape, group_id=new_group_id)

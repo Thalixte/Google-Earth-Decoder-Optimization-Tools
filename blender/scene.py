@@ -26,8 +26,7 @@ import mathutils
 from blender.blender_gis import import_osm_file
 from blender.image import get_image_node, fix_texture_size_for_package_compilation
 from blender.memory import remove_mesh_from_memory
-from constants import EOL, FEET_TO_METER_RATIO
-from mathutils.bvhtree import BVHTree
+from constants import EOL, MSFS_WATERMASK_DEM_MARGIN
 from utils import ScriptError, isolated_print, MsfsGltf
 from utils.progress_bar import ProgressBar
 
@@ -457,12 +456,12 @@ def generate_model_height_data(model_file_path, altitude):
             if not key in results:
                 results[key] = []
             if len(results[key]) < (grid_dimension-1):
-                height = result[1][2]-106.67 if result[1][2]-106.67 >= 49 else 49
+                height = result[1][2]+altitude+MSFS_WATERMASK_DEM_MARGIN
+                height = height if height >= MSFS_WATERMASK_DEM_MARGIN else MSFS_WATERMASK_DEM_MARGIN
                 results[key].append(height)
 
     bpy.ops.object.select_all(action=DESELECT_ACTION)
     grid.select_set(True)
-    # tile.select_set(True)
     bpy.ops.object.delete()
     bpy.ops.object.select_all(action=SELECT_ACTION)
     clean_scene()

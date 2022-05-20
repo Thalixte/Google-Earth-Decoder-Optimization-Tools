@@ -103,7 +103,9 @@ class ObjectsXml(Xml):
         self.save()
 
     def remove_shape(self):
+        group_id = -1
         pattern = self.GROUP_SEARCH_PATTERN + SHAPE_DISPLAY_NAME + self.PATTERN_SUFFIX
+
         groups = self.root.findall(pattern)
         for group in groups:
             group_id = group.get(self.GROUP_ID_ATTR)
@@ -116,8 +118,8 @@ class ObjectsXml(Xml):
 
     def remove_height_maps(self):
         group_id = -1
-
         pattern = self.GROUP_SEARCH_PATTERN + HEIGHT_MAPS_DISPLAY_NAME + self.PATTERN_SUFFIX
+
         groups = self.root.findall(pattern)
         for group in groups:
             group_id = group.get(self.GROUP_ID_ATTR)
