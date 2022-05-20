@@ -457,7 +457,7 @@ def generate_model_height_data(model_file_path, altitude):
                 results[key] = []
             if len(results[key]) < (grid_dimension-1):
                 height = result[1][2]+altitude+MSFS_WATERMASK_DEM_MARGIN
-                height = height if height >= MSFS_WATERMASK_DEM_MARGIN else MSFS_WATERMASK_DEM_MARGIN
+                height = height if height >= MSFS_WATERMASK_DEM_MARGIN else float(MSFS_WATERMASK_DEM_MARGIN)
                 results[key].append(height)
 
     bpy.ops.object.select_all(action=DESELECT_ACTION)
