@@ -414,8 +414,8 @@ def generate_model_height_data(model_file_path, altitude):
     # create the grid
     me = bpy.data.meshes.new("Grid")
     bm = bmesh.new()
-    grid_dimension = round(grid_dimensions.x / 10.0)
-    bmesh.ops.create_grid(bm, x_segments=grid_dimension, y_segments=grid_dimension, size=round(grid_dimensions.x / 2))
+    grid_dimension = round(max(grid_dimensions.x, grid_dimensions.y) / 10.0)
+    bmesh.ops.create_grid(bm, x_segments=grid_dimension, y_segments=grid_dimension, size=round(max(grid_dimensions.x, grid_dimensions.y) / 2))
     bmesh.ops.delete(bm, geom=bm.faces, context="FACES_ONLY")
     bm.to_mesh(me)
     ob = bpy.data.objects.new("Grid", me)

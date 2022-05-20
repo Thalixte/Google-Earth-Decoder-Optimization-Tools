@@ -25,7 +25,7 @@ from msfs_project.height_map import HeightMap
 from msfs_project.collider import MsfsCollider
 from msfs_project.scene_object import MsfsSceneObject
 from msfs_project.position import MsfsPosition
-from utils import get_coords_from_file_name, get_position_from_file_name, create_tile_bounding_box, resize_gdf, preserve_holes, isolated_print
+from utils import get_coords_from_file_name, get_position_from_file_name, create_tile_bounding_box, resize_gdf, preserve_holes
 from utils.minidom_xml import create_new_definition_file
 from msfs_project.osm_xml import OsmXml
 
@@ -38,7 +38,7 @@ class MsfsTile(MsfsSceneObject):
     exclusion_mask_gdf: gpd.GeoDataFrame
     height_map: HeightMap | None
 
-    GE_TILE_ROOF_LIMIT = 19
+    GE_TILE_ROOF_LIMIT = 18
 
     def __init__(self, folder, name, definition_file):
         super().__init__(folder, name, definition_file)
@@ -102,9 +102,9 @@ class MsfsTile(MsfsSceneObject):
         altitude = float(xml.get_object_altitude(self.xml.guid))
 
         min_lod = len(name)
-        max_lod = len(self.lods) - 1
-        lod_limit_diff = self.GE_TILE_ROOF_LIMIT - min_lod
-        lod = self.lods[max_lod - lod_limit_diff]
+        min_lod_idx = len(self.lods) - 1
+        lod_limit_diff = self.GE_TILE_ROOF_LIMIT - min_lod if self.GE_TILE_ROOF_LIMIT > min_lod else 0
+        lod = self.lods[min_lod_idx - lod_limit_diff]
 
         if os.path.isdir(lod.folder):
             height_data, width, altitude, grid_limit = lod.calculate_height_data(altitude)
