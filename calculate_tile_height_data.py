@@ -63,82 +63,82 @@ from msfs_project import MsfsLod, MsfsTile, ObjectsXml
 # clear and open the system console
 # open_console()
 
-# try:
-# get the args passed to blender after "--", all of which are ignored by
-# blender so scripts may receive their own arguments
-argv = sys.argv
+try:
+    # get the args passed to blender after "--", all of which are ignored by
+    # blender so scripts may receive their own arguments
+    argv = sys.argv
 
-if "--" not in argv:
-    argv = []  # as if no args are passed
-else:
-    argv = argv[argv.index("--") + 1:]  # get all args after "--"
+    if "--" not in argv:
+        argv = []  # as if no args are passed
+    else:
+        argv = argv[argv.index("--") + 1:]  # get all args after "--"
 
-# When --help or no args are given, print this help
-usage_text = (
-        "Run blender in background mode with this script:"
-        "  blender --background --python " + __file__ + " -- [options]"
-)
+    # When --help or no args are given, print this help
+    usage_text = (
+            "Run blender in background mode with this script:"
+            "  blender --background --python " + __file__ + " -- [options]"
+    )
 
-parser = argparse.ArgumentParser(description=usage_text)
+    parser = argparse.ArgumentParser(description=usage_text)
 
-parser.add_argument(
-    "-f", "--folder", dest="folder", type=str, required=True,
-    help="folder of the MsfsTile definition file",
-)
+    parser.add_argument(
+        "-f", "--folder", dest="folder", type=str, required=True,
+        help="folder of the MsfsTile definition file",
+    )
 
-parser.add_argument(
-    "-n", "--name", dest="name", type=str, required=True,
-    help="name of the tile",
-)
+    parser.add_argument(
+        "-n", "--name", dest="name", type=str, required=True,
+        help="name of the tile",
+    )
 
-parser.add_argument(
-    "-d", "--definition_file", dest="definition_file", type=str, required=True,
-    help="name of the xml definition file of the tile",
-)
+    parser.add_argument(
+        "-d", "--definition_file", dest="definition_file", type=str, required=True,
+        help="name of the xml definition file of the tile",
+    )
 
-parser.add_argument(
-    "-oxf", "--objects_xml_folder", dest="objects_xml_folder", type=str, required=True,
-    help="folder of the xml definition file of the scene",
-)
+    parser.add_argument(
+        "-oxf", "--objects_xml_folder", dest="objects_xml_folder", type=str, required=True,
+        help="folder of the xml definition file of the scene",
+    )
 
-parser.add_argument(
-    "-oxn", "--objects_xml_file", dest="objects_xml_file", type=str, required=True,
-    help="name of the xml definition file of the scene",
-)
+    parser.add_argument(
+        "-oxn", "--objects_xml_file", dest="objects_xml_file", type=str, required=True,
+        help="name of the xml definition file of the scene",
+    )
 
-parser.add_argument(
-    "-gi", "--group_id", dest="group_id", type=str, required=True,
-    help="group id for the group containing the height maps",
-)
+    parser.add_argument(
+        "-gi", "--group_id", dest="group_id", type=str, required=True,
+        help="group id for the group containing the height maps",
+    )
 
-args = parser.parse_args(argv)
+    args = parser.parse_args(argv)
 
-if not argv:
-    raise ScriptError("Error: arguments not given, aborting.")
+    if not argv:
+        raise ScriptError("Error: arguments not given, aborting.")
 
-if not args.folder:
-    raise ScriptError("Error: --folder=\"some string\" argument not given, aborting.")
+    if not args.folder:
+        raise ScriptError("Error: --folder=\"some string\" argument not given, aborting.")
 
-if not args.name:
-    raise ScriptError("Error: --name=\"some string\" argument not given, aborting.")
+    if not args.name:
+        raise ScriptError("Error: --name=\"some string\" argument not given, aborting.")
 
-if not args.definition_file:
-    raise ScriptError("Error: --definition_file=\"some string\" argument not given, aborting.")
+    if not args.definition_file:
+        raise ScriptError("Error: --definition_file=\"some string\" argument not given, aborting.")
 
-if not args.objects_xml_folder:
-    raise ScriptError("Error: --objects_xml_folder=\"some string\" argument not given, aborting.")
+    if not args.objects_xml_folder:
+        raise ScriptError("Error: --objects_xml_folder=\"some string\" argument not given, aborting.")
 
-if not args.objects_xml_file:
-    raise ScriptError("Error: --objects_xml_file=\"some string\" argument not given, aborting.")
+    if not args.objects_xml_file:
+        raise ScriptError("Error: --objects_xml_file=\"some string\" argument not given, aborting.")
 
-if not args.group_id:
-    raise ScriptError("Error: -group_id=\"some string\" argument not given, aborting.")
+    if not args.group_id:
+        raise ScriptError("Error: -group_id=\"some string\" argument not given, aborting.")
 
-clean_scene()
+    clean_scene()
 
-settings = Settings(get_sources_path())
+    settings = Settings(get_sources_path())
 
-tile = MsfsTile(args.folder, args.name, args.definition_file)
-tile.generate_height_data(args.name, ObjectsXml(args.objects_xml_folder, args.objects_xml_file), args.group_id)
-# except:
-#     pass
+    tile = MsfsTile(args.folder, args.name, args.definition_file)
+    tile.generate_height_data(args.name, ObjectsXml(args.objects_xml_folder, args.objects_xml_file), args.group_id)
+except:
+    pass
