@@ -76,7 +76,6 @@ TEMPLATES_FOLDER = RESOURCE_FOLDER + "\\" + "templates"
 THUMBNAIL_FOLDER = RESOURCE_FOLDER + "\\" + "thumbnail"
 SHAPE_TEMPLATES_FOLDER = RESOURCE_FOLDER + "\\" + "shapes"
 GEOIDS_DATASET_FOLDER = RESOURCE_FOLDER + "\\" + "geoids"
-GEOIDS_DATASET_FOLDER = "C:\\MSFS SDK\\Google-Earth-Decoder-optimisation-tools\\resource\geoids"
 
 BUSINESS_JSON_TEMPLATE = "Business.json"
 PACKAGE_DEFINITIONS_TEMPLATE = "package-definition" + XML_FILE_EXT

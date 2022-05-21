@@ -29,7 +29,7 @@ import mathutils
 from blender.blender_gis import import_osm_file
 from blender.image import get_image_node, fix_texture_size_for_package_compilation
 from blender.memory import remove_mesh_from_memory
-from constants import EOL, GEOIDS_DATASET_FOLDER, EGM96_5_DATASET, EGM2008_5_DATASET, EGM2008_1_DATASET
+from constants import EOL, GEOIDS_DATASET_FOLDER, EGM2008_5_DATASET
 from utils import ScriptError, isolated_print, MsfsGltf
 from utils.progress_bar import ProgressBar
 
