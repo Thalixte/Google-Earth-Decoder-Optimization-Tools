@@ -25,7 +25,7 @@ from msfs_project.height_map import HeightMap
 from msfs_project.collider import MsfsCollider
 from msfs_project.scene_object import MsfsSceneObject
 from msfs_project.position import MsfsPosition
-from utils import get_coords_from_file_name, get_position_from_file_name, create_tile_bounding_box, resize_gdf, preserve_holes
+from utils import get_coords_from_file_name, get_position_from_file_name, create_tile_bounding_box, resize_gdf, preserve_holes, isolated_print
 from utils.minidom_xml import create_new_definition_file
 from msfs_project.osm_xml import OsmXml
 
@@ -107,7 +107,7 @@ class MsfsTile(MsfsSceneObject):
         lod = self.lods[min_lod_idx - lod_limit_diff]
 
         if os.path.isdir(lod.folder):
-            height_data, width, altitude, grid_limit = lod.calculate_height_data(altitude)
+            height_data, width, altitude, grid_limit = lod.calculate_height_data(self.coords[0], self.coords[2], altitude)
             self.height_map = HeightMap(self, height_data, width, altitude, grid_limit, group_id=group_id)
             self.height_map.to_xml(xml)
 

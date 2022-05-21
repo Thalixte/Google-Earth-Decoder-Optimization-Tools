@@ -20,13 +20,16 @@ import os
 from collections import defaultdict
 from math import floor
 
+import pygeodesy
+from pygeodesy.ellipsoidalKarney import LatLon
+
 import bmesh
 import bpy
 import mathutils
 from blender.blender_gis import import_osm_file
 from blender.image import get_image_node, fix_texture_size_for_package_compilation
 from blender.memory import remove_mesh_from_memory
-from constants import EOL, MSFS_WATERMASK_DEM_MARGIN
+from constants import EOL, GEOIDS_DATASET_FOLDER, EGM96_5_DATASET, EGM2008_5_DATASET, EGM2008_1_DATASET
 from utils import ScriptError, isolated_print, MsfsGltf
 from utils.progress_bar import ProgressBar
 
@@ -393,7 +396,7 @@ def cleanup_3d_data(model_file_path):
     bpy.ops.object.select_all(action=SELECT_ACTION)
 
 
-def generate_model_height_data(model_file_path, altitude):
+def generate_model_height_data(model_file_path, lat, lon, altitude):
     if not bpy.context.scene:
         return False
 
@@ -415,7 +418,7 @@ def generate_model_height_data(model_file_path, altitude):
     me = bpy.data.meshes.new("Grid")
     bm = bmesh.new()
     grid_dimension = round(max(grid_dimensions.x, grid_dimensions.y) / 10.0)
-    bmesh.ops.create_grid(bm, x_segments=grid_dimension, y_segments=grid_dimension, size=round(max(grid_dimensions.x, grid_dimensions.y) / 2))
+    bmesh.ops.create_grid(bm, x_segments=grid_dimension, y_segments=grid_dimension, size=round(grid_dimensions.x / 2))
     bmesh.ops.delete(bm, geom=bm.faces, context="FACES_ONLY")
     bm.to_mesh(me)
     ob = bpy.data.objects.new("Grid", me)
@@ -456,8 +459,9 @@ def generate_model_height_data(model_file_path, altitude):
             if not key in results:
                 results[key] = []
             if len(results[key]) < (grid_dimension-1):
-                height = result[1][2]+altitude+MSFS_WATERMASK_DEM_MARGIN
-                height = height if height >= MSFS_WATERMASK_DEM_MARGIN else float(MSFS_WATERMASK_DEM_MARGIN)
+                geoid_height = get_geoid_height(lat, lon)
+                height = result[1][2]+altitude+geoid_height
+                height = height if height >= geoid_height else geoid_height
                 results[key].append(height)
 
     bpy.ops.object.select_all(action=DESELECT_ACTION)
@@ -488,6 +492,12 @@ def copy_objects(from_col, to_col, linked):
             dupe.data = dupe.data.copy()
         to_col.objects.link(dupe)
 
+
+def get_geoid_height(lat, lon):
+    interpolator = pygeodesy.GeoidKarney(os.path.join(GEOIDS_DATASET_FOLDER, EGM2008_5_DATASET))
+    single_position = LatLon(lat, lon)
+    h = interpolator(single_position)
+    return h
 
 def point_cloud(ob_name, coords, edges=[], faces=[]):
     """Create point cloud object based on given coordinates and name.
