@@ -100,7 +100,8 @@ class MsfsShapePolygon:
         self.exclude_osm_buildings.value = "1"
         self.exclude_ms_buildings.value = "1"
         self.exclude_tin.value = "1"
-        self.layer.value = "20000"
+        self.layer.value = "0"
+        self.flatten_falloff = "50.000000"
 
         self.attributes += [
             self.unique_guid,

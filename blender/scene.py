@@ -29,7 +29,7 @@ import mathutils
 from blender.blender_gis import import_osm_file
 from blender.image import get_image_node, fix_texture_size_for_package_compilation
 from blender.memory import remove_mesh_from_memory
-from constants import EOL, GEOIDS_DATASET_FOLDER, EGM2008_5_DATASET
+from constants import EOL, GEOIDS_DATASET_FOLDER, EGM2008_5_DATASET, TILE_THICKNESS
 from utils import ScriptError, isolated_print, MsfsGltf
 from utils.progress_bar import ProgressBar
 
@@ -461,7 +461,7 @@ def generate_model_height_data(model_file_path, lat, lon, altitude):
             if len(results[key]) < (grid_dimension-1):
                 geoid_height = get_geoid_height(lat, lon)
                 height = result[1][2]+altitude+geoid_height
-                height = height if height >= geoid_height else geoid_height
+                height = height + TILE_THICKNESS if height >= geoid_height else geoid_height
                 results[key].append(height)
 
     bpy.ops.object.select_all(action=DESELECT_ACTION)
