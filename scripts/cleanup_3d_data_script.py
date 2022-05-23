@@ -15,10 +15,6 @@
 #  #
 #
 #  <pep8 compliant>
-import glob
-
-from osmnx.utils_geo import bbox_to_poly
-from shapely.geometry import MultiPolygon
 
 from utils import Settings, get_sources_path, reload_modules, print_title, isolated_print
 

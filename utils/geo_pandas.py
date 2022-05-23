@@ -66,7 +66,7 @@ def create_tile_bounding_box(tile):
 
 def create_bounding_box_from_tiles(tiles, dest_folder):
     result = None
-    pbar = ProgressBar(list(tiles.values()), title="CREATE OSM FILES")
+    pbar = ProgressBar(list(tiles.values()), title="CREATE BOUNDING BOX OSM FILES FOR EACH TILE")
     for i, tile in enumerate(tiles.values()):
         tile.create_bbox_osm_file(dest_folder)
         pbar.update("osm files created for %s tile" % tile.name)
@@ -137,6 +137,8 @@ def create_exclusion_gdf(landuse, leisure, natural, water, aeroway, sea):
     result = landuse.copy()
 
     if not leisure.empty:
+        # slightly extend the leisure borders to remove bordering trees
+        leisure = resize_gdf(leisure, 20)
         result = result.overlay(leisure, how=OVERLAY_OPERATOR.union)
     if not natural.empty:
         result = result.overlay(natural, how=OVERLAY_OPERATOR.union)

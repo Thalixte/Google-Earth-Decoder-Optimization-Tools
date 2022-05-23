@@ -125,6 +125,9 @@ WATER_OSM_KEY = "water"
 AEROWAY_OSM_KEY = "aeroway"
 BOUNDARY_OSM_KEY = "boundary"
 BOUNDING_BOX_OSM_KEY = "box"
+RESIDENTIAL_OSM_KEY = "residential"
+AMENITY_OSM_KEY = "amenity"
+BUILDING_OSM_KEY = "building"
 
 FOREST_OSM_TAG = "forest"
 NATURE_RESERVE_OSM_TAG = "nature_reserve"
@@ -186,6 +189,8 @@ OSM_TAGS = {
         ORCHARD_TAG
     ],
     LEISURE_OSM_KEY: [
+        PARK_OSM_TAG,
+        PLAYGROUND_OSM_TAG,
         NATURE_RESERVE_OSM_TAG
     ],
     NATURAL_OSM_KEY: [
