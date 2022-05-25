@@ -70,6 +70,7 @@ TEXTURE_FOLDER = "texture"
 
 SCRIPT_PREFIX = "_script"
 COLLIDER_SUFFIX = "_collider"
+HEIGHT_MAP_SUFFIX = "height_map_"
 
 RESOURCE_FOLDER = "resource"
 TEMPLATES_FOLDER = RESOURCE_FOLDER + "\\" + "templates"
@@ -160,17 +161,16 @@ NATIONAL_PARK_OSM_KEY = "national_park"
 PROTECTED_AREA_OSM_KEY = "protected_area"
 MARINA_OSM_TAG = "marina"
 PIER_OSM_TAG = "pier"
-RESIDENTIAL_OSM_TAG = "residential"
 HEIGHT_OSM_TAG = "height"
 TREE_TAG = "tree"
 TREE_ROW_TAG = "tree_row"
-ORCHARD_TAG = "orchard"
+ORCHARD_OSM_TAG = "orchard"
 
 EXCLUSION_OSM_FILE_PREFIX = "exclusion"
 BOUNDING_BOX_OSM_FILE_PREFIX = "bbox"
 
 FEET_TO_METER_RATIO = 0.3048
-TILE_THICKNESS = 0.4
+TILE_THICKNESS = 0.5
 
 OSM_TAGS = {
     BOUNDARY_OSM_KEY: [
@@ -186,11 +186,9 @@ OSM_TAGS = {
         VINEYARD_OSM_TAG,
         ALLOTMENTS_OSM_TAG,
         COASTLINE_OSM_TAG,
-        ORCHARD_TAG
+        ORCHARD_OSM_TAG
     ],
     LEISURE_OSM_KEY: [
-        PARK_OSM_TAG,
-        PLAYGROUND_OSM_TAG,
         NATURE_RESERVE_OSM_TAG
     ],
     NATURAL_OSM_KEY: [

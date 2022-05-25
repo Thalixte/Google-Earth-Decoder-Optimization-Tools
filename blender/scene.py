@@ -17,8 +17,6 @@
 #  <pep8 compliant>
 
 import os
-from collections import defaultdict
-from math import floor
 
 import pygeodesy
 from pygeodesy.ellipsoidalKarney import LatLon
@@ -461,7 +459,7 @@ def generate_model_height_data(model_file_path, lat, lon, altitude):
             if len(results[key]) < (grid_dimension-1):
                 geoid_height = get_geoid_height(lat, lon)
                 height = result[1][2]+altitude+geoid_height
-                height = height + TILE_THICKNESS if height >= geoid_height else geoid_height
+                height = height if height >= geoid_height else geoid_height
                 results[key].append(height)
 
     bpy.ops.object.select_all(action=DESELECT_ACTION)

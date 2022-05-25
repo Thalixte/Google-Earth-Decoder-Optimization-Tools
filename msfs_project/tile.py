@@ -95,11 +95,9 @@ class MsfsTile(MsfsSceneObject):
             osm_xml = OsmXml(dest_folder, EXCLUSION_OSM_FILE_PREFIX + "_" + self.name + OSM_FILE_EXT)
             osm_xml.create_from_geodataframes([preserve_holes(exclusion_mask.clip(bbox_gdf).drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore'))], b, True, [(HEIGHT_OSM_TAG, 1000)])
 
-    def generate_height_data(self, name, xml, group_id):
+    def generate_height_data(self, name, height_map_xml, group_id, altitude):
         if not self.lods:
             return
-
-        altitude = float(xml.get_object_altitude(self.xml.guid))
 
         min_lod = len(name)
         min_lod_idx = len(self.lods) - 1
@@ -108,8 +106,8 @@ class MsfsTile(MsfsSceneObject):
 
         if os.path.isdir(lod.folder):
             height_data, width, altitude, grid_limit = lod.calculate_height_data(self.coords[0], self.coords[2], altitude)
-            self.height_map = HeightMap(self, height_data, width, altitude, grid_limit, group_id=group_id)
-            self.height_map.to_xml(xml)
+            self.height_map = HeightMap(tile=self, height_data=height_data, width=width, altitude=altitude, grid_limit=grid_limit, group_id=group_id)
+            self.height_map.to_xml(height_map_xml)
 
     def split(self, settings):
         for i, lod in enumerate(self.lods):

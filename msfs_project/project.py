@@ -31,6 +31,8 @@ from osmnx.utils_geo import bbox_to_poly
 
 import bpy
 from constants import *
+from msfs_project.height_map_xml import HeightMapXml
+from msfs_project.height_map import HeightMap
 from msfs_project.osm_xml import OsmXml
 from msfs_project.project_xml import MsfsProjectXml
 from msfs_project.package_definitions_xml import MsfsPackageDefinitionsXml
@@ -61,6 +63,7 @@ class MsfsProject:
     business_json_folder: str
     content_info_folder: str
     osmfiles_folder: str
+    xmlfiles_folder: str
     project_definition_xml: str
     project_definition_xml_path: str
     package_definitions_xml: str
@@ -88,6 +91,7 @@ class MsfsProject:
     MODEL_LIB_FOLDER = "modelLib"
     SCENE_FOLDER = "scene"
     OSMFILES_FOLDER = "osm"
+    XMLFILES_FOLDER = "xml"
     CONTENT_INFO_FOLDER = "ContentInfo"
     SCENE_OBJECTS_FILE = "objects" + XML_FILE_EXT
     NB_PARALLEL_TASKS = 4
@@ -100,6 +104,7 @@ class MsfsProject:
         self.project_folder = os.path.join(self.parent_path, self.project_name.capitalize())
         self.backup_folder = os.path.join(self.project_folder, self.BACKUP_FOLDER)
         self.osmfiles_folder = os.path.join(self.project_folder, self.OSMFILES_FOLDER)
+        self.xmlfiles_folder = os.path.join(self.project_folder, self.XMLFILES_FOLDER)
         self.package_definitions_folder = os.path.join(self.project_folder, self.PACKAGE_DEFINITIONS_FOLDER)
         self.package_sources_folder = os.path.join(self.project_folder, self.PACKAGE_SOURCES_FOLDER)
 
@@ -349,6 +354,9 @@ class MsfsProject:
         # create the osm folder if it does not exist
         os.makedirs(self.osmfiles_folder, exist_ok=True)
 
+        # create the xml folder if it does not exist
+        os.makedirs(self.xmlfiles_folder, exist_ok=True)
+
     def __init_components(self):
         self.__retrieve_objects()
 
@@ -534,6 +542,16 @@ class MsfsProject:
 
         return chunks(data, self.NB_PARALLEL_TASKS)
 
+    def __retrieve_tiles_to_calculate_height_map(self, new_group_id=-1, parallel=True):
+        data = []
+
+        for tile in self.tiles.values():
+            if os.path.isdir(tile.folder):
+                altitude = float(self.objects_xml.get_object_altitude(tile.xml.guid))
+                data.append({"name": tile.name, "params": ["--folder", str(tile.folder), "--name", str(tile.name), "--definition_file", str(tile.definition_file), "--height_map_xml_folder", str(self.xmlfiles_folder), "--group_id", str(new_group_id), "--altitude", str(altitude)]})
+
+        return chunks(data, self.NB_PARALLEL_TASKS if parallel else 1)
+
     def __retrieve_lods_to_cleanup(self):
         data = []
         for tile in self.tiles.values():
@@ -591,16 +609,14 @@ class MsfsProject:
             objects[guid] = object
             pbar.update("%s merged" % object.name)
 
-    def __retrieve_tiles_to_process(self, parallel=True):
+    def __retrieve_tiles_to_process(self, new_group_id=-1, parallel=True):
         data = []
-        self.objects_xml.remove_height_maps()
-        new_group_id = self.objects_xml.get_new_group_id()
 
         for tile in self.tiles.values():
             if os.path.isdir(tile.folder):
-                data.append({"name": tile.name, "params": ["--folder", str(tile.folder), "--name", str(tile.name), "--definition_file", str(tile.definition_file), "--objects_xml_folder", str(self.scene_folder), "--objects_xml_file", str(self.SCENE_OBJECTS_FILE), "--group_id", str(new_group_id)]})
+                data.append({"name": tile.name, "params": ["--folder", str(tile.folder), "--name", str(tile.name), "--definition_file", str(tile.definition_file), "--objects_xml_folder", str(self.scene_folder), "--objects_xml_file", str(self.SCENE_OBJECTS_FILE)]})
 
-        return chunks(data, self.NB_PARALLEL_TASKS if parallel else 1)
+        return chunks(data, self.NB_PARALLEL_TASKS)
 
     def __split_tiles(self, tiles_data):
         self.__multithread_process_data(tiles_data, "split_tile.py", "SPLIT THE TILES", "splitted")
@@ -628,8 +644,29 @@ class MsfsProject:
 
     def __generate_height_map_data(self):
         isolated_print(EOL)
-        tiles_data = self.__retrieve_tiles_to_process(parallel=False)
+        self.objects_xml.remove_height_maps()
+        new_group_id = self.objects_xml.get_new_group_id()
+
+        tiles_data = self.__retrieve_tiles_to_calculate_height_map(new_group_id=new_group_id, parallel=True)
         self.__multithread_process_data(tiles_data, "calculate_tile_height_data.py", "CALCULATE HEIGHT MAPS FOR EACH TILE", "height map calculated")
+        self.__add_height_maps_to_objects_xml()
+
+    def __add_height_maps_to_objects_xml(self):
+        height_map = None
+
+        for tile in self.tiles.values():
+            if os.path.isdir(tile.folder):
+                height_map = HeightMap(xml=HeightMapXml(self.xmlfiles_folder, HEIGHT_MAP_SUFFIX + tile.name + XML_FILE_EXT))
+                self.objects_xml.add_height_map(height_map)
+
+        if not height_map is None:
+            self.objects_xml.add_height_map_group(height_map)
+        self.objects_xml.save()
+
+        try:
+            shutil.rmtree(self.xmlfiles_folder)
+        except:
+            pass
 
     def __create_osm_files(self):
         ox.config(use_cache=True, log_level=lg.DEBUG)

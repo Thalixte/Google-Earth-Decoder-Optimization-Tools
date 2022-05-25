@@ -58,7 +58,7 @@ if cwd not in sys.path:
 
 from utils import *
 from blender import clean_scene
-from msfs_project import MsfsLod, MsfsTile, ObjectsXml
+from msfs_project import MsfsLod, MsfsTile, ObjectsXml, HeightMapXml
 
 # clear and open the system console
 # open_console()
@@ -97,18 +97,18 @@ try:
     )
 
     parser.add_argument(
-        "-oxf", "--objects_xml_folder", dest="objects_xml_folder", type=str, required=True,
-        help="folder of the xml definition file of the scene",
-    )
-
-    parser.add_argument(
-        "-oxn", "--objects_xml_file", dest="objects_xml_file", type=str, required=True,
-        help="name of the xml definition file of the scene",
+        "-hmxf", "--height_map_xml_folder", dest="height_map_xml_folder", type=str, required=True,
+        help="folder of the height map xml file",
     )
 
     parser.add_argument(
         "-gi", "--group_id", dest="group_id", type=str, required=True,
-        help="group id for the group containing the height maps",
+        help="id of the group containing the height maps",
+    )
+
+    parser.add_argument(
+        "-alt", "--altitude", dest="altitude", type=str, required=True,
+        help="altitude of the height map",
     )
 
     args = parser.parse_args(argv)
@@ -125,20 +125,20 @@ try:
     if not args.definition_file:
         raise ScriptError("Error: --definition_file=\"some string\" argument not given, aborting.")
 
-    if not args.objects_xml_folder:
-        raise ScriptError("Error: --objects_xml_folder=\"some string\" argument not given, aborting.")
-
-    if not args.objects_xml_file:
-        raise ScriptError("Error: --objects_xml_file=\"some string\" argument not given, aborting.")
+    if not args.height_map_xml_folder:
+        raise ScriptError("Error: --height_map_xml_folder=\"some string\" argument not given, aborting.")
 
     if not args.group_id:
-        raise ScriptError("Error: -group_id=\"some string\" argument not given, aborting.")
+        raise ScriptError("Error: --group_id=\"some string\" argument not given, aborting.")
+
+    if not args.altitude:
+        raise ScriptError("Error: --altitude=\"some string\" argument not given, aborting.")
 
     clean_scene()
 
     settings = Settings(get_sources_path())
 
     tile = MsfsTile(args.folder, args.name, args.definition_file)
-    tile.generate_height_data(args.name, ObjectsXml(args.objects_xml_folder, args.objects_xml_file), args.group_id)
+    tile.generate_height_data(args.name, HeightMapXml(args.height_map_xml_folder, HEIGHT_MAP_SUFFIX + args.name + XML_FILE_EXT), args.group_id, float(args.altitude))
 except:
     pass

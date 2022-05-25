@@ -17,7 +17,6 @@
 #  <pep8 compliant>
 from constants import HEIGHT_MAPS_DISPLAY_NAME
 from msfs_project.position import MsfsPosition
-from utils import isolated_print
 from utils.octant import get_latlonbox_from_file_name
 
 
@@ -49,22 +48,52 @@ class HeightMap:
     altitude: str
     group: MsfsHeightMapGroup
 
-    def __init__(self, tile, height_data, width, altitude, grid_limit, group_id=None):
-        self.falloff = 100
-        self.priority = 0
-        self.pos = get_latlonbox_from_file_name(tile.name).bl_point
-        self.pos2 = get_latlonbox_from_file_name(tile.name).tl_point
-        self.mid = get_latlonbox_from_file_name(tile.name).mid_point
-        self.size = grid_limit
-        self.height_data = self.__serialize_height_data(height_data, grid_limit)
-        self.width = width
-        self.altitude = altitude
-        self.group = MsfsHeightMapGroup(group_id=group_id)
+    def __init__(self, tile=None, height_data=None, xml=None, width=None, altitude=None, grid_limit=None, group_id=None):
+        if not tile is None and not height_data is None:
+            self.__init_from_height_data(tile, height_data, width, altitude, grid_limit, group_id)
+
+        if not xml is None:
+            self.__init_from_xml(xml)
 
     def to_xml(self, xml):
         xml.add_height_map(self)
 
-    def __serialize_height_data(self, height_data, grid_limit):
+    def __init_from_height_data(self, tile, height_data, width, altitude, grid_limit, group_id):
+        self.falloff = 100
+        self.priority = 0
+        self.altitude = altitude
+        self.pos = get_latlonbox_from_file_name(tile.name).bl_point
+        self.pos2 = get_latlonbox_from_file_name(tile.name).tl_point
+        self.mid = get_latlonbox_from_file_name(tile.name).mid_point
+        self.size = grid_limit
+        self.height_data = self.__serialize_height_data(height_data)
+        self.width = width
+        self.group = MsfsHeightMapGroup(group_id=group_id)
+
+    def __init_from_xml(self, xml):
+        rectangles = xml.find_rectangles()
+
+        if not rectangles:
+            return
+
+        for rectangle in rectangles:
+            self.falloff = rectangle.get(xml.FALLOFF_ATTR)
+            self.priority = rectangle.get(xml.PRIORITY_ATTR)
+            self.altitude = rectangle.get(xml.ALTITUDE_ATTR)
+            self.pos = MsfsPosition(rectangle.get(xml.LATITUDE_ATTR), rectangle.get(xml.LONGITUDE2_ATTR), self.altitude)
+            self.pos2 = MsfsPosition(rectangle.get(xml.LATITUDE2_ATTR), rectangle.get(xml.LONGITUDE2_ATTR), self.altitude)
+            self.mid = MsfsPosition(rectangle.get(xml.LATITUDE_ATTR), rectangle.get(xml.LONGITUDE_ATTR), self.altitude)
+            self.width = rectangle.get(xml.WIDTH_ATTR)
+
+            height_maps = xml.find_height_maps(rectangle)
+
+            for height_map in height_maps:
+                self.size = height_map.get(xml.WIDTH_ATTR)
+                self.height_data = height_map.get(xml.DATA_ATTR)
+
+            self.group = MsfsHeightMapGroup(rectangle.get(xml.PARENT_GROUP_ID_ATTR))
+
+    def __serialize_height_data(self, height_data):
         result = ""
         for i, x_data in enumerate(height_data.values()):
             if len(x_data) != self.size:

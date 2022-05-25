@@ -39,8 +39,8 @@ class Xml:
             self.tree = Et.parse(self.file_path, parser=Et.XMLParser(encoding=ENCODING))
             self.root = self.tree.getroot()
         else:
-            self.tree = None
-            self.root = None
+            self.root = Et.Element("root")
+            self.tree = tree = Et.ElementTree(self.root)
 
     def save(self):
         try:

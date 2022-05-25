@@ -152,13 +152,8 @@ class ObjectsXml(Xml):
         rectangle_elem = self.__add_height_map_rectangle(height_map)
         self.__add_height_map(rectangle_elem, height_map)
 
-        pattern = self.GROUP_SEARCH_PATTERN + HEIGHT_MAPS_DISPLAY_NAME + self.PATTERN_SUFFIX
-        groups = self.root.findall(pattern)
-
-        if not groups:
-            self.__add_generated_group(height_map.group)
-
-        self.save()
+    def add_height_map_group(self, height_map):
+        self.__add_generated_group(height_map.group)
 
     def find_scenery_objects(self, guid):
         return self.root.findall(self.SCENERY_OBJECT_SEARCH_PATTERN + guid.upper() + self.PARENT_PATTERN_SUFFIX)

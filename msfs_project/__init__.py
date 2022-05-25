@@ -29,4 +29,5 @@ from .project_xml import *
 from .objects_xml import *
 from .object_xml import *
 from .package_definitions_xml import *
+from .height_map_xml import *
 from .osm_xml import *
