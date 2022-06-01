@@ -24,12 +24,15 @@ from utils import get_coords_from_file_name, get_position_from_file_name
 class MsfsCollider(MsfsSceneObject):
     associated_tile: str
 
-    def __init__(self, folder, name, definition_file):
+    def __init__(self, folder, name, definition_file, objects_xml=None):
         super().__init__(folder, name, definition_file, True)
         self.associated_tile = name.split("_")[0]
         self.coords = get_coords_from_file_name(self.associated_tile)
+        altitude = 0.0
+        if not objects_xml is None:
+            altitude = float(objects_xml.get_object_altitude(self.xml.guid))
         pos = get_position_from_file_name(self.associated_tile)
-        self.pos = MsfsPosition(pos[0], pos[1], 0)
+        self.pos = MsfsPosition(pos[0], pos[1], altitude)
 
     def remove_files(self):
         for lod in self.lods:

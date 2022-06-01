@@ -34,19 +34,24 @@ class MsfsTile(MsfsSceneObject):
     new_tiles: dict
     exclusion_osm_file: str
     bbox_osm_file: str
+    has_rocks: bool
     bbox_gdf: gpd.GeoDataFrame
     exclusion_mask_gdf: gpd.GeoDataFrame
     height_map: HeightMap | None
 
     GE_TILE_ROOF_LIMIT = 18
 
-    def __init__(self, folder, name, definition_file):
+    def __init__(self, folder, name, definition_file, objects_xml=None):
         super().__init__(folder, name, definition_file)
         self.coords = get_coords_from_file_name(self.name)
         pos = get_position_from_file_name(self.name)
-        self.pos = MsfsPosition(pos[0], pos[1], 0)
+        altitude = 0.0
+        if not objects_xml is None:
+            altitude = float(objects_xml.get_object_altitude(self.xml.guid))
+        self.pos = MsfsPosition(pos[0], pos[1], altitude)
         self.new_tiles = {}
         self.height_map = None
+        self.has_rocks = False
 
     def create_optimization_folders(self, linked_tiles, dry_mode=False, pbar=None):
         other_tiles = [tile for tile in linked_tiles if tile.name != self.name]
@@ -95,7 +100,7 @@ class MsfsTile(MsfsSceneObject):
             osm_xml = OsmXml(dest_folder, EXCLUSION_OSM_FILE_PREFIX + "_" + self.name + OSM_FILE_EXT)
             osm_xml.create_from_geodataframes([preserve_holes(exclusion_mask.clip(bbox_gdf).drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore'))], b, True, [(HEIGHT_OSM_TAG, 1000)])
 
-    def generate_height_data(self, name, height_map_xml, group_id, altitude):
+    def generate_height_data(self, name, height_map_xml, group_id, altitude, inverted=False, positioning_file_path="", mask_file_path=""):
         if not self.lods:
             return
 
@@ -105,7 +110,7 @@ class MsfsTile(MsfsSceneObject):
         lod = self.lods[min_lod_idx - lod_limit_diff]
 
         if os.path.isdir(lod.folder):
-            height_data, width, altitude, grid_limit = lod.calculate_height_data(self.coords[0], self.coords[2], altitude)
+            height_data, width, altitude, grid_limit = lod.calculate_height_data(self.coords[0], self.coords[2], altitude, inverted=inverted, positioning_file_path=positioning_file_path, mask_file_path=mask_file_path)
             self.height_map = HeightMap(tile=self, height_data=height_data, width=width, altitude=altitude, grid_limit=grid_limit, group_id=group_id)
             self.height_map.to_xml(height_map_xml)
 

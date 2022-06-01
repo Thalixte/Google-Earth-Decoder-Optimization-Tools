@@ -17,9 +17,13 @@
 #  <pep8 compliant>
 
 import os
+from collections import defaultdict
 
+import numpy as np
 import pygeodesy
 from pygeodesy.ellipsoidalKarney import LatLon
+from scipy.spatial import cKDTree
+from shapely import geometry
 
 import bmesh
 import bpy
@@ -350,7 +354,7 @@ def align_model_with_mask(model_file_path, positioning_file_path, mask_file_path
     bpy.ops.object.select_all(action=DESELECT_ACTION)
 
 
-def cleanup_3d_data(model_file_path):
+def cleanup_3d_data(model_file_path, intersect=False):
     import_model_files([model_file_path], clean=False)
     objects = bpy.context.scene.objects
 
@@ -366,8 +370,8 @@ def cleanup_3d_data(model_file_path):
                     continue
 
                 booly.object = mask
-                booly.operation = 'DIFFERENCE'
-                booly.solver = 'EXACT'
+                booly.operation = "INTERSECT" if intersect else "DIFFERENCE"
+                booly.solver = "EXACT"
                 booly.use_hole_tolerant = True
                 for modifier in obj.modifiers:
                     bpy.ops.object.modifier_apply(modifier=modifier.name)
@@ -394,23 +398,81 @@ def cleanup_3d_data(model_file_path):
     bpy.ops.object.select_all(action=SELECT_ACTION)
 
 
-def generate_model_height_data(model_file_path, lat, lon, altitude):
+def generate_model_height_data(model_file_path, lat, lon, altitude, inverted=False):
     if not bpy.context.scene:
         return False
 
-    grid_dimensions = []
+    tile, coords, width, grid, grid_dimension = prepare_ray_cast()
+
+    if inverted:
+        depsgraph = bpy.context.evaluated_depsgraph_get()
+        depsgraph.update()
+        hmatrix = calculate_height_map_from_coords_from_top(tile, grid_dimension, coords, depsgraph, lat, lon, altitude)
+
+    bpy.ops.object.select_all(action=DESELECT_ACTION)
+    tile.select_set(True)
+    bpy.ops.object.delete()
+    import_model_files([model_file_path], clean=False)
+    bpy.ops.object.select_all(action=SELECT_ACTION)
+    grid.select_set(False)
+    bpy.ops.object.join()
+
+    objs = bpy.context.selected_objects
+
+    for obj in objs:
+        if obj.type != MESH_OBJECT_TYPE:
+            obj.select_set(True)
+            bpy.ops.object.delete()
+        else:
+            tile = obj
+
+    depsgraph = bpy.context.evaluated_depsgraph_get()
+    depsgraph.update()
+    hmatrix = calculate_height_map_from_coords_from_bottom(tile, grid_dimension, coords, depsgraph, lat, lon, altitude, adjusts=hmatrix)
+
+    new_collection = bpy.data.collections.new(name="coords")
+    assert (new_collection is not bpy.context.scene.collection)
+    bpy.context.scene.collection.children.link(new_collection)
+
     results = {}
+    i = 0
+
+    for y, heights in hmatrix.items():
+        results[y] = list(heights.values())
+        for x, h in heights.items():
+            p = point_cloud("p" + str(i), [(x, y, h)])
+            new_collection.objects.link(p)
+            i = i + 1
+
+    bpy.ops.object.select_all(action=DESELECT_ACTION)
+    grid.select_set(True)
+    bpy.ops.object.delete()
+    tile.select_set(True)
+
+    bpy.ops.object.select_all(action=SELECT_ACTION)
+    clean_scene()
+
+    return results, width, altitude, (grid_dimension-1)
+
+
+def prepare_ray_cast():
+    grid_dimensions = []
     width = 0.0
     tile = None
 
-    import_model_files([model_file_path])
     bpy.ops.object.select_all(action=SELECT_ACTION)
     bpy.ops.object.join()
+    objs = bpy.context.selected_objects
+    bpy.ops.object.select_all(action=DESELECT_ACTION)
 
-    for obj in bpy.context.selected_objects:
-        width = obj.dimensions.x
-        grid_dimensions = obj.dimensions
-        tile = obj
+    for obj in objs:
+        if obj.type != MESH_OBJECT_TYPE:
+            obj.select_set(True)
+            bpy.ops.object.delete()
+        else:
+            width = obj.dimensions.x
+            grid_dimensions = obj.dimensions
+            tile = obj
 
     # create the grid
     me = bpy.data.meshes.new("Grid")
@@ -434,41 +496,7 @@ def generate_model_height_data(model_file_path, lat, lon, altitude):
 
     coords = [v.co for v in grid.data.vertices]
 
-    depsgraph = bpy.context.evaluated_depsgraph_get()
-    depsgraph.update()
-
-    i = 0
-
-    for co in coords:
-        p1 = co
-        p2 = mathutils.Vector((co[0], co[1], 500))
-        ray_direction = (p2 - p1).normalized()
-        # ray_direction_inverted = (p1 - p2).normalized()
-
-        ray_begin_local = tile.matrix_world.inverted() @ p1
-        # ray_begin_local_inverted = tile.matrix_world.inverted() @ p2
-        result = tile.ray_cast(ray_begin_local, ray_direction, distance=1000, depsgraph=depsgraph)
-        # result = tile.ray_cast(ray_begin_local_inverted, ray_direction_inverted, distance=1000, depsgraph=depsgraph)
-        if result[0]:
-            i = i + 1
-            p = point_cloud("p" + str(i), [result[1]])
-            bpy.context.collection.objects.link(p)
-            key = result[1][1]
-            if not key in results:
-                results[key] = []
-            if len(results[key]) < (grid_dimension-1):
-                geoid_height = get_geoid_height(lat, lon)
-                height = result[1][2]+altitude+geoid_height
-                height = height if height >= geoid_height else geoid_height
-                results[key].append(height)
-
-    bpy.ops.object.select_all(action=DESELECT_ACTION)
-    grid.select_set(True)
-    bpy.ops.object.delete()
-    bpy.ops.object.select_all(action=SELECT_ACTION)
-    clean_scene()
-
-    return results, width, altitude, (grid_dimension-1)
+    return tile, coords, width, grid, grid_dimension
 
 
 def extract_splitted_tile(model_file_path, node, texture_folder):
@@ -496,6 +524,7 @@ def get_geoid_height(lat, lon):
     single_position = LatLon(lat, lon)
     h = interpolator(single_position)
     return h
+
 
 def point_cloud(ob_name, coords, edges=[], faces=[]):
     """Create point cloud object based on given coordinates and name.
@@ -548,3 +577,130 @@ def apply_transform(ob, use_location=False, use_rotation=False, use_scale=False)
         c.matrix_local = M @ c.matrix_local
 
     ob.matrix_basis = basis[0] @ basis[1] @ basis[2]
+
+
+def calculate_height_map_from_coords_from_bottom(tile, grid_dimension, coords, depsgraph, lat, lon, altitude, adjusts=None):
+    results = defaultdict(dict)
+    i = 0
+
+    for co in coords:
+        p1 = co
+        p2 = mathutils.Vector((co[0], co[1], 500))
+
+        ray_direction = (p2 - p1).normalized()
+        result = tile.ray_cast(p1, ray_direction, distance=1000, depsgraph=depsgraph)
+        if result[0]:
+            i = i + 1
+            x = result[1][0]
+            y = result[1][1]
+            h = result[1][2]
+            if len(results[y]) < (grid_dimension - 1):
+                geoid_height = get_geoid_height(lat, lon)
+                h = h + altitude + geoid_height
+                h = h if h >= geoid_height else geoid_height
+
+                if adjusts is not None:
+                    if y in adjusts:
+                        if x in adjusts[y]:
+                            adjusted_height = adjusts[y][x]
+                            h = h if h >= adjusted_height else adjusted_height
+
+                results[y][x] = h
+
+    return results
+
+
+def calculate_height_map_from_coords_from_top(tile, grid_dimension, coords, depsgraph, lat, lon, altitude):
+    results = defaultdict(dict)
+    new_coords = []
+    i = 0
+
+    for co in coords:
+        p1 = co
+        p2 = mathutils.Vector((co[0], co[1], 500))
+
+        ray_direction_inverted = (p1 - p2).normalized()
+        result = tile.ray_cast(p2, ray_direction_inverted, distance=1000, depsgraph=depsgraph)
+        if result[0]:
+            new_coords.append(result[1])
+        else:
+            new_coords.append(mathutils.Vector((p2[0], p2[1], result[1][2])))
+
+    # fix noise in the height map data
+    new_coords = spatial_median(np.array(new_coords), 30)
+
+    for co in new_coords:
+        p1 = co
+        i = i + 1
+        x = p1[0]
+        y = p1[1]
+        h = p1[2]
+        if len(results[y]) < (grid_dimension-1):
+            geoid_height = get_geoid_height(lat, lon)
+            h = h+altitude+geoid_height
+            h = h if h >= geoid_height else geoid_height
+            results[y][x] = h
+
+    return results
+
+
+# based on Adam Steer's code: https://stackoverflow.com/questions/34972383/improving-a-method-for-a-spatially-aware-median-filter-for-point-clouds-in-pytho
+# not really fast, but it an accurate method, and it is fast enough for the number of points treated here
+def spatial_median(pointcloud, radius):
+    new_p = []
+
+    for i, point in enumerate(pointcloud):
+        # pick a point and make it a shapely Point
+        point = geometry.Point(pointcloud[i, :])
+
+        # select a patch around the point and make it a shapely
+        # MultiPoint
+        patch = geometry.MultiPoint(list(pointcloud[
+                       (pointcloud[:, 0] > point.x - radius+0.5) &
+                       (pointcloud[:, 0] < point.x + radius+0.5) &
+                       (pointcloud[:, 1] > point.y - radius+0.5) &
+                       (pointcloud[:, 1] < point.y + radius+0.5)
+                       ]))
+
+        # buffer the Point by radius
+        pbuff = point.buffer(radius)
+
+        # use the intersection method to find points in our
+        # patch that lie inside the Point buffer
+        isect = pbuff.intersection(patch)
+
+        # initialise another list
+        plist = []
+
+        # f or every intersection set,
+        # unpack it into a list and collect the median Z value
+        if isect.geom_type == 'MultiPoint':
+            # isolated_print('point has neighbours')
+            for p in isect:
+                plist.append(p.z)
+
+            new_p.append((point.x, point.y, np.median(plist)))
+        else:
+            # if the intersection set isn't MultiPoint,
+            # it is an isolated point, whose median Z value
+            # is it's own.
+            # isolated_print('isolated point')
+
+            # append it to the big list)
+            new_p.append((point.x, point.y, isect.z))
+
+    # return a list of new median filtered Z coordinates
+    return new_p
+
+
+# less accurate, but faster method
+def spatial_median_kdtree(pointcloud, radius):
+    new_p = []
+    tree = cKDTree(pointcloud, leafsize=60)
+
+    results = tree.query_ball_point(pointcloud, r=radius)
+    for idx, result in enumerate(results):
+        if len(result) > 0:
+            new_p.append((pointcloud[idx, 0], pointcloud[idx, 1], np.median(pointcloud[result, 2])))
+
+    return new_p

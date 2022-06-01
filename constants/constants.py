@@ -129,6 +129,7 @@ BOUNDING_BOX_OSM_KEY = "box"
 RESIDENTIAL_OSM_KEY = "residential"
 AMENITY_OSM_KEY = "amenity"
 BUILDING_OSM_KEY = "building"
+ROCKS_OSM_KEY = "rocks"
 
 FOREST_OSM_TAG = "forest"
 NATURE_RESERVE_OSM_TAG = "nature_reserve"
@@ -154,6 +155,7 @@ ALLOTMENTS_OSM_TAG = "allotment"
 HEATH_OSM_TAG = "heath"
 WETLAND_OSM_TAG = "wetland"
 BARE_ROCK_OSM_TAG = "bare_rock"
+CLIFF_OSM_TAG = "cliff"
 COASTLINE_OSM_TAG = "coastline"
 GEOMETRY_OSM_COLUMN = "geometry"
 MARITIME_OSM_KEY = "maritime"
@@ -215,6 +217,10 @@ OSM_TAGS = {
         MARINA_OSM_TAG,
         PIER_OSM_TAG
     ],
-    AEROWAY_OSM_KEY: []
+    AEROWAY_OSM_KEY: [],
+    ROCKS_OSM_KEY: [
+        BARE_ROCK_OSM_TAG,
+        CLIFF_OSM_TAG
+    ]
 }
 

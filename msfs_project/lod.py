@@ -196,9 +196,13 @@ class MsfsLod:
         export_to_optimized_gltf_files(os.path.join(self.folder, self.model_file), TEXTURE_FOLDER, use_selection=True, export_extras=False)
         clean_scene()
 
-    def calculate_height_data(self, lat, lon, altitude):
+    def calculate_height_data(self, lat, lon, altitude, inverted=False, positioning_file_path="", mask_file_path=""):
         # Import the gltf files located in the object folder
-        return generate_model_height_data(os.path.join(self.folder, self.model_file), lat, lon, altitude)
+        if inverted:
+            align_model_with_mask(os.path.join(self.folder, self.model_file), positioning_file_path, mask_file_path)
+            cleanup_3d_data(os.path.join(self.folder, self.model_file), intersect=True)
+
+        return generate_model_height_data(os.path.join(self.folder, self.model_file), lat, lon, altitude, inverted)
 
     def __retrieve_gltf_resources(self):
         self.binaries = []

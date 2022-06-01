@@ -59,18 +59,9 @@ class PRESERVE_HOLES_METHOD:
     derivation_split = 2
 
 
-def create_tile_bounding_box(tile):
-    b = bbox_to_poly(tile.coords[1], tile.coords[0], tile.coords[2], tile.coords[3])
-    return gpd.GeoDataFrame(pd.DataFrame([], index=[0]), crs={"init": EPSG.key + str(EPSG.WGS84_degree_unit)}, geometry=[b]), b
-
-
 def create_bounding_box_from_tiles(tiles, dest_folder):
     result = None
-    pbar = ProgressBar(list(tiles.values()), title="CREATE BOUNDING BOX OSM FILES FOR EACH TILE")
     for i, tile in enumerate(tiles.values()):
-        tile.create_bbox_osm_file(dest_folder)
-        pbar.update("osm files created for %s tile" % tile.name)
-
         if i <= 0:
             result = tile.bbox_gdf.copy()
         else:
@@ -80,6 +71,11 @@ def create_bounding_box_from_tiles(tiles, dest_folder):
     result[GEOMETRY_OSM_COLUMN] = result[GEOMETRY_OSM_COLUMN].apply(lambda p: close_holes(p))
     result = resize_gdf(result, 10)
     return result
+
+
+def create_tile_bounding_box(tile):
+    b = bbox_to_poly(tile.coords[1], tile.coords[0], tile.coords[2], tile.coords[3])
+    return gpd.GeoDataFrame(pd.DataFrame([], index=[0]), crs=EPSG.key + str(EPSG.WGS84_degree_unit), geometry=[b]), b
 
 
 def create_exclusion_masks_from_tiles(tiles, dest_folder, b, exclusion_mask):
@@ -129,7 +125,7 @@ def create_sea_gdf(land_mass, bbox):
     # osm_xml.create_from_geodataframes([bbox], b)
     # bbox.to_file(os.path.join(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + SHP_FILE_EXT))
 
-    result = land_mass.overlay(bbox, how=OVERLAY_OPERATOR.symmetric_difference).assign(boundary=BOUNDING_BOX_OSM_KEY)
+    result = land_mass.overlay(bbox, how=OVERLAY_OPERATOR.symmetric_difference, keep_geom_type=False).assign(boundary=BOUNDING_BOX_OSM_KEY)
     return result[[GEOMETRY_OSM_COLUMN]].dissolve()
 
 
@@ -139,26 +135,26 @@ def create_exclusion_gdf(landuse, leisure, natural, water, aeroway, sea):
     if not leisure.empty:
         # slightly extend the leisure borders to remove bordering trees
         leisure = resize_gdf(leisure, 20)
-        result = result.overlay(leisure, how=OVERLAY_OPERATOR.union)
+        result = result.overlay(leisure, how=OVERLAY_OPERATOR.union, keep_geom_type=False)
     if not natural.empty:
-        result = result.overlay(natural, how=OVERLAY_OPERATOR.union)
+        result = result.overlay(natural, how=OVERLAY_OPERATOR.union, keep_geom_type=False)
     if not water.empty:
-        result = result.overlay(water, how=OVERLAY_OPERATOR.union)
+        result = result.overlay(water, how=OVERLAY_OPERATOR.union, keep_geom_type=False)
     if not aeroway.empty:
-        result = result.overlay(aeroway, how=OVERLAY_OPERATOR.union)
+        result = result.overlay(aeroway, how=OVERLAY_OPERATOR.union, keep_geom_type=False)
     if not sea.empty:
-        result = result.overlay(sea, how=OVERLAY_OPERATOR.union)
+        result = result.overlay(sea, how=OVERLAY_OPERATOR.union, keep_geom_type=False)
 
     return result.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)
 
 
 def create_scenery_shape_gdf(bbox, exclusion):
     bbox = resize_gdf(bbox, -100)
-    return preserve_holes(bbox.overlay(exclusion, how=OVERLAY_OPERATOR.difference), split_method=PRESERVE_HOLES_METHOD.derivation_split)
+    return preserve_holes(bbox.overlay(exclusion, how=OVERLAY_OPERATOR.difference, keep_geom_type=False), split_method=PRESERVE_HOLES_METHOD.derivation_split)
 
 
 def clip_gdf(gdf, clip):
-    result = gdf
+    result = gdf.copy()
     if not result.empty:
         result[GEOMETRY_OSM_COLUMN] = result[GEOMETRY_OSM_COLUMN].clip(clip)
         result = result[(result.geom_type == SHAPELY_TYPE.polygon) | (result.geom_type == SHAPELY_TYPE.multiPolygon)]
@@ -186,7 +182,7 @@ def preserve_holes(gdf, split_method=PRESERVE_HOLES_METHOD.centroid_split):
     if result_p.type == SHAPELY_TYPE.polygon:
         result_p = [result_p]
 
-    for input_p in result_p:
+    for input_p in result_p.geoms:
         if input_p.interiors:
             if split_method == PRESERVE_HOLES_METHOD.centroid_split:
                 keep_polys = centroid_split_method(input_p, keep_polys)
@@ -197,7 +193,7 @@ def preserve_holes(gdf, split_method=PRESERVE_HOLES_METHOD.centroid_split):
 
     if keep_polys:
         result[GEOMETRY_OSM_COLUMN] = MultiPolygon(keep_polys)
-        result = result.explode()
+        result = result.explode(index_parts=False)
 
     return result
 
@@ -225,7 +221,7 @@ def centroid_split_method(input_p, keep_polys):
         next_centroid_pt = pts[1]
 
         proj_centroid_pt = Point([centroid_pt.x, 0])
-        proj_other_centroid_pts = [Point([pt.x, 0]) for pt in other_centroid_pts]
+        proj_other_centroid_pts = [Point([pt.x, 0]) for pt in other_centroid_pts.geoms]
 
         proj_pts = nearest_points(proj_centroid_pt, MultiPoint(proj_other_centroid_pts))
         next_proj_centroid_pt = proj_pts[1]
@@ -249,7 +245,7 @@ def centroid_split_method(input_p, keep_polys):
     lines.append(input_l)
 
     if input_p.boundary.geom_type == SHAPELY_TYPE.multiLineString:
-        for line in input_p.boundary:
+        for line in input_p.boundary.geoms:
             lines.append(line)
     else:
         lines.append(input_p.boundary)

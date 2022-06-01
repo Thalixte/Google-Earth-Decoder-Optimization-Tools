@@ -265,9 +265,10 @@ class MsfsProject:
 
     def cleanup_3d_data(self):
         self.__remove_colliders()
+        self.__create_tiles_bounding_boxes()
         self.__generate_height_map_data()
-        self.__create_osm_files()
-        self.__cleanup_lods_3d_data()
+        # self.__create_osm_files()
+        # self.__cleanup_lods_3d_data()
 
         lods = [lod for tile in self.tiles.values() for lod in tile.lods]
         pbar = ProgressBar(list(lods), title="PREPARE THE TILES FOR MSFS")
@@ -390,17 +391,25 @@ class MsfsProject:
         for i, path in enumerate(pbar.iterable):
             if not is_octant(path.stem):
                 msfs_scene_object = MsfsSceneObject(self.model_lib_folder, path.stem, path.name)
+                if not self.objects_xml.find_scenery_objects(msfs_scene_object.xml.guid):
+                    msfs_scene_object.remove_files()
+                    continue
                 self.objects[msfs_scene_object.xml.guid] = msfs_scene_object
                 pbar.update("%s" % path.name)
                 continue
 
             if COLLIDER_SUFFIX in path.stem:
-                msfs_collider = MsfsCollider(self.model_lib_folder, path.stem, path.name)
+                msfs_collider = MsfsCollider(self.model_lib_folder, path.stem, path.name, self.objects_xml)
+                if not self.objects_xml.find_scenery_objects(msfs_collider.xml.guid):
+                    msfs_collider.remove_files()
+                    continue
                 self.colliders[msfs_collider.xml.guid] = msfs_collider
                 pbar.update("%s" % path.name)
                 continue
 
-            msfs_tile = MsfsTile(self.model_lib_folder, path.stem, path.name)
+            msfs_tile = MsfsTile(self.model_lib_folder, path.stem, path.name, self.objects_xml)
+            if not self.objects_xml.find_scenery_objects(msfs_tile.xml.guid):
+                msfs_tile.remove_files()
             if not msfs_tile.lods:
                 msfs_tile.remove_files()
             else:
@@ -542,13 +551,21 @@ class MsfsProject:
 
         return chunks(data, self.NB_PARALLEL_TASKS)
 
-    def __retrieve_tiles_to_calculate_height_map(self, new_group_id=-1, parallel=True):
+    def __retrieve_tiles_to_calculate_height_map(self, rocks=None, new_group_id=-1, parallel=True):
         data = []
 
-        for tile in self.tiles.values():
+        for guid, tile in self.tiles.items():
             if os.path.isdir(tile.folder):
-                altitude = float(self.objects_xml.get_object_altitude(tile.xml.guid))
-                data.append({"name": tile.name, "params": ["--folder", str(tile.folder), "--name", str(tile.name), "--definition_file", str(tile.definition_file), "--height_map_xml_folder", str(self.xmlfiles_folder), "--group_id", str(new_group_id), "--altitude", str(altitude)]})
+                params = ["--folder", str(tile.folder), "--name", str(tile.name), "--definition_file", str(tile.definition_file),
+                          "--height_map_xml_folder", str(self.xmlfiles_folder), "--group_id", str(new_group_id), "--altitude", str(tile.pos.alt), "--has_rocks", str(tile.has_rocks)]
+
+                tile_rocks = clip_gdf(rocks, tile.bbox_gdf)
+                if not tile_rocks.empty:
+                    tile.has_rocks = True
+                    params.extend(["--positioning_file_path", str(os.path.join(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)),
+                                   "--mask_file_path", str(os.path.join(self.osmfiles_folder, EXCLUSION_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT))])
+
+                data.append({"name": tile.name, "params": params})
 
         return chunks(data, self.NB_PARALLEL_TASKS if parallel else 1)
 
@@ -645,9 +662,10 @@ class MsfsProject:
     def __generate_height_map_data(self):
         isolated_print(EOL)
         self.objects_xml.remove_height_maps()
+        rocks = create_gdf_from_osm_data(self.coords, NATURAL_OSM_KEY, OSM_TAGS[ROCKS_OSM_KEY])
         new_group_id = self.objects_xml.get_new_group_id()
 
-        tiles_data = self.__retrieve_tiles_to_calculate_height_map(new_group_id=new_group_id, parallel=True)
+        tiles_data = self.__retrieve_tiles_to_calculate_height_map(rocks=rocks, new_group_id=new_group_id, parallel=True)
         self.__multithread_process_data(tiles_data, "calculate_tile_height_data.py", "CALCULATE HEIGHT MAPS FOR EACH TILE", "height map calculated")
         self.__add_height_maps_to_objects_xml()
 
@@ -667,6 +685,12 @@ class MsfsProject:
             shutil.rmtree(self.xmlfiles_folder)
         except:
             pass
+
+    def __create_tiles_bounding_boxes(self):
+        pbar = ProgressBar(list(self.tiles.values()), title="CREATE BOUNDING BOX OSM FILES FOR EACH TILE")
+        for i, tile in enumerate(self.tiles.values()):
+            tile.create_bbox_osm_file(self.osmfiles_folder)
+            pbar.update("osm files created for %s tile" % tile.name)
 
     def __create_osm_files(self):
         ox.config(use_cache=True, log_level=lg.DEBUG)
@@ -767,7 +791,7 @@ class MsfsProject:
 
                 for obj in chunck:
                     print("-------------------------------------------------------------------------------")
-                    print("prepare command line: ", "\"" + str(bpy.app.binary_path) + "\" --background --python \"" + os.path.join(os.path.dirname(os.path.dirname(__file__)), script_name) + "\" -- " + str(" ").join(obj["params"]))
+                    isolated_print("prepare command line: ", "\"" + str(bpy.app.binary_path) + "\" --background --python \"" + os.path.join(os.path.dirname(os.path.dirname(__file__)), script_name) + "\" -- " + str(" ").join(obj["params"]))
 
                 si = subprocess.STARTUPINFO()
                 si.dwFlags = subprocess.STARTF_USESTDHANDLES | subprocess.HIGH_PRIORITY_CLASS
