@@ -266,9 +266,9 @@ class MsfsProject:
     def cleanup_3d_data(self):
         self.__remove_colliders()
         self.__create_tiles_bounding_boxes()
-        # self.__generate_height_map_data()
+        self.__generate_height_map_data()
         self.__create_osm_files()
-        # self.__cleanup_lods_3d_data()
+        self.__cleanup_lods_3d_data()
 
         lods = [lod for tile in self.tiles.values() for lod in tile.lods]
         pbar = ProgressBar(list(lods), title="PREPARE THE TILES FOR MSFS")
@@ -791,7 +791,7 @@ class MsfsProject:
 
                 for obj in chunck:
                     print("-------------------------------------------------------------------------------")
-                    isolated_print("prepare command line: ", "\"" + str(bpy.app.binary_path) + "\" --background --python \"" + os.path.join(os.path.dirname(os.path.dirname(__file__)), script_name) + "\" -- " + str(" ").join(obj["params"]))
+                    print("prepare command line: ", "\"" + str(bpy.app.binary_path) + "\" --background --python \"" + os.path.join(os.path.dirname(os.path.dirname(__file__)), script_name) + "\" -- " + str(" ").join(obj["params"]))
 
                 si = subprocess.STARTUPINFO()
                 si.dwFlags = subprocess.STARTF_USESTDHANDLES | subprocess.HIGH_PRIORITY_CLASS
