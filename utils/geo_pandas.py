@@ -135,15 +135,15 @@ def create_exclusion_gdf(landuse, leisure, natural, water, aeroway, sea):
     if not leisure.empty:
         # slightly extend the leisure borders to remove bordering trees
         leisure = resize_gdf(leisure, 20)
-        result = result.overlay(leisure, how=OVERLAY_OPERATOR.union, keep_geom_type=False)
+        result = result.overlay(leisure, how=OVERLAY_OPERATOR.union, keep_geom_type=True)
     if not natural.empty:
-        result = result.overlay(natural, how=OVERLAY_OPERATOR.union, keep_geom_type=False)
+        result = result.overlay(natural, how=OVERLAY_OPERATOR.union, keep_geom_type=True)
     if not water.empty:
-        result = result.overlay(water, how=OVERLAY_OPERATOR.union, keep_geom_type=False)
+        result = result.overlay(water, how=OVERLAY_OPERATOR.union, keep_geom_type=True)
     if not aeroway.empty:
-        result = result.overlay(aeroway, how=OVERLAY_OPERATOR.union, keep_geom_type=False)
+        result = result.overlay(aeroway, how=OVERLAY_OPERATOR.union, keep_geom_type=True)
     if not sea.empty:
-        result = result.overlay(sea, how=OVERLAY_OPERATOR.union, keep_geom_type=False)
+        result = result.overlay(sea, how=OVERLAY_OPERATOR.union, keep_geom_type=True)
 
     return result.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)
 
@@ -182,7 +182,7 @@ def preserve_holes(gdf, split_method=PRESERVE_HOLES_METHOD.centroid_split):
     if result_p.type == SHAPELY_TYPE.polygon:
         result_p = [result_p]
 
-    for input_p in result_p.geoms:
+    for input_p in result_p:
         if input_p.interiors:
             if split_method == PRESERVE_HOLES_METHOD.centroid_split:
                 keep_polys = centroid_split_method(input_p, keep_polys)

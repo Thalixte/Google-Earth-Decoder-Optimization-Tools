@@ -188,7 +188,10 @@ class ObjectsXml(Xml):
         groups = self.root.findall(self.GROUPS_SEARCH_PATTERN)
 
         for group in groups:
-            group_id = int(group.get(self.GROUP_ID_ATTR))
+            gid = group.get(self.GROUP_ID_ATTR)
+            if gid is None:
+                continue
+            group_id = int(gid)
             result = group_id if group_id > result else result
 
         return result+1

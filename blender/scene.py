@@ -50,11 +50,19 @@ GLTF_SEPARATE_EXPORT_FORMAT = "GLTF_SEPARATE"
 COPY_COLLECTION_NAME = "CopyCollection"
 
 
-def clean_scene():
+def keep_objects(objects_to_keep):
+    if len(objects_to_keep) > 0:
+        for obj_to_keep in objects_to_keep:
+            obj_to_keep.select_set(False)
+
+
+def clean_scene(objects_to_keep=[]):
     if not bpy.data:
         return
 
     bpy.ops.object.select_all(action=SELECT_ACTION)
+
+    keep_objects(objects_to_keep)
 
     for block in bpy.data.meshes:
         if block.users == 0:
@@ -86,9 +94,9 @@ def clean_scene():
 ##################################################################
 # Import the gltf files located in a specific folder
 ##################################################################
-def import_model_files(model_files, clean=True):
+def import_model_files(model_files, clean=True, objects_to_keep=[]):
     if clean:
-        clean_scene()
+        clean_scene(objects_to_keep=objects_to_keep)
 
     for model_file in model_files:
         try:
@@ -295,11 +303,13 @@ def center_origin(obj):
     bpy.ops.object.location_clear(clear_delta=False)
 
 
-def align_model_with_mask(model_file_path, positioning_file_path, mask_file_path):
-    if not bpy.context.scene: return False
+def align_model_with_mask(model_file_path, positioning_file_path, mask_file_path, objects_to_keep=[]):
+    if not bpy.context.scene:
+        return False
 
-    import_model_files([model_file_path])
+    import_model_files([model_file_path], objects_to_keep=objects_to_keep)
     bpy.ops.object.select_all(action=SELECT_ACTION)
+    keep_objects(objects_to_keep)
     bpy.ops.object.join()
     rot_z = 0.0
 
@@ -330,7 +340,7 @@ def align_model_with_mask(model_file_path, positioning_file_path, mask_file_path
     transform_x = src.matrix_world.translation[0]
     transform_y = src.matrix_world.translation[1]
 
-    clean_scene()
+    clean_scene(objects_to_keep=objects_to_keep)
 
     bpy.ops.object.select_all(action=DESELECT_ACTION)
 
@@ -339,6 +349,7 @@ def align_model_with_mask(model_file_path, positioning_file_path, mask_file_path
         obj.name = "Areas"
     target = bpy.context.scene.objects.get("Areas")
     bpy.ops.object.select_all(action=SELECT_ACTION)
+    keep_objects(objects_to_keep)
     bpy.context.view_layer.objects.active = target
     bpy.ops.object.join()
 
@@ -359,10 +370,11 @@ def cleanup_3d_data(model_file_path, intersect=False):
     objects = bpy.context.scene.objects
 
     mask = bpy.context.scene.objects.get("Areas")
+    grid = bpy.context.scene.objects.get("Grid")
 
     if mask:
         for obj in objects:
-            if obj != mask:
+            if obj != mask and obj != grid:
                 bpy.context.view_layer.objects.active = obj
                 booly = obj.modifiers.new(name='booly', type='BOOLEAN')
 
@@ -378,7 +390,7 @@ def cleanup_3d_data(model_file_path, intersect=False):
 
     if mask:
         for obj in objects:
-            if obj != mask:
+            if obj != mask and obj != grid:
                 bpy.context.view_layer.objects.active = obj
                 weighted_normal = obj.modifiers.new(name='weighty', type='WEIGHTED_NORMAL')
 
@@ -398,25 +410,63 @@ def cleanup_3d_data(model_file_path, intersect=False):
     bpy.ops.object.select_all(action=SELECT_ACTION)
 
 
-def generate_model_height_data(model_file_path, lat, lon, altitude, inverted=False):
+def generate_model_height_data(model_file_path, lat, lon, altitude, inverted=False, positioning_file_path="", mask_file_path=""):
     if not bpy.context.scene:
         return False
 
-    tile, coords, width, grid, grid_dimension = prepare_ray_cast()
-
-    if inverted:
-        depsgraph = bpy.context.evaluated_depsgraph_get()
-        depsgraph.update()
-        hmatrix = calculate_height_map_from_coords_from_top(tile, grid_dimension, coords, depsgraph, lat, lon, altitude)
+    tile = get_tile_for_ray_cast(model_file_path)
+    coords, width, grid, grid_dimension = prepare_ray_cast()
 
     bpy.ops.object.select_all(action=DESELECT_ACTION)
-    tile.select_set(True)
-    bpy.ops.object.delete()
-    import_model_files([model_file_path], clean=False)
-    bpy.ops.object.select_all(action=SELECT_ACTION)
-    grid.select_set(False)
-    bpy.ops.object.join()
+    # ensure to select the tile
+    tile.select_set(False)
 
+    depsgraph = bpy.context.evaluated_depsgraph_get()
+    depsgraph.update()
+    hmatrix = calculate_height_map_from_coords_from_bottom(tile, grid_dimension, coords, depsgraph, lat, lon, altitude)
+
+    if inverted and os.path.exists(positioning_file_path) and os.path.exists(mask_file_path):
+        align_model_with_mask(model_file_path, positioning_file_path, mask_file_path, objects_to_keep=[grid])
+        cleanup_3d_data(model_file_path, intersect=True)
+        tile = get_tile_for_ray_cast(model_file_path, imported=False, objects_to_keep=[grid])
+        hmatrix = calculate_height_map_from_coords_from_top(tile, grid_dimension, coords, depsgraph, lat, lon, altitude, hmatrix_base=hmatrix)
+
+    new_collection = bpy.data.collections.new(name="coords")
+    assert (new_collection is not bpy.context.scene.collection)
+    bpy.context.scene.collection.children.link(new_collection)
+
+    results = {}
+    i = 0
+    n = 0
+
+    for y, heights in hmatrix.items():
+        if n % 2 == 0:
+            results[y] = list(heights.values())
+            for x, h in heights.items():
+                p = point_cloud("p" + str(i), [(x, y, h)])
+                new_collection.objects.link(p)
+                i = i + 1
+
+        n = n + 1
+
+    bpy.ops.object.select_all(action=DESELECT_ACTION)
+    grid.select_set(True)
+    bpy.ops.object.delete()
+    tile.select_set(True)
+    bpy.ops.object.select_all(action=SELECT_ACTION)
+    clean_scene()
+
+    return results, width, altitude, (int(grid_dimension/2)-1)
+
+
+def get_tile_for_ray_cast(model_file_path, imported=True, objects_to_keep=[]):
+    tile = None
+
+    if imported:
+        import_model_files([model_file_path])
+    bpy.ops.object.select_all(action=SELECT_ACTION)
+    keep_objects(objects_to_keep)
+    bpy.ops.object.join()
     objs = bpy.context.selected_objects
 
     for obj in objs:
@@ -426,39 +476,12 @@ def generate_model_height_data(model_file_path, lat, lon, altitude, inverted=Fal
         else:
             tile = obj
 
-    depsgraph = bpy.context.evaluated_depsgraph_get()
-    depsgraph.update()
-    hmatrix = calculate_height_map_from_coords_from_bottom(tile, grid_dimension, coords, depsgraph, lat, lon, altitude, adjusts=hmatrix)
-
-    new_collection = bpy.data.collections.new(name="coords")
-    assert (new_collection is not bpy.context.scene.collection)
-    bpy.context.scene.collection.children.link(new_collection)
-
-    results = {}
-    i = 0
-
-    for y, heights in hmatrix.items():
-        results[y] = list(heights.values())
-        for x, h in heights.items():
-            p = point_cloud("p" + str(i), [(x, y, h)])
-            new_collection.objects.link(p)
-            i = i + 1
-
-    bpy.ops.object.select_all(action=DESELECT_ACTION)
-    grid.select_set(True)
-    bpy.ops.object.delete()
-    tile.select_set(True)
-
-    bpy.ops.object.select_all(action=SELECT_ACTION)
-    clean_scene()
-
-    return results, width, altitude, (grid_dimension-1)
+    return tile
 
 
-def prepare_ray_cast():
+def prepare_ray_cast(grid_factor=5.0):
     grid_dimensions = []
     width = 0.0
-    tile = None
 
     bpy.ops.object.select_all(action=SELECT_ACTION)
     bpy.ops.object.join()
@@ -477,7 +500,7 @@ def prepare_ray_cast():
     # create the grid
     me = bpy.data.meshes.new("Grid")
     bm = bmesh.new()
-    grid_dimension = round(max(grid_dimensions.x, grid_dimensions.y) / 10.0)
+    grid_dimension = round(max(grid_dimensions.x, grid_dimensions.y) / grid_factor)
     bmesh.ops.create_grid(bm, x_segments=grid_dimension, y_segments=grid_dimension, size=round(grid_dimensions.x / 2))
     bmesh.ops.delete(bm, geom=bm.faces, context="FACES_ONLY")
     bm.to_mesh(me)
@@ -496,7 +519,7 @@ def prepare_ray_cast():
 
     coords = [v.co for v in grid.data.vertices]
 
-    return tile, coords, width, grid, grid_dimension
+    return coords, width, grid, grid_dimension
 
 
 def extract_splitted_tile(model_file_path, node, texture_folder):
@@ -581,7 +604,9 @@ def apply_transform(ob, use_location=False, use_rotation=False, use_scale=False)
 
 def calculate_height_map_from_coords_from_bottom(tile, grid_dimension, coords, depsgraph, lat, lon, altitude, adjusts=None):
     results = defaultdict(dict)
-    i = 0
+
+    # downsample the grid for bottom ray casting
+    coords = [co for i, co in enumerate(coords) if i % 2 == 0]
 
     for co in coords:
         p1 = co
@@ -590,27 +615,19 @@ def calculate_height_map_from_coords_from_bottom(tile, grid_dimension, coords, d
         ray_direction = (p2 - p1).normalized()
         result = tile.ray_cast(p1, ray_direction, distance=1000, depsgraph=depsgraph)
         if result[0]:
-            i = i + 1
             x = result[1][0]
             y = result[1][1]
             h = result[1][2]
-            if len(results[y]) < (grid_dimension - 1):
+            if len(results[y]) < (int(grid_dimension/2)-1):
                 geoid_height = get_geoid_height(lat, lon)
+                h = h if h >= 0 else 0
                 h = h + altitude + geoid_height
-                h = h if h >= geoid_height else geoid_height
-
-                if adjusts is not None:
-                    if y in adjusts:
-                        if x in adjusts[y]:
-                            adjusted_height = adjusts[y][x]
-                            h = h if h >= adjusted_height else adjusted_height
-
                 results[y][x] = h
 
     return results
 
 
-def calculate_height_map_from_coords_from_top(tile, grid_dimension, coords, depsgraph, lat, lon, altitude):
+def calculate_height_map_from_coords_from_top(tile, grid_dimension, coords, depsgraph, lat, lon, altitude, hmatrix_base=None):
     results = defaultdict(dict)
     new_coords = []
     i = 0
@@ -627,19 +644,28 @@ def calculate_height_map_from_coords_from_top(tile, grid_dimension, coords, deps
             new_coords.append(mathutils.Vector((p2[0], p2[1], result[1][2])))
 
     # fix noise in the height map data
-    new_coords = spatial_median(np.array(new_coords), 30)
+    new_coords = spatial_median_kdtree(np.array(new_coords), 30)
+    # new_coords = spatial_median(np.array(new_coords), 20)
 
-    for co in new_coords:
+    # downsample the new cords retrieved from top ray casting
+    new_coords = [co for i, co in enumerate(new_coords) if i % 2 == 0]
+
+    for i, co in enumerate(new_coords):
         p1 = co
-        i = i + 1
         x = p1[0]
         y = p1[1]
         h = p1[2]
-        if len(results[y]) < (grid_dimension-1):
+        if len(results[y]) < (int(grid_dimension/2)-1):
             geoid_height = get_geoid_height(lat, lon)
+            h = h if h >= 0 else 0
             h = h+altitude+geoid_height
-            h = h if h >= geoid_height else geoid_height
-            results[y][x] = h
+
+            if hmatrix_base is not None:
+                if y in hmatrix_base:
+                    if x in hmatrix_base[y]:
+                        base_h = hmatrix_base[y][x]
+                        h = h if h >= base_h else base_h
+                        results[y][x] = h
 
     return results
 

@@ -266,8 +266,8 @@ class MsfsProject:
     def cleanup_3d_data(self):
         self.__remove_colliders()
         self.__create_tiles_bounding_boxes()
-        self.__generate_height_map_data()
-        # self.__create_osm_files()
+        # self.__generate_height_map_data()
+        self.__create_osm_files()
         # self.__cleanup_lods_3d_data()
 
         lods = [lod for tile in self.tiles.values() for lod in tile.lods]
