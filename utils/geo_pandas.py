@@ -59,7 +59,7 @@ class PRESERVE_HOLES_METHOD:
     derivation_split = 2
 
 
-def create_bounding_box_from_tiles(tiles, dest_folder):
+def create_bounding_box_from_tiles(tiles):
     result = None
     for i, tile in enumerate(tiles.values()):
         if i <= 0:

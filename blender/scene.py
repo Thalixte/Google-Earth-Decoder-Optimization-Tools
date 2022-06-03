@@ -443,6 +443,7 @@ def generate_model_height_data(model_file_path, lat, lon, altitude, inverted=Fal
         if n % 2 == 0:
             results[y] = list(heights.values())
             for x, h in heights.items():
+                # debug display of the cloud of points
                 p = point_cloud("p" + str(i), [(x, y, h)])
                 new_collection.objects.link(p)
                 i = i + 1
@@ -604,6 +605,7 @@ def apply_transform(ob, use_location=False, use_rotation=False, use_scale=False)
 
 def calculate_height_map_from_coords_from_bottom(tile, grid_dimension, coords, depsgraph, lat, lon, altitude, adjusts=None):
     results = defaultdict(dict)
+    geoid_height = get_geoid_height(lat, lon)
 
     # downsample the grid for bottom ray casting
     coords = [co for i, co in enumerate(coords) if i % 2 == 0]
@@ -619,9 +621,8 @@ def calculate_height_map_from_coords_from_bottom(tile, grid_dimension, coords, d
             y = result[1][1]
             h = result[1][2]
             if len(results[y]) < (int(grid_dimension/2)-1):
-                geoid_height = get_geoid_height(lat, lon)
-                h = h if h >= 0 else 0
                 h = h + altitude + geoid_height
+                h = h if h >= geoid_height else geoid_height
                 results[y][x] = h
 
     return results
@@ -629,8 +630,8 @@ def calculate_height_map_from_coords_from_bottom(tile, grid_dimension, coords, d
 
 def calculate_height_map_from_coords_from_top(tile, grid_dimension, coords, depsgraph, lat, lon, altitude, hmatrix_base=None):
     results = defaultdict(dict)
+    geoid_height = get_geoid_height(lat, lon)
     new_coords = []
-    i = 0
 
     for co in coords:
         p1 = co
@@ -656,9 +657,8 @@ def calculate_height_map_from_coords_from_top(tile, grid_dimension, coords, deps
         y = p1[1]
         h = p1[2]
         if len(results[y]) < (int(grid_dimension/2)-1):
-            geoid_height = get_geoid_height(lat, lon)
-            h = h if h >= 0 else 0
-            h = h+altitude+geoid_height
+            h = h + altitude + geoid_height
+            h = h if h >= geoid_height else geoid_height
 
             if hmatrix_base is not None:
                 if y in hmatrix_base:

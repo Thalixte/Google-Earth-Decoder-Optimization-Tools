@@ -556,11 +556,13 @@ class MsfsProject:
 
         for guid, tile in self.tiles.items():
             if os.path.isdir(tile.folder):
+                tile_rocks = clip_gdf(rocks, tile.bbox_gdf)
+                tile.has_rocks = not tile_rocks.empty
+
                 params = ["--folder", str(tile.folder), "--name", str(tile.name), "--definition_file", str(tile.definition_file),
                           "--height_map_xml_folder", str(self.xmlfiles_folder), "--group_id", str(new_group_id), "--altitude", str(tile.pos.alt), "--has_rocks", str(tile.has_rocks)]
 
-                tile_rocks = clip_gdf(rocks, tile.bbox_gdf)
-                if not tile_rocks.empty:
+                if tile.has_rocks:
                     tile.has_rocks = True
                     params.extend(["--positioning_file_path", str(os.path.join(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)),
                                    "--mask_file_path", str(os.path.join(self.osmfiles_folder, EXCLUSION_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT))])
@@ -694,7 +696,7 @@ class MsfsProject:
 
     def __create_osm_files(self):
         ox.config(use_cache=True, log_level=lg.DEBUG)
-        self.__create_osm_exclusion_file(bbox_to_poly(self.coords[1], self.coords[0], self.coords[2], self.coords[3]), create_bounding_box_from_tiles(self.tiles, self.osmfiles_folder))
+        self.__create_osm_exclusion_file(bbox_to_poly(self.coords[1], self.coords[0], self.coords[2], self.coords[3]), create_bounding_box_from_tiles(self.tiles))
 
     def __create_osm_exclusion_file(self, b, bbox):
         print_title("RETRIEVE OSM (MAY TAKE SOME TIME TO COMPLETE, BE PATIENT...)")
