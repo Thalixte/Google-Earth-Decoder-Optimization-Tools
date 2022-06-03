@@ -85,9 +85,9 @@ def create_exclusion_masks_from_tiles(tiles, dest_folder, b, exclusion_mask):
         pbar.update("exclusion mask created for %s tile" % tile.name)
 
 
-def resize_gdf(gdf, resize_distance):
+def resize_gdf(gdf, resize_distance, single_sided=True):
     gdf = gdf.to_crs(EPSG.key + str(EPSG.WGS84_meter_unit))
-    gdf[GEOMETRY_OSM_COLUMN] = gdf[GEOMETRY_OSM_COLUMN].buffer(resize_distance, cap_style=CAP_STYLE.flat, join_style=JOIN_STYLE.mitre, single_sided=True)
+    gdf[GEOMETRY_OSM_COLUMN] = gdf[GEOMETRY_OSM_COLUMN].buffer(resize_distance, cap_style=CAP_STYLE.flat, join_style=JOIN_STYLE.mitre, single_sided=single_sided)
     return gdf.to_crs(EPSG.key + str(EPSG.WGS84_degree_unit))
 
 
@@ -103,6 +103,15 @@ def create_gdf_from_osm_data(coords, key, tags):
 def create_land_mass_gdf(bbox, b):
     result = gpd.read_file(os.path.join(SHAPE_TEMPLATES_FOLDER, OSM_LAND_SHAPEFILE), bbox=b).clip(bbox.geometry)
     return result[[GEOMETRY_OSM_COLUMN]].dissolve()
+
+
+def create_bridges_gdf(coords):
+    result = ox.geometries_from_bbox(coords[0], coords[1], coords[2], coords[3], tags={"highway": True})
+    result = result[result["bridge"] == "yes"]
+    result = result[[GEOMETRY_OSM_COLUMN, "highway"]]
+    result = resize_gdf(result, 20, single_sided=False)
+
+    return result
 
 
 def create_sea_gdf(land_mass, bbox):

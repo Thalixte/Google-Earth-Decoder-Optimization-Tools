@@ -42,7 +42,7 @@ from msfs_project.collider import MsfsCollider
 from msfs_project.tile import MsfsTile
 from msfs_project.shape import MsfsShape
 from utils import replace_in_file, is_octant, backup_file, install_python_lib, ScriptError, print_title, \
-    get_backup_file_path, isolated_print, chunks, create_bounding_box_from_tiles, create_gdf_from_osm_data, clip_gdf, create_exclusion_gdf, create_scenery_shape_gdf, create_sea_gdf, create_land_mass_gdf, resize_gdf, create_exclusion_masks_from_tiles, preserve_holes
+    get_backup_file_path, isolated_print, chunks, create_bounding_box_from_tiles, create_gdf_from_osm_data, clip_gdf, create_exclusion_gdf, create_scenery_shape_gdf, create_sea_gdf, create_land_mass_gdf, resize_gdf, create_exclusion_masks_from_tiles, preserve_holes, create_bridges_gdf
 from pathlib import Path
 
 from utils.compressonator import Compressonator
@@ -354,6 +354,12 @@ class MsfsProject:
 
         # create the osm folder if it does not exist
         os.makedirs(self.osmfiles_folder, exist_ok=True)
+
+        # ensure to clean the xml folder containing the heightmaps data by removing it
+        try:
+            shutil.rmtree(self.xmlfiles_folder)
+        except:
+            pass
 
         # create the xml folder if it does not exist
         os.makedirs(self.xmlfiles_folder, exist_ok=True)
@@ -700,6 +706,11 @@ class MsfsProject:
 
     def __create_osm_exclusion_file(self, b, bbox):
         print_title("RETRIEVE OSM (MAY TAKE SOME TIME TO COMPLETE, BE PATIENT...)")
+
+        bridges = create_bridges_gdf(self.coords)
+        bridges.to_file(os.path.join(self.osmfiles_folder, "bridges" + SHP_FILE_EXT))
+        osm_xml = OsmXml(self.osmfiles_folder, "bridges" + OSM_FILE_EXT)
+        osm_xml.create_from_geodataframes([bridges], b)
 
         land_mass = create_land_mass_gdf(bbox, b)
         sea = create_sea_gdf(land_mass, bbox)
