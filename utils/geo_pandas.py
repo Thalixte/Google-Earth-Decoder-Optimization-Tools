@@ -109,7 +109,7 @@ def create_bridges_gdf(coords):
     result = ox.geometries_from_bbox(coords[0], coords[1], coords[2], coords[3], tags={"highway": True})
     result = result[result["bridge"] == "yes"]
     result = result[[GEOMETRY_OSM_COLUMN, "highway"]]
-    result = resize_gdf(result, 20, single_sided=False)
+    result = resize_gdf(result, 10, single_sided=False)
 
     return result
 
@@ -138,7 +138,7 @@ def create_sea_gdf(land_mass, bbox):
     return result[[GEOMETRY_OSM_COLUMN]].dissolve()
 
 
-def create_exclusion_gdf(landuse, leisure, natural, water, aeroway, sea):
+def create_exclusion_gdf(landuse, leisure, natural, water, aeroway, sea, bridges):
     result = landuse.copy()
 
     if not leisure.empty:
@@ -153,6 +153,8 @@ def create_exclusion_gdf(landuse, leisure, natural, water, aeroway, sea):
         result = result.overlay(aeroway, how=OVERLAY_OPERATOR.union, keep_geom_type=True)
     if not sea.empty:
         result = result.overlay(sea, how=OVERLAY_OPERATOR.union, keep_geom_type=True)
+    if not bridges.empty:
+        result = result.overlay(bridges, how=OVERLAY_OPERATOR.difference, keep_geom_type=True)
 
     return result.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)
 

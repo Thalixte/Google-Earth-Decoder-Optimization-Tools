@@ -399,6 +399,7 @@ class MsfsProject:
                 msfs_scene_object = MsfsSceneObject(self.model_lib_folder, path.stem, path.name)
                 if not self.objects_xml.find_scenery_objects(msfs_scene_object.xml.guid):
                     msfs_scene_object.remove_files()
+                    pbar.update("%s" % path.name)
                     continue
                 self.objects[msfs_scene_object.xml.guid] = msfs_scene_object
                 pbar.update("%s" % path.name)
@@ -408,6 +409,7 @@ class MsfsProject:
                 msfs_collider = MsfsCollider(self.model_lib_folder, path.stem, path.name, self.objects_xml)
                 if not self.objects_xml.find_scenery_objects(msfs_collider.xml.guid):
                     msfs_collider.remove_files()
+                    pbar.update("%s" % path.name)
                     continue
                 self.colliders[msfs_collider.xml.guid] = msfs_collider
                 pbar.update("%s" % path.name)
@@ -416,6 +418,8 @@ class MsfsProject:
             msfs_tile = MsfsTile(self.model_lib_folder, path.stem, path.name, self.objects_xml)
             if not self.objects_xml.find_scenery_objects(msfs_tile.xml.guid):
                 msfs_tile.remove_files()
+                pbar.update("%s" % path.name)
+                continue
             if not msfs_tile.lods:
                 msfs_tile.remove_files()
             else:
@@ -708,9 +712,7 @@ class MsfsProject:
         print_title("RETRIEVE OSM (MAY TAKE SOME TIME TO COMPLETE, BE PATIENT...)")
 
         bridges = create_bridges_gdf(self.coords)
-        bridges.to_file(os.path.join(self.osmfiles_folder, "bridges" + SHP_FILE_EXT))
-        osm_xml = OsmXml(self.osmfiles_folder, "bridges" + OSM_FILE_EXT)
-        osm_xml.create_from_geodataframes([bridges], b)
+        # bridges.to_file(os.path.join(self.osmfiles_folder, "bridges" + SHP_FILE_EXT))
 
         land_mass = create_land_mass_gdf(bbox, b)
         sea = create_sea_gdf(land_mass, bbox)
@@ -725,7 +727,7 @@ class MsfsProject:
         water = clip_gdf(create_gdf_from_osm_data(self.coords, WATER_OSM_KEY, OSM_TAGS[WATER_OSM_KEY]), bbox)
         aeroway = clip_gdf(create_gdf_from_osm_data(self.coords, AEROWAY_OSM_KEY, True), bbox)
 
-        exclusion = create_exclusion_gdf(landuse, leisure, natural, water, aeroway, sea)
+        exclusion = create_exclusion_gdf(landuse, leisure, natural, water, aeroway, sea, bridges)
         # for debugging purpose, generate the whole exclusion osm file
         osm_xml = OsmXml(self.osmfiles_folder, EXCLUSION_OSM_FILE_PREFIX + OSM_FILE_EXT)
         osm_xml.create_from_geodataframes([preserve_holes(exclusion.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore'))], b, True, [(HEIGHT_OSM_TAG, 1000)])

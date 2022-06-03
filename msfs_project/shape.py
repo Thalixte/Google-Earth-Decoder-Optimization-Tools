@@ -101,7 +101,7 @@ class MsfsShapePolygon:
         self.exclude_ms_buildings.value = "1"
         self.exclude_tin.value = "1"
         self.layer.value = "50000"
-        self.flatten_mode.value = "0" if flatten else "1"
+        self.flatten_mode.value = "1" if flatten else "0"
         self.flatten_falloff.value = "1.000000"
 
         self.attributes += [
