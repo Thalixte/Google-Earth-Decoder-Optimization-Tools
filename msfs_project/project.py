@@ -356,10 +356,10 @@ class MsfsProject:
         os.makedirs(self.osmfiles_folder, exist_ok=True)
 
         # ensure to clean the xml folder containing the heightmaps data by removing it
-        # try:
-        #     shutil.rmtree(self.xmlfiles_folder)
-        # except:
-        #     pass
+        try:
+            shutil.rmtree(self.xmlfiles_folder)
+        except:
+            pass
 
         # create the xml folder if it does not exist
         os.makedirs(self.xmlfiles_folder, exist_ok=True)
@@ -693,10 +693,10 @@ class MsfsProject:
             self.objects_xml.add_height_map_group(height_map)
         self.objects_xml.save()
 
-        try:
-            shutil.rmtree(self.xmlfiles_folder)
-        except:
-            pass
+        # try:
+        #     shutil.rmtree(self.xmlfiles_folder)
+        # except:
+        #     pass
 
     def __create_tiles_bounding_boxes(self):
         pbar = ProgressBar(list(self.tiles.values()), title="CREATE BOUNDING BOX OSM FILES FOR EACH TILE")
