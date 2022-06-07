@@ -60,7 +60,7 @@ class HeightMap:
 
     def __init_from_height_data(self, tile, height_data, width, altitude, grid_limit, group_id):
         self.falloff = 100
-        self.priority = 0
+        self.priority = 50000
         self.altitude = altitude
         self.pos = get_latlonbox_from_file_name(tile.name).bl_point
         self.pos2 = get_latlonbox_from_file_name(tile.name).tl_point

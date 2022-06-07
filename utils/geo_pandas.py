@@ -105,10 +105,9 @@ def create_land_mass_gdf(bbox, b):
     return result[[GEOMETRY_OSM_COLUMN]].dissolve()
 
 
-def create_bridges_gdf(coords):
+def create_roads_gdf(coords):
     result = ox.geometries_from_bbox(coords[0], coords[1], coords[2], coords[3], tags={"highway": True})
-    result = result[result["bridge"] == "yes"]
-    result = result[[GEOMETRY_OSM_COLUMN, "highway"]]
+    result = result[[GEOMETRY_OSM_COLUMN, "highway", "bridge"]]
     result = resize_gdf(result, 10, single_sided=False)
 
     return result
@@ -138,7 +137,7 @@ def create_sea_gdf(land_mass, bbox):
     return result[[GEOMETRY_OSM_COLUMN]].dissolve()
 
 
-def create_exclusion_gdf(landuse, leisure, natural, water, aeroway, sea, bridges):
+def create_exclusion_gdf(landuse, leisure, natural, natural_water, water, sea, aeroway, roads):
     result = landuse.copy()
 
     if not leisure.empty:
@@ -147,21 +146,36 @@ def create_exclusion_gdf(landuse, leisure, natural, water, aeroway, sea, bridges
         result = result.overlay(leisure, how=OVERLAY_OPERATOR.union, keep_geom_type=True)
     if not natural.empty:
         result = result.overlay(natural, how=OVERLAY_OPERATOR.union, keep_geom_type=True)
-    if not water.empty:
-        result = result.overlay(water, how=OVERLAY_OPERATOR.union, keep_geom_type=True)
     if not aeroway.empty:
         result = result.overlay(aeroway, how=OVERLAY_OPERATOR.union, keep_geom_type=True)
+    if not water.empty:
+        if not roads.empty:
+            water = water.overlay(roads, how=OVERLAY_OPERATOR.difference, keep_geom_type=True)
+        result = result.overlay(water, how=OVERLAY_OPERATOR.union, keep_geom_type=True)
+    if not natural_water.empty:
+        if not roads.empty:
+            natural_water = natural_water.overlay(roads, how=OVERLAY_OPERATOR.difference, keep_geom_type=True)
+        result = result.overlay(natural_water, how=OVERLAY_OPERATOR.union, keep_geom_type=True)
     if not sea.empty:
+        if not roads.empty:
+            sea = sea.overlay(roads, how=OVERLAY_OPERATOR.difference, keep_geom_type=True)
         result = result.overlay(sea, how=OVERLAY_OPERATOR.union, keep_geom_type=True)
-    if not bridges.empty:
-        result = result.overlay(bridges, how=OVERLAY_OPERATOR.difference, keep_geom_type=True)
+    if not roads.empty:
+        bridges = roads[roads["bridge"] == "yes"]
+        if not bridges.empty:
+            result = result.overlay(bridges, how=OVERLAY_OPERATOR.difference, keep_geom_type=True)
 
     return result.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)
 
 
-def create_scenery_shape_gdf(bbox, exclusion):
-    bbox = resize_gdf(bbox, -100)
-    return preserve_holes(bbox.overlay(exclusion, how=OVERLAY_OPERATOR.difference, keep_geom_type=False), split_method=PRESERVE_HOLES_METHOD.derivation_split)
+def create_terraforming_polygons_gdf(bbox, exclusion):
+    adjusted_bbox = resize_gdf(bbox, -100)
+    return preserve_holes(adjusted_bbox.overlay(exclusion, how=OVERLAY_OPERATOR.difference, keep_geom_type=False), split_method=PRESERVE_HOLES_METHOD.derivation_split)
+
+
+def create_exclusion_building_polygons_gdf(bbox, exclusion):
+    adjusted_bbox = resize_gdf(bbox, 20)
+    return preserve_holes(adjusted_bbox.overlay(exclusion, how=OVERLAY_OPERATOR.difference, keep_geom_type=False), split_method=PRESERVE_HOLES_METHOD.derivation_split)
 
 
 def clip_gdf(gdf, clip):

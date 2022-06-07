@@ -96,7 +96,8 @@ MAX_PHOTOGRAMMETRY_LOD = 23
 
 TARGET_MIN_SIZE_VALUE_PROPERTY_PREFIX = "target_min_size_value_"
 
-SHAPE_DISPLAY_NAME = "GEDOT_generated_shape"
+TERRAFORMING_POLYGONS_DISPLAY_NAME = "GEDOT_generated_terraforming_polygons"
+EXCLUSION_BUILDING_POLYGONS_DISPLAY_NAME = "GEDOT_generated_exclusion_building_polygons"
 HEIGHT_MAPS_DISPLAY_NAME = "GEDOT_generated_height_maps"
 
 PROJECT_INI_SECTION = "PROJECT"
@@ -122,6 +123,7 @@ DUMMY_OBJECT = "dummy"
 LANDUSE_OSM_KEY = "landuse"
 LEISURE_OSM_KEY = "leisure"
 NATURAL_OSM_KEY = "natural"
+NATURAL_WATER_OSM_KEY = "natural_water"
 WATER_OSM_KEY = "water"
 AEROWAY_OSM_KEY = "aeroway"
 BOUNDARY_OSM_KEY = "boundary"
@@ -140,6 +142,7 @@ PARK_OSM_TAG = "park"
 PLAYGROUND_OSM_TAG = "playground"
 GRASS_OSM_TAG = "grass"
 WOOD_OSM_TAG = "wood"
+BAY_OSM_TAG = "bay"
 WATER_OSM_TAG = "water"
 RIVER_OSM_TAG = "river"
 STREAM_OSM_TAG = "stream"
@@ -195,13 +198,8 @@ OSM_TAGS = {
     ],
     NATURAL_OSM_KEY: [
         WOOD_OSM_TAG,
-        WATER_OSM_TAG,
-        RIVER_OSM_TAG,
-        STREAM_OSM_TAG,
-        SEA_OSM_TAG,
         GRASSLAND_OSM_TAG,
         SCRUB_OSM_TAG,
-        WETLAND_OSM_TAG,
         COASTLINE_OSM_TAG
     ],
     WATER_OSM_KEY: [
@@ -216,6 +214,14 @@ OSM_TAGS = {
         BASIN_OSM_TAG,
         MARINA_OSM_TAG,
         PIER_OSM_TAG
+    ],
+    NATURAL_WATER_OSM_KEY: [
+        BAY_OSM_TAG,
+        WATER_OSM_TAG,
+        RIVER_OSM_TAG,
+        STREAM_OSM_TAG,
+        SEA_OSM_TAG,
+        WETLAND_OSM_TAG
     ],
     AEROWAY_OSM_KEY: [],
     ROCKS_OSM_KEY: [

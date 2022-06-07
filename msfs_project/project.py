@@ -42,7 +42,7 @@ from msfs_project.collider import MsfsCollider
 from msfs_project.tile import MsfsTile
 from msfs_project.shape import MsfsShape
 from utils import replace_in_file, is_octant, backup_file, install_python_lib, ScriptError, print_title, \
-    get_backup_file_path, isolated_print, chunks, create_bounding_box_from_tiles, create_gdf_from_osm_data, clip_gdf, create_exclusion_gdf, create_scenery_shape_gdf, create_sea_gdf, create_land_mass_gdf, resize_gdf, create_exclusion_masks_from_tiles, preserve_holes, create_bridges_gdf
+    get_backup_file_path, isolated_print, chunks, create_bounding_box_from_tiles, create_gdf_from_osm_data, clip_gdf, create_exclusion_gdf, create_terraforming_polygons_gdf, create_sea_gdf, create_land_mass_gdf, resize_gdf, create_exclusion_masks_from_tiles, preserve_holes, create_roads_gdf, create_exclusion_building_polygons_gdf, PRESERVE_HOLES_METHOD
 from pathlib import Path
 
 from utils.compressonator import Compressonator
@@ -356,10 +356,10 @@ class MsfsProject:
         os.makedirs(self.osmfiles_folder, exist_ok=True)
 
         # ensure to clean the xml folder containing the heightmaps data by removing it
-        try:
-            shutil.rmtree(self.xmlfiles_folder)
-        except:
-            pass
+        # try:
+        #     shutil.rmtree(self.xmlfiles_folder)
+        # except:
+        #     pass
 
         # create the xml folder if it does not exist
         os.makedirs(self.xmlfiles_folder, exist_ok=True)
@@ -427,7 +427,7 @@ class MsfsProject:
             pbar.update("%s" % path.name)
 
     def __retrieve_shapes(self):
-        self.shapes = {SHAPE_DISPLAY_NAME: MsfsShape(xml=self.objects_xml)}
+        self.shapes = {TERRAFORMING_POLYGONS_DISPLAY_NAME: MsfsShape(xml=self.objects_xml)}
         isolated_print(EOL)
 
     def __clean_objects(self, objects: dict):
@@ -711,8 +711,8 @@ class MsfsProject:
     def __create_osm_exclusion_file(self, b, bbox):
         print_title("RETRIEVE OSM (MAY TAKE SOME TIME TO COMPLETE, BE PATIENT...)")
 
-        bridges = create_bridges_gdf(self.coords)
-        # bridges.to_file(os.path.join(self.osmfiles_folder, "bridges" + SHP_FILE_EXT))
+        import geopandas as gpd
+        roads = create_roads_gdf(self.coords)
 
         land_mass = create_land_mass_gdf(bbox, b)
         sea = create_sea_gdf(land_mass, bbox)
@@ -724,22 +724,24 @@ class MsfsProject:
         landuse = clip_gdf(create_gdf_from_osm_data(self.coords, LANDUSE_OSM_KEY, OSM_TAGS[LANDUSE_OSM_KEY]), bbox)
         leisure = clip_gdf(create_gdf_from_osm_data(self.coords, LEISURE_OSM_KEY, OSM_TAGS[LEISURE_OSM_KEY]), bbox)
         natural = clip_gdf(create_gdf_from_osm_data(self.coords, NATURAL_OSM_KEY, OSM_TAGS[NATURAL_OSM_KEY]), bbox)
+        natural_water = clip_gdf(create_gdf_from_osm_data(self.coords, NATURAL_OSM_KEY, OSM_TAGS[NATURAL_WATER_OSM_KEY]), bbox)
         water = clip_gdf(create_gdf_from_osm_data(self.coords, WATER_OSM_KEY, OSM_TAGS[WATER_OSM_KEY]), bbox)
         aeroway = clip_gdf(create_gdf_from_osm_data(self.coords, AEROWAY_OSM_KEY, True), bbox)
 
-        exclusion = create_exclusion_gdf(landuse, leisure, natural, water, aeroway, sea, bridges)
+        exclusion = create_exclusion_gdf(landuse, leisure, natural, natural_water, water, sea, aeroway, roads)
         # for debugging purpose, generate the whole exclusion osm file
         osm_xml = OsmXml(self.osmfiles_folder, EXCLUSION_OSM_FILE_PREFIX + OSM_FILE_EXT)
         osm_xml.create_from_geodataframes([preserve_holes(exclusion.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore'))], b, True, [(HEIGHT_OSM_TAG, 1000)])
 
         create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, exclusion)
-        exclusion = resize_gdf(exclusion, 20)
-        scenery_shape = create_scenery_shape_gdf(bbox, exclusion)
+        terraforming_polygons = create_terraforming_polygons_gdf(bbox, exclusion)
+        exclusion_building_polygons = create_exclusion_building_polygons_gdf(bbox, exclusion)
         # reload the xml file to retrieve the last updates
         self.objects_xml = ObjectsXml(self.scene_folder, self.SCENE_OBJECTS_FILE)
         self.objects_xml.remove_shape()
         new_group_id = self.objects_xml.get_new_group_id()
-        self.shapes[SHAPE_DISPLAY_NAME] = MsfsShape(shape_gdf=scenery_shape, group_id=new_group_id)
+        self.shapes[TERRAFORMING_POLYGONS_DISPLAY_NAME] = MsfsShape(shape_gdf=terraforming_polygons, group_display_name=TERRAFORMING_POLYGONS_DISPLAY_NAME, group_id=new_group_id, flatten=False)
+        self.shapes[EXCLUSION_BUILDING_POLYGONS_DISPLAY_NAME] = MsfsShape(shape_gdf=exclusion_building_polygons, group_display_name=EXCLUSION_BUILDING_POLYGONS_DISPLAY_NAME, group_id=new_group_id+1, exclude_buildings=True)
         for shape in self.shapes.values():
             shape.to_xml(self.objects_xml)
 

@@ -25,7 +25,7 @@ from msfs_project.height_map import HeightMap
 from msfs_project.collider import MsfsCollider
 from msfs_project.scene_object import MsfsSceneObject
 from msfs_project.position import MsfsPosition
-from utils import get_coords_from_file_name, get_position_from_file_name, create_tile_bounding_box, resize_gdf, preserve_holes, isolated_print
+from utils import get_coords_from_file_name, get_position_from_file_name, create_tile_bounding_box, resize_gdf, preserve_holes
 from utils.minidom_xml import create_new_definition_file
 from msfs_project.osm_xml import OsmXml
 

@@ -426,8 +426,8 @@ def generate_model_height_data(model_file_path, lat, lon, altitude, inverted=Fal
     hmatrix = calculate_height_map_from_coords_from_bottom(tile, grid_dimension, coords, depsgraph, lat, lon, altitude)
 
     if inverted and os.path.exists(positioning_file_path) and os.path.exists(mask_file_path):
-        align_model_with_mask(model_file_path, positioning_file_path, mask_file_path, objects_to_keep=[grid])
-        cleanup_3d_data(model_file_path, intersect=True)
+        # align_model_with_mask(model_file_path, positioning_file_path, mask_file_path, objects_to_keep=[grid])
+        # cleanup_3d_data(model_file_path, intersect=True)
         tile = get_tile_for_ray_cast(model_file_path, imported=False, objects_to_keep=[grid])
         hmatrix = calculate_height_map_from_coords_from_top(tile, grid_dimension, coords, depsgraph, lat, lon, altitude, hmatrix_base=hmatrix)
 
@@ -467,15 +467,21 @@ def get_tile_for_ray_cast(model_file_path, imported=True, objects_to_keep=[]):
         import_model_files([model_file_path])
     bpy.ops.object.select_all(action=SELECT_ACTION)
     keep_objects(objects_to_keep)
-    bpy.ops.object.join()
     objs = bpy.context.selected_objects
+    bpy.ops.object.select_all(action=DESELECT_ACTION)
 
     for obj in objs:
         if obj.type != MESH_OBJECT_TYPE:
             obj.select_set(True)
             bpy.ops.object.delete()
-        else:
-            tile = obj
+
+    bpy.context.view_layer.objects.active = obj
+    bpy.ops.object.select_all(action=SELECT_ACTION)
+    bpy.ops.object.join()
+
+    objs = bpy.context.selected_objects
+    for obj in objs:
+        tile = obj
 
     return tile
 

@@ -19,7 +19,7 @@ from uuid import uuid4
 
 from shapely.geometry import Polygon, MultiPolygon
 
-from constants import SHAPE_DISPLAY_NAME
+from constants import TERRAFORMING_POLYGONS_DISPLAY_NAME
 from utils import SHAPELY_TYPE
 
 
@@ -80,7 +80,7 @@ class MsfsShapePolygon:
     airport_size = MsfsShapeAttribute(name="AirportSize", guid="{86A147E9-ACF2-4780-9D3C-416373ECB451}", type=SHAPE_ATTRIBUTE_TYPE.uint8, value="0")
     layer = MsfsShapeAttribute(name="Layer", guid="{9E2B4C3E-7D84-453F-9DCC-B6498FF46703}", type=SHAPE_ATTRIBUTE_TYPE.uint32, value="1")
 
-    def __init__(self, polygon=None, xml=None, elem=None, parent_group_id=None, group_index=None, flatten=False):
+    def __init__(self, polygon=None, xml=None, elem=None, parent_group_id=None, group_index=None, flatten=False, exclude_buildings=False):
         self.tag = SHAPELY_TYPE.polygon
         self.altitude = 0.0
         self.parent_group_id = parent_group_id
@@ -89,17 +89,17 @@ class MsfsShapePolygon:
         self.vertices = []
 
         if polygon is not None:
-            self.__init_from_polygon(polygon, flatten=flatten)
+            self.__init_from_polygon(polygon, flatten=flatten, exclude_buildings=exclude_buildings)
 
         if xml is not None and elem is not None:
             self.__init_from_xml(xml, elem)
 
-    def __init_from_polygon(self, polygon, flatten=False):
+    def __init_from_polygon(self, polygon, flatten=False, exclude_buildings=False):
         self.unique_guid.value = uuid4()
-        self.exclude_detected_buildings.value = "1"
-        self.exclude_osm_buildings.value = "1"
-        self.exclude_ms_buildings.value = "1"
-        self.exclude_tin.value = "1"
+        self.exclude_detected_buildings.value = "1" if exclude_buildings else "0"
+        self.exclude_osm_buildings.value = "1" if exclude_buildings else "0"
+        self.exclude_ms_buildings.value = "1" if exclude_buildings else "0"
+        self.exclude_tin.value = "1" if exclude_buildings else "0"
         self.layer.value = "50000"
         self.flatten_mode.value = "1" if flatten else "0"
         self.flatten_falloff.value = "1.000000"
@@ -149,9 +149,9 @@ class MsfsShapeGroup:
     group_id: int
     group_generated: bool
 
-    def __init__(self, xml=None, elem=None, group_id=None):
+    def __init__(self, xml=None, elem=None, group_display_name=TERRAFORMING_POLYGONS_DISPLAY_NAME, group_id=None):
         self.tag = "Group"
-        self.display_name = SHAPE_DISPLAY_NAME
+        self.display_name = group_display_name
         self.group_index = 1
         self.group_id = 1 if group_id is None else group_id
         self.group_generated = (group_id is not None)
@@ -177,11 +177,11 @@ class MsfsShape:
     polygons: list
     group: MsfsShapeGroup
 
-    def __init__(self, shape_gdf=None, xml=None, group_id=None, flatten=False):
+    def __init__(self, shape_gdf=None, xml=None, group_display_name=TERRAFORMING_POLYGONS_DISPLAY_NAME, group_id=None, flatten=False, exclude_buildings=False):
         self.polygons = []
 
         if not shape_gdf is None:
-            self.__init_from_gdf(shape_gdf, group_id, flatten=flatten)
+            self.__init_from_gdf(shape_gdf, group_display_name, group_id, flatten=flatten, exclude_buildings=exclude_buildings)
 
         if not xml is None:
             self.__init_from_xml(xml)
@@ -189,8 +189,8 @@ class MsfsShape:
     def to_xml(self, xml):
         xml.add_shape(self)
 
-    def __init_from_gdf(self, shape_gdf, group_id, flatten=False):
-        self.group = MsfsShapeGroup(group_id=group_id)
+    def __init_from_gdf(self, shape_gdf, group_display_name, group_id, flatten=False, exclude_buildings=False):
+        self.group = MsfsShapeGroup(group_display_name=group_display_name, group_id=group_id)
 
         for index, row in shape_gdf.iterrows():
             if not isinstance(row.geometry, Polygon) and not isinstance(row.geometry, MultiPolygon):
@@ -203,7 +203,7 @@ class MsfsShape:
 
             group_index = index[1]+1 if isinstance(index, list) or isinstance(index, tuple) else index+1
             for polygon in polygons:
-                self.polygons.append(MsfsShapePolygon(polygon=polygon, parent_group_id=group_id, group_index=group_index, flatten=flatten))
+                self.polygons.append(MsfsShapePolygon(polygon=polygon, parent_group_id=group_id, group_index=group_index, flatten=flatten, exclude_buildings=exclude_buildings))
 
     def __init_from_xml(self, xml):
         polygons = xml.find_polygons()

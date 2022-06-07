@@ -15,7 +15,7 @@
 #  #
 #
 #  <pep8 compliant>
-from constants import SHAPE_DISPLAY_NAME, HEIGHT_MAPS_DISPLAY_NAME
+from constants import TERRAFORMING_POLYGONS_DISPLAY_NAME, HEIGHT_MAPS_DISPLAY_NAME
 from utils.progress_bar import ProgressBar
 from utils import Xml
 import xml.etree.ElementTree as Et
@@ -104,7 +104,7 @@ class ObjectsXml(Xml):
 
     def remove_shape(self):
         group_id = -1
-        pattern = self.GROUP_SEARCH_PATTERN + SHAPE_DISPLAY_NAME + self.PATTERN_SUFFIX
+        pattern = self.GROUP_SEARCH_PATTERN + TERRAFORMING_POLYGONS_DISPLAY_NAME + self.PATTERN_SUFFIX
 
         groups = self.root.findall(pattern)
         for group in groups:
@@ -140,7 +140,7 @@ class ObjectsXml(Xml):
             for vertex in polygon.vertices:
                 self.__add_shape_polygon_vertex(polygon_elem, vertex)
 
-        pattern = self.GROUP_SEARCH_PATTERN + SHAPE_DISPLAY_NAME + self.PATTERN_SUFFIX
+        pattern = self.GROUP_SEARCH_PATTERN + shape.group.display_name + self.PATTERN_SUFFIX
         groups = self.root.findall(pattern)
 
         if not groups:
