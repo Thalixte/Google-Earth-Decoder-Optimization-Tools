@@ -581,7 +581,7 @@ class MsfsProject:
                 if tile.has_rocks:
                     tile.has_rocks = True
                     params.extend(["--positioning_file_path", str(os.path.join(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)),
-                                   "--mask_file_path", str(os.path.join(self.osmfiles_folder, EXCLUSION_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT))])
+                                   "--mask_file_path", str(os.path.join(self.osmfiles_folder, EXCLUSION_OSM_FILE_PREFIX + "_" + tile.name + "_resized" + OSM_FILE_EXT))])
 
                 data.append({"name": tile.name, "params": params})
 
@@ -717,8 +717,7 @@ class MsfsProject:
     def __create_osm_exclusion_file(self, b, bbox):
         print_title("RETRIEVE OSM (MAY TAKE SOME TIME TO COMPLETE, BE PATIENT...)")
 
-        import geopandas as gpd
-        roads = create_roads_gdf(self.coords)
+        roads = create_roads_gdf(self.coords, shp_file_path=os.path.join(self.shpfiles_folder, ROADS_OSM_KEY + SHP_FILE_EXT))
 
         land_mass = create_land_mass_gdf(bbox, b)
         sea = create_sea_gdf(land_mass, bbox)
@@ -740,6 +739,7 @@ class MsfsProject:
         osm_xml.create_from_geodataframes([preserve_holes(exclusion.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore'))], b, True, [(HEIGHT_OSM_TAG, 1000)])
 
         create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, exclusion)
+        create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, exclusion, resized=True)
         terraforming_polygons = create_terraforming_polygons_gdf(bbox, exclusion)
         exclusion_building_polygons = create_exclusion_building_polygons_gdf(bbox, exclusion)
         # reload the xml file to retrieve the last updates

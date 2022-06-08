@@ -25,7 +25,7 @@ from osmnx.utils_geo import bbox_to_poly
 from shapely.geometry import Polygon, JOIN_STYLE, CAP_STYLE, MultiPolygon, LineString, MultiPoint, Point
 from shapely.ops import linemerge, unary_union, polygonize, nearest_points
 
-from constants import GEOMETRY_OSM_COLUMN, BOUNDING_BOX_OSM_KEY, SHAPE_TEMPLATES_FOLDER, OSM_LAND_SHAPEFILE
+from constants import GEOMETRY_OSM_COLUMN, BOUNDING_BOX_OSM_KEY, SHAPE_TEMPLATES_FOLDER, OSM_LAND_SHAPEFILE, ROADS_OSM_KEY, BRIDGE_OSM_TAG
 from utils.progress_bar import ProgressBar
 from utils.geometry import close_holes, extend_line
 
@@ -78,10 +78,13 @@ def create_tile_bounding_box(tile):
     return gpd.GeoDataFrame(pd.DataFrame([], index=[0]), crs=EPSG.key + str(EPSG.WGS84_degree_unit), geometry=[b]), b
 
 
-def create_exclusion_masks_from_tiles(tiles, dest_folder, b, exclusion_mask):
+def create_exclusion_masks_from_tiles(tiles, dest_folder, b, exclusion_mask, resized=False):
     pbar = ProgressBar(list(tiles.values()), title="CREATE EXCLUSION MASKS OSM FILES")
+    exclusion = exclusion_mask.copy()
+    if resized:
+        exclusion = resize_gdf(exclusion, 8)
     for i, tile in enumerate(tiles.values()):
-        tile.create_exclusion_mask_osm_file(dest_folder, b, exclusion_mask)
+        tile.create_exclusion_mask_osm_file(dest_folder, b, exclusion, resized=resized)
         pbar.update("exclusion mask created for %s tile" % tile.name)
 
 
@@ -115,10 +118,20 @@ def create_land_mass_gdf(bbox, b):
     return result[[GEOMETRY_OSM_COLUMN]].dissolve()
 
 
-def create_roads_gdf(coords):
-    result = ox.geometries_from_bbox(coords[0], coords[1], coords[2], coords[3], tags={"highway": True})
-    result = result[[GEOMETRY_OSM_COLUMN, "highway", "bridge"]]
-    result = resize_gdf(result, 10, single_sided=False)
+def create_roads_gdf(coords, shp_file_path=""):
+    has_cache = os.path.isfile(shp_file_path)
+
+    if has_cache:
+        result = gpd.read_file(shp_file_path)
+    else:
+        result = ox.geometries_from_bbox(coords[0], coords[1], coords[2], coords[3], tags={ROADS_OSM_KEY: True})
+
+    if not result.empty:
+        result = result[[GEOMETRY_OSM_COLUMN, ROADS_OSM_KEY, BRIDGE_OSM_TAG]]
+        result = resize_gdf(result, 12, single_sided=False)
+
+        if not has_cache and shp_file_path != "":
+            result.to_file(shp_file_path)
 
     return result
 
@@ -171,7 +184,7 @@ def create_exclusion_gdf(landuse, leisure, natural, natural_water, water, sea, a
             sea = sea.overlay(roads, how=OVERLAY_OPERATOR.difference, keep_geom_type=True)
         result = result.overlay(sea, how=OVERLAY_OPERATOR.union, keep_geom_type=True)
     if not roads.empty:
-        bridges = roads[roads["bridge"] == "yes"]
+        bridges = roads[roads[BRIDGE_OSM_TAG] == "yes"]
         if not bridges.empty:
             result = result.overlay(bridges, how=OVERLAY_OPERATOR.difference, keep_geom_type=True)
 

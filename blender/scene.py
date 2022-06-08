@@ -689,7 +689,7 @@ def calculate_height_map_from_coords_from_top(tile, grid_dimension, coords, deps
                 if y in hmatrix_base:
                     if x in hmatrix_base[y]:
                         base_h = hmatrix_base[y][x]
-                        h = h if h >= base_h else base_h
+                        h = h + 5.0 if h >= base_h else base_h
                         results[y][x] = h
 
     return results

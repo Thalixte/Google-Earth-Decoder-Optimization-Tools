@@ -91,13 +91,14 @@ class MsfsTile(MsfsSceneObject):
         osm_xml = OsmXml(dest_folder, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + self.name + OSM_FILE_EXT)
         osm_xml.create_from_geodataframes([self.bbox_gdf.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')], b)
 
-    def create_exclusion_mask_osm_file(self, dest_folder, b, exclusion_mask):
+    def create_exclusion_mask_osm_file(self, dest_folder, b, exclusion_mask, resized=False):
         self.exclusion_mask_gdf = exclusion_mask.clip(self.bbox_gdf)
 
         if not self.exclusion_mask_gdf.empty:
             bbox_gdf = resize_gdf(self.bbox_gdf, 10)
+            file_name = EXCLUSION_OSM_FILE_PREFIX + "_" + self.name + ("_resized" if resized else "") + OSM_FILE_EXT
 
-            osm_xml = OsmXml(dest_folder, EXCLUSION_OSM_FILE_PREFIX + "_" + self.name + OSM_FILE_EXT)
+            osm_xml = OsmXml(dest_folder, file_name)
             osm_xml.create_from_geodataframes([preserve_holes(exclusion_mask.clip(bbox_gdf).drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore'))], b, True, [(HEIGHT_OSM_TAG, 1000)])
 
     def generate_height_data(self, name, height_map_xml, group_id, altitude, inverted=False, positioning_file_path="", mask_file_path=""):
