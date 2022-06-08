@@ -63,6 +63,7 @@ class MsfsProject:
     business_json_folder: str
     content_info_folder: str
     osmfiles_folder: str
+    shpfiles_folder: str
     xmlfiles_folder: str
     project_definition_xml: str
     project_definition_xml_path: str
@@ -91,6 +92,7 @@ class MsfsProject:
     MODEL_LIB_FOLDER = "modelLib"
     SCENE_FOLDER = "scene"
     OSMFILES_FOLDER = "osm"
+    SHPFILES_FOLDER = "shp"
     XMLFILES_FOLDER = "xml"
     CONTENT_INFO_FOLDER = "ContentInfo"
     SCENE_OBJECTS_FILE = "objects" + XML_FILE_EXT
@@ -104,6 +106,7 @@ class MsfsProject:
         self.project_folder = os.path.join(self.parent_path, self.project_name.capitalize())
         self.backup_folder = os.path.join(self.project_folder, self.BACKUP_FOLDER)
         self.osmfiles_folder = os.path.join(self.project_folder, self.OSMFILES_FOLDER)
+        self.shpfiles_folder = os.path.join(self.project_folder, self.SHPFILES_FOLDER)
         self.xmlfiles_folder = os.path.join(self.project_folder, self.XMLFILES_FOLDER)
         self.package_definitions_folder = os.path.join(self.project_folder, self.PACKAGE_DEFINITIONS_FOLDER)
         self.package_sources_folder = os.path.join(self.project_folder, self.PACKAGE_SOURCES_FOLDER)
@@ -266,8 +269,8 @@ class MsfsProject:
     def cleanup_3d_data(self):
         self.__remove_colliders()
         self.__create_tiles_bounding_boxes()
-        self.__generate_height_map_data()
         self.__create_osm_files()
+        self.__generate_height_map_data()
         self.__cleanup_lods_3d_data()
 
         lods = [lod for tile in self.tiles.values() for lod in tile.lods]
@@ -354,6 +357,9 @@ class MsfsProject:
 
         # create the osm folder if it does not exist
         os.makedirs(self.osmfiles_folder, exist_ok=True)
+
+        # create the shp folder if it does not exist
+        os.makedirs(self.shpfiles_folder, exist_ok=True)
 
         # ensure to clean the xml folder containing the heightmaps data by removing it
         try:
@@ -674,7 +680,7 @@ class MsfsProject:
     def __generate_height_map_data(self):
         isolated_print(EOL)
         self.objects_xml.remove_height_maps()
-        rocks = create_gdf_from_osm_data(self.coords, NATURAL_OSM_KEY, OSM_TAGS[ROCKS_OSM_KEY])
+        rocks = create_gdf_from_osm_data(self.coords, NATURAL_OSM_KEY, OSM_TAGS[ROCKS_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, ROCKS_OSM_KEY + SHP_FILE_EXT))
         new_group_id = self.objects_xml.get_new_group_id()
 
         tiles_data = self.__retrieve_tiles_to_calculate_height_map(rocks=rocks, new_group_id=new_group_id, parallel=True)
@@ -718,15 +724,15 @@ class MsfsProject:
         sea = create_sea_gdf(land_mass, bbox)
 
         bbox = clip_gdf(bbox, land_mass)
-        bbox = clip_gdf(bbox, create_gdf_from_osm_data(self.coords, BOUNDARY_OSM_KEY, True))
+        bbox = clip_gdf(bbox, create_gdf_from_osm_data(self.coords, BOUNDARY_OSM_KEY, True, shp_file_path=os.path.join(self.shpfiles_folder, BOUNDARY_OSM_KEY + SHP_FILE_EXT)))
         bbox = resize_gdf(bbox, 20)
 
-        landuse = clip_gdf(create_gdf_from_osm_data(self.coords, LANDUSE_OSM_KEY, OSM_TAGS[LANDUSE_OSM_KEY]), bbox)
-        leisure = clip_gdf(create_gdf_from_osm_data(self.coords, LEISURE_OSM_KEY, OSM_TAGS[LEISURE_OSM_KEY]), bbox)
-        natural = clip_gdf(create_gdf_from_osm_data(self.coords, NATURAL_OSM_KEY, OSM_TAGS[NATURAL_OSM_KEY]), bbox)
-        natural_water = clip_gdf(create_gdf_from_osm_data(self.coords, NATURAL_OSM_KEY, OSM_TAGS[NATURAL_WATER_OSM_KEY]), bbox)
-        water = clip_gdf(create_gdf_from_osm_data(self.coords, WATER_OSM_KEY, OSM_TAGS[WATER_OSM_KEY]), bbox)
-        aeroway = clip_gdf(create_gdf_from_osm_data(self.coords, AEROWAY_OSM_KEY, True), bbox)
+        landuse = clip_gdf(create_gdf_from_osm_data(self.coords, LANDUSE_OSM_KEY, OSM_TAGS[LANDUSE_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, LANDUSE_OSM_KEY + SHP_FILE_EXT)), bbox)
+        leisure = clip_gdf(create_gdf_from_osm_data(self.coords, LEISURE_OSM_KEY, OSM_TAGS[LEISURE_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, LEISURE_OSM_KEY + SHP_FILE_EXT)), bbox)
+        natural = clip_gdf(create_gdf_from_osm_data(self.coords, NATURAL_OSM_KEY, OSM_TAGS[NATURAL_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, NATURAL_OSM_KEY + SHP_FILE_EXT)), bbox)
+        natural_water = clip_gdf(create_gdf_from_osm_data(self.coords, NATURAL_OSM_KEY, OSM_TAGS[NATURAL_WATER_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, NATURAL_WATER_OSM_KEY + SHP_FILE_EXT)), bbox)
+        water = clip_gdf(create_gdf_from_osm_data(self.coords, WATER_OSM_KEY, OSM_TAGS[WATER_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, WATER_OSM_KEY + SHP_FILE_EXT)), bbox)
+        aeroway = clip_gdf(create_gdf_from_osm_data(self.coords, AEROWAY_OSM_KEY, True, shp_file_path=os.path.join(self.shpfiles_folder, AEROWAY_OSM_KEY + SHP_FILE_EXT)), bbox)
 
         exclusion = create_exclusion_gdf(landuse, leisure, natural, natural_water, water, sea, aeroway, roads)
         # for debugging purpose, generate the whole exclusion osm file

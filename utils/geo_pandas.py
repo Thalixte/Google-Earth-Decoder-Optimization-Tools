@@ -91,11 +91,21 @@ def resize_gdf(gdf, resize_distance, single_sided=True):
     return gdf.to_crs(EPSG.key + str(EPSG.WGS84_degree_unit))
 
 
-def create_gdf_from_osm_data(coords, key, tags):
-    result = ox.geometries_from_bbox(coords[0], coords[1], coords[2], coords[3], tags={key: tags})
+def create_gdf_from_osm_data(coords, key, tags, shp_file_path=""):
+    has_cache = os.path.isfile(shp_file_path)
+
+    if has_cache:
+        result = gpd.read_file(shp_file_path)
+    else:
+        result = ox.geometries_from_bbox(coords[0], coords[1], coords[2], coords[3], tags={key: tags})
+
     if not result.empty:
         result = result[[GEOMETRY_OSM_COLUMN, key]]
+        result = resize_gdf(result, 1)
         result = result[(result.geom_type == SHAPELY_TYPE.polygon) | (result.geom_type == SHAPELY_TYPE.multiPolygon)]
+
+        if not has_cache and shp_file_path != "":
+            result.to_file(shp_file_path)
 
     return result
 
@@ -329,3 +339,29 @@ def derivation_split_method(input_p, keep_polys):
 
     return result
 
+
+def create_grid_from_hmatrix(hmatrix, lat, lon):
+    result = []
+    n = 0
+
+    data = {"x": [], "y": []}
+    for y, heights in hmatrix.items():
+        if n % 2 == 0:
+            for x, h in heights.items():
+                data["x"].append(x)
+                data["y"].append(y)
+
+        n = n + 1
+
+    df = pd.DataFrame(data)
+    gdf = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df["x"], df["y"]), crs=EPSG.key + str(EPSG.WGS84_meter_unit))
+
+    gdf = gdf.to_crs(EPSG.key + str(EPSG.WGS84_degree_unit))
+
+    for point in gdf[GEOMETRY_OSM_COLUMN]:
+        co = list(point.coords)
+        result.append((lat + co[0][0], lon + co[0][1]))
+
+    gdf[GEOMETRY_OSM_COLUMN] = result
+
+    return gdf

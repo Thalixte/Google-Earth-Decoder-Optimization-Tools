@@ -31,8 +31,8 @@ import mathutils
 from blender.blender_gis import import_osm_file
 from blender.image import get_image_node, fix_texture_size_for_package_compilation
 from blender.memory import remove_mesh_from_memory
-from constants import EOL, GEOIDS_DATASET_FOLDER, EGM2008_5_DATASET, TILE_THICKNESS
-from utils import ScriptError, isolated_print, MsfsGltf
+from constants import EOL, GEOIDS_DATASET_FOLDER, EGM2008_5_DATASET
+from utils import ScriptError, isolated_print, MsfsGltf, retrieve_height_data, create_grid_from_hmatrix
 from utils.progress_bar import ProgressBar
 
 SELECT_ACTION = "SELECT"
@@ -426,10 +426,28 @@ def generate_model_height_data(model_file_path, lat, lon, altitude, inverted=Fal
     hmatrix = calculate_height_map_from_coords_from_bottom(tile, grid_dimension, coords, depsgraph, lat, lon, altitude)
 
     if inverted and os.path.exists(positioning_file_path) and os.path.exists(mask_file_path):
-        # align_model_with_mask(model_file_path, positioning_file_path, mask_file_path, objects_to_keep=[grid])
-        # cleanup_3d_data(model_file_path, intersect=True)
+        align_model_with_mask(model_file_path, positioning_file_path, mask_file_path, objects_to_keep=[grid])
+        cleanup_3d_data(model_file_path, intersect=True)
         tile = get_tile_for_ray_cast(model_file_path, imported=False, objects_to_keep=[grid])
         hmatrix = calculate_height_map_from_coords_from_top(tile, grid_dimension, coords, depsgraph, lat, lon, altitude, hmatrix_base=hmatrix)
+
+    # height_data = retrieve_height_data(create_grid_from_hmatrix(hmatrix, lat, lon), get_geoid_height(lat, lon))
+    # isolated_print(height_data)
+    #
+    # new_collection = bpy.data.collections.new(name="new_coords")
+    # assert (new_collection is not bpy.context.scene.collection)
+    # bpy.context.scene.collection.children.link(new_collection)
+    #
+    # results = {}
+    # i = 0
+    #
+    # for y, heights in height_data.items():
+    #     results[y] = list(heights.values())
+    #     for x, h in heights.items():
+    #         # debug display of the cloud of points
+    #         p = point_cloud("p" + str(i), [(x, y, h)])
+    #         new_collection.objects.link(p)
+    #         i = i + 1
 
     new_collection = bpy.data.collections.new(name="coords")
     assert (new_collection is not bpy.context.scene.collection)
@@ -477,6 +495,7 @@ def get_tile_for_ray_cast(model_file_path, imported=True, objects_to_keep=[]):
 
     bpy.context.view_layer.objects.active = obj
     bpy.ops.object.select_all(action=SELECT_ACTION)
+    keep_objects(objects_to_keep)
     bpy.ops.object.join()
 
     objs = bpy.context.selected_objects
@@ -651,7 +670,7 @@ def calculate_height_map_from_coords_from_top(tile, grid_dimension, coords, deps
             new_coords.append(mathutils.Vector((p2[0], p2[1], result[1][2])))
 
     # fix noise in the height map data
-    new_coords = spatial_median_kdtree(np.array(new_coords), 30)
+    new_coords = spatial_median_kdtree(np.array(new_coords), 35)
     # new_coords = spatial_median(np.array(new_coords), 20)
 
     # downsample the new cords retrieved from top ray casting
