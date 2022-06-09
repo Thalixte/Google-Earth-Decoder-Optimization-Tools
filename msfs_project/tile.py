@@ -99,8 +99,11 @@ class MsfsTile(MsfsSceneObject):
             file_name = EXCLUSION_OSM_FILE_PREFIX + "_" + self.name + ("_buildings_and_water" if buildings_and_water else "") + OSM_FILE_EXT
             exclusion_mask = exclusion_mask.clip(bbox_gdf).drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')
 
+            if not buildings_and_water:
+                exclusion_mask = preserve_holes(exclusion_mask)
+
             osm_xml = OsmXml(dest_folder, file_name)
-            osm_xml.create_from_geodataframes([preserve_holes(exclusion_mask)], b, True, [(HEIGHT_OSM_TAG, 1000)])
+            osm_xml.create_from_geodataframes([exclusion_mask], b, True, [(HEIGHT_OSM_TAG, 1000)])
 
     def generate_height_data(self, name, height_map_xml, group_id, altitude, inverted=False, positioning_file_path="", mask_file_path=""):
         if not self.lods:
