@@ -427,27 +427,9 @@ def generate_model_height_data(model_file_path, lat, lon, altitude, inverted=Fal
 
     if inverted and os.path.exists(positioning_file_path) and os.path.exists(mask_file_path):
         align_model_with_mask(model_file_path, positioning_file_path, mask_file_path, objects_to_keep=[grid])
-        cleanup_3d_data(model_file_path, intersect=True)
+        cleanup_3d_data(model_file_path, intersect=False)
         tile = get_tile_for_ray_cast(model_file_path, imported=False, objects_to_keep=[grid])
         hmatrix = calculate_height_map_from_coords_from_top(tile, grid_dimension, coords, depsgraph, lat, lon, altitude, hmatrix_base=hmatrix)
-
-    # height_data = retrieve_height_data(create_grid_from_hmatrix(hmatrix, lat, lon), get_geoid_height(lat, lon))
-    # isolated_print(height_data)
-    #
-    # new_collection = bpy.data.collections.new(name="new_coords")
-    # assert (new_collection is not bpy.context.scene.collection)
-    # bpy.context.scene.collection.children.link(new_collection)
-    #
-    # results = {}
-    # i = 0
-    #
-    # for y, heights in height_data.items():
-    #     results[y] = list(heights.values())
-    #     for x, h in heights.items():
-    #         # debug display of the cloud of points
-    #         p = point_cloud("p" + str(i), [(x, y, h)])
-    #         new_collection.objects.link(p)
-    #         i = i + 1
 
     new_collection = bpy.data.collections.new(name="coords")
     assert (new_collection is not bpy.context.scene.collection)

@@ -20,7 +20,7 @@ import os
 
 import geopandas as gpd
 
-from constants import GLTF_FILE_EXT, COLLIDER_SUFFIX, XML_FILE_EXT, BOUNDARY_OSM_KEY, OSM_FILE_EXT, BOUNDING_BOX_OSM_FILE_PREFIX, EXCLUSION_OSM_FILE_PREFIX, HEIGHT_OSM_TAG
+from constants import GLTF_FILE_EXT, COLLIDER_SUFFIX, XML_FILE_EXT, BOUNDARY_OSM_KEY, OSM_FILE_EXT, BOUNDING_BOX_OSM_FILE_PREFIX, EXCLUSION_OSM_FILE_PREFIX, HEIGHT_OSM_TAG, EOL
 from msfs_project.height_map import HeightMap
 from msfs_project.collider import MsfsCollider
 from msfs_project.scene_object import MsfsSceneObject
@@ -91,15 +91,16 @@ class MsfsTile(MsfsSceneObject):
         osm_xml = OsmXml(dest_folder, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + self.name + OSM_FILE_EXT)
         osm_xml.create_from_geodataframes([self.bbox_gdf.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')], b)
 
-    def create_exclusion_mask_osm_file(self, dest_folder, b, exclusion_mask, resized=False):
+    def create_exclusion_mask_osm_file(self, dest_folder, b, exclusion_mask, buildings_and_water=False):
         self.exclusion_mask_gdf = exclusion_mask.clip(self.bbox_gdf)
 
         if not self.exclusion_mask_gdf.empty:
             bbox_gdf = resize_gdf(self.bbox_gdf, 10)
-            file_name = EXCLUSION_OSM_FILE_PREFIX + "_" + self.name + ("_resized" if resized else "") + OSM_FILE_EXT
+            file_name = EXCLUSION_OSM_FILE_PREFIX + "_" + self.name + ("_buildings_and_water" if buildings_and_water else "") + OSM_FILE_EXT
+            exclusion_mask = exclusion_mask.clip(bbox_gdf).drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')
 
             osm_xml = OsmXml(dest_folder, file_name)
-            osm_xml.create_from_geodataframes([preserve_holes(exclusion_mask.clip(bbox_gdf).drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore'))], b, True, [(HEIGHT_OSM_TAG, 1000)])
+            osm_xml.create_from_geodataframes([preserve_holes(exclusion_mask)], b, True, [(HEIGHT_OSM_TAG, 1000)])
 
     def generate_height_data(self, name, height_map_xml, group_id, altitude, inverted=False, positioning_file_path="", mask_file_path=""):
         if not self.lods:
