@@ -59,7 +59,7 @@ class PRESERVE_HOLES_METHOD:
     derivation_split = 2
 
 
-def gdf_union(gdf1, gdf2):
+def union_gdf(gdf1, gdf2):
     if gdf1.empty and not gdf2.empty:
         return gdf2.copy()
 
@@ -69,12 +69,23 @@ def gdf_union(gdf1, gdf2):
     return gdf1
 
 
-def gdf_difference(gdf1, gdf2):
-    if gdf1.empty and not gdf2.empty:
-        return gdf2.copy()
-
+def difference_gdf(gdf1, gdf2):
     if not gdf1.empty and not gdf2.empty:
         return gdf1.overlay(gdf2, how=OVERLAY_OPERATOR.difference, keep_geom_type=True)
+
+    return gdf1
+
+
+def symmetric_difference_gdf(gdf1, gdf2):
+    if not gdf1.empty and not gdf2.empty:
+        return gdf1.overlay(gdf2, how=OVERLAY_OPERATOR.symmetric_difference, keep_geom_type=True)
+
+    return gdf1
+
+
+def intersect_gdf(gdf1, gdf2):
+    if not gdf1.empty and not gdf2.empty:
+        return gdf1.overlay(gdf2, how=OVERLAY_OPERATOR.intersection, keep_geom_type=True)
 
     return gdf1
 
@@ -107,12 +118,15 @@ def create_exclusion_masks_from_tiles(tiles, dest_folder, b, exclusion_mask, bui
 
 
 def resize_gdf(gdf, resize_distance, single_sided=True):
+    if gdf.empty:
+        return gdf
+
     gdf = gdf.to_crs(EPSG.key + str(EPSG.WGS84_meter_unit))
     gdf[GEOMETRY_OSM_COLUMN] = gdf[GEOMETRY_OSM_COLUMN].buffer(resize_distance, cap_style=CAP_STYLE.flat, join_style=JOIN_STYLE.mitre, single_sided=single_sided)
     return gdf.to_crs(EPSG.key + str(EPSG.WGS84_degree_unit))
 
 
-def create_gdf_from_osm_data(coords, key, tags, shp_file_path=""):
+def create_gdf_from_osm_data(coords, key, tags, shp_file_path="", buildings=False):
     has_cache = os.path.isfile(shp_file_path)
 
     if has_cache:
@@ -122,7 +136,8 @@ def create_gdf_from_osm_data(coords, key, tags, shp_file_path=""):
 
     if not result.empty:
         result = result[[GEOMETRY_OSM_COLUMN, key]]
-        result = resize_gdf(result, 1)
+        if not buildings:
+            result = resize_gdf(result, 1)
         result = result[(result.geom_type == SHAPELY_TYPE.polygon) | (result.geom_type == SHAPELY_TYPE.multiPolygon)]
 
         if not has_cache and shp_file_path != "":
@@ -182,9 +197,8 @@ def create_sea_gdf(land_mass, bbox):
 def create_buildings_and_water_gdf(buildings, water):
     result = gpd.GeoDataFrame(columns=[GEOMETRY_OSM_COLUMN], geometry=GEOMETRY_OSM_COLUMN)
 
-    result = gdf_union(result, buildings)
-    result = gdf_union(result, water)
-    result = resize_gdf(result, 5)
+    result = union_gdf(result, resize_gdf(water, 5))
+    result = union_gdf(result, buildings)
     result = result[(result.geom_type == SHAPELY_TYPE.polygon) | (result.geom_type == SHAPELY_TYPE.multiPolygon)]
 
     return result.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)
@@ -192,26 +206,26 @@ def create_buildings_and_water_gdf(buildings, water):
 
 def create_exclusion_gdf(landuse, leisure, natural, natural_water, water, sea, aeroway, roads):
     result = gpd.GeoDataFrame(columns=[GEOMETRY_OSM_COLUMN], geometry=GEOMETRY_OSM_COLUMN)
-    result = gdf_union(result, landuse)
-    result = gdf_union(result, resize_gdf(leisure, 20))
-    result = gdf_union(result, natural)
-    result = gdf_union(result, aeroway)
-    result = gdf_union(result, gdf_difference(water, roads))
-    result = gdf_union(result, gdf_difference(natural_water, roads))
-    result = gdf_union(result, gdf_difference(sea, roads))
+    result = union_gdf(result, landuse)
+    result = union_gdf(result, resize_gdf(leisure, 20))
+    result = union_gdf(result, natural)
+    result = union_gdf(result, aeroway)
+    result = union_gdf(result, difference_gdf(water, roads))
+    result = union_gdf(result, difference_gdf(natural_water, roads))
+    result = union_gdf(result, difference_gdf(sea, roads))
 
     if not roads.empty:
         bridges = roads[roads[BRIDGE_OSM_TAG] == "yes"]
-        result = gdf_difference(result, bridges)
+        result = difference_gdf(result, bridges)
 
     return result.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)
 
 
 def create_whole_water_gdf(water, natural_water, sea):
     result = gpd.GeoDataFrame(columns=[GEOMETRY_OSM_COLUMN], geometry=GEOMETRY_OSM_COLUMN)
-    result = gdf_union(result, water)
-    result = gdf_union(result, natural_water)
-    result = gdf_union(result, sea)
+    result = union_gdf(result, water)
+    result = union_gdf(result, natural_water)
+    result = union_gdf(result, sea)
     return result.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)
 
 
@@ -227,6 +241,7 @@ def create_exclusion_building_polygons_gdf(bbox, exclusion):
 
 def clip_gdf(gdf, clip):
     result = gdf.copy()
+
     if not result.empty:
         result[GEOMETRY_OSM_COLUMN] = result[GEOMETRY_OSM_COLUMN].clip(clip)
         result = result[(result.geom_type == SHAPELY_TYPE.polygon) | (result.geom_type == SHAPELY_TYPE.multiPolygon)]

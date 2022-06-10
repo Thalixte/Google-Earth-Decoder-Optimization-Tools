@@ -20,12 +20,12 @@ import os
 
 import geopandas as gpd
 
-from constants import GLTF_FILE_EXT, COLLIDER_SUFFIX, XML_FILE_EXT, BOUNDARY_OSM_KEY, OSM_FILE_EXT, BOUNDING_BOX_OSM_FILE_PREFIX, EXCLUSION_OSM_FILE_PREFIX, HEIGHT_OSM_TAG, EOL
+from constants import GLTF_FILE_EXT, COLLIDER_SUFFIX, XML_FILE_EXT, BOUNDARY_OSM_KEY, OSM_FILE_EXT, BOUNDING_BOX_OSM_FILE_PREFIX, EXCLUSION_OSM_FILE_PREFIX, HEIGHT_OSM_TAG
 from msfs_project.height_map import HeightMap
 from msfs_project.collider import MsfsCollider
 from msfs_project.scene_object import MsfsSceneObject
 from msfs_project.position import MsfsPosition
-from utils import get_coords_from_file_name, get_position_from_file_name, create_tile_bounding_box, resize_gdf, preserve_holes
+from utils import get_coords_from_file_name, get_position_from_file_name, create_tile_bounding_box, resize_gdf, preserve_holes, clip_gdf
 from utils.minidom_xml import create_new_definition_file
 from msfs_project.osm_xml import OsmXml
 
@@ -97,7 +97,7 @@ class MsfsTile(MsfsSceneObject):
         if not self.exclusion_mask_gdf.empty:
             bbox_gdf = resize_gdf(self.bbox_gdf, 10)
             file_name = EXCLUSION_OSM_FILE_PREFIX + "_" + self.name + ("_buildings_and_water" if buildings_and_water else "") + OSM_FILE_EXT
-            exclusion_mask = exclusion_mask.clip(bbox_gdf).drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')
+            exclusion_mask = clip_gdf(exclusion_mask, bbox_gdf).drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')
 
             if not buildings_and_water:
                 exclusion_mask = preserve_holes(exclusion_mask)
