@@ -271,7 +271,7 @@ class MsfsProject:
         self.__create_tiles_bounding_boxes()
         self.__create_osm_files()
         self.__generate_height_map_data()
-        # self.__cleanup_lods_3d_data()
+        self.__cleanup_lods_3d_data()
 
         lods = [lod for tile in self.tiles.values() for lod in tile.lods]
         pbar = ProgressBar(list(lods), title="PREPARE THE TILES FOR MSFS")
@@ -578,10 +578,10 @@ class MsfsProject:
                 params = ["--folder", str(tile.folder), "--name", str(tile.name), "--definition_file", str(tile.definition_file),
                           "--height_map_xml_folder", str(self.xmlfiles_folder), "--group_id", str(new_group_id), "--altitude", str(tile.pos.alt), "--has_rocks", str(tile.has_rocks)]
 
-                if tile.has_rocks:
-                    tile.has_rocks = True
-                    params.extend(["--positioning_file_path", str(os.path.join(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)),
-                                   "--mask_file_path", str(os.path.join(self.osmfiles_folder, EXCLUSION_OSM_FILE_PREFIX + "_" + tile.name + "_buildings_and_water" + OSM_FILE_EXT))])
+                # if tile.has_rocks:
+                #     tile.has_rocks = True
+                #     params.extend(["--positioning_file_path", str(os.path.join(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)),
+                #                    "--mask_file_path", str(os.path.join(self.osmfiles_folder, EXCLUSION_OSM_FILE_PREFIX + "_" + tile.name + "_buildings_and_water" + OSM_FILE_EXT))])
 
                 data.append({"name": tile.name, "params": params})
 
@@ -726,7 +726,7 @@ class MsfsProject:
         bbox = clip_gdf(bbox, create_gdf_from_osm_data(self.coords, BOUNDARY_OSM_KEY, True, shp_file_path=os.path.join(self.shpfiles_folder, BOUNDARY_OSM_KEY + SHP_FILE_EXT)))
         bbox = resize_gdf(bbox, 20)
 
-        buildings = create_gdf_from_osm_data(self.coords, BUILDING_OSM_KEY, True, shp_file_path=os.path.join(self.shpfiles_folder, BUILDING_OSM_KEY + SHP_FILE_EXT), buildings=True)
+        # buildings = create_gdf_from_osm_data(self.coords, BUILDING_OSM_KEY, True, shp_file_path=os.path.join(self.shpfiles_folder, BUILDING_OSM_KEY + SHP_FILE_EXT), buildings=True)
         landuse = clip_gdf(create_gdf_from_osm_data(self.coords, LANDUSE_OSM_KEY, OSM_TAGS[LANDUSE_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, LANDUSE_OSM_KEY + SHP_FILE_EXT)), bbox)
         leisure = clip_gdf(create_gdf_from_osm_data(self.coords, LEISURE_OSM_KEY, OSM_TAGS[LEISURE_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, LEISURE_OSM_KEY + SHP_FILE_EXT)), bbox)
         natural = clip_gdf(create_gdf_from_osm_data(self.coords, NATURAL_OSM_KEY, OSM_TAGS[NATURAL_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, NATURAL_OSM_KEY + SHP_FILE_EXT)), bbox)
@@ -738,19 +738,18 @@ class MsfsProject:
         # for debugging purpose, generate the whole exclusion osm file
         osm_xml = OsmXml(self.osmfiles_folder, EXCLUSION_OSM_FILE_PREFIX + OSM_FILE_EXT)
         osm_xml.create_from_geodataframes([preserve_holes(exclusion.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore'))], b, True, [(HEIGHT_OSM_TAG, 1000)])
-        water = create_whole_water_gdf(water, natural_water, sea)
 
         create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, exclusion)
-        create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, buildings, buildings_and_water=True)
 
         print_title("CREATE TERRAFORMING POLYGONS GEO DATAFRAMES...)")
         terraforming_polygons = create_terraforming_polygons_gdf(bbox, exclusion)
 
+        water = create_whole_water_gdf(water, natural_water, sea)
         print_title("CREATE EXCLUSION BUILDINGS POLYGONS GEO DATAFRAMES...)")
-        exclusion_building_polygons = create_exclusion_building_polygons_gdf(bbox, water)
-
-        buildings_and_water = create_buildings_and_water_gdf(buildings, water)
-        create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, buildings_and_water, buildings_and_water=True)
+        exclusion_building_polygons = create_exclusion_building_polygons_gdf(water)
+        #
+        # buildings_and_water = create_buildings_and_water_gdf(buildings, water)
+        # create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, buildings_and_water, buildings_and_water=True)
 
         # reload the xml file to retrieve the last updates
         self.objects_xml = ObjectsXml(self.scene_folder, self.SCENE_OBJECTS_FILE)

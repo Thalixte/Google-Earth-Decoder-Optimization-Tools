@@ -234,9 +234,9 @@ def create_terraforming_polygons_gdf(bbox, exclusion):
     return preserve_holes(adjusted_bbox.overlay(exclusion, how=OVERLAY_OPERATOR.difference, keep_geom_type=False), split_method=PRESERVE_HOLES_METHOD.derivation_split)
 
 
-def create_exclusion_building_polygons_gdf(bbox, exclusion):
-    adjusted_bbox = resize_gdf(bbox, 20)
-    return preserve_holes(adjusted_bbox.overlay(exclusion, how=OVERLAY_OPERATOR.difference, keep_geom_type=False), split_method=PRESERVE_HOLES_METHOD.derivation_split)
+def create_exclusion_building_polygons_gdf(exclusion):
+    adjusted_exclusion = resize_gdf(exclusion, 20)
+    return preserve_holes(adjusted_exclusion, split_method=PRESERVE_HOLES_METHOD.derivation_split)
 
 
 def clip_gdf(gdf, clip):
@@ -268,6 +268,10 @@ def preserve_holes(gdf, split_method=PRESERVE_HOLES_METHOD.centroid_split):
     result = result[(result.geom_type == SHAPELY_TYPE.polygon) | (result.geom_type == SHAPELY_TYPE.multiPolygon)]
 
     result_p = result.geometry.unary_union
+
+    if result_p is None:
+        return result
+
     if result_p.type == SHAPELY_TYPE.polygon:
         result_p = [result_p]
 

@@ -425,11 +425,11 @@ def generate_model_height_data(model_file_path, lat, lon, altitude, inverted=Fal
     depsgraph.update()
     hmatrix = calculate_height_map_from_coords_from_bottom(tile, grid_dimension, coords, depsgraph, lat, lon, altitude)
 
-    if inverted and os.path.exists(positioning_file_path) and os.path.exists(mask_file_path):
-        align_model_with_mask(model_file_path, positioning_file_path, mask_file_path, objects_to_keep=[grid])
-        cleanup_3d_data(model_file_path, intersect=False)
-        tile = get_tile_for_ray_cast(model_file_path, imported=False, objects_to_keep=[grid])
-        hmatrix = calculate_height_map_from_coords_from_top(tile, grid_dimension, coords, depsgraph, lat, lon, altitude, hmatrix_base=hmatrix)
+    # if inverted and os.path.exists(positioning_file_path) and os.path.exists(mask_file_path):
+    #     align_model_with_mask(model_file_path, positioning_file_path, mask_file_path, objects_to_keep=[grid])
+    #     cleanup_3d_data(model_file_path, intersect=False)
+    #     tile = get_tile_for_ray_cast(model_file_path, imported=False, objects_to_keep=[grid])
+    #     hmatrix = calculate_height_map_from_coords_from_top(tile, grid_dimension, coords, depsgraph, lat, lon, altitude, hmatrix_base=hmatrix)
 
     new_collection = bpy.data.collections.new(name="coords")
     assert (new_collection is not bpy.context.scene.collection)
@@ -630,7 +630,7 @@ def calculate_height_map_from_coords_from_bottom(tile, grid_dimension, coords, d
             if len(results[y]) < (int(grid_dimension/2)-1):
                 h = h + altitude + geoid_height
                 h = h if h >= geoid_height else geoid_height
-                results[y][x] = h
+                results[y][x] = h - 0.5
 
     return results
 

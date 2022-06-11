@@ -153,6 +153,7 @@ GRASSLAND_OSM_TAG = "grassland"
 SCRUB_OSM_TAG = "scrub"
 POND_OSM_TAG = "pond"
 WASTEWATER_OSM_TAG = "wastewater"
+RESERVOIR_OSM_TAG = "RESERVOIR"
 CANAL_OSM_TAG = "canal"
 BASIN_OSM_TAG = "basin"
 ALLOTMENTS_OSM_TAG = "allotment"
@@ -211,11 +212,11 @@ OSM_TAGS = {
         LAKE_TAG,
         WATER_OSM_KEY,
         POND_OSM_TAG,
-        WASTEWATER_OSM_TAG,
         CANAL_OSM_TAG,
         BASIN_OSM_TAG,
         MARINA_OSM_TAG,
-        PIER_OSM_TAG
+        PIER_OSM_TAG,
+        RESERVOIR_OSM_TAG
     ],
     NATURAL_WATER_OSM_KEY: [
         BAY_OSM_TAG,
