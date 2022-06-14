@@ -40,6 +40,8 @@ class MsfsGltf:
     EXTENSIONS_TAG = "extensions"
     EXTENSIONS_USED_TAG = "extensionsUsed"
     ASOBO_TAGS_TAG = "ASOBO_tags"
+    MESHES_TAG = "meshes"
+    NAME_TAG = "name"
     ROAD_TAG = "Road"
     COLLISION_TAG = "Collision"
     ENABLED_TAG = "enabled"
@@ -174,6 +176,16 @@ class MsfsGltf:
         if self.EXTENSIONS_USED_TAG in self.data.keys():
             if extension_name in self.data[self.EXTENSIONS_USED_TAG]:
                 self.data[self.EXTENSIONS_USED_TAG].remove(extension_name)
+
+    def get_subtiles(self):
+        result = []
+
+        if self.MESHES_TAG in self.data.keys():
+            for mesh in self.data[self.MESHES_TAG]:
+                if self.NAME_TAG in mesh.keys():
+                    result.append(mesh[self.NAME_TAG].split("_", 1)[0])
+
+        return result
 
     def dump(self):
         save_json_file(self.file_path, self.data)

@@ -133,6 +133,8 @@ AMENITY_OSM_KEY = "amenity"
 BUILDING_OSM_KEY = "building"
 ROCKS_OSM_KEY = "rocks"
 ROADS_OSM_KEY="highway"
+SERVICE_OSM_KEY="service"
+NOT_SHORE_WATER_OSM_KEY = "not_shore"
 
 FOREST_OSM_TAG = "forest"
 NATURE_RESERVE_OSM_TAG = "nature_reserve"
@@ -173,6 +175,8 @@ TREE_TAG = "tree"
 TREE_ROW_TAG = "tree_row"
 ORCHARD_OSM_TAG = "orchard"
 BRIDGE_OSM_TAG = "bridge"
+SLIPWAY_OSM_TAG="slipway"
+CONSTRUCTION_OSM_TAG = "construction"
 
 EXCLUSION_OSM_FILE_PREFIX = "exclusion"
 BOUNDING_BOX_OSM_FILE_PREFIX = "bbox"
@@ -190,11 +194,10 @@ OSM_TAGS = {
         FOREST_OSM_TAG,
         NATURE_RESERVE_OSM_TAG,
         FARMLAND_OSM_TAG,
-        MEADOW_OSM_TAG,
         VINEYARD_OSM_TAG,
         ALLOTMENTS_OSM_TAG,
-        COASTLINE_OSM_TAG,
-        ORCHARD_OSM_TAG
+        ORCHARD_OSM_TAG,
+        CONSTRUCTION_OSM_TAG
     ],
     LEISURE_OSM_KEY: [
         NATURE_RESERVE_OSM_TAG
@@ -202,8 +205,7 @@ OSM_TAGS = {
     NATURAL_OSM_KEY: [
         WOOD_OSM_TAG,
         GRASSLAND_OSM_TAG,
-        SCRUB_OSM_TAG,
-        COASTLINE_OSM_TAG
+        SCRUB_OSM_TAG
     ],
     WATER_OSM_KEY: [
         RIVER_OSM_TAG,
@@ -212,10 +214,10 @@ OSM_TAGS = {
         LAKE_TAG,
         WATER_OSM_KEY,
         POND_OSM_TAG,
+        WASTEWATER_OSM_TAG,
         CANAL_OSM_TAG,
         BASIN_OSM_TAG,
         MARINA_OSM_TAG,
-        PIER_OSM_TAG,
         RESERVOIR_OSM_TAG
     ],
     NATURAL_WATER_OSM_KEY: [
@@ -230,6 +232,14 @@ OSM_TAGS = {
     ROCKS_OSM_KEY: [
         BARE_ROCK_OSM_TAG,
         CLIFF_OSM_TAG
+    ],
+    NOT_SHORE_WATER_OSM_KEY: [
+        WATER_OSM_KEY,
+        POND_OSM_TAG,
+        WASTEWATER_OSM_TAG,
+        CANAL_OSM_TAG,
+        BASIN_OSM_TAG,
+        RESERVOIR_OSM_TAG
     ]
 }
 

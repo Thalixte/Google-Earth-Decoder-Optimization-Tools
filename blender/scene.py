@@ -629,7 +629,7 @@ def calculate_height_map_from_coords_from_bottom(tile, grid_dimension, coords, d
             h = result[1][2]
             if len(results[y]) < (int(grid_dimension/2)-1):
                 h = h + altitude + geoid_height
-                h = h if h >= geoid_height else geoid_height
+                h = h if h >= geoid_height else geoid_height + 0.5
                 results[y][x] = h - 0.5
 
     return results

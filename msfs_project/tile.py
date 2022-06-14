@@ -25,7 +25,7 @@ from msfs_project.height_map import HeightMap
 from msfs_project.collider import MsfsCollider
 from msfs_project.scene_object import MsfsSceneObject
 from msfs_project.position import MsfsPosition
-from utils import get_coords_from_file_name, get_position_from_file_name, create_tile_bounding_box, resize_gdf, preserve_holes, clip_gdf
+from utils import get_coords_from_file_name, get_position_from_file_name, resize_gdf, preserve_holes, clip_gdf, create_bounding_box
 from utils.minidom_xml import create_new_definition_file
 from msfs_project.osm_xml import OsmXml
 
@@ -43,8 +43,8 @@ class MsfsTile(MsfsSceneObject):
 
     def __init__(self, folder, name, definition_file, objects_xml=None):
         super().__init__(folder, name, definition_file)
-        self.coords = get_coords_from_file_name(self.name)
-        pos = get_position_from_file_name(self.name)
+        self.__calculate_coords()
+        pos = self.__calculate_pos()
         altitude = 0.0
         if not objects_xml is None:
             altitude = float(objects_xml.get_object_altitude(self.xml.guid))
@@ -77,17 +77,29 @@ class MsfsTile(MsfsSceneObject):
 
         return new_collider
 
-    def define_max_coords(self, max_coords):
+    def define_max_coords(self, other_coords):
         n1, s1, w1, e1 = self.coords
-        n2, s2, w2, e2 = max_coords
+        n2, s2, w2, e2 = other_coords
 
         if n2 == 0 or s2 == 0 or w2 == 0 or e2 == 0:
             return self.coords
 
         return tuple([n1 if n1 >= n2 else n2, s1 if s1 <= s2 else s2, w1 if w1 <= w2 else w2, e1 if e1 >= e2 else e2])
 
-    def create_bbox_osm_file(self, dest_folder):
-        self.bbox_gdf, b = create_tile_bounding_box(self)
+    def create_bbox_osm_file(self, dest_folder, min_lod_level):
+        if not self.lods:
+            return
+
+        min_lod_idx = len(self.lods) - 1
+        lod = self.lods[min_lod_idx]
+        subtiles = lod.get_subtiles()
+        coords = self.coords
+
+        for subtile in subtiles:
+            subtile_coords = get_coords_from_file_name(subtile)
+            coords = self.define_max_coords(subtile_coords)
+
+        self.bbox_gdf, b = create_bounding_box(coords)
         osm_xml = OsmXml(dest_folder, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + self.name + OSM_FILE_EXT)
         osm_xml.create_from_geodataframes([self.bbox_gdf.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')], b)
 
@@ -124,3 +136,33 @@ class MsfsTile(MsfsSceneObject):
             lod.split(self.name, str(settings.target_min_size_values[(len(self.lods) - 1) - i]), self)
 
         self.remove_file()
+
+    def __calculate_coords(self):
+        self.coords = get_coords_from_file_name(self.name)
+        lod = self.lods[0]
+        subtiles = lod.get_subtiles()
+
+        for subtile in subtiles:
+            subtile_coords = get_coords_from_file_name(subtile)
+            self.coords = self.define_max_coords(subtile_coords)
+
+    def __calculate_pos(self):
+        result = get_position_from_file_name(self.name)
+        lod = self.lods[0]
+        subtiles = lod.get_subtiles()
+
+        for subtile in subtiles:
+            subtile_pos = get_position_from_file_name(subtile)
+            result = self.__define_min_pos(result, subtile_pos)
+
+        return result
+
+    @staticmethod
+    def __define_min_pos(pos, other_pos):
+        lat1, lon1 = pos
+        lat2, lon2 = other_pos
+
+        if lat2 == 0 or lon2 == 0:
+            return pos
+
+        return [lat1 if lat1 <= lat2 else lat2, lon1 if lon1 <= lon2 else lon2]

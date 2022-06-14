@@ -196,6 +196,15 @@ class MsfsLod:
         export_to_optimized_gltf_files(os.path.join(self.folder, self.model_file), TEXTURE_FOLDER, use_selection=True, export_extras=False)
         clean_scene()
 
+    def get_subtiles(self):
+        result = []
+        model_file = MsfsGltf(os.path.join(self.folder, self.model_file))
+
+        if model_file:
+            result = model_file.get_subtiles()
+
+        return result
+
     def calculate_height_data(self, lat, lon, altitude, inverted=False, positioning_file_path="", mask_file_path=""):
         return generate_model_height_data(os.path.join(self.folder, self.model_file), lat, lon, altitude, inverted, positioning_file_path, mask_file_path)
 

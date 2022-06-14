@@ -42,7 +42,8 @@ from msfs_project.collider import MsfsCollider
 from msfs_project.tile import MsfsTile
 from msfs_project.shape import MsfsShape
 from utils import replace_in_file, is_octant, backup_file, install_python_lib, ScriptError, print_title, \
-    get_backup_file_path, isolated_print, chunks, create_bounding_box_from_tiles, create_gdf_from_osm_data, clip_gdf, create_exclusion_gdf, create_terraforming_polygons_gdf, create_sea_gdf, create_land_mass_gdf, resize_gdf, create_exclusion_masks_from_tiles, preserve_holes, create_roads_gdf, create_exclusion_building_polygons_gdf, create_whole_water_gdf, create_buildings_and_water_gdf
+    get_backup_file_path, isolated_print, chunks, create_bounding_box_from_tiles, clip_gdf, create_terraforming_polygons_gdf, create_land_mass_gdf, create_exclusion_masks_from_tiles, preserve_holes, create_exclusion_building_polygons_gdf, create_whole_water_gdf, create_water_exclusion_gdf, create_ground_exclusion_gdf, union_gdf, load_gdf, prepare_roads_gdf, \
+    prepare_sea_gdf, prepare_bbox_gdf, prepare_gdf
 from pathlib import Path
 
 from utils.compressonator import Compressonator
@@ -680,7 +681,8 @@ class MsfsProject:
     def __generate_height_map_data(self):
         isolated_print(EOL)
         self.objects_xml.remove_height_maps()
-        rocks = create_gdf_from_osm_data(self.coords, NATURAL_OSM_KEY, OSM_TAGS[ROCKS_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, ROCKS_OSM_KEY + SHP_FILE_EXT))
+        rocks = load_gdf(self.coords, NATURAL_OSM_KEY, OSM_TAGS[ROCKS_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, ROCKS_OSM_KEY + SHP_FILE_EXT))
+        rocks = prepare_gdf(rocks)
         new_group_id = self.objects_xml.get_new_group_id()
 
         tiles_data = self.__retrieve_tiles_to_calculate_height_map(rocks=rocks, new_group_id=new_group_id, parallel=True)
@@ -691,7 +693,7 @@ class MsfsProject:
         height_map = None
 
         for tile in self.tiles.values():
-            if os.path.isdir(tile.folder):
+            if os.path.isdir(tile.folder) and os.path.isfile(os.path.join(self.xmlfiles_folder, HEIGHT_MAP_SUFFIX + tile.name + XML_FILE_EXT)):
                 height_map = HeightMap(xml=HeightMapXml(self.xmlfiles_folder, HEIGHT_MAP_SUFFIX + tile.name + XML_FILE_EXT))
                 self.objects_xml.add_height_map(height_map)
 
@@ -707,7 +709,7 @@ class MsfsProject:
     def __create_tiles_bounding_boxes(self):
         pbar = ProgressBar(list(self.tiles.values()), title="CREATE BOUNDING BOX OSM FILES FOR EACH TILE")
         for i, tile in enumerate(self.tiles.values()):
-            tile.create_bbox_osm_file(self.osmfiles_folder)
+            tile.create_bbox_osm_file(self.osmfiles_folder, self.min_lod_level)
             pbar.update("osm files created for %s tile" % tile.name)
 
     def __create_osm_files(self):
@@ -717,36 +719,61 @@ class MsfsProject:
     def __create_osm_exclusion_file(self, b, bbox):
         print_title("RETRIEVE OSM (MAY TAKE SOME TIME TO COMPLETE, BE PATIENT...)")
 
-        roads = create_roads_gdf(self.coords, shp_file_path=os.path.join(self.shpfiles_folder, ROADS_OSM_KEY + SHP_FILE_EXT))
-
-        land_mass = create_land_mass_gdf(bbox, b)
-        sea = create_sea_gdf(land_mass, bbox)
-
-        bbox = clip_gdf(bbox, land_mass)
-        bbox = clip_gdf(bbox, create_gdf_from_osm_data(self.coords, BOUNDARY_OSM_KEY, True, shp_file_path=os.path.join(self.shpfiles_folder, BOUNDARY_OSM_KEY + SHP_FILE_EXT)))
-        bbox = resize_gdf(bbox, 20)
-
-        # buildings = create_gdf_from_osm_data(self.coords, BUILDING_OSM_KEY, True, shp_file_path=os.path.join(self.shpfiles_folder, BUILDING_OSM_KEY + SHP_FILE_EXT), buildings=True)
-        landuse = clip_gdf(create_gdf_from_osm_data(self.coords, LANDUSE_OSM_KEY, OSM_TAGS[LANDUSE_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, LANDUSE_OSM_KEY + SHP_FILE_EXT)), bbox)
-        leisure = clip_gdf(create_gdf_from_osm_data(self.coords, LEISURE_OSM_KEY, OSM_TAGS[LEISURE_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, LEISURE_OSM_KEY + SHP_FILE_EXT)), bbox)
-        natural = clip_gdf(create_gdf_from_osm_data(self.coords, NATURAL_OSM_KEY, OSM_TAGS[NATURAL_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, NATURAL_OSM_KEY + SHP_FILE_EXT)), bbox)
-        natural_water = clip_gdf(create_gdf_from_osm_data(self.coords, NATURAL_OSM_KEY, OSM_TAGS[NATURAL_WATER_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, NATURAL_WATER_OSM_KEY + SHP_FILE_EXT)), bbox)
-        water = clip_gdf(create_gdf_from_osm_data(self.coords, WATER_OSM_KEY, OSM_TAGS[WATER_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, WATER_OSM_KEY + SHP_FILE_EXT)), bbox)
-        aeroway = clip_gdf(create_gdf_from_osm_data(self.coords, AEROWAY_OSM_KEY, True, shp_file_path=os.path.join(self.shpfiles_folder, AEROWAY_OSM_KEY + SHP_FILE_EXT)), bbox)
-
-        exclusion = create_exclusion_gdf(landuse, leisure, natural, natural_water, water, sea, aeroway, roads)
         # for debugging purpose, generate the whole exclusion osm file
-        osm_xml = OsmXml(self.osmfiles_folder, EXCLUSION_OSM_FILE_PREFIX + OSM_FILE_EXT)
-        osm_xml.create_from_geodataframes([preserve_holes(exclusion.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore'))], b, True, [(HEIGHT_OSM_TAG, 1000)])
+        osm_xml = OsmXml(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + EXCLUSION_OSM_FILE_PREFIX + OSM_FILE_EXT)
+        osm_xml.create_from_geodataframes([preserve_holes(bbox.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore'))], b)
 
-        create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, exclusion)
+        # load all necessary GeoPandas Dataframes
+        orig_land_mass = create_land_mass_gdf(bbox, b)
+        orig_boundary = load_gdf(self.coords, BOUNDARY_OSM_KEY, True, shp_file_path=os.path.join(self.shpfiles_folder, BOUNDARY_OSM_KEY + SHP_FILE_EXT))
+        orig_roads = load_gdf(self.coords, ROADS_OSM_KEY, True, shp_file_path=os.path.join(self.shpfiles_folder, ROADS_OSM_KEY + SHP_FILE_EXT), is_roads=True)
+        orig_sea = load_gdf(self.coords, BOUNDARY_OSM_KEY, True, shp_file_path=os.path.join(self.shpfiles_folder, SEA_OSM_TAG + SHP_FILE_EXT), is_sea=True, land_mass=orig_land_mass, bbox=bbox)
+        orig_landuse = load_gdf(self.coords, LANDUSE_OSM_KEY, OSM_TAGS[LANDUSE_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, LANDUSE_OSM_KEY + SHP_FILE_EXT))
+        orig_leisure = load_gdf(self.coords, LEISURE_OSM_KEY, OSM_TAGS[LEISURE_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, LEISURE_OSM_KEY + SHP_FILE_EXT))
+        orig_natural = load_gdf(self.coords, NATURAL_OSM_KEY, OSM_TAGS[NATURAL_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, NATURAL_OSM_KEY + SHP_FILE_EXT))
+        orig_natural_water = load_gdf(self.coords, NATURAL_OSM_KEY, OSM_TAGS[NATURAL_WATER_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, NATURAL_WATER_OSM_KEY + SHP_FILE_EXT))
+        orig_water = load_gdf(self.coords, WATER_OSM_KEY, OSM_TAGS[WATER_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, WATER_OSM_KEY + SHP_FILE_EXT))
+        orig_aeroway = load_gdf(self.coords, AEROWAY_OSM_KEY, True, shp_file_path=os.path.join(self.shpfiles_folder, AEROWAY_OSM_KEY + SHP_FILE_EXT))
+        # orig_buildings = load_gdf(self.coords, BUILDING_OSM_KEY, True, shp_file_path=os.path.join(self.shpfiles_folder, BUILDING_OSM_KEY + SHP_FILE_EXT), is_buildings=True)
+
+        roads = prepare_roads_gdf(orig_roads)
+        sea = prepare_sea_gdf(orig_sea)
+        bbox = prepare_bbox_gdf(bbox, orig_land_mass, orig_boundary)
+        # buildings = prepare_buildings_gdf(buildings)
+
+        landuse = clip_gdf(prepare_gdf(orig_landuse), bbox)
+        leisure = clip_gdf(prepare_gdf(orig_leisure), bbox)
+        natural = clip_gdf(prepare_gdf(orig_natural), bbox)
+        natural_water = clip_gdf(prepare_gdf(orig_natural_water), bbox)
+        water = clip_gdf(prepare_gdf(orig_water), bbox)
+        aeroway = clip_gdf(prepare_gdf(orig_aeroway), bbox)
+
+        # create water exclusion masks to cleanup 3d data tiles
+        water_exclusion = create_water_exclusion_gdf(natural_water, water, sea, roads)
+        # for debugging purpose, generate the whole exclusion osm file
+        osm_xml = OsmXml(self.osmfiles_folder, WATER_OSM_KEY + "_" + EXCLUSION_OSM_FILE_PREFIX + OSM_FILE_EXT)
+        osm_xml.create_from_geodataframes([preserve_holes(water_exclusion.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore'))], b, True, [(HEIGHT_OSM_TAG, 1000)])
+
+        # create ground exclusion masks to cleanup 3d data tiles
+        ground_exclusion = create_ground_exclusion_gdf(landuse, leisure, natural, aeroway)
+        # for debugging purpose, generate the whole exclusion osm file
+        osm_xml = OsmXml(self.osmfiles_folder, "ground_" + EXCLUSION_OSM_FILE_PREFIX + OSM_FILE_EXT)
+        osm_xml.create_from_geodataframes([preserve_holes(ground_exclusion.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore'))], b, True, [(HEIGHT_OSM_TAG, 1000)])
+
+        create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, union_gdf(water_exclusion, ground_exclusion))
 
         print_title("CREATE TERRAFORMING POLYGONS GEO DATAFRAMES...)")
-        terraforming_polygons = create_terraforming_polygons_gdf(bbox, exclusion)
+        terraforming_polygons = create_terraforming_polygons_gdf(bbox, union_gdf(water_exclusion, ground_exclusion))
+        # for debugging purpose
+        osm_xml = OsmXml(self.osmfiles_folder, "terraforming_polygons" + OSM_FILE_EXT)
+        osm_xml.create_from_geodataframes([terraforming_polygons.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')], b)
 
-        water = create_whole_water_gdf(water, natural_water, sea)
         print_title("CREATE EXCLUSION BUILDINGS POLYGONS GEO DATAFRAMES...)")
+        water = create_whole_water_gdf(orig_water, orig_natural_water, sea, bbox)
         exclusion_building_polygons = create_exclusion_building_polygons_gdf(water)
+        # for debugging purpose
+        osm_xml = OsmXml(self.osmfiles_folder, "exclusion_building_polygons" + OSM_FILE_EXT)
+        osm_xml.create_from_geodataframes([exclusion_building_polygons.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')], b)
         #
         # buildings_and_water = create_buildings_and_water_gdf(buildings, water)
         # create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, buildings_and_water, buildings_and_water=True)
@@ -756,7 +783,7 @@ class MsfsProject:
         self.objects_xml.remove_shape()
         new_group_id = self.objects_xml.get_new_group_id()
         self.shapes[TERRAFORMING_POLYGONS_DISPLAY_NAME] = MsfsShape(shape_gdf=terraforming_polygons, group_display_name=TERRAFORMING_POLYGONS_DISPLAY_NAME, group_id=new_group_id, flatten=False)
-        self.shapes[EXCLUSION_BUILDING_POLYGONS_DISPLAY_NAME] = MsfsShape(shape_gdf=exclusion_building_polygons, group_display_name=EXCLUSION_BUILDING_POLYGONS_DISPLAY_NAME, group_id=new_group_id+1, exclude_buildings=True, exclude_roads=True)
+        self.shapes[EXCLUSION_BUILDING_POLYGONS_DISPLAY_NAME] = MsfsShape(shape_gdf=exclusion_building_polygons, group_display_name=EXCLUSION_BUILDING_POLYGONS_DISPLAY_NAME, group_id=new_group_id+1, exclude_buildings=True, exclude_roads=True, exclude_vegetation=True)
         for shape in self.shapes.values():
             shape.to_xml(self.objects_xml)
 

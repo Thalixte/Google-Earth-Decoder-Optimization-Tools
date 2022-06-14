@@ -24,8 +24,9 @@ from osmnx.utils_geo import bbox_to_poly
 
 from shapely.geometry import Polygon, JOIN_STYLE, CAP_STYLE, MultiPolygon, LineString, MultiPoint, Point
 from shapely.ops import linemerge, unary_union, polygonize, nearest_points
+from shapely.validation import make_valid
 
-from constants import GEOMETRY_OSM_COLUMN, BOUNDING_BOX_OSM_KEY, SHAPE_TEMPLATES_FOLDER, OSM_LAND_SHAPEFILE, ROADS_OSM_KEY, BRIDGE_OSM_TAG
+from constants import GEOMETRY_OSM_COLUMN, BOUNDING_BOX_OSM_KEY, SHAPE_TEMPLATES_FOLDER, OSM_LAND_SHAPEFILE, ROADS_OSM_KEY, BRIDGE_OSM_TAG, SERVICE_OSM_KEY, SLIPWAY_OSM_TAG, NOT_SHORE_WATER_OSM_KEY, WATER_OSM_KEY, NATURAL_OSM_KEY, OSM_TAGS
 from utils.progress_bar import ProgressBar
 from utils.geometry import close_holes, extend_line
 
@@ -104,8 +105,8 @@ def create_bounding_box_from_tiles(tiles):
     return result
 
 
-def create_tile_bounding_box(tile):
-    b = bbox_to_poly(tile.coords[1], tile.coords[0], tile.coords[2], tile.coords[3])
+def create_bounding_box(coords):
+    b = bbox_to_poly(coords[1], coords[0], coords[2], coords[3])
     return gpd.GeoDataFrame(pd.DataFrame([], index=[0]), crs=EPSG.key + str(EPSG.WGS84_degree_unit), geometry=[b]), b
 
 
@@ -126,71 +127,78 @@ def resize_gdf(gdf, resize_distance, single_sided=True):
     return gdf.to_crs(EPSG.key + str(EPSG.WGS84_degree_unit))
 
 
-def create_gdf_from_osm_data(coords, key, tags, shp_file_path="", buildings=False):
+def load_gdf(coords, key, tags, shp_file_path="", is_roads=False, is_buildings=False, is_sea=False, land_mass=None, bbox=None):
     has_cache = os.path.isfile(shp_file_path)
 
     if has_cache:
         result = gpd.read_file(shp_file_path)
     else:
-        result = ox.geometries_from_bbox(coords[0], coords[1], coords[2], coords[3], tags={key: tags})
+        if is_sea and land_mass is not None and bbox is not None:
+            result = land_mass.overlay(bbox, how=OVERLAY_OPERATOR.symmetric_difference, keep_geom_type=False).assign(boundary=BOUNDING_BOX_OSM_KEY)
+        else:
+            result = ox.geometries_from_bbox(coords[0], coords[1], coords[2], coords[3], tags={key: tags})
 
     if not result.empty:
-        result = result[[GEOMETRY_OSM_COLUMN, key]]
-        if not buildings:
-            result = resize_gdf(result, 1)
-        result = result[(result.geom_type == SHAPELY_TYPE.polygon) | (result.geom_type == SHAPELY_TYPE.multiPolygon)]
-
+        if is_roads:
+            result = result[[GEOMETRY_OSM_COLUMN, key, BRIDGE_OSM_TAG, SERVICE_OSM_KEY]]
+            result = resize_gdf(result, 12, single_sided=False)
+        else:
+            result = result[[GEOMETRY_OSM_COLUMN, key]]
+            if not is_buildings:
+                result = resize_gdf(result, 1)
         if not has_cache and shp_file_path != "":
             result.to_file(shp_file_path)
+
+    return result
+
+
+def prepare_gdf(gdf):
+    result = gdf.copy()
+
+    if not result.empty:
+        result = result[(result.geom_type == SHAPELY_TYPE.polygon) | (result.geom_type == SHAPELY_TYPE.multiPolygon)]
+
+    return result
+
+
+def prepare_roads_gdf(gdf):
+    result = gdf.copy()
+
+    if not result.empty:
+        result = result[~result[GEOMETRY_OSM_COLUMN].isna()]
+        result = result[~(result[SERVICE_OSM_KEY] == SLIPWAY_OSM_TAG)]
+        result = result[(result.geom_type == SHAPELY_TYPE.polygon) | (result.geom_type == SHAPELY_TYPE.multiPolygon)]
+        result[GEOMETRY_OSM_COLUMN] = result[GEOMETRY_OSM_COLUMN].buffer(0)
+
+    return result
+
+
+def prepare_sea_gdf(gdf):
+    result = gdf.copy()
+
+    if not result.empty:
+        result = result[(result.geom_type == SHAPELY_TYPE.polygon) | (result.geom_type == SHAPELY_TYPE.multiPolygon)]
+
+    return result[[GEOMETRY_OSM_COLUMN]].dissolve()
+
+
+def prepare_bbox_gdf(bbox, land_mass, boundary):
+    result = clip_gdf(bbox, land_mass)
+    result = clip_gdf(result, boundary)
+    return resize_gdf(result, 20)
+
+
+def prepare_buildings_gdf(gdf, key):
+    result = gdf.copy()
+
+    if not result.empty:
+        result = result[(result.geom_type == SHAPELY_TYPE.polygon) | (result.geom_type == SHAPELY_TYPE.multiPolygon)]
 
     return result
 
 
 def create_land_mass_gdf(bbox, b):
     result = gpd.read_file(os.path.join(SHAPE_TEMPLATES_FOLDER, OSM_LAND_SHAPEFILE), bbox=b).clip(bbox.geometry)
-    return result[[GEOMETRY_OSM_COLUMN]].dissolve()
-
-
-def create_roads_gdf(coords, shp_file_path=""):
-    has_cache = os.path.isfile(shp_file_path)
-
-    if has_cache:
-        result = gpd.read_file(shp_file_path)
-    else:
-        result = ox.geometries_from_bbox(coords[0], coords[1], coords[2], coords[3], tags={ROADS_OSM_KEY: True})
-
-    if not result.empty:
-        result = result[[GEOMETRY_OSM_COLUMN, ROADS_OSM_KEY, BRIDGE_OSM_TAG]]
-        result = resize_gdf(result, 12, single_sided=False)
-        result = result[(result.geom_type == SHAPELY_TYPE.polygon) | (result.geom_type == SHAPELY_TYPE.multiPolygon)]
-
-        if not has_cache and shp_file_path != "":
-            result.to_file(shp_file_path)
-
-    return result
-
-
-def create_sea_gdf(land_mass, bbox):
-    # multicoords = [list(line.coords) for line in coastlines.geometry if line.geom_type != SHAPELY_TYPE.polygon]
-    # # Making a flat list -> LineString
-    # input_l = LineString([item for sublist in multicoords for item in sublist])
-    #
-    # keep_polys = []
-
-    # for input_p in bbox.geometry:
-    #     unioned = input_p.boundary.union(input_l)
-    #     for poly in polygonize(unioned):
-    #         if poly.representative_point().within(input_p):
-    #             if globe.is_land(poly.centroid.y, poly.centroid.x):
-    #                 keep_polys.append(poly)
-
-    # remaining polygons are the split polys of original shape
-    # bbox[GEOMETRY_OSM_COLUMN] = MultiPolygon(keep_polys)
-    # osm_xml = OsmXml(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + OSM_FILE_EXT)
-    # osm_xml.create_from_geodataframes([bbox], b)
-    # bbox.to_file(os.path.join(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + SHP_FILE_EXT))
-
-    result = land_mass.overlay(bbox, how=OVERLAY_OPERATOR.symmetric_difference, keep_geom_type=False).assign(boundary=BOUNDING_BOX_OSM_KEY)
     return result[[GEOMETRY_OSM_COLUMN]].dissolve()
 
 
@@ -221,8 +229,42 @@ def create_exclusion_gdf(landuse, leisure, natural, natural_water, water, sea, a
     return result.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)
 
 
-def create_whole_water_gdf(water, natural_water, sea):
+def create_water_exclusion_gdf(natural_water, water, sea, roads):
     result = gpd.GeoDataFrame(columns=[GEOMETRY_OSM_COLUMN], geometry=GEOMETRY_OSM_COLUMN)
+    result = union_gdf(result, difference_gdf(water, roads))
+    result = union_gdf(result, difference_gdf(natural_water, roads))
+    result = union_gdf(result, difference_gdf(sea, roads))
+
+    if not roads.empty:
+        bridges = roads[roads[BRIDGE_OSM_TAG] == "yes"]
+        result = difference_gdf(result, bridges)
+
+    return result.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)
+
+
+def create_ground_exclusion_gdf(landuse, leisure, natural, aeroway):
+    result = gpd.GeoDataFrame(columns=[GEOMETRY_OSM_COLUMN], geometry=GEOMETRY_OSM_COLUMN)
+    result = union_gdf(result, landuse)
+    result = union_gdf(result, resize_gdf(leisure, 20))
+    result = union_gdf(result, natural)
+    result = union_gdf(result, aeroway)
+
+    return result.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)
+
+
+def create_whole_water_gdf(orig_water, orig_natural_water, sea, bbox):
+    result = gpd.GeoDataFrame(columns=[GEOMETRY_OSM_COLUMN], geometry=GEOMETRY_OSM_COLUMN)
+
+    water = orig_water.copy()
+    for tag in OSM_TAGS[NOT_SHORE_WATER_OSM_KEY]:
+        water = water[~(water[WATER_OSM_KEY] == tag)]
+    water = clip_gdf(prepare_gdf(water), bbox)
+
+    natural_water = orig_natural_water.copy()
+    for tag in OSM_TAGS[NOT_SHORE_WATER_OSM_KEY]:
+        natural_water = natural_water[~(natural_water[NATURAL_OSM_KEY] == tag)]
+    natural_water = clip_gdf(prepare_gdf(natural_water), bbox)
+
     result = union_gdf(result, water)
     result = union_gdf(result, natural_water)
     result = union_gdf(result, sea)
@@ -231,7 +273,7 @@ def create_whole_water_gdf(water, natural_water, sea):
 
 def create_terraforming_polygons_gdf(bbox, exclusion):
     adjusted_bbox = resize_gdf(bbox, -100)
-    return preserve_holes(adjusted_bbox.overlay(exclusion, how=OVERLAY_OPERATOR.difference, keep_geom_type=False), split_method=PRESERVE_HOLES_METHOD.derivation_split)
+    return preserve_holes(adjusted_bbox.overlay(resize_gdf(exclusion, 20), how=OVERLAY_OPERATOR.difference, keep_geom_type=False), split_method=PRESERVE_HOLES_METHOD.derivation_split)
 
 
 def create_exclusion_building_polygons_gdf(exclusion):
