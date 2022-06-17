@@ -149,8 +149,9 @@ class ObjectsXml(Xml):
         self.save()
 
     def add_height_map(self, height_map):
-        rectangle_elem = self.__add_height_map_rectangle(height_map)
-        self.__add_height_map(rectangle_elem, height_map)
+        if height_map.height_data:
+            rectangle_elem = self.__add_height_map_rectangle(height_map)
+            self.__add_height_map(rectangle_elem, height_map)
 
     def add_height_map_group(self, height_map):
         self.__add_generated_group(height_map.group)

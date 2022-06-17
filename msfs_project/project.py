@@ -568,14 +568,11 @@ class MsfsProject:
 
         return chunks(data, self.NB_PARALLEL_TASKS)
 
-    def __retrieve_tiles_to_calculate_height_map(self, rocks=None, new_group_id=-1, parallel=True):
+    def __retrieve_tiles_to_calculate_height_map(self, new_group_id=-1, parallel=True):
         data = []
 
         for guid, tile in self.tiles.items():
             if os.path.isdir(tile.folder):
-                tile_rocks = clip_gdf(rocks, tile.bbox_gdf)
-                tile.has_rocks = not tile_rocks.empty
-
                 params = ["--folder", str(tile.folder), "--name", str(tile.name), "--definition_file", str(tile.definition_file),
                           "--height_map_xml_folder", str(self.xmlfiles_folder), "--group_id", str(new_group_id), "--altitude", str(tile.pos.alt), "--has_rocks", str(tile.has_rocks)]
 
@@ -594,11 +591,16 @@ class MsfsProject:
             if tile.exclusion_mask_gdf.empty:
                 continue
 
+            mask_file_path = os.path.join(self.osmfiles_folder, EXCLUSION_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)
+
+            if not os.path.isfile(mask_file_path):
+                continue
+
             for lod in tile.lods:
                 if os.path.isdir(lod.folder):
                     data.append({"name": lod.name, "params": ["--folder", str(lod.folder), "--model_file", str(lod.model_file),
                                                               "--positioning_file_path", str(os.path.join(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)),
-                                                              "--mask_file_path", str(os.path.join(self.osmfiles_folder, EXCLUSION_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT))]})
+                                                              "--mask_file_path", str(mask_file_path)]})
 
         return chunks(data, self.NB_PARALLEL_TASKS)
 
@@ -679,13 +681,10 @@ class MsfsProject:
         self.__clean_objects(self.colliders)
 
     def __generate_height_map_data(self):
-        isolated_print(EOL)
         self.objects_xml.remove_height_maps()
-        rocks = load_gdf(self.coords, NATURAL_OSM_KEY, OSM_TAGS[ROCKS_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, ROCKS_OSM_KEY + SHP_FILE_EXT))
-        rocks = prepare_gdf(rocks)
         new_group_id = self.objects_xml.get_new_group_id()
 
-        tiles_data = self.__retrieve_tiles_to_calculate_height_map(rocks=rocks, new_group_id=new_group_id, parallel=True)
+        tiles_data = self.__retrieve_tiles_to_calculate_height_map(new_group_id=new_group_id, parallel=True)
         self.__multithread_process_data(tiles_data, "calculate_tile_height_data.py", "CALCULATE HEIGHT MAPS FOR EACH TILE", "height map calculated")
         self.__add_height_maps_to_objects_xml()
 
@@ -760,7 +759,10 @@ class MsfsProject:
         osm_xml = OsmXml(self.osmfiles_folder, "ground_" + EXCLUSION_OSM_FILE_PREFIX + OSM_FILE_EXT)
         osm_xml.create_from_geodataframes([preserve_holes(ground_exclusion.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore'))], b, True, [(HEIGHT_OSM_TAG, 1000)])
 
-        create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, union_gdf(water_exclusion, ground_exclusion))
+        rocks = load_gdf(self.coords, NATURAL_OSM_KEY, OSM_TAGS[ROCKS_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, ROCKS_OSM_KEY + SHP_FILE_EXT))
+        rocks = prepare_gdf(rocks)
+
+        create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, water_exclusion, ground_exclusion_mask=ground_exclusion, rocks=rocks)
 
         print_title("CREATE TERRAFORMING POLYGONS GEO DATAFRAMES...)")
         terraforming_polygons = create_terraforming_polygons_gdf(bbox, union_gdf(water_exclusion, ground_exclusion))
@@ -788,8 +790,6 @@ class MsfsProject:
             shape.to_xml(self.objects_xml)
 
     def __cleanup_lods_3d_data(self):
-        isolated_print(EOL)
-        # some tile lods are not optimized
         lods_data = self.__retrieve_lods_to_cleanup()
         self.__multithread_process_data(lods_data, "cleanup_lod_3d_data.py", "CLEANUP LODS 3D DATA TILES", "cleaned")
 

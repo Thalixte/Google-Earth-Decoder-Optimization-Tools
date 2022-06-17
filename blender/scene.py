@@ -370,7 +370,7 @@ def cleanup_3d_data(model_file_path, intersect=False):
     objects = bpy.context.scene.objects
 
     mask = bpy.context.scene.objects.get("Areas")
-    grid = bpy.context.scene.objects.get("Grid")
+    grid = bpy.context.scene.objects.get("grid")
 
     if mask:
         for obj in objects:
@@ -436,19 +436,16 @@ def generate_model_height_data(model_file_path, lat, lon, altitude, inverted=Fal
     bpy.context.scene.collection.children.link(new_collection)
 
     results = {}
-    i = 0
     n = 0
 
     for y, heights in hmatrix.items():
         if n % 2 == 0:
             results[y] = list(heights.values())
-            for x, h in heights.items():
-                # debug display of the cloud of points
-                p = point_cloud("p" + str(i), [(x, y, h)])
-                new_collection.objects.link(p)
-                i = i + 1
 
         n = n + 1
+
+    # display the heights for debugging purpose
+    display_heights(coords, grid_dimension, hmatrix, new_collection)
 
     bpy.ops.object.select_all(action=DESELECT_ACTION)
     grid.select_set(True)
@@ -503,21 +500,20 @@ def prepare_ray_cast(grid_factor=5.0):
         else:
             width = obj.dimensions.x
             grid_dimensions = obj.dimensions
-            tile = obj
 
     # create the grid
-    me = bpy.data.meshes.new("Grid")
+    me = bpy.data.meshes.new("grid")
     bm = bmesh.new()
     grid_dimension = round(max(grid_dimensions.x, grid_dimensions.y) / grid_factor)
     bmesh.ops.create_grid(bm, x_segments=grid_dimension, y_segments=grid_dimension, size=round(grid_dimensions.x / 2))
     bmesh.ops.delete(bm, geom=bm.faces, context="FACES_ONLY")
     bm.to_mesh(me)
-    ob = bpy.data.objects.new("Grid", me)
+    ob = bpy.data.objects.new("grid", me)
     bpy.context.collection.objects.link(ob)
 
     bpy.ops.object.select_all(action=DESELECT_ACTION)
 
-    grid = bpy.context.scene.objects.get("Grid")
+    grid = bpy.context.scene.objects.get("grid")
     grid.select_set(True)
 
     bpy.ops.object.select_all(action=SELECT_ACTION)
@@ -610,7 +606,7 @@ def apply_transform(ob, use_location=False, use_rotation=False, use_scale=False)
     ob.matrix_basis = basis[0] @ basis[1] @ basis[2]
 
 
-def calculate_height_map_from_coords_from_bottom(tile, grid_dimension, coords, depsgraph, lat, lon, altitude, adjusts=None):
+def calculate_height_map_from_coords_from_bottom(tile, grid_dimension, coords, depsgraph, lat, lon, altitude):
     results = defaultdict(dict)
     geoid_height = get_geoid_height(lat, lon)
 
@@ -655,7 +651,7 @@ def calculate_height_map_from_coords_from_top(tile, grid_dimension, coords, deps
     new_coords = spatial_median_kdtree(np.array(new_coords), 35)
     # new_coords = spatial_median(np.array(new_coords), 20)
 
-    # downsample the new cords retrieved from top ray casting
+    # downscale the new cords retrieved from top ray casting
     new_coords = [co for i, co in enumerate(new_coords) if i % 2 == 0]
 
     for i, co in enumerate(new_coords):
@@ -737,3 +733,42 @@ def spatial_median_kdtree(pointcloud, radius):
             new_p.append((pointcloud[idx, 0], pointcloud[idx, 1], np.median(pointcloud[result, 2])))
 
     return new_p
+
+
+def face(rows, column, row):
+    return column * rows + row, column * rows + row + 1, (column + 1) * rows + row + 1, (column + 1) * rows + row
+
+
+def display_heights(coords, grid_dimension, hmatrix, new_collection):
+    mesh_name = "display_heights"
+    verts = []
+    edges = []
+
+    # Create mesh
+    mesh = bpy.data.meshes.new(mesh_name)
+    ob = bpy.data.objects.new(mesh_name, mesh)
+    coords = [co for i, co in enumerate(coords) if i % 2 == 0]
+
+    for co in coords:
+        if co[1] in hmatrix.keys() and co[0] in hmatrix[co[1]].keys():
+            verts.append((co[0], co[1], hmatrix[co[1]][co[0]]))
+        else:
+            verts.append((co[0], co[1], co[2]))
+
+    downscaled_grid_dimension = (int(grid_dimension / 2) - 1)
+    faces = [face(downscaled_grid_dimension + 2, x, y) for x in range(grid_dimension - 1) for y in range(grid_dimension - 1)]
+
+    mesh.from_pydata(verts, edges, faces)
+    mesh.update(calc_edges=True)
+    new_collection.objects.link(ob)
+
+    bm = bmesh.new()
+    bm.from_mesh(ob.data)
+    # bmesh.ops.delete(bm, geom=bm.faces, context="FACES_ONLY")
+
+    bad_verts = [v for v in bm.verts if v.co.z == 0]
+    for vert in bad_verts:
+        bm.verts.remove(vert)
+
+    bm.to_mesh(ob.data)
+    ob.data.update(calc_edges=True)

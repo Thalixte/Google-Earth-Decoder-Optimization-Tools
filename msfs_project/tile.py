@@ -25,7 +25,7 @@ from msfs_project.height_map import HeightMap
 from msfs_project.collider import MsfsCollider
 from msfs_project.scene_object import MsfsSceneObject
 from msfs_project.position import MsfsPosition
-from utils import get_coords_from_file_name, get_position_from_file_name, resize_gdf, preserve_holes, clip_gdf, create_bounding_box
+from utils import get_coords_from_file_name, get_position_from_file_name, resize_gdf, preserve_holes, clip_gdf, create_bounding_box, union_gdf
 from utils.minidom_xml import create_new_definition_file
 from msfs_project.osm_xml import OsmXml
 
@@ -103,13 +103,19 @@ class MsfsTile(MsfsSceneObject):
         osm_xml = OsmXml(dest_folder, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + self.name + OSM_FILE_EXT)
         osm_xml.create_from_geodataframes([self.bbox_gdf.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')], b)
 
-    def create_exclusion_mask_osm_file(self, dest_folder, b, exclusion_mask, buildings_and_water=False):
-        self.exclusion_mask_gdf = exclusion_mask.clip(self.bbox_gdf)
+    def create_exclusion_mask_osm_file(self, dest_folder, b, exclusion_mask, ground_exclusion_mask=None, rocks=None, buildings_and_water=False):
+        bbox_gdf = resize_gdf(self.bbox_gdf, 10)
+        self.exclusion_mask_gdf = exclusion_mask.clip(bbox_gdf)
+        tile_rocks = clip_gdf(rocks, self.bbox_gdf)
+        self.has_rocks = not tile_rocks.empty
+
+        if not ground_exclusion_mask is None and not self.has_rocks:
+            tile_ground_exclusion_mask = ground_exclusion_mask.clip(bbox_gdf)
+            self.exclusion_mask_gdf = union_gdf(self.exclusion_mask_gdf, tile_ground_exclusion_mask)
 
         if not self.exclusion_mask_gdf.empty:
-            bbox_gdf = resize_gdf(self.bbox_gdf, 10)
             file_name = EXCLUSION_OSM_FILE_PREFIX + "_" + self.name + ("_buildings_and_water" if buildings_and_water else "") + OSM_FILE_EXT
-            exclusion_mask = clip_gdf(exclusion_mask, bbox_gdf).drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')
+            exclusion_mask = self.exclusion_mask_gdf.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')
 
             if not buildings_and_water:
                 exclusion_mask = preserve_holes(exclusion_mask)
@@ -121,10 +127,8 @@ class MsfsTile(MsfsSceneObject):
         if not self.lods:
             return
 
-        min_lod = len(name)
         min_lod_idx = len(self.lods) - 1
-        lod_limit_diff = self.GE_TILE_ROOF_LIMIT - min_lod if self.GE_TILE_ROOF_LIMIT > min_lod else 0
-        lod = self.lods[min_lod_idx - lod_limit_diff]
+        lod = self.lods[min_lod_idx]
 
         if os.path.isdir(lod.folder):
             height_data, width, altitude, grid_limit = lod.calculate_height_data(self.coords[0], self.coords[2], altitude, inverted=inverted, positioning_file_path=positioning_file_path, mask_file_path=mask_file_path)
