@@ -425,11 +425,11 @@ def generate_model_height_data(model_file_path, lat, lon, altitude, inverted=Fal
     depsgraph.update()
     hmatrix = calculate_height_map_from_coords_from_bottom(tile, grid_dimension, coords, depsgraph, lat, lon, altitude)
 
-    # if inverted and os.path.exists(positioning_file_path) and os.path.exists(mask_file_path):
-    #     align_model_with_mask(model_file_path, positioning_file_path, mask_file_path, objects_to_keep=[grid])
-    #     cleanup_3d_data(model_file_path, intersect=False)
-    #     tile = get_tile_for_ray_cast(model_file_path, imported=False, objects_to_keep=[grid])
-    #     hmatrix = calculate_height_map_from_coords_from_top(tile, grid_dimension, coords, depsgraph, lat, lon, altitude, hmatrix_base=hmatrix)
+    if inverted and os.path.exists(positioning_file_path) and os.path.exists(mask_file_path):
+        align_model_with_mask(model_file_path, positioning_file_path, mask_file_path, objects_to_keep=[grid])
+        cleanup_3d_data(model_file_path, intersect=True)
+        tile = get_tile_for_ray_cast(model_file_path, imported=False, objects_to_keep=[grid])
+        hmatrix = calculate_height_map_from_coords_from_top(tile, grid_dimension, coords, depsgraph, lat, lon, altitude, hmatrix_base=hmatrix)
 
     new_collection = bpy.data.collections.new(name="coords")
     assert (new_collection is not bpy.context.scene.collection)
@@ -445,7 +445,7 @@ def generate_model_height_data(model_file_path, lat, lon, altitude, inverted=Fal
         n = n + 1
 
     # display the heights for debugging purpose
-    display_heights(coords, grid_dimension, hmatrix, new_collection)
+    # display_heights(coords, grid_dimension, hmatrix, new_collection)
 
     bpy.ops.object.select_all(action=DESELECT_ACTION)
     grid.select_set(True)
@@ -667,7 +667,7 @@ def calculate_height_map_from_coords_from_top(tile, grid_dimension, coords, deps
                 if y in hmatrix_base:
                     if x in hmatrix_base[y]:
                         base_h = hmatrix_base[y][x]
-                        h = h + 5.0 if h >= base_h else base_h
+                        h = h + 2.0 if h >= base_h else base_h
                         results[y][x] = h
 
     return results

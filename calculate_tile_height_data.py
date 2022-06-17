@@ -162,6 +162,6 @@ positioning_file_path = args.positioning_file_path if has_rocks else ""
 mask_file_path = args.mask_file_path if has_rocks else ""
 
 tile = MsfsTile(args.folder, args.name, args.definition_file)
-tile.generate_height_data(args.name, HeightMapXml(args.height_map_xml_folder, HEIGHT_MAP_SUFFIX + args.name + XML_FILE_EXT), args.group_id, float(args.altitude), inverted=has_rocks, positioning_file_path=positioning_file_path, mask_file_path=mask_file_path)
+tile.generate_height_data(HeightMapXml(args.height_map_xml_folder, HEIGHT_MAP_SUFFIX + args.name + XML_FILE_EXT), args.group_id, float(args.altitude), inverted=has_rocks, positioning_file_path=positioning_file_path, mask_file_path=mask_file_path)
 # except:
 #     pass

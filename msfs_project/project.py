@@ -573,13 +573,15 @@ class MsfsProject:
 
         for guid, tile in self.tiles.items():
             if os.path.isdir(tile.folder):
+                mask_file_path = os.path.join(self.osmfiles_folder, GROUND_OSM_KEY + "_" + EXCLUSION_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)
                 params = ["--folder", str(tile.folder), "--name", str(tile.name), "--definition_file", str(tile.definition_file),
-                          "--height_map_xml_folder", str(self.xmlfiles_folder), "--group_id", str(new_group_id), "--altitude", str(tile.pos.alt), "--has_rocks", str(tile.has_rocks)]
+                          "--height_map_xml_folder", str(self.xmlfiles_folder), "--group_id", str(new_group_id), "--altitude", str(tile.pos.alt)]
 
-                # if tile.has_rocks:
-                #     tile.has_rocks = True
-                #     params.extend(["--positioning_file_path", str(os.path.join(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)),
-                #                    "--mask_file_path", str(os.path.join(self.osmfiles_folder, EXCLUSION_OSM_FILE_PREFIX + "_" + tile.name + "_buildings_and_water" + OSM_FILE_EXT))])
+                if tile.has_rocks and os.path.isfile(mask_file_path):
+                    params.extend(["--positioning_file_path", str(os.path.join(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)),
+                                   "--mask_file_path", str(mask_file_path)])
+
+                params.extend(["--has_rocks", str(tile.has_rocks)])
 
                 data.append({"name": tile.name, "params": params})
 
@@ -588,9 +590,6 @@ class MsfsProject:
     def __retrieve_lods_to_cleanup(self):
         data = []
         for tile in self.tiles.values():
-            if tile.exclusion_mask_gdf.empty:
-                continue
-
             mask_file_path = os.path.join(self.osmfiles_folder, EXCLUSION_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)
 
             if not os.path.isfile(mask_file_path):
@@ -754,7 +753,7 @@ class MsfsProject:
         osm_xml.create_from_geodataframes([preserve_holes(water_exclusion.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore'))], b, True, [(HEIGHT_OSM_TAG, 1000)])
 
         # create ground exclusion masks to cleanup 3d data tiles
-        ground_exclusion = create_ground_exclusion_gdf(landuse, leisure, natural, aeroway)
+        ground_exclusion = create_ground_exclusion_gdf(landuse, leisure, natural, aeroway, roads)
         # for debugging purpose, generate the whole exclusion osm file
         osm_xml = OsmXml(self.osmfiles_folder, "ground_" + EXCLUSION_OSM_FILE_PREFIX + OSM_FILE_EXT)
         osm_xml.create_from_geodataframes([preserve_holes(ground_exclusion.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore'))], b, True, [(HEIGHT_OSM_TAG, 1000)])
@@ -763,6 +762,7 @@ class MsfsProject:
         rocks = prepare_gdf(rocks)
 
         create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, water_exclusion, ground_exclusion_mask=ground_exclusion, rocks=rocks)
+        create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, ground_exclusion, file_prefix=GROUND_OSM_KEY + "_")
 
         print_title("CREATE TERRAFORMING POLYGONS GEO DATAFRAMES...)")
         terraforming_polygons = create_terraforming_polygons_gdf(bbox, union_gdf(water_exclusion, ground_exclusion))

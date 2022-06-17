@@ -26,7 +26,7 @@ from shapely.geometry import Polygon, JOIN_STYLE, CAP_STYLE, MultiPolygon, LineS
 from shapely.ops import linemerge, unary_union, polygonize, nearest_points
 from shapely.validation import make_valid
 
-from constants import GEOMETRY_OSM_COLUMN, BOUNDING_BOX_OSM_KEY, SHAPE_TEMPLATES_FOLDER, OSM_LAND_SHAPEFILE, ROADS_OSM_KEY, BRIDGE_OSM_TAG, SERVICE_OSM_KEY, SLIPWAY_OSM_TAG, NOT_SHORE_WATER_OSM_KEY, WATER_OSM_KEY, NATURAL_OSM_KEY, OSM_TAGS, FOOTWAY_OSM_TAG, PATH_OSM_TAG
+from constants import GEOMETRY_OSM_COLUMN, BOUNDING_BOX_OSM_KEY, SHAPE_TEMPLATES_FOLDER, OSM_LAND_SHAPEFILE, ROADS_OSM_KEY, BRIDGE_OSM_TAG, SERVICE_OSM_KEY, SLIPWAY_OSM_TAG, NOT_SHORE_WATER_OSM_KEY, WATER_OSM_KEY, NATURAL_OSM_KEY, OSM_TAGS, FOOTWAY_OSM_TAG, PATH_OSM_TAG, PEDESTRIAN_OSM_TAG
 from utils.progress_bar import ProgressBar
 from utils.geometry import close_holes, extend_line
 
@@ -110,12 +110,12 @@ def create_bounding_box(coords):
     return gpd.GeoDataFrame(pd.DataFrame([], index=[0]), crs=EPSG.key + str(EPSG.WGS84_degree_unit), geometry=[b]), b
 
 
-def create_exclusion_masks_from_tiles(tiles, dest_folder, b, exclusion_mask, ground_exclusion_mask=None, rocks=None, buildings_and_water=False):
+def create_exclusion_masks_from_tiles(tiles, dest_folder, b, exclusion_mask, ground_exclusion_mask=None, rocks=None, file_prefix=""):
     pbar = ProgressBar(list(tiles.values()), title="CREATE EXCLUSION MASKS OSM FILES")
     exclusion = exclusion_mask.copy()
 
     for i, tile in enumerate(tiles.values()):
-        tile.create_exclusion_mask_osm_file(dest_folder, b, exclusion, ground_exclusion_mask=ground_exclusion_mask, rocks=rocks, buildings_and_water=buildings_and_water)
+        tile.create_exclusion_mask_osm_file(dest_folder, b, exclusion, ground_exclusion_mask=ground_exclusion_mask, rocks=rocks, file_prefix=file_prefix)
         pbar.update("exclusion mask created for %s tile" % tile.name)
 
 
@@ -169,6 +169,7 @@ def prepare_roads_gdf(gdf):
         result = result[~result[GEOMETRY_OSM_COLUMN].isna()]
         result = result[~(result[SERVICE_OSM_KEY] == SLIPWAY_OSM_TAG)]
         result = result[~(result[ROADS_OSM_KEY] == FOOTWAY_OSM_TAG)]
+        result = result[~(result[ROADS_OSM_KEY] == PEDESTRIAN_OSM_TAG)]
         result = result[~(result[ROADS_OSM_KEY] == PATH_OSM_TAG)]
         result = result[(result.geom_type == SHAPELY_TYPE.polygon) | (result.geom_type == SHAPELY_TYPE.multiPolygon)]
         result[GEOMETRY_OSM_COLUMN] = result[GEOMETRY_OSM_COLUMN].buffer(0)
@@ -238,19 +239,19 @@ def create_water_exclusion_gdf(natural_water, water, sea, roads):
     result = union_gdf(result, difference_gdf(natural_water, roads))
     result = union_gdf(result, difference_gdf(sea, roads))
 
-    if not roads.empty:
-        bridges = roads[roads[BRIDGE_OSM_TAG] == "yes"]
-        result = difference_gdf(result, bridges)
-
     return result.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)
 
 
-def create_ground_exclusion_gdf(landuse, leisure, natural, aeroway):
+def create_ground_exclusion_gdf(landuse, leisure, natural, aeroway, roads):
     result = gpd.GeoDataFrame(columns=[GEOMETRY_OSM_COLUMN], geometry=GEOMETRY_OSM_COLUMN)
     result = union_gdf(result, landuse)
     result = union_gdf(result, resize_gdf(leisure, 20))
     result = union_gdf(result, natural)
     result = union_gdf(result, aeroway)
+
+    if not roads.empty:
+        bridges = roads[roads[BRIDGE_OSM_TAG] == "yes"]
+        result = difference_gdf(result, bridges)
 
     return result.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)
 
