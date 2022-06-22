@@ -16,6 +16,8 @@
 #
 #  <pep8 compliant>
 
+# 21615171614242537
+
 import argparse
 import os
 import site
@@ -58,7 +60,7 @@ if cwd not in sys.path:
 
 from utils import *
 from blender import clean_scene
-from msfs_project import MsfsLod, MsfsTile, ObjectsXml, HeightMapXml
+from msfs_project import MsfsLod
 
 # clear and open the system console
 # open_console()
@@ -83,54 +85,13 @@ parser = argparse.ArgumentParser(description=usage_text)
 
 parser.add_argument(
     "-f", "--folder", dest="folder", type=str, required=True,
-    help="folder of the MsfsTile definition file",
+    help="folder of the MsfsLod model file",
 )
 
 parser.add_argument(
-    "-n", "--name", dest="name", type=str, required=True,
-    help="name of the tile",
+    "-m", "--model_file", dest="model_file", type=str, required=True,
+    help="name of the gltf model file",
 )
-
-parser.add_argument(
-    "-d", "--definition_file", dest="definition_file", type=str, required=True,
-    help="name of the xml definition file of the tile",
-)
-
-parser.add_argument(
-    "-hmxf", "--height_map_xml_folder", dest="height_map_xml_folder", type=str, required=True,
-    help="folder of the height map xml file",
-)
-
-parser.add_argument(
-    "-gi", "--group_id", dest="group_id", type=str, required=True,
-    help="id of the group containing the height maps",
-)
-
-parser.add_argument(
-    "-alt", "--altitude", dest="altitude", type=str, required=True,
-    help="altitude of the height map",
-)
-
-parser.add_argument(
-    "-hr", "--has_rocks", dest="has_rocks", type=str, required=True,
-    help="indicates if the tile has rocks inside",
-)
-
-parser.add_argument(
-    "-p", "--positioning_file_path", dest="positioning_file_path", type=str, required=False,
-    help="path of the positioning mask file",
-)
-
-parser.add_argument(
-    "-wbmsk", "--water_bridge_mask_file_path", dest="water_bridge_mask_file_path", type=str, required=False,
-    help="path of the water bridge exclusion mask file",
-)
-
-parser.add_argument(
-    "-gmsk", "--ground_mask_file_path", dest="ground_mask_file_path", type=str, required=False,
-    help="path of the ground exclusion mask file",
-)
-
 
 args = parser.parse_args(argv)
 
@@ -140,34 +101,14 @@ if not argv:
 if not args.folder:
     raise ScriptError("Error: --folder=\"some string\" argument not given, aborting.")
 
-if not args.name:
-    raise ScriptError("Error: --name=\"some string\" argument not given, aborting.")
-
-if not args.definition_file:
-    raise ScriptError("Error: --definition_file=\"some string\" argument not given, aborting.")
-
-if not args.height_map_xml_folder:
-    raise ScriptError("Error: --height_map_xml_folder=\"some string\" argument not given, aborting.")
-
-if not args.group_id:
-    raise ScriptError("Error: --group_id=\"some string\" argument not given, aborting.")
-
-if not args.altitude:
-    raise ScriptError("Error: --altitude=\"some string\" argument not given, aborting.")
-
-if not args.has_rocks:
-    raise ScriptError("Error: --has_rocks=\"some string\" argument not given, aborting.")
+if not args.model_file:
+    raise ScriptError("Error: --model_file=\"some string\" argument not given, aborting.")
 
 clean_scene()
 
 settings = Settings(get_sources_path())
-has_rocks = json.loads(args.has_rocks.lower())
 
-ground_mask_file_path = args.ground_mask_file_path if has_rocks else str()
-positioning_file_path = args.positioning_file_path if args.positioning_file_path else str()
-water_bridge_mask_file_path = args.water_bridge_mask_file_path if args.water_bridge_mask_file_path else str()
-
-tile = MsfsTile(args.folder, args.name, args.definition_file)
-tile.generate_height_data(HeightMapXml(args.height_map_xml_folder, HEIGHT_MAP_SUFFIX + args.name + XML_FILE_EXT), args.group_id, float(args.altitude), inverted=has_rocks, positioning_file_path=positioning_file_path, water_bridge_mask_file_path=water_bridge_mask_file_path, ground_mask_file_path=ground_mask_file_path)
+lod = MsfsLod(os.path.splitext(args.model_file)[0][-2:], 0, args.folder, args.model_file)
+lod.reduce_number_of_vertices()
 # except:
 #     pass

@@ -125,6 +125,8 @@ class MsfsGltf:
             }
         }
 
+        if not self.MATERIALS_TAG in self.data.keys(): return
+
         try:
             for material in self.data[self.MATERIALS_TAG]:
                 material[self.EXTENSIONS_TAG] = material_extensions_data
@@ -136,10 +138,15 @@ class MsfsGltf:
 
         self.data[self.EXTENSIONS_USED_TAG].append(extension_tag)
 
-        for material in self.data[self.MATERIALS_TAG]:
-            material[self.EXTENSIONS_TAG][extension_tag] = {
-                self.ENABLED_TAG: True
-            }
+        if not self.MATERIALS_TAG in self.data.keys(): return
+
+        try:
+            for material in self.data[self.MATERIALS_TAG]:
+                material[self.EXTENSIONS_TAG][extension_tag] = {
+                    self.ENABLED_TAG: True
+                }
+        except:
+            pass
 
     def remove_asobo_tag(self, asobo_tag_name):
         if not self.MATERIALS_TAG in self.data.keys(): return

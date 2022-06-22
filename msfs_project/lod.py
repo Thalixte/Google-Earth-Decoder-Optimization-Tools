@@ -22,7 +22,7 @@ import shutil
 from pathlib import Path
 
 import bpy
-from blender import import_model_files, bake_texture_files, fix_object_bounding_box, export_to_optimized_gltf_files, clean_scene, extract_splitted_tile, align_model_with_mask, cleanup_3d_data, generate_model_height_data
+from blender import import_model_files, bake_texture_files, fix_object_bounding_box, export_to_optimized_gltf_files, clean_scene, extract_splitted_tile, align_model_with_mask, cleanup_3d_data, generate_model_height_data, reduce_number_of_vertices
 from constants import PNG_TEXTURE_FORMAT, JPG_TEXTURE_FORMAT, GLTF_FILE_PATTERN, GLTF_FILE_EXT, XML_FILE_EXT, TEXTURE_FOLDER
 from msfs_project.binary import MsfsBinary
 from msfs_project.texture import MsfsTexture
@@ -184,6 +184,16 @@ class MsfsLod:
             for definition_file in tile.new_tiles.values():
                 add_new_lod(definition_file, self.model_file, min_size_value)
 
+    def reduce_number_of_vertices(self):
+        # Import the gltf files located in the object folder
+        model_file = MsfsGltf(os.path.join(self.folder, self.model_file))
+        model_file.remove_texture_path()
+        model_file.add_texture_path()
+        model_file.dump()
+        reduce_number_of_vertices(os.path.join(self.folder, self.model_file))
+        export_to_optimized_gltf_files(os.path.join(self.folder, self.model_file), TEXTURE_FOLDER, use_selection=True, export_extras=False)
+        clean_scene()
+
     def cleanup_3d_data(self, positioning_file_path, mask_file_path):
         # Import the gltf files located in the object folder
         isolated_print("align", self.name, "model with mask")
@@ -205,8 +215,8 @@ class MsfsLod:
 
         return result
 
-    def calculate_height_data(self, lat, lon, altitude, inverted=False, positioning_file_path="", mask_file_path=""):
-        return generate_model_height_data(os.path.join(self.folder, self.model_file), lat, lon, altitude, inverted, positioning_file_path, mask_file_path)
+    def calculate_height_data(self, lat, lon, altitude, inverted=False, positioning_file_path="", water_bridge_mask_file_path="", ground_mask_file_path=""):
+        return generate_model_height_data(os.path.join(self.folder, self.model_file), lat, lon, altitude, inverted=inverted, positioning_file_path=positioning_file_path, water_bridge_mask_file_path=water_bridge_mask_file_path, ground_mask_file_path=ground_mask_file_path)
 
     def __retrieve_gltf_resources(self):
         self.binaries = []

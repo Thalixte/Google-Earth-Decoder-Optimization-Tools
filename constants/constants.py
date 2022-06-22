@@ -98,6 +98,7 @@ TARGET_MIN_SIZE_VALUE_PROPERTY_PREFIX = "target_min_size_value_"
 
 TERRAFORMING_POLYGONS_DISPLAY_NAME = "GEDOT_generated_terraforming_polygons"
 EXCLUSION_BUILDING_POLYGONS_DISPLAY_NAME = "GEDOT_generated_exclusion_building_polygons"
+EXCLUSION_VEGETATION_POLYGONS_DISPLAY_NAME = "GEDOT_generated_exclusion_vegetation_polygons"
 HEIGHT_MAPS_DISPLAY_NAME = "GEDOT_generated_height_maps"
 
 PROJECT_INI_SECTION = "PROJECT"
@@ -185,6 +186,8 @@ CONSTRUCTION_OSM_TAG = "construction"
 
 EXCLUSION_OSM_FILE_PREFIX = "exclusion"
 BOUNDING_BOX_OSM_FILE_PREFIX = "bbox"
+WATER_BRIDGE_OSM_FILE_PREFIX = "water_bridge"
+GEOCODE_OSM_FILE_PREFIX = "geocode"
 
 FEET_TO_METER_RATIO = 0.3048
 TILE_THICKNESS = 0.5
@@ -237,6 +240,7 @@ OSM_TAGS = {
     ],
     AEROWAY_OSM_KEY: [],
     ROCKS_OSM_KEY: [
+        BARE_ROCK_OSM_TAG,
         CLIFF_OSM_TAG
     ],
     NOT_SHORE_WATER_OSM_KEY: [
@@ -245,7 +249,8 @@ OSM_TAGS = {
         WASTEWATER_OSM_TAG,
         CANAL_OSM_TAG,
         BASIN_OSM_TAG,
-        RESERVOIR_OSM_TAG
+        RESERVOIR_OSM_TAG,
+        WETLAND_OSM_TAG
     ]
 }
 

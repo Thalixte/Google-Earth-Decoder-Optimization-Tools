@@ -103,8 +103,8 @@ class MsfsTile(MsfsSceneObject):
         osm_xml = OsmXml(dest_folder, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + self.name + OSM_FILE_EXT)
         osm_xml.create_from_geodataframes([self.bbox_gdf.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')], b)
 
-    def create_exclusion_mask_osm_file(self, dest_folder, b, exclusion_mask, ground_exclusion_mask=None, rocks=None, file_prefix=""):
-        bbox_gdf = resize_gdf(self.bbox_gdf, 10)
+    def create_exclusion_mask_osm_file(self, dest_folder, b, exclusion_mask, ground_exclusion_mask=None, rocks=None, keep_holes=True, file_prefix=""):
+        bbox_gdf = resize_gdf(self.bbox_gdf, 10 if keep_holes else 200)
         exclusion_mask_gdf = exclusion_mask.clip(bbox_gdf)
 
         if not rocks is None:
@@ -118,7 +118,8 @@ class MsfsTile(MsfsSceneObject):
         if not exclusion_mask_gdf.empty:
             file_name = file_prefix + EXCLUSION_OSM_FILE_PREFIX + "_" + self.name + OSM_FILE_EXT
             exclusion_mask = exclusion_mask_gdf.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')
-            exclusion_mask = preserve_holes(exclusion_mask)
+            if keep_holes:
+                exclusion_mask = preserve_holes(exclusion_mask)
 
             osm_xml = OsmXml(dest_folder, file_name)
             osm_xml.create_from_geodataframes([exclusion_mask], b, True, [(HEIGHT_OSM_TAG, 1000)])
@@ -126,7 +127,7 @@ class MsfsTile(MsfsSceneObject):
         if not file_prefix:
             self.exclusion_mask_gdf = exclusion_mask_gdf
 
-    def generate_height_data(self, height_map_xml, group_id, altitude, inverted=False, positioning_file_path="", mask_file_path=""):
+    def generate_height_data(self, height_map_xml, group_id, altitude, inverted=False, positioning_file_path="", water_bridge_mask_file_path="", ground_mask_file_path=""):
         if not self.lods:
             return
 
@@ -134,7 +135,7 @@ class MsfsTile(MsfsSceneObject):
         lod = self.lods[min_lod_idx]
 
         if os.path.isdir(lod.folder):
-            height_data, width, altitude, grid_limit = lod.calculate_height_data(self.coords[0], self.coords[2], altitude, inverted=inverted, positioning_file_path=positioning_file_path, mask_file_path=mask_file_path)
+            height_data, width, altitude, grid_limit = lod.calculate_height_data(self.coords[0], self.coords[2], altitude, inverted=inverted, positioning_file_path=positioning_file_path, water_bridge_mask_file_path=water_bridge_mask_file_path, ground_mask_file_path=ground_mask_file_path)
             self.height_map = HeightMap(tile=self, height_data=height_data, width=width, altitude=altitude, grid_limit=grid_limit, group_id=group_id)
             self.height_map.to_xml(height_map_xml)
 

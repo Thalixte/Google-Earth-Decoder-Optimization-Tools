@@ -365,6 +365,38 @@ def align_model_with_mask(model_file_path, positioning_file_path, mask_file_path
     bpy.ops.object.select_all(action=DESELECT_ACTION)
 
 
+def reduce_number_of_vertices(model_file_path):
+    import_model_files([model_file_path], clean=False)
+    objects = bpy.context.scene.objects
+
+    for obj in objects:
+        bpy.context.view_layer.objects.active = obj
+        decimate = obj.modifiers.new(name="decimate", type="DECIMATE")
+
+        if not decimate:
+            continue
+
+        decimate.decimate_type = "DISSOLVE"
+        for modifier in obj.modifiers:
+            bpy.ops.object.modifier_apply(modifier=modifier.name)
+
+    for obj in objects:
+        bpy.context.view_layer.objects.active = obj
+        weighted_normal = obj.modifiers.new(name="weighty", type="WEIGHTED_NORMAL")
+
+        if not weighted_normal:
+            continue
+
+        weighted_normal.weight = 50
+        weighted_normal.thresh = 10.0
+        weighted_normal.keep_sharp = True
+        weighted_normal.use_face_influence = True
+        for modifier in obj.modifiers:
+            bpy.ops.object.modifier_apply(modifier=modifier.name)
+
+    bpy.ops.object.select_all(action=SELECT_ACTION)
+
+
 def cleanup_3d_data(model_file_path, intersect=False):
     import_model_files([model_file_path], clean=False)
     objects = bpy.context.scene.objects
@@ -376,7 +408,7 @@ def cleanup_3d_data(model_file_path, intersect=False):
         for obj in objects:
             if obj != mask and obj != grid:
                 bpy.context.view_layer.objects.active = obj
-                booly = obj.modifiers.new(name='booly', type='BOOLEAN')
+                booly = obj.modifiers.new(name="booly", type="BOOLEAN")
 
                 if not booly:
                     continue
@@ -392,7 +424,7 @@ def cleanup_3d_data(model_file_path, intersect=False):
         for obj in objects:
             if obj != mask and obj != grid:
                 bpy.context.view_layer.objects.active = obj
-                weighted_normal = obj.modifiers.new(name='weighty', type='WEIGHTED_NORMAL')
+                weighted_normal = obj.modifiers.new(name="weighty", type="WEIGHTED_NORMAL")
 
                 if not weighted_normal:
                     continue
@@ -410,7 +442,7 @@ def cleanup_3d_data(model_file_path, intersect=False):
     bpy.ops.object.select_all(action=SELECT_ACTION)
 
 
-def generate_model_height_data(model_file_path, lat, lon, altitude, inverted=False, positioning_file_path="", mask_file_path=""):
+def generate_model_height_data(model_file_path, lat, lon, altitude, inverted=False, positioning_file_path="", water_bridge_mask_file_path="", ground_mask_file_path=""):
     if not bpy.context.scene:
         return False
 
@@ -425,8 +457,16 @@ def generate_model_height_data(model_file_path, lat, lon, altitude, inverted=Fal
     depsgraph.update()
     hmatrix = calculate_height_map_from_coords_from_bottom(tile, grid_dimension, coords, depsgraph, lat, lon, altitude)
 
-    if inverted and os.path.exists(positioning_file_path) and os.path.exists(mask_file_path):
-        align_model_with_mask(model_file_path, positioning_file_path, mask_file_path, objects_to_keep=[grid])
+    # fix wrong height data for bridges on water
+    if os.path.exists(positioning_file_path) and os.path.exists(water_bridge_mask_file_path):
+        align_model_with_mask(model_file_path, positioning_file_path, water_bridge_mask_file_path, objects_to_keep=[grid])
+        cleanup_3d_data(model_file_path, intersect=True)
+        tile = get_tile_for_ray_cast(model_file_path, imported=False, objects_to_keep=[grid])
+        hmatrix = fix_bridge_height_data_on_water(tile, depsgraph, lat, lon, hmatrix_base=hmatrix)
+
+    # fix wrong height data for tiles that has bare rocks or cliff inside them
+    if inverted and os.path.exists(positioning_file_path) and os.path.exists(ground_mask_file_path):
+        align_model_with_mask(model_file_path, positioning_file_path, ground_mask_file_path, objects_to_keep=[grid])
         cleanup_3d_data(model_file_path, intersect=True)
         tile = get_tile_for_ray_cast(model_file_path, imported=False, objects_to_keep=[grid])
         hmatrix = calculate_height_map_from_coords_from_top(tile, grid_dimension, coords, depsgraph, lat, lon, altitude, hmatrix_base=hmatrix)
@@ -436,11 +476,17 @@ def generate_model_height_data(model_file_path, lat, lon, altitude, inverted=Fal
     bpy.context.scene.collection.children.link(new_collection)
 
     results = {}
+    i = 0
     n = 0
 
     for y, heights in hmatrix.items():
         if n % 2 == 0:
             results[y] = list(heights.values())
+            for x, h in heights.items():
+                # debug display of the cloud of points
+                p = point_cloud("p" + str(i), [(x, y, h)])
+                new_collection.objects.link(p)
+                i = i + 1
 
         n = n + 1
 
@@ -504,8 +550,9 @@ def prepare_ray_cast(grid_factor=5.0):
     # create the grid
     me = bpy.data.meshes.new("grid")
     bm = bmesh.new()
-    grid_dimension = round(max(grid_dimensions.x, grid_dimensions.y) / grid_factor)
-    bmesh.ops.create_grid(bm, x_segments=grid_dimension, y_segments=grid_dimension, size=round(grid_dimensions.x / 2))
+    max_grid_dimension = max(grid_dimensions.x, grid_dimensions.y)
+    grid_dimension = round(max_grid_dimension / grid_factor)
+    bmesh.ops.create_grid(bm, x_segments=grid_dimension, y_segments=grid_dimension, size=round(max_grid_dimension / 2))
     bmesh.ops.delete(bm, geom=bm.faces, context="FACES_ONLY")
     bm.to_mesh(me)
     ob = bpy.data.objects.new("grid", me)
@@ -518,7 +565,7 @@ def prepare_ray_cast(grid_factor=5.0):
 
     bpy.ops.object.select_all(action=SELECT_ACTION)
 
-    bpy.ops.object.align(bb_quality=True, align_mode='OPT_1', relative_to='OPT_4', align_axis={'X', 'Y'})
+    bpy.ops.object.align(bb_quality=True, align_mode='OPT_3', relative_to='OPT_4', align_axis={'X', 'Y'})
     apply_transform(grid, use_location=True, use_rotation=False, use_scale=False)
 
     coords = [v.co for v in grid.data.vertices]
@@ -606,12 +653,12 @@ def apply_transform(ob, use_location=False, use_rotation=False, use_scale=False)
     ob.matrix_basis = basis[0] @ basis[1] @ basis[2]
 
 
-def calculate_height_map_from_coords_from_bottom(tile, grid_dimension, coords, depsgraph, lat, lon, altitude):
+def calculate_height_map_from_coords_from_bottom(tile, grid_dimension, coords, depsgraph, lat, lon, altitude, hmatrix_base=None):
     results = defaultdict(dict)
     geoid_height = get_geoid_height(lat, lon)
 
     # downsample the grid for bottom ray casting
-    coords = [co for i, co in enumerate(coords) if i % 2 == 0]
+    coords = [co for i, co in enumerate(coords) if i % 2 == 1]
 
     for co in coords:
         p1 = co
@@ -623,10 +670,10 @@ def calculate_height_map_from_coords_from_bottom(tile, grid_dimension, coords, d
             x = result[1][0]
             y = result[1][1]
             h = result[1][2]
-            if len(results[y]) < (int(grid_dimension/2)-1):
+            if len(results[y]) <= (int(grid_dimension/2)-1):
                 h = h + altitude + geoid_height
-                h = h if h >= geoid_height else geoid_height + 0.5
-                results[y][x] = h - 0.5
+                h = h if h >= geoid_height else geoid_height - 0.5
+                results[y][x] = h + 0.5
 
     return results
 
@@ -652,7 +699,7 @@ def calculate_height_map_from_coords_from_top(tile, grid_dimension, coords, deps
     # new_coords = spatial_median(np.array(new_coords), 20)
 
     # downscale the new cords retrieved from top ray casting
-    new_coords = [co for i, co in enumerate(new_coords) if i % 2 == 0]
+    new_coords = [co for i, co in enumerate(new_coords) if i % 2 == 1]
 
     for i, co in enumerate(new_coords):
         p1 = co
@@ -667,8 +714,27 @@ def calculate_height_map_from_coords_from_top(tile, grid_dimension, coords, deps
                 if y in hmatrix_base:
                     if x in hmatrix_base[y]:
                         base_h = hmatrix_base[y][x]
-                        h = h + 2.0 if h >= base_h else base_h
+                        h = h + 1.0 if h >= base_h else base_h
                         results[y][x] = h
+
+    return results
+
+
+def fix_bridge_height_data_on_water(tile, depsgraph, lat, lon, hmatrix_base=None):
+    results = hmatrix_base.copy()
+    geoid_height = get_geoid_height(lat, lon)
+
+    if results is not None:
+        for y in results:
+            for x in results[y]:
+                p1 = mathutils.Vector((x, y, 0))
+                p2 = mathutils.Vector((x, y, 500))
+
+                ray_direction = (p2 - p1).normalized()
+                result = tile.ray_cast(p1, ray_direction, distance=1000, depsgraph=depsgraph)
+
+                if result[0]:
+                    results[y][x] = geoid_height
 
     return results
 

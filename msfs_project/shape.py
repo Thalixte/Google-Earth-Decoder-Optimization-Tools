@@ -104,8 +104,6 @@ class MsfsShapePolygon:
         self.layer.value = "50000"
         self.flatten_mode.value = "1" if flatten else "0"
         self.flatten_falloff.value = "1.000000"
-        self.vegetation_scale.value = "0" if exclude_vegetation else "127"
-        self.vegetation_density.value = "0" if exclude_vegetation else "31"
 
         self.attributes += [
             self.unique_guid,
@@ -116,10 +114,13 @@ class MsfsShapePolygon:
             self.exclusion_flags,
             self.layer,
             self.flatten_mode,
-            self.flatten_falloff,
-            self.vegetation_scale,
-            self.vegetation_density
+            self.flatten_falloff
         ]
+
+        if exclude_vegetation:
+            self.vegetation_scale.value = "0"
+            self.vegetation_density.value = "0"
+            self.attributes.extend([self.vegetation_scale, self.vegetation_density])
 
         for point in polygon.exterior.coords:
             self.vertices.append(MsfsShapeVertex(point))
@@ -183,7 +184,7 @@ class MsfsShape:
     polygons: list
     group: MsfsShapeGroup
 
-    def __init__(self, shape_gdf=None, xml=None, group_display_name=TERRAFORMING_POLYGONS_DISPLAY_NAME, group_id=None, flatten=False, exclude_buildings=False, exclude_roads=False,exclude_vegetation=False):
+    def __init__(self, shape_gdf=None, xml=None, group_display_name=TERRAFORMING_POLYGONS_DISPLAY_NAME, group_id=None, flatten=False, exclude_buildings=False, exclude_roads=False, exclude_vegetation=False):
         self.polygons = []
 
         if not shape_gdf is None:

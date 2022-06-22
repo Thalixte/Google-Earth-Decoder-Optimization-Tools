@@ -17,6 +17,7 @@
 #  <pep8 compliant>
 from constants import HEIGHT_MAPS_DISPLAY_NAME
 from msfs_project.position import MsfsPosition
+from utils import isolated_print
 from utils.octant import get_latlonbox_from_file_name
 
 
@@ -59,13 +60,15 @@ class HeightMap:
         xml.add_height_map(self)
 
     def __init_from_height_data(self, tile, height_data, width, altitude, grid_limit, group_id):
+        lod = len(tile.name)
+        lod_limit = lod - 1 if lod >= 19 else lod
         self.falloff = 100
         self.priority = 0
         self.altitude = altitude
+        self.size = self.__guess_height_map_size(height_data)
         self.pos = get_latlonbox_from_file_name(tile.name).bl_point
-        self.pos2 = get_latlonbox_from_file_name(tile.name).tl_point
+        self.pos2 = get_latlonbox_from_file_name(tile.name[0:lod_limit]).tl_point
         self.mid = get_latlonbox_from_file_name(tile.name).mid_point
-        self.size = grid_limit
         self.height_data = self.__serialize_height_data(height_data)
         self.width = width
         self.group = MsfsHeightMapGroup(group_id=group_id)
@@ -103,3 +106,8 @@ class HeightMap:
             result = (" ".join([str(h) for h in x_data])) + " " + result
 
         return result.strip()
+
+    @staticmethod
+    def __guess_height_map_size(height_data):
+        x_size = [len(x_data) for x_data in list(height_data.values())]
+        return max(x_size, key=x_size.count)

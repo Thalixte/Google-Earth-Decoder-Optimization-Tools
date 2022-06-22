@@ -15,7 +15,7 @@
 #  #
 #
 #  <pep8 compliant>
-from constants import TERRAFORMING_POLYGONS_DISPLAY_NAME, HEIGHT_MAPS_DISPLAY_NAME
+from constants import HEIGHT_MAPS_DISPLAY_NAME
 from utils.progress_bar import ProgressBar
 from utils import Xml
 import xml.etree.ElementTree as Et
@@ -102,9 +102,9 @@ class ObjectsXml(Xml):
             self.root.remove(scenery_object)
         self.save()
 
-    def remove_shape(self):
+    def remove_shapes(self, group_name):
         group_id = -1
-        pattern = self.GROUP_SEARCH_PATTERN + TERRAFORMING_POLYGONS_DISPLAY_NAME + self.PATTERN_SUFFIX
+        pattern = self.GROUP_SEARCH_PATTERN + group_name + self.PATTERN_SUFFIX
 
         groups = self.root.findall(pattern)
         for group in groups:

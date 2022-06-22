@@ -44,6 +44,7 @@ class Settings:
     lat_correction: float
     lon_correction: float
     compressonator_exe_path = str
+    geocode: str
     sections = list
 
     def __init__(self, sources_path=str()):
@@ -66,6 +67,7 @@ class Settings:
         self.lat_correction = 0.0
         self.lon_correction = 0.0
         self.compressonator_exe_path = str()
+        self.geocode = str()
         self.sections = []
 
         config = cp.ConfigParser()
