@@ -141,7 +141,7 @@ def load_gdf(coords, key, tags, shp_file_path="", is_roads=False, is_buildings=F
     has_cache = os.path.isfile(shp_file_path)
 
     if has_cache:
-        result = gpd.read_file(shp_file_path)
+        return gpd.read_file(shp_file_path)
     else:
         if is_sea and land_mass is not None and bbox is not None:
             result = land_mass.overlay(bbox, how=OVERLAY_OPERATOR.symmetric_difference, keep_geom_type=False).assign(boundary=BOUNDING_BOX_OSM_KEY)
