@@ -581,7 +581,7 @@ class MsfsProject:
             if os.path.isdir(tile.folder):
                 has_rocks = tile.has_rocks
                 ground_mask_file_path = os.path.join(self.osmfiles_folder, GROUND_OSM_KEY + "_" + EXCLUSION_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)
-                water_bridge_mask_file_path = os.path.join(self.osmfiles_folder, WATER_BRIDGE_OSM_FILE_PREFIX + "_" + EXCLUSION_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)
+                water_mask_file_path = os.path.join(self.osmfiles_folder, WATER_OSM_KEY + "_" + EXCLUSION_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)
                 params = ["--folder", str(tile.folder), "--name", str(tile.name), "--definition_file", str(tile.definition_file),
                           "--height_map_xml_folder", str(self.xmlfiles_folder), "--group_id", str(new_group_id), "--altitude", str(tile.pos.alt)]
 
@@ -592,9 +592,9 @@ class MsfsProject:
                     else:
                         has_rocks = False
 
-                if os.path.isfile(water_bridge_mask_file_path):
+                if os.path.isfile(water_mask_file_path):
                     params.extend(["--positioning_file_path", str(os.path.join(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)),
-                                   "--water_bridge_mask_file_path", str(water_bridge_mask_file_path)])
+                                   "--water_mask_file_path", str(water_mask_file_path)])
 
                 params.extend(["--has_rocks", str(has_rocks)])
                 data.append({"name": tile.name, "params": params})
@@ -783,23 +783,22 @@ class MsfsProject:
         orig_aeroway = load_gdf(self.coords, AEROWAY_OSM_KEY, True, shp_file_path=os.path.join(self.shpfiles_folder, AEROWAY_OSM_KEY + SHP_FILE_EXT))
 
         roads = prepare_roads_gdf(orig_roads)
-        sea = prepare_sea_gdf(orig_sea)
+        sea = clip_gdf(prepare_sea_gdf(orig_sea), orig_bbox)
         bbox = prepare_bbox_gdf(orig_bbox, orig_land_mass, orig_boundary)
 
         landuse = clip_gdf(prepare_gdf(orig_landuse), bbox)
         leisure = clip_gdf(prepare_gdf(orig_leisure), bbox)
         natural = clip_gdf(prepare_gdf(orig_natural), bbox)
-        natural_water = clip_gdf(prepare_gdf(orig_natural_water), bbox)
-        water = clip_gdf(prepare_gdf(orig_water), bbox)
+        natural_water = clip_gdf(prepare_gdf(orig_natural_water), orig_bbox)
+        water = clip_gdf(prepare_gdf(orig_water), orig_bbox)
         aeroway = clip_gdf(prepare_gdf(orig_aeroway), bbox)
 
         whole_water = create_whole_water_gdf(natural_water, water, sea)
         # for debugging purpose, generate the water exclusion osm file
-        osm_xml = OsmXml(self.osmfiles_folder, "whole_" + WATER_OSM_KEY + OSM_FILE_EXT)
+        osm_xml = OsmXml(self.osmfiles_folder, WHOLE_WATER_OSM_FILE_PREFIX + OSM_FILE_EXT)
         osm_xml.create_from_geodataframes([preserve_holes(whole_water.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore'))], b, True, [(HEIGHT_OSM_TAG, 1000)])
 
         # create water exclusion masks to cleanup 3d data tiles
-        # water_exclusion = create_water_exclusion_gdf(natural_water, water, sea, roads)
         water_exclusion = difference_gdf(whole_water, roads)
         # for debugging purpose, generate the water exclusion osm file
         osm_xml = OsmXml(self.osmfiles_folder, WATER_OSM_KEY + "_" + EXCLUSION_OSM_FILE_PREFIX + OSM_FILE_EXT)
@@ -811,19 +810,12 @@ class MsfsProject:
         osm_xml = OsmXml(self.osmfiles_folder, GROUND_OSM_KEY + "_" + EXCLUSION_OSM_FILE_PREFIX + OSM_FILE_EXT)
         osm_xml.create_from_geodataframes([preserve_holes(ground_exclusion.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore'))], b, True, [(HEIGHT_OSM_TAG, 1000)])
 
-        # create water bridge exclusion masks to cleanup height data
-        # water_bridge_exclusion = create_water_bridge_exclusion_gdf(natural_water, water, sea, roads)
-        # for debugging purpose, generate the water bridge exclusion osm file
-        # water_bridge_exclusion = difference_gdf(water_exclusion, whole_water)
-        # osm_xml = OsmXml(self.osmfiles_folder, WATER_BRIDGE_OSM_FILE_PREFIX + "_" + EXCLUSION_OSM_FILE_PREFIX + OSM_FILE_EXT)
-        # osm_xml.create_from_geodataframes([water_bridge_exclusion], b, True, [(HEIGHT_OSM_TAG, 1000)])
-
         rocks = load_gdf(self.coords, NATURAL_OSM_KEY, OSM_TAGS[ROCKS_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, ROCKS_OSM_KEY + SHP_FILE_EXT))
         rocks = prepare_gdf(rocks)
 
-        create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, water_exclusion, ground_exclusion_mask=ground_exclusion, rocks=rocks, title="CREATE WATER EXCLUSION MASKS OSM FILES")
+        create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, water_exclusion, ground_exclusion_mask=ground_exclusion, rocks=rocks, title="CREATE EXCLUSION MASKS OSM FILES")
         create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, ground_exclusion, file_prefix=GROUND_OSM_KEY + "_", title="CREATE GROUND EXCLUSION MASKS OSM FILES")
-        # create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, water_bridge_exclusion, keep_holes=False, file_prefix=WATER_BRIDGE_OSM_FILE_PREFIX + "_", title="CREATE WATER BRIDGE EXCLUSION MASKS OSM FILES")
+        create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, whole_water, keep_holes=False, file_prefix=WATER_OSM_KEY + "_", title="CREATE WATER EXCLUSION MASKS OSM FILES")
 
         print_title("CREATE TERRAFORMING POLYGONS GEO DATAFRAMES...)")
         terraforming_polygons = create_terraforming_polygons_gdf(bbox, union_gdf(water_exclusion, ground_exclusion))

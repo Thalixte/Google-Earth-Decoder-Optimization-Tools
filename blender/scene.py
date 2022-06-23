@@ -442,7 +442,7 @@ def cleanup_3d_data(model_file_path, intersect=False):
     bpy.ops.object.select_all(action=SELECT_ACTION)
 
 
-def generate_model_height_data(model_file_path, lat, lon, altitude, inverted=False, positioning_file_path="", water_bridge_mask_file_path="", ground_mask_file_path=""):
+def generate_model_height_data(model_file_path, lat, lon, altitude, inverted=False, positioning_file_path="", water_mask_file_path="", ground_mask_file_path=""):
     if not bpy.context.scene:
         return False
 
@@ -458,11 +458,11 @@ def generate_model_height_data(model_file_path, lat, lon, altitude, inverted=Fal
     hmatrix = calculate_height_map_from_coords_from_bottom(tile, grid_dimension, coords, depsgraph, lat, lon, altitude)
 
     # fix wrong height data for bridges on water
-    if os.path.exists(positioning_file_path) and os.path.exists(water_bridge_mask_file_path):
-        align_model_with_mask(model_file_path, positioning_file_path, water_bridge_mask_file_path, objects_to_keep=[grid])
+    if os.path.exists(positioning_file_path) and os.path.exists(water_mask_file_path):
+        align_model_with_mask(model_file_path, positioning_file_path, water_mask_file_path, objects_to_keep=[grid])
         cleanup_3d_data(model_file_path, intersect=True)
         tile = get_tile_for_ray_cast(model_file_path, imported=False, objects_to_keep=[grid])
-        hmatrix = fix_bridge_height_data_on_water(tile, depsgraph, lat, lon, hmatrix_base=hmatrix)
+        hmatrix = fix_bridge_height_data_on_water(tile, depsgraph, lat, lon, altitude, hmatrix_base=hmatrix)
 
     # fix wrong height data for tiles that has bare rocks or cliff inside them
     if inverted and os.path.exists(positioning_file_path) and os.path.exists(ground_mask_file_path):
@@ -653,7 +653,7 @@ def apply_transform(ob, use_location=False, use_rotation=False, use_scale=False)
     ob.matrix_basis = basis[0] @ basis[1] @ basis[2]
 
 
-def calculate_height_map_from_coords_from_bottom(tile, grid_dimension, coords, depsgraph, lat, lon, altitude, hmatrix_base=None):
+def calculate_height_map_from_coords_from_bottom(tile, grid_dimension, coords, depsgraph, lat, lon, altitude):
     results = defaultdict(dict)
     geoid_height = get_geoid_height(lat, lon)
 
@@ -720,9 +720,10 @@ def calculate_height_map_from_coords_from_top(tile, grid_dimension, coords, deps
     return results
 
 
-def fix_bridge_height_data_on_water(tile, depsgraph, lat, lon, hmatrix_base=None):
+def fix_bridge_height_data_on_water(tile, depsgraph, lat, lon, altitude, hmatrix_base=None):
     results = hmatrix_base.copy()
     geoid_height = get_geoid_height(lat, lon)
+    new_coords = []
 
     if results is not None:
         for y in results:
@@ -734,7 +735,24 @@ def fix_bridge_height_data_on_water(tile, depsgraph, lat, lon, hmatrix_base=None
                 result = tile.ray_cast(p1, ray_direction, distance=1000, depsgraph=depsgraph)
 
                 if result[0]:
-                    results[y][x] = geoid_height
+                    new_coords.append(result[1])
+
+    # fix noise in the height map data
+    new_coords = spatial_median_kdtree(np.array(new_coords), 100)
+    # new_coords = spatial_median(np.array(new_coords), 20)
+
+    for i, co in enumerate(new_coords):
+        p1 = co
+        x = p1[0]
+        y = p1[1]
+        h = p1[2]
+        h = h + altitude + geoid_height
+        h = h if h >= geoid_height else geoid_height
+
+        if hmatrix_base is not None:
+            if y in hmatrix_base:
+                if x in hmatrix_base[y]:
+                    results[y][x] = h
 
     return results
 

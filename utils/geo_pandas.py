@@ -139,25 +139,32 @@ def load_gdf_from_geocode(geocode):
 
 def load_gdf(coords, key, tags, shp_file_path="", is_roads=False, is_buildings=False, is_sea=False, land_mass=None, bbox=None):
     has_cache = os.path.isfile(shp_file_path)
+    keys = [key, BRIDGE_OSM_TAG, SERVICE_OSM_KEY] if is_roads else [key]
 
     if has_cache:
-        return gpd.read_file(shp_file_path)
+        result = gpd.read_file(shp_file_path)
     else:
         if is_sea and land_mass is not None and bbox is not None:
-            result = land_mass.overlay(bbox, how=OVERLAY_OPERATOR.symmetric_difference, keep_geom_type=False).assign(boundary=BOUNDING_BOX_OSM_KEY)
+            result = symmetric_difference_gdf(land_mass, bbox).assign(boundary=BOUNDING_BOX_OSM_KEY)
         else:
             result = ox.geometries_from_bbox(coords[0], coords[1], coords[2], coords[3], tags={key: tags})
 
     if not result.empty:
-        if is_roads:
-            result = result[[GEOMETRY_OSM_COLUMN, key, BRIDGE_OSM_TAG, SERVICE_OSM_KEY]]
-            result = resize_gdf(result, 12, single_sided=False)
-        else:
-            result = result[[GEOMETRY_OSM_COLUMN, key]]
-            if not is_buildings:
-                result = resize_gdf(result, 1)
-        if not has_cache and shp_file_path != "":
-            result.to_file(shp_file_path)
+        keys.insert(0, GEOMETRY_OSM_COLUMN)
+        result = result[keys]
+
+        if not has_cache:
+            if is_roads:
+                result = resize_gdf(result, 24, single_sided=False)
+            else:
+                if not is_buildings:
+                    result = resize_gdf(result, 0)
+
+            if shp_file_path != "":
+                result.to_file(shp_file_path)
+    else:
+        for key in keys:
+            result[key] = None
 
     return result
 
@@ -205,6 +212,7 @@ def prepare_buildings_gdf(gdf, key):
     result = gdf.copy()
 
     if not result.empty:
+        result = resize_gdf(result, 5)
         result = result[(result.geom_type == SHAPELY_TYPE.polygon) | (result.geom_type == SHAPELY_TYPE.multiPolygon)]
 
     return result
@@ -284,8 +292,6 @@ def create_ground_exclusion_gdf(landuse, leisure, natural, aeroway, roads):
 
 
 def create_shore_water_gdf(orig_water, orig_natural_water, sea, bbox):
-    result = gpd.GeoDataFrame(columns=[GEOMETRY_OSM_COLUMN], geometry=GEOMETRY_OSM_COLUMN)
-
     water = orig_water.copy()
     for tag in OSM_TAGS[NOT_SHORE_WATER_OSM_KEY]:
         water = water[~(water[WATER_OSM_KEY] == tag)]

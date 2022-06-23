@@ -122,8 +122,8 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    "-wbmsk", "--water_bridge_mask_file_path", dest="water_bridge_mask_file_path", type=str, required=False,
-    help="path of the water bridge exclusion mask file",
+    "-wmsk", "--water_mask_file_path", dest="water_mask_file_path", type=str, required=False,
+    help="path of the water exclusion mask file",
 )
 
 parser.add_argument(
@@ -165,9 +165,9 @@ has_rocks = json.loads(args.has_rocks.lower())
 
 ground_mask_file_path = args.ground_mask_file_path if has_rocks else str()
 positioning_file_path = args.positioning_file_path if args.positioning_file_path else str()
-water_bridge_mask_file_path = args.water_bridge_mask_file_path if args.water_bridge_mask_file_path else str()
+water_mask_file_path = args.water_mask_file_path if args.water_mask_file_path else str()
 
 tile = MsfsTile(args.folder, args.name, args.definition_file)
-tile.generate_height_data(HeightMapXml(args.height_map_xml_folder, HEIGHT_MAP_SUFFIX + args.name + XML_FILE_EXT), args.group_id, float(args.altitude), inverted=has_rocks, positioning_file_path=positioning_file_path, water_bridge_mask_file_path=water_bridge_mask_file_path, ground_mask_file_path=ground_mask_file_path)
+tile.generate_height_data(HeightMapXml(args.height_map_xml_folder, HEIGHT_MAP_SUFFIX + args.name + XML_FILE_EXT), args.group_id, float(args.altitude), inverted=has_rocks, positioning_file_path=positioning_file_path, water_mask_file_path=water_mask_file_path, ground_mask_file_path=ground_mask_file_path)
 # except:
 #     pass
