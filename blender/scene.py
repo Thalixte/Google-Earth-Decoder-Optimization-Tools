@@ -738,21 +738,22 @@ def fix_bridge_height_data_on_water(tile, depsgraph, lat, lon, altitude, hmatrix
                     new_coords.append(result[1])
 
     # fix noise in the height map data
-    new_coords = spatial_median_kdtree(np.array(new_coords), 100)
-    # new_coords = spatial_median(np.array(new_coords), 20)
+    if new_coords:
+        new_coords = spatial_median_kdtree(np.array(new_coords), 100)
+        # new_coords = spatial_median(np.array(new_coords), 20)
 
-    for i, co in enumerate(new_coords):
-        p1 = co
-        x = p1[0]
-        y = p1[1]
-        h = p1[2]
-        h = h + altitude + geoid_height
-        h = h if h >= geoid_height else geoid_height
+        for i, co in enumerate(new_coords):
+            p1 = co
+            x = p1[0]
+            y = p1[1]
+            h = p1[2]
+            h = h + altitude + geoid_height
+            h = h if h >= geoid_height else geoid_height
 
-        if hmatrix_base is not None:
-            if y in hmatrix_base:
-                if x in hmatrix_base[y]:
-                    results[y][x] = h
+            if hmatrix_base is not None:
+                if y in hmatrix_base:
+                    if x in hmatrix_base[y]:
+                        results[y][x] = h
 
     return results
 
