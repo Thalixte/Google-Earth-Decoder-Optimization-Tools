@@ -783,14 +783,14 @@ class MsfsProject:
         orig_aeroway = load_gdf(self.coords, AEROWAY_OSM_KEY, True, shp_file_path=os.path.join(self.shpfiles_folder, AEROWAY_OSM_KEY + SHP_FILE_EXT))
 
         roads = prepare_roads_gdf(orig_roads)
-        sea = clip_gdf(prepare_sea_gdf(orig_sea), orig_bbox)
+        sea = prepare_sea_gdf(orig_sea)
         bbox = prepare_bbox_gdf(orig_bbox, orig_land_mass, orig_boundary)
 
         landuse = clip_gdf(prepare_gdf(orig_landuse), bbox)
         leisure = clip_gdf(prepare_gdf(orig_leisure), bbox)
         natural = clip_gdf(prepare_gdf(orig_natural), bbox)
-        natural_water = clip_gdf(prepare_gdf(orig_natural_water), orig_bbox)
-        water = clip_gdf(prepare_gdf(orig_water), orig_bbox)
+        natural_water = clip_gdf(prepare_gdf(orig_natural_water), bbox)
+        water = clip_gdf(prepare_gdf(orig_water), bbox)
         aeroway = clip_gdf(prepare_gdf(orig_aeroway), bbox)
 
         whole_water = create_whole_water_gdf(natural_water, water, sea)

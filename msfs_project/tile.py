@@ -104,7 +104,7 @@ class MsfsTile(MsfsSceneObject):
         osm_xml.create_from_geodataframes([self.bbox_gdf.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')], b)
 
     def create_exclusion_mask_osm_file(self, dest_folder, b, exclusion_mask, ground_exclusion_mask=None, rocks=None, keep_holes=True, file_prefix=""):
-        bbox_gdf = resize_gdf(self.bbox_gdf, 10)
+        bbox_gdf = resize_gdf(self.bbox_gdf, 10 if keep_holes else 200)
         exclusion_mask_gdf = exclusion_mask.clip(bbox_gdf)
 
         if not rocks is None:
