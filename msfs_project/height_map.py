@@ -123,10 +123,11 @@ class MsfsHeightMap:
 
 
 class MsfsHeightMaps:
-    rectangles = []
+    rectangles: list
     group: MsfsHeightMapGroup
 
     def __init__(self, xml, group_display_name=None):
+        self.rectangles = []
         self.__init_from_xml(xml, group_display_name)
 
     def __init_from_xml(self, xml, group_name):

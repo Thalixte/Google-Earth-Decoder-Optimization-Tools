@@ -158,7 +158,7 @@ def load_gdf(coords, key, tags, shp_file_path="", is_roads=False, is_buildings=F
                 result = resize_gdf(result, 24, single_sided=False)
             else:
                 if not is_buildings:
-                    result = resize_gdf(result, 0)
+                    result = resize_gdf(result, 0.00001)
 
             if shp_file_path != "":
                 result.to_file(shp_file_path)
