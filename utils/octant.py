@@ -23,6 +23,10 @@
 import os
 from collections import namedtuple
 
+from utils import isolated_print
+
+NULL_COORDS = (0, 0, 0, 0)
+
 octant_dict = {
     '0': (0, 0, 0),
     '1': (1, 0, 0),
@@ -105,16 +109,22 @@ first_latlonbox_dict = {
 
 #######################****************###########################
 
-def get_position_from_file_name(file_name):
-    return tuple(get_latlonbox_from_file_name(file_name).bl_point)
+def get_position_from_file_name(file_name, is_subtile=False):
+    latlonbox = get_latlonbox_from_file_name(file_name)
+    if is_subtile and latlonbox == NULL_COORDS:
+        return None
+    return tuple(latlonbox.bl_point)
 
 
-def get_coords_from_file_name(file_name):
-    return tuple(get_latlonbox_from_file_name(file_name))
+def get_coords_from_file_name(file_name, is_subtile=True):
+    latlonbox = get_latlonbox_from_file_name(file_name)
+    if is_subtile and latlonbox == NULL_COORDS:
+        return None
+    return tuple(latlonbox)
 
 
 def get_latlonbox_from_file_name(file_name):
-    pos = tuple([0, 0, 0, 0])
+    pos = NULL_COORDS
 
     try:
         latlonbox = first_latlonbox_dict[file_name[0:2]]

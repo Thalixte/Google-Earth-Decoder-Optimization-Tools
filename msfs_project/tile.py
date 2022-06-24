@@ -151,8 +151,9 @@ class MsfsTile(MsfsSceneObject):
         subtiles = lod.get_subtiles()
 
         for subtile in subtiles:
-            subtile_coords = get_coords_from_file_name(subtile)
-            self.coords = self.define_max_coords(subtile_coords)
+            subtile_coords = get_coords_from_file_name(subtile, is_subtile=True)
+            if subtile_coords:
+                self.coords = self.define_max_coords(subtile_coords)
 
     def __calculate_pos(self):
         result = get_position_from_file_name(self.name)
@@ -160,8 +161,9 @@ class MsfsTile(MsfsSceneObject):
         subtiles = lod.get_subtiles()
 
         for subtile in subtiles:
-            subtile_pos = get_position_from_file_name(subtile)
-            result = self.__define_min_pos(result, subtile_pos)
+            subtile_pos = get_position_from_file_name(subtile, is_subtile=True)
+            if subtile_pos:
+                result = self.__define_min_pos(result, subtile_pos)
 
         return result
 

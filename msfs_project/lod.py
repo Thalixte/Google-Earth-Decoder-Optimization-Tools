@@ -49,7 +49,7 @@ class MsfsLod:
 
     def __init__(self, lod_level, min_size, folder, model_file):
         self.lod_level = lod_level
-        self.min_size = int(min_size)
+        self.min_size = int(min_size) if min_size else 0
         self.name = os.path.splitext(model_file)[0]
         self.folder = folder
         self.optimization_in_progress = os.path.isdir(os.path.join(self.folder, self.name))
