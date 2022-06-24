@@ -17,7 +17,6 @@
 #  <pep8 compliant>
 from constants import HEIGHT_MAPS_DISPLAY_NAME
 from msfs_project.position import MsfsPosition
-from utils import isolated_print
 from utils.octant import get_latlonbox_from_file_name
 
 
@@ -28,15 +27,31 @@ class MsfsHeightMapGroup:
     group_id: int
     group_generated: bool
 
-    def __init__(self, group_id=None):
+    def __init__(self, xml=None, elem=None, group_display_name=HEIGHT_MAPS_DISPLAY_NAME, group_id=None):
         self.tag = "Group"
         self.display_name = HEIGHT_MAPS_DISPLAY_NAME
         self.group_index = 1
         self.group_id = 1 if group_id is None else group_id
         self.group_generated = (group_id is not None)
 
+        if xml is not None and elem is not None:
+            self.__init_from_xml(xml, elem)
 
-class HeightMap:
+    def __init_from_xml(self, xml, elem):
+        parent_group_id = elem.get(xml.PARENT_GROUP_ID_ATTR)
+
+        if parent_group_id is None:
+            return
+
+        groups = xml.root.findall(xml.PARENT_GROUP_SEARCH_PATTERN + elem.get(xml.PARENT_GROUP_ID_ATTR) + xml.PATTERN_SUFFIX)
+        for group in groups:
+            self.display_name = group.get(xml.DISPLAY_NAME_ATTR)
+            self.group_index = int(group.get(xml.GROUP_INDEX_ATTR))
+            self.group_id = int(group.get(xml.GROUP_ID_ATTR))
+            self.group_generated = bool(group.get(xml.GROUP_GENERATED_ATTR))
+
+
+class MsfsHeightMap:
     width: float
     size: int
     falloff: int
@@ -49,12 +64,12 @@ class HeightMap:
     altitude: str
     group: MsfsHeightMapGroup
 
-    def __init__(self, tile=None, height_data=None, xml=None, width=None, altitude=None, grid_limit=None, group_id=None):
-        if not tile is None and not height_data is None:
+    def __init__(self, tile=None, elem=None, height_data=None, xml=None, width=None, altitude=None, grid_limit=None, group_id=None):
+        if tile is not None and height_data is not None:
             self.__init_from_height_data(tile, height_data, width, altitude, grid_limit, group_id)
 
-        if not xml is None:
-            self.__init_from_xml(xml)
+        if xml is not None and elem is not None:
+            self.__init_from_xml(xml, elem)
 
     def to_xml(self, xml):
         xml.add_height_map(self)
@@ -73,28 +88,22 @@ class HeightMap:
         self.width = width
         self.group = MsfsHeightMapGroup(group_id=group_id)
 
-    def __init_from_xml(self, xml):
-        rectangles = xml.find_rectangles()
+    def __init_from_xml(self, xml, elem):
+        self.falloff = elem.get(xml.FALLOFF_ATTR)
+        self.priority = elem.get(xml.PRIORITY_ATTR)
+        self.altitude = elem.get(xml.ALTITUDE_ATTR)
+        self.pos = MsfsPosition(elem.get(xml.LATITUDE_ATTR), elem.get(xml.LONGITUDE2_ATTR), self.altitude)
+        self.pos2 = MsfsPosition(elem.get(xml.LATITUDE2_ATTR), elem.get(xml.LONGITUDE2_ATTR), self.altitude)
+        self.mid = MsfsPosition(elem.get(xml.LATITUDE_ATTR), elem.get(xml.LONGITUDE_ATTR), self.altitude)
+        self.width = elem.get(xml.WIDTH_ATTR)
 
-        if not rectangles:
-            return
+        height_maps = xml.find_rectangle_height_data(elem)
 
-        for rectangle in rectangles:
-            self.falloff = rectangle.get(xml.FALLOFF_ATTR)
-            self.priority = rectangle.get(xml.PRIORITY_ATTR)
-            self.altitude = rectangle.get(xml.ALTITUDE_ATTR)
-            self.pos = MsfsPosition(rectangle.get(xml.LATITUDE_ATTR), rectangle.get(xml.LONGITUDE2_ATTR), self.altitude)
-            self.pos2 = MsfsPosition(rectangle.get(xml.LATITUDE2_ATTR), rectangle.get(xml.LONGITUDE2_ATTR), self.altitude)
-            self.mid = MsfsPosition(rectangle.get(xml.LATITUDE_ATTR), rectangle.get(xml.LONGITUDE_ATTR), self.altitude)
-            self.width = rectangle.get(xml.WIDTH_ATTR)
+        for height_map in height_maps:
+            self.size = height_map.get(xml.WIDTH_ATTR)
+            self.height_data = height_map.get(xml.DATA_ATTR)
 
-            height_maps = xml.find_height_maps(rectangle)
-
-            for height_map in height_maps:
-                self.size = height_map.get(xml.WIDTH_ATTR)
-                self.height_data = height_map.get(xml.DATA_ATTR)
-
-            self.group = MsfsHeightMapGroup(rectangle.get(xml.PARENT_GROUP_ID_ATTR))
+        self.group = MsfsHeightMapGroup(elem.get(xml.PARENT_GROUP_ID_ATTR))
 
     def __serialize_height_data(self, height_data):
         result = ""
@@ -111,3 +120,23 @@ class HeightMap:
     def __guess_height_map_size(height_data):
         x_size = [len(x_data) for x_data in list(height_data.values())]
         return max(x_size, key=x_size.count)
+
+
+class MsfsHeightMaps:
+    rectangles = []
+    group: MsfsHeightMapGroup
+
+    def __init__(self, xml, group_display_name=None):
+        self.__init_from_xml(xml, group_display_name)
+
+    def __init_from_xml(self, xml, group_name):
+        rectangles = xml.find_rectangles() if group_name is None else xml.find_rectangles(group_name=group_name)
+
+        if not rectangles:
+            return
+
+        for rectangle in rectangles:
+            self.rectangles.append(MsfsHeightMap(xml=xml, elem=rectangle))
+
+        if group_name is not None:
+            self.group = MsfsHeightMapGroup(xml, rectangles[0])

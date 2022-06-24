@@ -32,7 +32,7 @@ from osmnx.utils_geo import bbox_to_poly
 import bpy
 from constants import *
 from msfs_project.height_map_xml import HeightMapXml
-from msfs_project.height_map import HeightMap
+from msfs_project.height_map import MsfsHeightMaps
 from msfs_project.osm_xml import OsmXml
 from msfs_project.project_xml import MsfsProjectXml
 from msfs_project.package_definitions_xml import MsfsPackageDefinitionsXml
@@ -80,6 +80,7 @@ class MsfsProject:
     objects: dict
     tiles: dict
     shapes: dict
+    height_maps: dict
     colliders: dict
     objects_xml: ObjectsXml
     coords: tuple
@@ -313,6 +314,7 @@ class MsfsProject:
         self.objects = dict()
         self.tiles = dict()
         self.shapes = dict()
+        self.height_maps = dict()
         self.colliders = dict()
 
         if init_structure:
@@ -404,6 +406,7 @@ class MsfsProject:
     def __retrieve_objects(self):
         self.__retrieve_scene_objects()
         self.__retrieve_shapes()
+        self.__retrieve_height_maps()
 
     def __retrieve_scene_objects(self):
         pbar = ProgressBar(list(Path(self.model_lib_folder).rglob(XML_FILE_PATTERN)), title="Retrieve project infos")
@@ -440,8 +443,12 @@ class MsfsProject:
             pbar.update("%s" % path.name)
 
     def __retrieve_shapes(self):
-        self.shapes = {TERRAFORMING_POLYGONS_DISPLAY_NAME: MsfsShape(xml=self.objects_xml)}
-        isolated_print(EOL)
+        self.shapes = {TERRAFORMING_POLYGONS_DISPLAY_NAME: MsfsShape(xml=self.objects_xml, group_display_name=TERRAFORMING_POLYGONS_DISPLAY_NAME),
+                       EXCLUSION_BUILDING_POLYGONS_DISPLAY_NAME: MsfsShape(xml=self.objects_xml, group_display_name=EXCLUSION_BUILDING_POLYGONS_DISPLAY_NAME),
+                       EXCLUSION_VEGETATION_POLYGONS_DISPLAY_NAME: MsfsShape(xml=self.objects_xml, group_display_name=EXCLUSION_VEGETATION_POLYGONS_DISPLAY_NAME)}
+
+    def __retrieve_height_maps(self):
+        self.height_maps = {HEIGHT_MAPS_DISPLAY_NAME: MsfsHeightMaps(xml=self.objects_xml, group_display_name=HEIGHT_MAPS_DISPLAY_NAME)}
 
     def __clean_objects(self, objects: dict):
         pop_objects = []
@@ -725,7 +732,7 @@ class MsfsProject:
         self.__clean_objects(self.colliders)
 
     def __generate_height_map_data(self):
-        self.objects_xml.remove_height_maps()
+        self.objects_xml.remove_height_maps(HEIGHT_MAPS_DISPLAY_NAME)
         new_group_id = self.objects_xml.get_new_group_id()
 
         tiles_data = self.__retrieve_tiles_to_calculate_height_map(new_group_id=new_group_id, parallel=True)
@@ -733,15 +740,16 @@ class MsfsProject:
         self.__add_height_maps_to_objects_xml()
 
     def __add_height_maps_to_objects_xml(self):
-        height_map = None
+        height_maps = None
 
         for tile in self.tiles.values():
             if os.path.isdir(tile.folder) and os.path.isfile(os.path.join(self.xmlfiles_folder, HEIGHT_MAP_SUFFIX + tile.name + XML_FILE_EXT)):
-                height_map = HeightMap(xml=HeightMapXml(self.xmlfiles_folder, HEIGHT_MAP_SUFFIX + tile.name + XML_FILE_EXT))
-                self.objects_xml.add_height_map(height_map)
+                height_maps = MsfsHeightMaps(xml=HeightMapXml(self.xmlfiles_folder, HEIGHT_MAP_SUFFIX + tile.name + XML_FILE_EXT))
+                if height_maps:
+                    self.objects_xml.add_height_map(height_maps.rectangles[0])
 
-        if not height_map is None:
-            self.objects_xml.add_height_map_group(height_map)
+        if height_maps is not None:
+            self.objects_xml.add_height_map_group(height_maps.rectangles[0])
         self.objects_xml.save()
 
         # try:

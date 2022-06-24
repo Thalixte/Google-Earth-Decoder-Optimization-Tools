@@ -37,7 +37,7 @@ def backup_file(backup_path, folder, file, dry_mode=False, pbar=None):
         if not os.path.isfile(backup_file_path):
             if not dry_mode:
                 shutil.copyfile(file_path, backup_file_path)
-            if not pbar is None:
+            if pbar is not None:
                 if dry_mode:
                     pbar.range+=1
                 else:

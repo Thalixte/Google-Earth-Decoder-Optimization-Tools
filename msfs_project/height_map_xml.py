@@ -54,8 +54,8 @@ class HeightMapXml(Xml):
     def find_rectangles(self):
         return self.root.findall(self.RECTANGLE_SEARCH_PATTERN)
 
-    def find_height_maps(self, rectangle_elem):
-        return rectangle_elem.findall(self.HEIGHT_MAP_SEARCH_PATTERN)
+    def find_rectangle_height_data(self, root):
+        return root.findall(self.HEIGHT_MAP_SEARCH_PATTERN)
 
     def __add_height_map_rectangle(self, height_map):
         return Et.SubElement(self.root, self.RECTANGLE_TAG, attrib={

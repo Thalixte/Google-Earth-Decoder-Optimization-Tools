@@ -36,7 +36,7 @@ class MsfsObjectXml(Xml):
     def __init__(self, file_folder, file_name):
         super().__init__(file_folder, file_name)
         guid = self.root.get(self.GUID_ATTR)
-        if not guid is None:
+        if guid is not None:
             self.guid = guid.upper()
 
     def find_scenery_lods(self):

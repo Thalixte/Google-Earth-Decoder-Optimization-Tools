@@ -134,7 +134,7 @@ def bake_texture_files(folder, file_name):
     source_image_nodes = []
     for obj in bpy.context.scene.objects:
         image_node = get_image_node(obj)
-        if not image_node.image is None:
+        if image_node.image is not None:
             source_image_nodes.append(image_node)
         else:
             bpy.data.objects.remove(obj, do_unlink=True)

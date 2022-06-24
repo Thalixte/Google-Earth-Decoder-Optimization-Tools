@@ -163,7 +163,7 @@ class MsfsShapeGroup:
         self.group_id = 1 if group_id is None else group_id
         self.group_generated = (group_id is not None)
 
-        if not xml is None and not elem is None:
+        if xml is not None and elem is not None:
             self.__init_from_xml(xml, elem)
 
     def __init_from_xml(self, xml, elem):
@@ -187,11 +187,11 @@ class MsfsShape:
     def __init__(self, shape_gdf=None, xml=None, group_display_name=TERRAFORMING_POLYGONS_DISPLAY_NAME, group_id=None, flatten=False, exclude_buildings=False, exclude_roads=False, exclude_vegetation=False):
         self.polygons = []
 
-        if not shape_gdf is None:
+        if shape_gdf is not None:
             self.__init_from_gdf(shape_gdf, group_display_name, group_id, flatten=flatten, exclude_buildings=exclude_buildings, exclude_roads=exclude_roads, exclude_vegetation=exclude_vegetation)
 
-        if not xml is None:
-            self.__init_from_xml(xml)
+        if xml is not None:
+            self.__init_from_xml(xml, group_display_name)
 
     def to_xml(self, xml):
         xml.add_shape(self)
@@ -212,8 +212,8 @@ class MsfsShape:
             for polygon in polygons:
                 self.polygons.append(MsfsShapePolygon(polygon=polygon, parent_group_id=group_id, group_index=group_index, flatten=flatten, exclude_buildings=exclude_buildings, exclude_roads=exclude_roads, exclude_vegetation=exclude_vegetation))
 
-    def __init_from_xml(self, xml):
-        polygons = xml.find_polygons()
+    def __init_from_xml(self, xml, group_name):
+        polygons = xml.find_polygons(group_name=group_name)
 
         if not polygons:
             return

@@ -71,6 +71,7 @@ class ObjectsXml(Xml):
     POLYGON_VERTICES_SEARCH_PATTERN = "./" + VERTEX_TAG
     GROUPS_SEARCH_PATTERN = "./" + GROUP_TAG
     RECTANGLES_SEARCH_PATTERN = "./" + RECTANGLE_TAG
+    RECTANGLE_HEIGHT_DATA_SEARCH_PATTERN = "./" + HEIGHT_MAP_TAG
     PARENT_GROUP_SEARCH_PATTERN = GROUPS_SEARCH_PATTERN + "[@" + GROUP_ID_ATTR + "='"
     GROUP_SEARCH_PATTERN = GROUPS_SEARCH_PATTERN + "[@" + DISPLAY_NAME_ATTR + "='"
     POLYGON_SEARCH_PATTERN = POLYGONS_SEARCH_PATTERN + "[@" + PARENT_GROUP_ID_ATTR + "='"
@@ -103,30 +104,20 @@ class ObjectsXml(Xml):
         self.save()
 
     def remove_shapes(self, group_name):
-        group_id = -1
-        pattern = self.GROUP_SEARCH_PATTERN + group_name + self.PATTERN_SUFFIX
-
-        groups = self.root.findall(pattern)
-        for group in groups:
-            group_id = group.get(self.GROUP_ID_ATTR)
-            self.root.remove(group)
-
-        for polygon in self.find_polygons(group_id=group_id):
+        for polygon in self.find_polygons(group_name=group_name):
             self.root.remove(polygon)
+
+        for group in self.find_groups(group_name=group_name):
+            self.root.remove(group)
 
         self.save()
 
-    def remove_height_maps(self):
-        group_id = -1
-        pattern = self.GROUP_SEARCH_PATTERN + HEIGHT_MAPS_DISPLAY_NAME + self.PATTERN_SUFFIX
+    def remove_height_maps(self, group_name):
+        for rectangle in self.find_rectangles(group_name=group_name):
+            self.root.remove(rectangle)
 
-        groups = self.root.findall(pattern)
-        for group in groups:
-            group_id = group.get(self.GROUP_ID_ATTR)
+        for group in self.find_groups(group_name=group_name):
             self.root.remove(group)
-
-        for height_map in self.find_height_maps(group_id):
-            self.root.remove(height_map)
 
         self.save()
 
@@ -140,9 +131,7 @@ class ObjectsXml(Xml):
             for vertex in polygon.vertices:
                 self.__add_shape_polygon_vertex(polygon_elem, vertex)
 
-        pattern = self.GROUP_SEARCH_PATTERN + shape.group.display_name + self.PATTERN_SUFFIX
-        groups = self.root.findall(pattern)
-
+        groups = self.find_groups(group_name=shape.group.display_name)
         if not groups:
             self.__add_generated_group(shape.group)
 
@@ -168,10 +157,30 @@ class ObjectsXml(Xml):
     def find_scenery_objects_in_group_parents(self, guid):
         return self.root.findall(self.SCENERY_OBJECT_GROUP_SEARCH_PATTERN + guid.upper() + self.PARENT_PATTERN_SUFFIX + self.PARENT_SUFFIX)
 
-    def find_polygons(self, group_id=None):
+    def find_groups(self, group_name=None):
+        pattern = self.GROUPS_SEARCH_PATTERN
+        if group_name is not None:
+            pattern = self.GROUP_SEARCH_PATTERN + str(group_name) + self.PATTERN_SUFFIX
+        return self.root.findall(pattern)
+
+    def find_polygons(self, group_name=None):
+        group_id = -1
         pattern = self.POLYGONS_SEARCH_PATTERN
-        if not group_id is None:
+        if group_name is not None:
+            related_groups = self.find_groups(group_name=group_name)
+            for group in related_groups:
+                group_id = group.get(self.GROUP_ID_ATTR)
             pattern = self.POLYGON_SEARCH_PATTERN + str(group_id) + self.PATTERN_SUFFIX
+        return self.root.findall(pattern)
+
+    def find_rectangles(self, group_name=None):
+        group_id = -1
+        pattern = self.POLYGONS_SEARCH_PATTERN
+        if group_name is not None:
+            related_groups = self.find_groups(group_name=group_name)
+            for group in related_groups:
+                group_id = group.get(self.GROUP_ID_ATTR)
+            pattern = self.HEIGHT_MAP_SEARCH_PATTERN + str(group_id) + self.PATTERN_SUFFIX
         return self.root.findall(pattern)
 
     def find_polygon_attributes(self, root):
@@ -180,9 +189,8 @@ class ObjectsXml(Xml):
     def find_polygon_vertices(self, root):
         return root.findall(self.POLYGON_VERTICES_SEARCH_PATTERN)
 
-    def find_height_maps(self, group_id):
-        pattern = self.HEIGHT_MAP_SEARCH_PATTERN + str(group_id) + self.PATTERN_SUFFIX
-        return self.root.findall(pattern)
+    def find_rectangle_height_data(self, root):
+        return root.findall(self.RECTANGLE_HEIGHT_DATA_SEARCH_PATTERN)
 
     def get_new_group_id(self):
         result = 0

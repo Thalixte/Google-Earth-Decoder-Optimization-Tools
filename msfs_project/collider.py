@@ -29,7 +29,7 @@ class MsfsCollider(MsfsSceneObject):
         self.associated_tile = name.split("_")[0]
         self.coords = get_coords_from_file_name(self.associated_tile)
         altitude = 0.0
-        if not objects_xml is None:
+        if objects_xml is not None:
             altitude = float(objects_xml.get_object_altitude(self.xml.guid))
         pos = get_position_from_file_name(self.associated_tile)
         self.pos = MsfsPosition(pos[0], pos[1], altitude)

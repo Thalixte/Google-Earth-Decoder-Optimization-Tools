@@ -21,7 +21,7 @@ import os
 import geopandas as gpd
 
 from constants import GLTF_FILE_EXT, COLLIDER_SUFFIX, XML_FILE_EXT, BOUNDARY_OSM_KEY, OSM_FILE_EXT, BOUNDING_BOX_OSM_FILE_PREFIX, EXCLUSION_OSM_FILE_PREFIX, HEIGHT_OSM_TAG
-from msfs_project.height_map import HeightMap
+from msfs_project.height_map import MsfsHeightMap
 from msfs_project.collider import MsfsCollider
 from msfs_project.scene_object import MsfsSceneObject
 from msfs_project.position import MsfsPosition
@@ -37,7 +37,7 @@ class MsfsTile(MsfsSceneObject):
     has_rocks: bool
     bbox_gdf: gpd.GeoDataFrame
     exclusion_mask_gdf: gpd.GeoDataFrame
-    height_map: HeightMap | None
+    height_map: MsfsHeightMap | None
 
     GE_TILE_ROOF_LIMIT = 18
 
@@ -46,7 +46,7 @@ class MsfsTile(MsfsSceneObject):
         self.__calculate_coords()
         pos = self.__calculate_pos()
         altitude = 0.0
-        if not objects_xml is None:
+        if objects_xml is not None:
             altitude = float(objects_xml.get_object_altitude(self.xml.guid))
         self.pos = MsfsPosition(pos[0], pos[1], altitude)
         self.new_tiles = {}
@@ -59,7 +59,7 @@ class MsfsTile(MsfsSceneObject):
             if lod.optimized: continue
             if not dry_mode:
                 lod.create_optimization_folder(other_tiles)
-            if not pbar is None:
+            if pbar is not None:
                 if dry_mode and not os.path.isdir(os.path.join(lod.folder, lod.name)):
                     pbar.range += 1
                 else:
@@ -107,11 +107,11 @@ class MsfsTile(MsfsSceneObject):
         bbox_gdf = resize_gdf(self.bbox_gdf, 10 if keep_holes else 200)
         exclusion_mask_gdf = exclusion_mask.clip(bbox_gdf)
 
-        if not rocks is None:
+        if rocks is not None:
             tile_rocks = clip_gdf(rocks, self.bbox_gdf)
             self.has_rocks = not tile_rocks.empty
 
-        if not ground_exclusion_mask is None and not self.has_rocks:
+        if ground_exclusion_mask is not None and not self.has_rocks:
             tile_ground_exclusion_mask = ground_exclusion_mask.clip(bbox_gdf)
             exclusion_mask_gdf = union_gdf(exclusion_mask_gdf, tile_ground_exclusion_mask)
 
@@ -136,7 +136,7 @@ class MsfsTile(MsfsSceneObject):
 
         if os.path.isdir(lod.folder):
             height_data, width, altitude, grid_limit = lod.calculate_height_data(self.coords[0], self.coords[2], altitude, inverted=inverted, positioning_file_path=positioning_file_path, water_mask_file_path=water_mask_file_path, ground_mask_file_path=ground_mask_file_path)
-            self.height_map = HeightMap(tile=self, height_data=height_data, width=width, altitude=altitude, grid_limit=grid_limit, group_id=group_id)
+            self.height_map = MsfsHeightMap(tile=self, height_data=height_data, width=width, altitude=altitude, grid_limit=grid_limit, group_id=group_id)
             self.height_map.to_xml(height_map_xml)
 
     def split(self, settings):
