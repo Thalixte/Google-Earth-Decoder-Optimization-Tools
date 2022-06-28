@@ -47,12 +47,12 @@ def adjust_height_data(script_settings):
         check_configuration(script_settings, msfs_project)
 
         if script_settings.backup_enabled:
-            msfs_project.backup(Path(os.path.abspath(__file__)).stem.replace(SCRIPT_PREFIX, str()))
+            msfs_project.backup(Path(os.path.abspath(__file__)).stem.replace(SCRIPT_PREFIX, str()), all_files=False)
 
         isolated_print(EOL)
         print_title("ADJUST HEIGHT DATA")
 
-        msfs_project.adjust_height_data()
+        msfs_project.cleanup_3d_data(script_settings, clean_3d_data=False)
 
         if script_settings.build_package_enabled:
             build_package(msfs_project, script_settings)

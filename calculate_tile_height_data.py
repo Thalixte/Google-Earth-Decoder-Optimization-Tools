@@ -112,6 +112,11 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    "-hadjust", "--height_adjustment", dest="height_adjustment", type=str, required=True,
+    help="height adjustment of the height map",
+)
+
+parser.add_argument(
     "-hr", "--has_rocks", dest="has_rocks", type=str, required=True,
     help="indicates if the tile has rocks inside",
 )
@@ -155,6 +160,9 @@ if not args.group_id:
 if not args.altitude:
     raise ScriptError("Error: --altitude=\"some string\" argument not given, aborting.")
 
+if not args.height_adjustment:
+    raise ScriptError("Error: --height_adjustment=\"some string\" argument not given, aborting.")
+
 if not args.has_rocks:
     raise ScriptError("Error: --has_rocks=\"some string\" argument not given, aborting.")
 
@@ -168,6 +176,6 @@ positioning_file_path = args.positioning_file_path if args.positioning_file_path
 water_mask_file_path = args.water_mask_file_path if args.water_mask_file_path else str()
 
 tile = MsfsTile(args.folder, args.name, args.definition_file)
-tile.generate_height_data(HeightMapXml(args.height_map_xml_folder, HEIGHT_MAP_SUFFIX + args.name + XML_FILE_EXT), args.group_id, float(args.altitude), inverted=has_rocks, positioning_file_path=positioning_file_path, water_mask_file_path=water_mask_file_path, ground_mask_file_path=ground_mask_file_path)
+tile.generate_height_data(HeightMapXml(args.height_map_xml_folder, HEIGHT_MAP_SUFFIX + args.name + XML_FILE_EXT), args.group_id, float(args.altitude), float(args.height_adjustment), inverted=has_rocks, positioning_file_path=positioning_file_path, water_mask_file_path=water_mask_file_path, ground_mask_file_path=ground_mask_file_path)
 # except:
 #     pass

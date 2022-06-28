@@ -29,6 +29,8 @@ class MsfsSceneObject(MsfsObject):
     pos: MsfsPosition
     coords: tuple
     lods: list
+    valid: bool
+    cleaned: bool
 
     LOD_MODEL_FILES_SEARCH_PATTERN = "_LOD*.gltf"
 
@@ -37,6 +39,8 @@ class MsfsSceneObject(MsfsObject):
         self.pos = MsfsPosition(0, 0, 0)
         self.coords = ([0, 0, 0, 0])
         self.lods = self.__retrieve_lods(is_collider)
+        self.valid = self.__is_valid()
+        self.cleaned = self.__is_cleaned()
 
     def backup_files(self, backup_path, dry_mode=False, pbar=None):
         for lod in self.lods:
@@ -52,7 +56,7 @@ class MsfsSceneObject(MsfsObject):
         pop_lods = []
         if not self.xml.find_scenery_lods(): return
         for i, lod in enumerate(self.lods):
-            if not self.xml.find_scenery_lod_models(lod.model_file):
+            if not lod.valid or not self.xml.find_scenery_lod_models(lod.model_file):
                 lod.remove_files()
                 pop_lods.append(i)
         self.lods.pop(i)
@@ -87,6 +91,20 @@ class MsfsSceneObject(MsfsObject):
                 lods.append(MsfsLod(int(path.stem[-2:]), 0, self.folder, path.name))
 
         return lods
+
+    def __is_valid(self):
+        for lod in self.lods:
+            if lod.valid:
+                return True
+
+        return False
+
+    def __is_cleaned(self):
+        for lod in self.lods:
+            if lod.cleaned:
+                return True
+
+        return False
 
     @staticmethod
     def __model_file_exists(lods, file_name):

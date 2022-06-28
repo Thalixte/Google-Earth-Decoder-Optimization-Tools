@@ -33,6 +33,8 @@ from utils.minidom_xml import create_new_definition_file, add_new_lod
 class MsfsLod:
     optimization_in_progress: bool
     optimized: bool
+    cleaned: bool
+    valid: bool
     lod_level: int
     min_size: int
     name: str
@@ -44,6 +46,7 @@ class MsfsLod:
 
     OPTIMIZATION_GENERATOR_TAG = "Scenery optimized"
     ALT_OPTIMIZATION_GENERATOR_TAG = "FPS optimized"
+    CLEANED_OPTIMIZATION_GENERATOR_TAG = "Scenery optimized and cleaned"
     UNBAKED_TEXTURE_NAME_PATTERN = "([a-zA-Z0-9\s_\\.\-\(\):])(LOD)(\d+)(_)(\d+).(" + PNG_TEXTURE_FORMAT + "|" + JPG_TEXTURE_FORMAT + ")"
     LOD_SUFFIX = "_LOD"
 
@@ -56,6 +59,8 @@ class MsfsLod:
         self.folder = self.folder if not self.optimization_in_progress else os.path.join(self.folder, self.name)
         self.model_file = model_file
         self.optimized = self.__is_optimized(self.model_file)
+        self.cleaned = self.__is_cleaned(self.model_file)
+        self.valid = self.__is_valid(self.model_file)
         self.splitted_nodes = {}
         self.__retrieve_gltf_resources()
 
@@ -138,7 +143,10 @@ class MsfsLod:
 
         if bake_textures_enabled and self.has_unbaked_textures():
             isolated_print("bake textures for", self.name)
-            bake_texture_files(self.folder, self.name + "." + output_texture_format)
+            bake_texture_files(os.path.join(os.path.dirname(self.folder), TEXTURE_FOLDER), self.name + "." + output_texture_format)
+        else:
+            for texture in self.textures:
+                shutil.copyfile(os.path.join(self.folder, texture.file), os.path.join(os.path.dirname(self.folder), TEXTURE_FOLDER, texture.file))
 
         isolated_print("fix bounding box for", self.name)
         fix_object_bounding_box()
@@ -154,7 +162,7 @@ class MsfsLod:
         model_file = MsfsGltf(os.path.join(self.folder, self.model_file)) if model_file_path is None else MsfsGltf(model_file_path)
         model_file.fix_doublesided()
         model_file.add_asobo_extensions()
-        model_file.remove_texture_path()
+        model_file.remove_texture_path(self.name)
         model_file.dump()
 
     def remove_road_and_collision_tags(self):
@@ -187,7 +195,7 @@ class MsfsLod:
     def reduce_number_of_vertices(self):
         # Import the gltf files located in the object folder
         model_file = MsfsGltf(os.path.join(self.folder, self.model_file))
-        model_file.remove_texture_path()
+        model_file.remove_texture_path(self.name)
         model_file.add_texture_path()
         model_file.dump()
         reduce_number_of_vertices(os.path.join(self.folder, self.model_file))
@@ -198,12 +206,15 @@ class MsfsLod:
         # Import the gltf files located in the object folder
         isolated_print("align", self.name, "model with mask")
         model_file = MsfsGltf(os.path.join(self.folder, self.model_file))
-        model_file.remove_texture_path()
+        model_file.remove_texture_path(self.name)
         model_file.add_texture_path()
         model_file.dump()
         align_model_with_mask(os.path.join(self.folder, self.model_file), positioning_file_path, mask_file_path)
         cleanup_3d_data(os.path.join(self.folder, self.model_file))
         export_to_optimized_gltf_files(os.path.join(self.folder, self.model_file), TEXTURE_FOLDER, use_selection=True, export_extras=False)
+        model_file = MsfsGltf(os.path.join(self.folder, self.model_file))
+        model_file.add_cleaned_tag()
+        model_file.dump()
         clean_scene()
 
     def get_subtiles(self):
@@ -215,8 +226,8 @@ class MsfsLod:
 
         return result
 
-    def calculate_height_data(self, lat, lon, altitude, inverted=False, positioning_file_path="", water_mask_file_path="", ground_mask_file_path=""):
-        return generate_model_height_data(os.path.join(self.folder, self.model_file), lat, lon, altitude, inverted=inverted, positioning_file_path=positioning_file_path, water_mask_file_path=water_mask_file_path, ground_mask_file_path=ground_mask_file_path)
+    def calculate_height_data(self, lat, lon, altitude, height_adjustment, inverted=False, positioning_file_path="", water_mask_file_path="", ground_mask_file_path=""):
+        return generate_model_height_data(os.path.join(self.folder, self.model_file), lat, lon, altitude, height_adjustment, inverted=inverted, positioning_file_path=positioning_file_path, water_mask_file_path=water_mask_file_path, ground_mask_file_path=ground_mask_file_path)
 
     def __retrieve_gltf_resources(self):
         self.binaries = []
@@ -239,7 +250,17 @@ class MsfsLod:
     def __is_optimized(self, model_file):
         model_file = MsfsGltf(os.path.join(self.folder, model_file))
         if not model_file.data: return
-        return self.OPTIMIZATION_GENERATOR_TAG in model_file.data[MsfsGltf.ASSET_TAG][MsfsGltf.GENERATOR_TAG] or self.ALT_OPTIMIZATION_GENERATOR_TAG in model_file.data[MsfsGltf.ASSET_TAG][MsfsGltf.GENERATOR_TAG]
+        return self.CLEANED_OPTIMIZATION_GENERATOR_TAG in model_file.data[MsfsGltf.ASSET_TAG][MsfsGltf.GENERATOR_TAG] or self.OPTIMIZATION_GENERATOR_TAG in model_file.data[MsfsGltf.ASSET_TAG][MsfsGltf.GENERATOR_TAG] or self.ALT_OPTIMIZATION_GENERATOR_TAG in model_file.data[MsfsGltf.ASSET_TAG][MsfsGltf.GENERATOR_TAG]
+
+    def __is_cleaned(self, model_file):
+        model_file = MsfsGltf(os.path.join(self.folder, model_file))
+        if not model_file.data: return
+        return self.CLEANED_OPTIMIZATION_GENERATOR_TAG in model_file.data[MsfsGltf.ASSET_TAG][MsfsGltf.GENERATOR_TAG]
+
+    def __is_valid(self, model_file):
+        model_file = MsfsGltf(os.path.join(self.folder, model_file))
+        if not model_file.data: return False
+        return model_file.is_valid()
 
     def __retrieve_splitted_nodes(self, tile_name):
         file_path = os.path.join(self.folder, self.model_file)

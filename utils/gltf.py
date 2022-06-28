@@ -71,11 +71,17 @@ class MsfsGltf:
 
         self.data[self.ASSET_TAG][self.GENERATOR_TAG] = "Scenery optimized Khronos glTF Blender I/O v1.2.75"
 
-    def remove_texture_path(self):
+    def add_cleaned_tag(self):
+        if not self.data: return
+
+        self.data[self.ASSET_TAG][self.GENERATOR_TAG] = "Scenery optimized and cleaned Khronos glTF Blender I/O v1.2.75"
+
+    def remove_texture_path(self, lod_name):
         if not self.data: return
         if not self.IMAGES_TAG in self.data.keys(): return
 
         for image in self.data[self.IMAGES_TAG]:
+            image[self.URI_TAG] = image[self.URI_TAG].replace(lod_name + "/", str())
             image[self.URI_TAG] = image[self.URI_TAG].replace(TEXTURE_FOLDER + "/", str())
 
     def add_texture_path(self):
@@ -193,6 +199,9 @@ class MsfsGltf:
                     result.append(mesh[self.NAME_TAG].split("_", 1)[0])
 
         return result
+
+    def is_valid(self):
+        return self.BUFFERS_TAG in self.data.keys()
 
     def dump(self):
         save_json_file(self.file_path, self.data)

@@ -135,7 +135,9 @@ BUILDING_OSM_KEY = "building"
 ROCKS_OSM_KEY = "rocks"
 ROADS_OSM_KEY="highway"
 SERVICE_OSM_KEY="service"
+MAN_MADE_OSM_KEY = "man_made"
 GROUND_OSM_KEY = "ground"
+PITCH_OSM_KEY = "pitch"
 NOT_SHORE_WATER_OSM_KEY = "not_shore"
 
 FOREST_OSM_TAG = "forest"
@@ -145,6 +147,7 @@ MEADOW_OSM_TAG = "meadow"
 VINEYARD_OSM_TAG = "vineyard"
 PARK_OSM_TAG = "park"
 PLAYGROUND_OSM_TAG = "playground"
+PITCH_OSM_TAG = "pitch"
 GRASS_OSM_TAG = "grass"
 WOOD_OSM_TAG = "wood"
 BAY_OSM_TAG = "bay"
@@ -204,8 +207,7 @@ OSM_TAGS = {
         FARMLAND_OSM_TAG,
         VINEYARD_OSM_TAG,
         ALLOTMENTS_OSM_TAG,
-        ORCHARD_OSM_TAG,
-        CONSTRUCTION_OSM_TAG
+        ORCHARD_OSM_TAG
     ],
     LEISURE_OSM_KEY: [
         NATURE_RESERVE_OSM_TAG
@@ -242,6 +244,10 @@ OSM_TAGS = {
     ROCKS_OSM_KEY: [
         BARE_ROCK_OSM_TAG,
         CLIFF_OSM_TAG
+    ],
+    PITCH_OSM_KEY: [
+        PITCH_OSM_TAG,
+        CONSTRUCTION_OSM_TAG
     ],
     NOT_SHORE_WATER_OSM_KEY: [
         WATER_OSM_KEY,

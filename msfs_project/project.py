@@ -31,6 +31,7 @@ from osmnx.utils_geo import bbox_to_poly
 
 import bpy
 from constants import *
+from msfs_project.geoid import get_geoid_height
 from msfs_project.height_map_xml import HeightMapXml
 from msfs_project.height_map import MsfsHeightMaps
 from msfs_project.osm_xml import OsmXml
@@ -268,13 +269,15 @@ class MsfsProject:
 
             pbar.update("splitted tiles added, replacing the previous %s tile" % previous_tile.name)
 
-    def cleanup_3d_data(self):
+    def cleanup_3d_data(self, settings, clean_3d_data=True):
         self.__remove_colliders()
         self.__create_tiles_bounding_boxes()
         self.__create_osm_files()
-        self.__generate_height_map_data()
-        # self.__reduce_number_of_vertices()
-        self.__cleanup_lods_3d_data()
+        self.__generate_height_map_data(settings)
+
+        if clean_3d_data:
+            # self.__reduce_number_of_vertices()
+            self.__cleanup_lods_3d_data()
 
         lods = [lod for tile in self.tiles.values() for lod in tile.lods]
         pbar = ProgressBar(list(lods), title="PREPARE THE TILES FOR MSFS")
@@ -282,6 +285,10 @@ class MsfsProject:
             lod.optimization_in_progress = False
             lod.prepare_for_msfs()
             pbar.update("%s prepared for msfs" % lod.name)
+
+    def adjust_height_data(self, settings):
+        height_adjustment = float(settings.height_adjustment)
+        self.__adjust_height_data(height_adjustment)
 
     def exclude_3d_data_from_geocode(self, settings):
         geocode = settings.geocode
@@ -371,10 +378,10 @@ class MsfsProject:
         os.makedirs(self.shpfiles_folder, exist_ok=True)
 
         # ensure to clean the xml folder containing the heightmaps data by removing it
-        try:
-            shutil.rmtree(self.xmlfiles_folder)
-        except:
-            pass
+        # try:
+        #     shutil.rmtree(self.xmlfiles_folder)
+        # except:
+        #     pass
 
         # create the xml folder if it does not exist
         os.makedirs(self.xmlfiles_folder, exist_ok=True)
@@ -454,7 +461,7 @@ class MsfsProject:
         pop_objects = []
         for guid, object in objects.items():
             # first, check if the object is unused
-            if not self.objects_xml.find_scenery_objects(guid) and not self.objects_xml.find_scenery_objects_in_group(guid):
+            if not object.valid or (not self.objects_xml.find_scenery_objects(guid) and not self.objects_xml.find_scenery_objects_in_group(guid)):
                 # unused object, so remove the files related to it
                 object.remove_files()
                 pop_objects.append(guid)
@@ -576,35 +583,49 @@ class MsfsProject:
         data = []
         for tile in self.tiles.values():
             for lod in tile.lods:
-                if os.path.isdir(lod.folder) and lod.folder != self.model_lib_folder:
+                if not os.path.isdir(lod.folder):
+                    continue
+
+                if not lod.valid:
+                    continue
+
+                if lod.folder != self.model_lib_folder:
                     data.append({"name": lod.name, "params": ["--folder", str(lod.folder), "--model_file", str(lod.model_file)]})
 
         return chunks(data, self.NB_PARALLEL_TASKS)
 
-    def __retrieve_tiles_to_calculate_height_map(self, new_group_id=-1, parallel=True):
+    def __retrieve_tiles_to_calculate_height_map(self, new_group_id=-1, parallel=True, height_adjustment=0.5):
         data = []
 
         for guid, tile in self.tiles.items():
-            if os.path.isdir(tile.folder):
-                has_rocks = tile.has_rocks
-                ground_mask_file_path = os.path.join(self.osmfiles_folder, GROUND_OSM_KEY + "_" + EXCLUSION_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)
-                water_mask_file_path = os.path.join(self.osmfiles_folder, WATER_OSM_KEY + "_" + EXCLUSION_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)
-                params = ["--folder", str(tile.folder), "--name", str(tile.name), "--definition_file", str(tile.definition_file),
-                          "--height_map_xml_folder", str(self.xmlfiles_folder), "--group_id", str(new_group_id), "--altitude", str(tile.pos.alt)]
+            if not os.path.isdir(tile.folder):
+                continue
 
-                if has_rocks:
-                    if os.path.isfile(ground_mask_file_path):
-                        params.extend(["--positioning_file_path", str(os.path.join(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)),
-                                       "--ground_mask_file_path", str(ground_mask_file_path)])
-                    else:
-                        has_rocks = False
+            if not tile.valid:
+                continue
 
-                if os.path.isfile(water_mask_file_path):
+            if tile.cleaned:
+                continue
+
+            has_rocks = tile.has_rocks
+            ground_mask_file_path = os.path.join(self.osmfiles_folder, GROUND_OSM_KEY + "_" + EXCLUSION_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)
+            water_mask_file_path = os.path.join(self.osmfiles_folder, WATER_OSM_KEY + "_" + EXCLUSION_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)
+            params = ["--folder", str(tile.folder), "--name", str(tile.name), "--definition_file", str(tile.definition_file),
+                      "--height_map_xml_folder", str(self.xmlfiles_folder), "--group_id", str(new_group_id), "--altitude", str(tile.pos.alt), "--height_adjustment", str(height_adjustment)]
+
+            if has_rocks:
+                if os.path.isfile(ground_mask_file_path):
                     params.extend(["--positioning_file_path", str(os.path.join(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)),
-                                   "--water_mask_file_path", str(water_mask_file_path)])
+                                   "--ground_mask_file_path", str(ground_mask_file_path)])
+                else:
+                    has_rocks = False
 
-                params.extend(["--has_rocks", str(has_rocks)])
-                data.append({"name": tile.name, "params": params})
+            if os.path.isfile(water_mask_file_path):
+                params.extend(["--positioning_file_path", str(os.path.join(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)),
+                               "--water_mask_file_path", str(water_mask_file_path)])
+
+            params.extend(["--has_rocks", str(has_rocks)])
+            data.append({"name": tile.name, "params": params})
 
         return chunks(data, self.NB_PARALLEL_TASKS if parallel else 1)
 
@@ -612,8 +633,13 @@ class MsfsProject:
         data = []
         for tile in self.tiles.values():
             for lod in tile.lods:
-                if os.path.isdir(lod.folder):
-                    data.append({"name": lod.name, "params": ["--folder", str(lod.folder), "--model_file", str(lod.model_file)]})
+                if not os.path.isdir(lod.folder):
+                    continue
+
+                if not lod.valid:
+                    continue
+
+                data.append({"name": lod.name, "params": ["--folder", str(lod.folder), "--model_file", str(lod.model_file)]})
 
         return chunks(data, self.NB_PARALLEL_TASKS)
 
@@ -622,20 +648,31 @@ class MsfsProject:
         for tile in self.tiles.values():
             mask_file_path = os.path.join(self.osmfiles_folder, EXCLUSION_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)
 
-            if not os.path.isfile(mask_file_path):
-                continue
-
             for lod in tile.lods:
-                if os.path.isdir(lod.folder):
-                    data.append({"name": lod.name, "params": ["--folder", str(lod.folder), "--model_file", str(lod.model_file),
-                                                              "--positioning_file_path", str(os.path.join(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)),
-                                                              "--mask_file_path", str(mask_file_path)]})
+                if not os.path.isdir(lod.folder):
+                    continue
+
+                if not lod.valid:
+                    continue
+
+                if lod.cleaned:
+                    continue
+
+                data.append({"name": lod.name, "params": ["--folder", str(lod.folder), "--model_file", str(lod.model_file),
+                                                          "--positioning_file_path", str(os.path.join(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)),
+                                                          "--mask_file_path", str(mask_file_path)]})
 
         return chunks(data, self.NB_PARALLEL_TASKS)
 
     def __retrieve_lods_to_exclude_3d_data_from_geocode(self, geocode_gdf, settings):
         data = []
         for tile in self.tiles.values():
+            if not os.path.isdir(tile.folder):
+                continue
+
+            if not tile.valid:
+                continue
+
             excluded = clip_gdf(geocode_gdf, tile.bbox_gdf)
             if excluded.empty:
                 continue
@@ -648,10 +685,15 @@ class MsfsProject:
                 continue
 
             for lod in tile.lods:
-                if os.path.isdir(lod.folder):
-                    data.append({"name": lod.name, "params": ["--folder", str(lod.folder), "--model_file", str(lod.model_file),
-                                                              "--positioning_file_path", str(os.path.join(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)),
-                                                              "--mask_file_path", str(mask_file_path)]})
+                if not os.path.isdir(lod.folder):
+                    continue
+
+                if not lod.valid:
+                    continue
+
+                data.append({"name": lod.name, "params": ["--folder", str(lod.folder), "--model_file", str(lod.model_file),
+                                                          "--positioning_file_path", str(os.path.join(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)),
+                                                          "--mask_file_path", str(mask_file_path)]})
 
         return chunks(data, self.NB_PARALLEL_TASKS)
 
@@ -731,11 +773,11 @@ class MsfsProject:
             pbar.update("%s removed" % collider.name)
         self.__clean_objects(self.colliders)
 
-    def __generate_height_map_data(self):
-        self.objects_xml.remove_height_maps(HEIGHT_MAPS_DISPLAY_NAME)
+    def __generate_height_map_data(self, settings):
+        self.objects_xml.remove_height_maps(HEIGHT_MAPS_DISPLAY_NAME, True)
         new_group_id = self.objects_xml.get_new_group_id()
 
-        tiles_data = self.__retrieve_tiles_to_calculate_height_map(new_group_id=new_group_id, parallel=True)
+        tiles_data = self.__retrieve_tiles_to_calculate_height_map(new_group_id=new_group_id, parallel=True, height_adjustment=float(settings.height_adjustment))
         self.__multithread_process_data(tiles_data, "calculate_tile_height_data.py", "CALCULATE HEIGHT MAPS FOR EACH TILE", "height map calculated")
         self.__add_height_maps_to_objects_xml()
 
@@ -758,8 +800,9 @@ class MsfsProject:
         #     pass
 
     def __create_tiles_bounding_boxes(self):
-        pbar = ProgressBar(list(self.tiles.values()), title="CREATE BOUNDING BOX OSM FILES FOR EACH TILE")
-        for i, tile in enumerate(self.tiles.values()):
+        valid_tiles = [tile for tile in list(self.tiles.values()) if tile.valid]
+        pbar = ProgressBar(valid_tiles, title="CREATE BOUNDING BOX OSM FILES FOR EACH TILE")
+        for i, tile in enumerate(valid_tiles):
             tile.create_bbox_osm_file(self.osmfiles_folder, self.min_lod_level)
             pbar.update("osm files created for %s tile" % tile.name)
 
@@ -789,6 +832,7 @@ class MsfsProject:
         orig_natural_water = load_gdf(self.coords, NATURAL_OSM_KEY, OSM_TAGS[NATURAL_WATER_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, NATURAL_WATER_OSM_KEY + SHP_FILE_EXT))
         orig_water = load_gdf(self.coords, WATER_OSM_KEY, OSM_TAGS[WATER_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, WATER_OSM_KEY + SHP_FILE_EXT))
         orig_aeroway = load_gdf(self.coords, AEROWAY_OSM_KEY, True, shp_file_path=os.path.join(self.shpfiles_folder, AEROWAY_OSM_KEY + SHP_FILE_EXT))
+        orig_pitch = load_gdf(self.coords, LEISURE_OSM_KEY, OSM_TAGS[PITCH_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, PITCH_OSM_KEY + SHP_FILE_EXT))
 
         roads = prepare_roads_gdf(orig_roads)
         sea = prepare_sea_gdf(orig_sea)
@@ -800,6 +844,7 @@ class MsfsProject:
         natural_water = clip_gdf(prepare_gdf(orig_natural_water), bbox)
         water = clip_gdf(prepare_gdf(orig_water), bbox)
         aeroway = clip_gdf(prepare_gdf(orig_aeroway), bbox)
+        pitch = clip_gdf(prepare_gdf(orig_pitch), bbox)
 
         whole_water = create_whole_water_gdf(natural_water, water, sea)
         # for debugging purpose, generate the water exclusion osm file
@@ -825,15 +870,15 @@ class MsfsProject:
         create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, ground_exclusion, file_prefix=GROUND_OSM_KEY + "_", title="CREATE GROUND EXCLUSION MASKS OSM FILES")
         create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, whole_water, keep_holes=False, file_prefix=WATER_OSM_KEY + "_", title="CREATE WATER EXCLUSION MASKS OSM FILES")
 
-        print_title("CREATE TERRAFORMING POLYGONS GEO DATAFRAMES...)")
-        terraforming_polygons = create_terraforming_polygons_gdf(bbox, union_gdf(water_exclusion, ground_exclusion))
+        print_title("CREATE TERRAFORM POLYGONS GEO DATAFRAMES...)")
+        terraform_polygons = create_terraforming_polygons_gdf(orig_bbox, pitch)
         # for debugging purpose
-        osm_xml = OsmXml(self.osmfiles_folder, "terraforming_polygons" + OSM_FILE_EXT)
-        osm_xml.create_from_geodataframes([terraforming_polygons.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')], b)
+        osm_xml = OsmXml(self.osmfiles_folder, "terraform_polygons" + OSM_FILE_EXT)
+        osm_xml.create_from_geodataframes([terraform_polygons.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')], b)
 
         print_title("CREATE EXCLUSION BUILDINGS POLYGONS GEO DATAFRAMES...)")
         shore_water = create_shore_water_gdf(orig_water, orig_natural_water, sea, bbox)
-        exclusion_building_polygons = create_exclusion_building_polygons_gdf(shore_water)
+        exclusion_building_polygons = create_exclusion_building_polygons_gdf(orig_bbox, shore_water)
         # for debugging purpose
         osm_xml = OsmXml(self.osmfiles_folder, "exclusion_building_polygons" + OSM_FILE_EXT)
         osm_xml.create_from_geodataframes([exclusion_building_polygons.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')], b)
@@ -844,22 +889,16 @@ class MsfsProject:
         osm_xml = OsmXml(self.osmfiles_folder, "exclusion_vegetation_polygons" + OSM_FILE_EXT)
         osm_xml.create_from_geodataframes([exclusion_vegetation_polygons.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')], b)
 
+        new_group_id = self.objects_xml.get_new_group_id()
+        self.shapes[TERRAFORMING_POLYGONS_DISPLAY_NAME] = MsfsShape(shape_gdf=terraform_polygons, group_display_name=TERRAFORMING_POLYGONS_DISPLAY_NAME, group_id=new_group_id, flatten=True)
+        self.shapes[EXCLUSION_BUILDING_POLYGONS_DISPLAY_NAME] = MsfsShape(shape_gdf=exclusion_building_polygons, group_display_name=EXCLUSION_BUILDING_POLYGONS_DISPLAY_NAME, group_id=new_group_id+1, exclude_buildings=True, exclude_roads=True)
+        self.shapes[EXCLUSION_VEGETATION_POLYGONS_DISPLAY_NAME] = MsfsShape(shape_gdf=exclusion_vegetation_polygons, group_display_name=EXCLUSION_VEGETATION_POLYGONS_DISPLAY_NAME, group_id=new_group_id+2, exclude_vegetation=True)
+
         # reload the xml file to retrieve the last updates
         self.objects_xml = ObjectsXml(self.scene_folder, self.SCENE_OBJECTS_FILE)
-        self.objects_xml.remove_shapes(TERRAFORMING_POLYGONS_DISPLAY_NAME)
-        self.objects_xml.remove_shapes(EXCLUSION_BUILDING_POLYGONS_DISPLAY_NAME)
-        self.objects_xml.remove_shapes(EXCLUSION_VEGETATION_POLYGONS_DISPLAY_NAME)
-
-        new_group_id = self.objects_xml.get_new_group_id()
-        terraform_shape = MsfsShape(shape_gdf=terraforming_polygons, group_display_name=TERRAFORMING_POLYGONS_DISPLAY_NAME, group_id=new_group_id, flatten=False, exclude_buildings=True)
-        terraform_shape.to_xml(self.objects_xml)
-        self.shapes[TERRAFORMING_POLYGONS_DISPLAY_NAME] = terraform_shape
-        exclusion_building_shapes = MsfsShape(shape_gdf=exclusion_building_polygons, group_display_name=EXCLUSION_BUILDING_POLYGONS_DISPLAY_NAME, group_id=new_group_id+1, exclude_buildings=True, exclude_roads=True)
-        exclusion_building_shapes.to_xml(self.objects_xml)
-        self.shapes[EXCLUSION_BUILDING_POLYGONS_DISPLAY_NAME] = exclusion_building_shapes
-        exclusion_vegetation_shapes = MsfsShape(shape_gdf=exclusion_vegetation_polygons, group_display_name=EXCLUSION_VEGETATION_POLYGONS_DISPLAY_NAME, group_id=new_group_id+2, exclude_vegetation=True)
-        exclusion_vegetation_shapes.to_xml(self.objects_xml)
-        self.shapes[EXCLUSION_VEGETATION_POLYGONS_DISPLAY_NAME] = exclusion_vegetation_shapes
+        for group_name, shape in self.shapes.items():
+            shape.remove_from_xml(self.objects_xml, group_name)
+            shape.to_xml(self.objects_xml)
 
         self.__remove_full_water_tiles(water_exclusion)
 
@@ -875,7 +914,8 @@ class MsfsProject:
 
     def __remove_full_water_tiles(self, water):
         tiles_to_remove = []
-        for tile in self.tiles.values():
+        valid_tiles = [tile for tile in list(self.tiles.values()) if tile.valid]
+        for tile in valid_tiles:
             not_in_water = difference_gdf(tile.bbox_gdf, water)
             if not_in_water.empty:
                 tiles_to_remove.append(tile)
@@ -892,6 +932,29 @@ class MsfsProject:
     def __cleanup_lods_3d_data(self):
         lods_data = self.__retrieve_lods_to_cleanup()
         self.__multithread_process_data(lods_data, "cleanup_lod_3d_data.py", "CLEANUP LODS 3D DATA TILES", "cleaned")
+
+    def __adjust_height_data(self, height_adjustment):
+        if HEIGHT_MAPS_DISPLAY_NAME not in self.height_maps: return
+
+        height_map = self.height_maps[HEIGHT_MAPS_DISPLAY_NAME]
+        self.objects_xml.remove_height_maps(HEIGHT_MAPS_DISPLAY_NAME, False)
+
+        pbar = ProgressBar(height_map.rectangles, title="ADJUST HEIGHT MAPS DATA")
+        for rectangle in pbar.iterable:
+            updated_height_data = str()
+            geoid_height = get_geoid_height(rectangle.pos.lat, rectangle.pos.lon)
+            height_data = rectangle.height_data.split(" ")
+            for height in height_data:
+                height = float(height)
+                if height <= geoid_height:
+                    continue
+                h = height + height_adjustment
+                updated_height_data += (str(h if h >= geoid_height else geoid_height) + " ")
+            rectangle.height_data = updated_height_data.rstrip()
+            self.objects_xml.add_height_map(rectangle)
+            pbar.update("height_maps adjusted")
+
+        self.objects_xml.save()
 
     def __exclude_lods_3d_data_from_geocode(self, geocode_gdf, settings):
         lods_data = self.__retrieve_lods_to_exclude_3d_data_from_geocode(geocode_gdf, settings)

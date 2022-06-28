@@ -16,10 +16,8 @@
 #
 #  <pep8 compliant>
 
-import os
 import subprocess
 
-from constants import MSFS_BUILD_EXE
 from utils import ScriptError
 
 MSFS_BUILD_EXE_FORCE_STEAM_OPTION = "-forcesteam"

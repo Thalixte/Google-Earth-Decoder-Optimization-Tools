@@ -442,7 +442,7 @@ def cleanup_3d_data(model_file_path, intersect=False):
     bpy.ops.object.select_all(action=SELECT_ACTION)
 
 
-def generate_model_height_data(model_file_path, lat, lon, altitude, inverted=False, positioning_file_path="", water_mask_file_path="", ground_mask_file_path=""):
+def generate_model_height_data(model_file_path, lat, lon, altitude, height_adjustment, inverted=False, positioning_file_path="", water_mask_file_path="", ground_mask_file_path=""):
     if not bpy.context.scene:
         return False
 
@@ -455,7 +455,7 @@ def generate_model_height_data(model_file_path, lat, lon, altitude, inverted=Fal
 
     depsgraph = bpy.context.evaluated_depsgraph_get()
     depsgraph.update()
-    hmatrix = calculate_height_map_from_coords_from_bottom(tile, grid_dimension, coords, depsgraph, lat, lon, altitude)
+    hmatrix = calculate_height_map_from_coords_from_bottom(tile, grid_dimension, coords, depsgraph, lat, lon, altitude, height_adjustment)
 
     # fix wrong height data for bridges on water
     if os.path.exists(positioning_file_path) and os.path.exists(water_mask_file_path):
@@ -653,7 +653,7 @@ def apply_transform(ob, use_location=False, use_rotation=False, use_scale=False)
     ob.matrix_basis = basis[0] @ basis[1] @ basis[2]
 
 
-def calculate_height_map_from_coords_from_bottom(tile, grid_dimension, coords, depsgraph, lat, lon, altitude):
+def calculate_height_map_from_coords_from_bottom(tile, grid_dimension, coords, depsgraph, lat, lon, altitude, height_adjustment):
     results = defaultdict(dict)
     geoid_height = get_geoid_height(lat, lon)
 
@@ -672,8 +672,8 @@ def calculate_height_map_from_coords_from_bottom(tile, grid_dimension, coords, d
             h = result[1][2]
             if len(results[y]) <= (int(grid_dimension/2)-1):
                 h = h + altitude + geoid_height
-                h = h if h >= geoid_height else geoid_height - 0.5
-                results[y][x] = h + 0.5
+                h = h if h >= geoid_height else geoid_height - height_adjustment
+                results[y][x] = h + height_adjustment
 
     return results
 

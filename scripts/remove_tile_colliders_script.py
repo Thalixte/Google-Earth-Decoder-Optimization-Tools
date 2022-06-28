@@ -16,7 +16,7 @@
 #
 #  <pep8 compliant>
 
-from utils import Settings, get_sources_path, reload_modules, print_title, isolated_print
+from utils import Settings, get_sources_path, reload_modules, isolated_print
 
 settings = Settings(get_sources_path())
 
@@ -39,7 +39,7 @@ def remove_tile_colliders(script_settings):
         check_configuration(script_settings, msfs_project)
 
         if script_settings.backup_enabled:
-            msfs_project.backup(Path(os.path.abspath(__file__)).stem.replace(SCRIPT_PREFIX, str()))
+            msfs_project.backup(Path(os.path.abspath(__file__)).stem.replace(SCRIPT_PREFIX, str()), all_files=False)
 
         isolated_print(EOL)
         msfs_project.remove_colliders()

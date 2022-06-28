@@ -15,6 +15,7 @@
 #  #
 #
 #  <pep8 compliant>
+
 from uuid import uuid4
 
 from shapely.geometry import Polygon, MultiPolygon
@@ -61,24 +62,24 @@ class MsfsShapePolygon:
     parent_group_id: int
     group_index: int
     vertices: list
-    unique_guid = MsfsShapeAttribute(name="UniqueGUID", guid="{359C73E8-06BE-4FB2-ABCB-EC942F7761D0}", type=SHAPE_ATTRIBUTE_TYPE.guid, value="{FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF}")
-    flatten_falloff = MsfsShapeAttribute(name="FlattenFalloff", guid="{5548FDB5-2267-4328-8E6F-FD0A45ADEC8F}", type=SHAPE_ATTRIBUTE_TYPE.float32, value="200.000000")
-    flatten_mode = MsfsShapeAttribute(name="FlattenMode", guid="{065E9D4D-6984-4D2A-91FD-3C33C4F53B22}", type=SHAPE_ATTRIBUTE_TYPE.uint8, value="0")
-    exclude_tin = MsfsShapeAttribute(name="ExcludeTIN", guid="{18B58CBF-AE02-4A19-8AA9-3809E8E73400}", type=SHAPE_ATTRIBUTE_TYPE.uint8, value="0")
-    exclude_detected_buildings = MsfsShapeAttribute(name="ExcludeDetectedBuildings", guid="{5C1A2387-1F07-47DF-A569-962CF6258E55}", type=SHAPE_ATTRIBUTE_TYPE.uint8, value="0")
-    exclude_osm_buildings = MsfsShapeAttribute(name="ExcludeOSMBuildings", guid="{F3C2635D-9F2F-458F-8663-90B3837BED09}", type=SHAPE_ATTRIBUTE_TYPE.uint8, value="0")
-    exclude_ms_buildings = MsfsShapeAttribute(name="ExcludeMSBuildings", guid="{F78A3074-8AD5-4B8B-92C4-C1C948BB7AA5}", type=SHAPE_ATTRIBUTE_TYPE.uint8, value="0")
-    building_on_tin = MsfsShapeAttribute(name="BuildingOnTIN", guid="{4C252581-63E9-4C22-8A3D-14B31F3C8157}", type=SHAPE_ATTRIBUTE_TYPE.uint8, value="0")
-    force_detected_building = MsfsShapeAttribute(name="ForceDetectedBuilding", guid="{69A63EDD-FBE5-4F0D-88E6-6FA01963D613}", type=SHAPE_ATTRIBUTE_TYPE.uint8, value="0")
-    exclusion_flags = MsfsShapeAttribute(name="ExclusionFlags", guid="{4CACC252-E6DC-419A-B20C-16EC601DF70E}", type=SHAPE_ATTRIBUTE_TYPE.uint32, value="0")
-    vegetation_scale = MsfsShapeAttribute(name="VegetationScale", guid="{6A043F59-E6F2-4117-A2E4-D510E7317C29}", type=SHAPE_ATTRIBUTE_TYPE.uint32, value="127")
-    vegetation_density = MsfsShapeAttribute(name="VegetationDensity", guid="{41EFF715-C392-4B31-A457-50A504353A90}", type=SHAPE_ATTRIBUTE_TYPE.uint32, value="31")
-    vegetation_falloff = MsfsShapeAttribute(name="VegetationFalloff", guid="{E82ABE17-FB4C-4F67-A28C-ED41969AEAD6}", type=SHAPE_ATTRIBUTE_TYPE.float32, value="0.0")
-    tree_brightness_factor = MsfsShapeAttribute(name="TreeBrightnessFactor", guid="{63040596-0B21-48FD-8B5F-A9E84A5B7BC9}", type=SHAPE_ATTRIBUTE_TYPE.uint32, value="127")
-    water_type = MsfsShapeAttribute(name="WaterType", guid="{3F8514F8-FAA8-4B94-AB7F-DC2078A4B888}", type=SHAPE_ATTRIBUTE_TYPE.uint32, value="0")
-    land_class_remap = MsfsShapeAttribute(name="LandClassRemap", guid="{0A685EB0-0E01-44FE-B9EF-BFFFBC968ADE}", type=SHAPE_ATTRIBUTE_TYPE.uint8, value="0")
-    airport_size = MsfsShapeAttribute(name="AirportSize", guid="{86A147E9-ACF2-4780-9D3C-416373ECB451}", type=SHAPE_ATTRIBUTE_TYPE.uint8, value="0")
-    layer = MsfsShapeAttribute(name="Layer", guid="{9E2B4C3E-7D84-453F-9DCC-B6498FF46703}", type=SHAPE_ATTRIBUTE_TYPE.uint32, value="1")
+    unique_guid = MsfsShapeAttribute
+    flatten_falloff = MsfsShapeAttribute
+    flatten_mode = MsfsShapeAttribute
+    exclude_tin = MsfsShapeAttribute
+    exclude_detected_buildings = MsfsShapeAttribute
+    exclude_osm_buildings = MsfsShapeAttribute
+    exclude_ms_buildings = MsfsShapeAttribute
+    building_on_tin = MsfsShapeAttribute
+    force_detected_building = MsfsShapeAttribute
+    exclusion_flags = MsfsShapeAttribute
+    vegetation_scale = MsfsShapeAttribute
+    vegetation_density = MsfsShapeAttribute
+    vegetation_falloff = MsfsShapeAttribute
+    tree_brightness_factor = MsfsShapeAttribute
+    water_type = MsfsShapeAttribute
+    land_class_remap = MsfsShapeAttribute
+    airport_size = MsfsShapeAttribute
+    layer = MsfsShapeAttribute
 
     def __init__(self, polygon=None, xml=None, elem=None, parent_group_id=None, group_index=None, flatten=False, exclude_buildings=False, exclude_roads=False, exclude_vegetation=False):
         self.tag = SHAPELY_TYPE.polygon
@@ -87,6 +88,24 @@ class MsfsShapePolygon:
         self.group_index = group_index
         self.attributes = []
         self.vertices = []
+        self.unique_guid = MsfsShapeAttribute(name="UniqueGUID", guid="{359C73E8-06BE-4FB2-ABCB-EC942F7761D0}", type=self.SHAPE_ATTRIBUTE_TYPE.guid, value="{FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF}")
+        self.flatten_falloff = MsfsShapeAttribute(name="FlattenFalloff", guid="{5548FDB5-2267-4328-8E6F-FD0A45ADEC8F}", type=self.SHAPE_ATTRIBUTE_TYPE.float32, value="200.000000")
+        self.flatten_mode = MsfsShapeAttribute(name="FlattenMode", guid="{065E9D4D-6984-4D2A-91FD-3C33C4F53B22}", type=self.SHAPE_ATTRIBUTE_TYPE.uint8, value="0")
+        self.exclude_tin = MsfsShapeAttribute(name="ExcludeTIN", guid="{18B58CBF-AE02-4A19-8AA9-3809E8E73400}", type=self.SHAPE_ATTRIBUTE_TYPE.uint8, value="0")
+        self.exclude_detected_buildings = MsfsShapeAttribute(name="ExcludeDetectedBuildings", guid="{5C1A2387-1F07-47DF-A569-962CF6258E55}", type=self.SHAPE_ATTRIBUTE_TYPE.uint8, value="0")
+        self.exclude_osm_buildings = MsfsShapeAttribute(name="ExcludeOSMBuildings", guid="{F3C2635D-9F2F-458F-8663-90B3837BED09}", type=self.SHAPE_ATTRIBUTE_TYPE.uint8, value="0")
+        self.exclude_ms_buildings = MsfsShapeAttribute(name="ExcludeMSBuildings", guid="{F78A3074-8AD5-4B8B-92C4-C1C948BB7AA5}", type=self.SHAPE_ATTRIBUTE_TYPE.uint8, value="0")
+        self.building_on_tin = MsfsShapeAttribute(name="BuildingOnTIN", guid="{4C252581-63E9-4C22-8A3D-14B31F3C8157}", type=self.SHAPE_ATTRIBUTE_TYPE.uint8, value="0")
+        self.force_detected_building = MsfsShapeAttribute(name="ForceDetectedBuilding", guid="{69A63EDD-FBE5-4F0D-88E6-6FA01963D613}", type=self.SHAPE_ATTRIBUTE_TYPE.uint8, value="0")
+        self.exclusion_flags = MsfsShapeAttribute(name="ExclusionFlags", guid="{4CACC252-E6DC-419A-B20C-16EC601DF70E}", type=self.SHAPE_ATTRIBUTE_TYPE.uint32, value="0")
+        self.vegetation_scale = MsfsShapeAttribute(name="VegetationScale", guid="{6A043F59-E6F2-4117-A2E4-D510E7317C29}", type=self.SHAPE_ATTRIBUTE_TYPE.uint32, value="127")
+        self.vegetation_density = MsfsShapeAttribute(name="VegetationDensity", guid="{41EFF715-C392-4B31-A457-50A504353A90}", type=self.SHAPE_ATTRIBUTE_TYPE.uint32, value="31")
+        self.vegetation_falloff = MsfsShapeAttribute(name="VegetationFalloff", guid="{E82ABE17-FB4C-4F67-A28C-ED41969AEAD6}", type=self.SHAPE_ATTRIBUTE_TYPE.float32, value="0.0")
+        self.tree_brightness_factor = MsfsShapeAttribute(name="TreeBrightnessFactor", guid="{63040596-0B21-48FD-8B5F-A9E84A5B7BC9}", type=self.SHAPE_ATTRIBUTE_TYPE.uint32, value="127")
+        self.water_type = MsfsShapeAttribute(name="WaterType", guid="{3F8514F8-FAA8-4B94-AB7F-DC2078A4B888}", type=self.SHAPE_ATTRIBUTE_TYPE.uint32, value="0")
+        self.land_class_remap = MsfsShapeAttribute(name="LandClassRemap", guid="{0A685EB0-0E01-44FE-B9EF-BFFFBC968ADE}", type=self.SHAPE_ATTRIBUTE_TYPE.uint8, value="0")
+        self.airport_size = MsfsShapeAttribute(name="AirportSize", guid="{86A147E9-ACF2-4780-9D3C-416373ECB451}", type=self.SHAPE_ATTRIBUTE_TYPE.uint8, value="0")
+        self.layer = MsfsShapeAttribute(name="Layer", guid="{9E2B4C3E-7D84-453F-9DCC-B6498FF46703}", type=self.SHAPE_ATTRIBUTE_TYPE.uint32, value="1")
 
         if polygon is not None:
             self.__init_from_polygon(polygon, flatten=flatten, exclude_buildings=exclude_buildings, exclude_roads=exclude_roads, exclude_vegetation=exclude_vegetation)
@@ -103,7 +122,7 @@ class MsfsShapePolygon:
         self.exclusion_flags.value = "1" if exclude_roads else "0"
         self.layer.value = "50000"
         self.flatten_mode.value = "1" if flatten else "0"
-        self.flatten_falloff.value = "1.000000"
+        self.flatten_falloff.value = "150.000000"
 
         self.attributes += [
             self.unique_guid,
@@ -195,6 +214,10 @@ class MsfsShape:
 
     def to_xml(self, xml):
         xml.add_shape(self)
+
+    @staticmethod
+    def remove_from_xml(xml, group_name):
+        xml.remove_shapes(group_name)
 
     def __init_from_gdf(self, shape_gdf, group_display_name, group_id, flatten=False, exclude_buildings=False, exclude_roads=False, exclude_vegetation=False):
         self.group = MsfsShapeGroup(group_display_name=group_display_name, group_id=group_id)

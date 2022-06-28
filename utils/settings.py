@@ -45,6 +45,7 @@ class Settings:
     lon_correction: float
     compressonator_exe_path = str
     geocode: str
+    height_adjustment: float
     sections = list
 
     def __init__(self, sources_path=str()):
@@ -68,6 +69,7 @@ class Settings:
         self.lon_correction = 0.0
         self.compressonator_exe_path = str()
         self.geocode = str()
+        self.height_adjustment = 0.0
         self.sections = []
 
         config = cp.ConfigParser()
@@ -107,6 +109,8 @@ class Settings:
         # ensure to convert float settings values
         self.lat_correction = "{:.9f}".format(float(str(self.lat_correction))).rstrip("0").rstrip(".")
         self.lon_correction = "{:.9f}".format(float(str(self.lon_correction))).rstrip("0").rstrip(".")
+
+        self.height_adjustment = "{:.9f}".format(float(str(self.height_adjustment))).rstrip("0").rstrip(".")
 
         if self.definition_file_to_merge == str() and self.project_path_to_merge != str():
             self.definition_file_to_merge = os.path.basename(self.project_path_to_merge).capitalize() + XML_FILE_EXT

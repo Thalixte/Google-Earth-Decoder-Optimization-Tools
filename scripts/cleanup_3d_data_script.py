@@ -52,7 +52,7 @@ def cleanup_3d_data(script_settings):
         isolated_print(EOL)
         print_title("CLEANUP 3D DATA")
 
-        msfs_project.cleanup_3d_data()
+        msfs_project.cleanup_3d_data(script_settings)
 
         if script_settings.build_package_enabled:
             build_package(msfs_project, script_settings)

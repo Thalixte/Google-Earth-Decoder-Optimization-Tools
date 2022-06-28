@@ -78,7 +78,7 @@ class MsfsHeightMap:
         lod = len(tile.name)
         lod_limit = lod - 1 if lod >= 19 else lod
         self.falloff = 100
-        self.priority = 0
+        self.priority = 10
         self.altitude = altitude
         self.size = self.__guess_height_map_size(height_data)
         self.pos = get_latlonbox_from_file_name(tile.name).bl_point

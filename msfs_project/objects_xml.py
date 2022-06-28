@@ -15,6 +15,8 @@
 #  #
 #
 #  <pep8 compliant>
+from decimal import Decimal
+
 from constants import HEIGHT_MAPS_DISPLAY_NAME
 from utils.progress_bar import ProgressBar
 from utils import Xml
@@ -112,14 +114,14 @@ class ObjectsXml(Xml):
 
         self.save()
 
-    def remove_height_maps(self, group_name):
+    def remove_height_maps(self, group_name, remove_groups):
         for rectangle in self.find_rectangles(group_name=group_name):
             self.root.remove(rectangle)
 
-        for group in self.find_groups(group_name=group_name):
-            self.root.remove(group)
-
-        self.save()
+        if remove_groups:
+            for group in self.find_groups(group_name=group_name):
+                self.root.remove(group)
+            self.save()
 
     def add_shape(self, shape):
         for polygon in shape.polygons:
@@ -278,10 +280,9 @@ class ObjectsXml(Xml):
             self.WIDTH_ATTR: str(height_map.size),
             self.DATA_ATTR: str(height_map.height_data)})
 
-    @staticmethod
-    def __update_scenery_object_pos(tile, found_scenery_objects, settings):
+    def __update_scenery_object_pos(self, tile, found_scenery_objects, settings):
         for scenery_object in found_scenery_objects:
-            new_lat = tile.pos.lat + float(settings.lat_correction)
-            new_lon = tile.pos.lon + float(settings.lon_correction)
-            scenery_object.set("lat", str(new_lat))
-            scenery_object.set("lon", str(new_lon))
+            new_lat = Decimal(scenery_object.get(self.LAT_ATTR)) + Decimal(settings.lat_correction)
+            new_lon = Decimal(scenery_object.get(self.LON_ATTR)) + Decimal(settings.lon_correction)
+            scenery_object.set(self.LAT_ATTR, str(new_lat))
+            scenery_object.set(self.LON_ATTR, str(new_lon))
