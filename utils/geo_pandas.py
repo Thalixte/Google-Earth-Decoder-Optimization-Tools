@@ -342,8 +342,9 @@ def create_shore_water_gdf(orig_water, orig_natural_water, sea, bbox):
     return result.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)
 
 
-def create_terraforming_polygons_gdf(bbox, terraforming):
-    return preserve_holes(resize_gdf(terraforming, -10), split_method=PRESERVE_HOLES_METHOD.derivation_split)
+def create_terraform_polygons_gdf(bbox, pitch, construction):
+    terraform_gdf = union_gdf(pitch, construction)
+    return preserve_holes(resize_gdf(terraform_gdf, -10), split_method=PRESERVE_HOLES_METHOD.derivation_split)
 
 
 def create_exclusion_building_polygons_gdf(bbox, exclusion):

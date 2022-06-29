@@ -138,6 +138,7 @@ SERVICE_OSM_KEY="service"
 MAN_MADE_OSM_KEY = "man_made"
 GROUND_OSM_KEY = "ground"
 PITCH_OSM_KEY = "pitch"
+CONSTRUCTION_OSM_KEY = "construction"
 NOT_SHORE_WATER_OSM_KEY = "not_shore"
 
 FOREST_OSM_TAG = "forest"
@@ -246,7 +247,9 @@ OSM_TAGS = {
         CLIFF_OSM_TAG
     ],
     PITCH_OSM_KEY: [
-        PITCH_OSM_TAG,
+        PITCH_OSM_TAG
+    ],
+    CONSTRUCTION_OSM_KEY: [
         CONSTRUCTION_OSM_TAG
     ],
     NOT_SHORE_WATER_OSM_KEY: [

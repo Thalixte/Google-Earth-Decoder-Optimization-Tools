@@ -43,7 +43,7 @@ from msfs_project.collider import MsfsCollider
 from msfs_project.tile import MsfsTile
 from msfs_project.shape import MsfsShape
 from utils import replace_in_file, is_octant, backup_file, install_python_lib, ScriptError, print_title, \
-    get_backup_file_path, isolated_print, chunks, create_bounding_box_from_tiles, clip_gdf, create_terraforming_polygons_gdf, create_land_mass_gdf, create_exclusion_masks_from_tiles, preserve_holes, create_exclusion_building_polygons_gdf, create_whole_water_gdf, create_water_exclusion_gdf, create_ground_exclusion_gdf, union_gdf, load_gdf, prepare_roads_gdf, \
+    get_backup_file_path, isolated_print, chunks, create_bounding_box_from_tiles, clip_gdf, create_terraform_polygons_gdf, create_land_mass_gdf, create_exclusion_masks_from_tiles, preserve_holes, create_exclusion_building_polygons_gdf, create_whole_water_gdf, create_water_exclusion_gdf, create_ground_exclusion_gdf, union_gdf, load_gdf, prepare_roads_gdf, \
     prepare_sea_gdf, prepare_bbox_gdf, prepare_gdf, create_exclusion_vegetation_polygons_gdf, load_gdf_from_geocode, difference_gdf, create_shore_water_gdf, resize_gdf
 from pathlib import Path
 
@@ -833,6 +833,7 @@ class MsfsProject:
         orig_water = load_gdf(self.coords, WATER_OSM_KEY, OSM_TAGS[WATER_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, WATER_OSM_KEY + SHP_FILE_EXT))
         orig_aeroway = load_gdf(self.coords, AEROWAY_OSM_KEY, True, shp_file_path=os.path.join(self.shpfiles_folder, AEROWAY_OSM_KEY + SHP_FILE_EXT))
         orig_pitch = load_gdf(self.coords, LEISURE_OSM_KEY, OSM_TAGS[PITCH_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, PITCH_OSM_KEY + SHP_FILE_EXT))
+        orig_construction = load_gdf(self.coords, LANDUSE_OSM_KEY, OSM_TAGS[CONSTRUCTION_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, CONSTRUCTION_OSM_KEY + SHP_FILE_EXT))
 
         roads = prepare_roads_gdf(orig_roads)
         sea = prepare_sea_gdf(orig_sea)
@@ -845,6 +846,7 @@ class MsfsProject:
         water = clip_gdf(prepare_gdf(orig_water), bbox)
         aeroway = clip_gdf(prepare_gdf(orig_aeroway), bbox)
         pitch = clip_gdf(prepare_gdf(orig_pitch), bbox)
+        construction = clip_gdf(prepare_gdf(orig_construction), bbox)
 
         whole_water = create_whole_water_gdf(natural_water, water, sea)
         # for debugging purpose, generate the water exclusion osm file
@@ -871,7 +873,7 @@ class MsfsProject:
         create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, whole_water, keep_holes=False, file_prefix=WATER_OSM_KEY + "_", title="CREATE WATER EXCLUSION MASKS OSM FILES")
 
         print_title("CREATE TERRAFORM POLYGONS GEO DATAFRAMES...)")
-        terraform_polygons = create_terraforming_polygons_gdf(orig_bbox, pitch)
+        terraform_polygons = create_terraform_polygons_gdf(orig_bbox, pitch, construction)
         # for debugging purpose
         osm_xml = OsmXml(self.osmfiles_folder, "terraform_polygons" + OSM_FILE_EXT)
         osm_xml.create_from_geodataframes([terraform_polygons.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')], b)
