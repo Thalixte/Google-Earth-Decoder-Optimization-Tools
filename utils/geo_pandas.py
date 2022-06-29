@@ -25,7 +25,7 @@ from osmnx.utils_geo import bbox_to_poly
 from shapely.geometry import Polygon, JOIN_STYLE, CAP_STYLE, MultiPolygon, LineString, MultiPoint, Point, mapping
 from shapely.ops import linemerge, unary_union, polygonize, nearest_points
 
-from constants import GEOMETRY_OSM_COLUMN, BOUNDING_BOX_OSM_KEY, SHAPE_TEMPLATES_FOLDER, OSM_LAND_SHAPEFILE, ROADS_OSM_KEY, BRIDGE_OSM_TAG, SERVICE_OSM_KEY, SLIPWAY_OSM_TAG, NOT_SHORE_WATER_OSM_KEY, WATER_OSM_KEY, NATURAL_OSM_KEY, OSM_TAGS, FOOTWAY_OSM_TAG, PATH_OSM_TAG, PEDESTRIAN_OSM_TAG, MAN_MADE_OSM_KEY, PIER_OSM_TAG
+from constants import GEOMETRY_OSM_COLUMN, BOUNDING_BOX_OSM_KEY, SHAPE_TEMPLATES_FOLDER, OSM_LAND_SHAPEFILE, ROADS_OSM_KEY, BRIDGE_OSM_TAG, SERVICE_OSM_KEY, SLIPWAY_OSM_TAG, NOT_SHORE_WATER_OSM_KEY, WATER_OSM_KEY, NATURAL_OSM_KEY, OSM_TAGS, FOOTWAY_OSM_TAG, PATH_OSM_TAG, PEDESTRIAN_OSM_TAG, MAN_MADE_OSM_KEY, PIER_OSM_TAG, GOLF_OSM_KEY, FAIRWAY_OSM_TAG
 from utils.progress_bar import ProgressBar
 from utils.geometry import close_holes, extend_line
 
@@ -139,7 +139,7 @@ def load_gdf_from_geocode(geocode):
     return result.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)
 
 
-def load_gdf(coords, key, tags, shp_file_path="", is_roads=False, is_buildings=False, is_sea=False, land_mass=None, bbox=None):
+def load_gdf(coords, key, tags, shp_file_path="", is_roads=False, is_buildings=False, is_sea=False, is_grass=False, land_mass=None, bbox=None):
     has_cache = os.path.isfile(shp_file_path)
     keys = [key]
 
@@ -156,6 +156,10 @@ def load_gdf(coords, key, tags, shp_file_path="", is_roads=False, is_buildings=F
 
     if not result.empty:
         keys.insert(0, GEOMETRY_OSM_COLUMN)
+
+        if is_grass:
+            if GOLF_OSM_KEY in result:
+                keys.append(GOLF_OSM_KEY)
 
         if is_roads:
             if BRIDGE_OSM_TAG in result:
@@ -230,6 +234,18 @@ def prepare_roads_gdf(gdf):
 
 def prepare_sea_gdf(gdf):
     result = gdf.copy()
+
+    if not result.empty:
+        result = result[(result.geom_type == SHAPELY_TYPE.polygon) | (result.geom_type == SHAPELY_TYPE.multiPolygon)]
+
+    return result[[GEOMETRY_OSM_COLUMN]].dissolve()
+
+
+def prepare_golf_gdf(gdf):
+    result = gpd.GeoDataFrame(columns=[GEOMETRY_OSM_COLUMN], geometry=GEOMETRY_OSM_COLUMN)
+
+    if GOLF_OSM_KEY in gdf:
+        result = gdf[(gdf[GOLF_OSM_KEY] == FAIRWAY_OSM_TAG)]
 
     if not result.empty:
         result = result[(result.geom_type == SHAPELY_TYPE.polygon) | (result.geom_type == SHAPELY_TYPE.multiPolygon)]
@@ -342,8 +358,9 @@ def create_shore_water_gdf(orig_water, orig_natural_water, sea, bbox):
     return result.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)
 
 
-def create_terraform_polygons_gdf(bbox, pitch, construction):
+def create_terraform_polygons_gdf(pitch, construction, golf):
     terraform_gdf = union_gdf(pitch, construction)
+    # terraform_gdf = union_gdf(terraform_gdf, golf)
     return preserve_holes(resize_gdf(terraform_gdf, -10), split_method=PRESERVE_HOLES_METHOD.derivation_split)
 
 

@@ -155,6 +155,8 @@ class MsfsGltf:
             pass
 
     def remove_asobo_tag(self, asobo_tag_name):
+        if not self.data: return
+
         if not self.MATERIALS_TAG in self.data.keys(): return
 
         other_tag_exists = False
@@ -178,6 +180,8 @@ class MsfsGltf:
                 self.data[self.EXTENSIONS_USED_TAG].remove(self.ASOBO_TAGS_TAG)
 
     def remove_asobo_extension(self, extension_name):
+        if not self.data: return
+
         if not self.MATERIALS_TAG in self.data.keys(): return
 
         for material in self.data[self.MATERIALS_TAG]:

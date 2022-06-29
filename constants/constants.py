@@ -139,6 +139,8 @@ MAN_MADE_OSM_KEY = "man_made"
 GROUND_OSM_KEY = "ground"
 PITCH_OSM_KEY = "pitch"
 CONSTRUCTION_OSM_KEY = "construction"
+GRASS_OSM_KEY = "grass"
+GOLF_OSM_KEY = "golf"
 NOT_SHORE_WATER_OSM_KEY = "not_shore"
 
 FOREST_OSM_TAG = "forest"
@@ -186,6 +188,7 @@ SLIPWAY_OSM_TAG="slipway"
 PEDESTRIAN_OSM_TAG="pedestrian"
 FOOTWAY_OSM_TAG="footway"
 PATH_OSM_TAG="path"
+FAIRWAY_OSM_TAG = "fairway"
 CONSTRUCTION_OSM_TAG = "construction"
 
 EXCLUSION_OSM_FILE_PREFIX = "exclusion"
@@ -251,6 +254,12 @@ OSM_TAGS = {
     ],
     CONSTRUCTION_OSM_KEY: [
         CONSTRUCTION_OSM_TAG
+    ],
+    GRASS_OSM_KEY: [
+        GRASS_OSM_TAG
+    ],
+    GOLF_OSM_KEY: [
+        FAIRWAY_OSM_TAG
     ],
     NOT_SHORE_WATER_OSM_KEY: [
         WATER_OSM_KEY,
