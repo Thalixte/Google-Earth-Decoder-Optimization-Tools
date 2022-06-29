@@ -193,6 +193,9 @@ class MsfsGltf:
     def get_subtiles(self):
         result = []
 
+        if not self.data:
+            return result
+
         if self.MESHES_TAG in self.data.keys():
             for mesh in self.data[self.MESHES_TAG]:
                 if self.NAME_TAG in mesh.keys():

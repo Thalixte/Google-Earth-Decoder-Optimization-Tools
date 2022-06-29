@@ -196,6 +196,7 @@ def prepare_gdf(gdf):
 def prepare_roads_gdf(gdf):
     result = gdf.copy()
     has_pier = False
+    has_bridge_path = False
 
     if not result.empty:
         result = result[~result[GEOMETRY_OSM_COLUMN].isna()]
@@ -207,11 +208,17 @@ def prepare_roads_gdf(gdf):
             pier = resize_gdf(pier, 12, single_sided=False)
             has_pier = not pier.empty
 
+        # fix for bridge paths
+        if BRIDGE_OSM_TAG in result:
+            bridge_path = result[(result[ROADS_OSM_KEY] == PATH_OSM_TAG) & (result[BRIDGE_OSM_TAG] == "yes")]
+            has_bridge_path = not bridge_path.empty
+
         result = resize_gdf(result, 22, single_sided=False)
         result = result[~(result[SERVICE_OSM_KEY] == SLIPWAY_OSM_TAG)]
         result = result[~(result[ROADS_OSM_KEY] == FOOTWAY_OSM_TAG)]
         result = result[~(result[ROADS_OSM_KEY] == PEDESTRIAN_OSM_TAG)]
-        result = result[~(result[ROADS_OSM_KEY] == PATH_OSM_TAG)]
+        if not has_bridge_path:
+            result = result[~(result[ROADS_OSM_KEY] == PATH_OSM_TAG)]
         result = result[(result.geom_type == SHAPELY_TYPE.polygon) | (result.geom_type == SHAPELY_TYPE.multiPolygon)]
         result[GEOMETRY_OSM_COLUMN] = result[GEOMETRY_OSM_COLUMN].buffer(0)
 
