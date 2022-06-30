@@ -15,9 +15,9 @@
 #  #
 #
 #  <pep8 compliant>
+import copy
 from decimal import Decimal
 
-from constants import HEIGHT_MAPS_DISPLAY_NAME
 from utils.progress_bar import ProgressBar
 from utils import Xml
 import xml.etree.ElementTree as Et
@@ -33,6 +33,7 @@ class ObjectsXml(Xml):
     VERTEX_TAG = "Vertex"
     RECTANGLE_TAG = "Rectangle"
     HEIGHT_MAP_TAG = "Heightmap"
+    LANDMARK_LOCATION_TAG = "LandmarkLocation"
     NAME_ATTR = "name"
     GUID_ATTR = "guid"
     DISPLAY_NAME_ATTR = "displayName"
@@ -64,6 +65,9 @@ class ObjectsXml(Xml):
     SURFACE_ATTR = "surface"
     PRIORITY_ATTR = "priority"
     DATA_ATTR = "data"
+    INSTANCE_ID_ATTR = "instanceId"
+    OFFSET_ATTR = "offset"
+    OWNER_ATTR = "owner"
 
     LIBRARY_OBJECTS_SEARCH_PATTERN = "./" + SCENERY_OBJECT_TAG + "/" + LIBRARY_OBJECT_TAG
     SCENERY_OBJECT_SEARCH_PATTERN = LIBRARY_OBJECTS_SEARCH_PATTERN + "[@" + NAME_ATTR + "='"
@@ -78,6 +82,9 @@ class ObjectsXml(Xml):
     GROUP_SEARCH_PATTERN = GROUPS_SEARCH_PATTERN + "[@" + DISPLAY_NAME_ATTR + "='"
     POLYGON_SEARCH_PATTERN = POLYGONS_SEARCH_PATTERN + "[@" + PARENT_GROUP_ID_ATTR + "='"
     HEIGHT_MAP_SEARCH_PATTERN = RECTANGLES_SEARCH_PATTERN + "[@" + PARENT_GROUP_ID_ATTR + "='"
+    LANDMARKS_SEARCH_PATTERN = "./" + LANDMARK_LOCATION_TAG
+    LANDMARK_LOCATION_SEARCH_PATTERN = LANDMARKS_SEARCH_PATTERN + "[@" + NAME_ATTR + "='"
+    LANDMARK_LOCATION_INSTANCE_ID_SEARCH_PATTERN = LANDMARKS_SEARCH_PATTERN + "[@" + INSTANCE_ID_ATTR + "='"
 
     def __init__(self, file_folder, file_name):
         super().__init__(file_folder, file_name)
@@ -123,7 +130,15 @@ class ObjectsXml(Xml):
                 self.root.remove(group)
             self.save()
 
-    def add_shape(self, shape):
+    def remove_landmarks(self, name):
+        landmarks = self.find_landmarks(name=name)
+        if landmarks:
+            for landmark_location in landmarks:
+                self.root.remove(landmark_location)
+
+        self.save()
+
+    def add_shapes(self, shape):
         for polygon in shape.polygons:
             polygon_elem = self.__add_shape_polygon(polygon)
 
@@ -146,6 +161,9 @@ class ObjectsXml(Xml):
 
     def add_height_map_group(self, height_map):
         self.__add_generated_group(height_map.group)
+
+    def add_landmark_location(self, landmark_location):
+        self.__add_landmark_location(landmark_location)
 
     def find_scenery_objects(self, guid):
         return self.root.findall(self.SCENERY_OBJECT_SEARCH_PATTERN + guid.upper() + self.PARENT_PATTERN_SUFFIX)
@@ -193,6 +211,22 @@ class ObjectsXml(Xml):
 
     def find_rectangle_height_data(self, root):
         return root.findall(self.RECTANGLE_HEIGHT_DATA_SEARCH_PATTERN)
+
+    def find_landmarks(self, name=None):
+        result = []
+        pattern = self.LANDMARKS_SEARCH_PATTERN
+
+        if name is not None:
+            pattern = self.remove_accents((self.LANDMARK_LOCATION_SEARCH_PATTERN + str(name).replace("'", "") + self.PATTERN_SUFFIX).lower())
+            parse_tree = self.to_parseable(copy.deepcopy(self.root))
+            elems = parse_tree.findall(pattern)
+            for elem in elems:
+                instance_id = elem.get(self.INSTANCE_ID_ATTR.lower())
+                result = self.root.findall(self.LANDMARK_LOCATION_INSTANCE_ID_SEARCH_PATTERN + instance_id.upper() + self.PATTERN_SUFFIX)
+        else:
+            result = self.root.findall(pattern)
+
+        return result
 
     def get_new_group_id(self):
         result = 0
@@ -279,6 +313,18 @@ class ObjectsXml(Xml):
         return Et.SubElement(rectangle, self.HEIGHT_MAP_TAG, attrib={
             self.WIDTH_ATTR: str(height_map.size),
             self.DATA_ATTR: str(height_map.height_data)})
+
+    def __add_landmark_location(self, landmark_location):
+        return Et.SubElement(self.root, self.LANDMARK_LOCATION_TAG, attrib={
+            self.INSTANCE_ID_ATTR: str(landmark_location.instance_id),
+            self.NAME_ATTR: str(landmark_location.name),
+            self.OWNER_ATTR: str(landmark_location.owner),
+            self.LAT_ATTR: str(landmark_location.pos.lat),
+            self.LON_ATTR: str(landmark_location.pos.lon),
+            self.ALTITUDE_ATTR: str(landmark_location.pos.alt),
+            self.OFFSET_ATTR: str(landmark_location.offset),
+            self.TYPE_ATTR: str(landmark_location.type)
+        })
 
     def __update_scenery_object_pos(self, tile, found_scenery_objects, settings):
         for scenery_object in found_scenery_objects:

@@ -25,7 +25,8 @@ from osmnx.utils_geo import bbox_to_poly
 from shapely.geometry import Polygon, JOIN_STYLE, CAP_STYLE, MultiPolygon, LineString, MultiPoint, Point, mapping
 from shapely.ops import linemerge, unary_union, polygonize, nearest_points
 
-from constants import GEOMETRY_OSM_COLUMN, BOUNDING_BOX_OSM_KEY, SHAPE_TEMPLATES_FOLDER, OSM_LAND_SHAPEFILE, ROADS_OSM_KEY, BRIDGE_OSM_TAG, SERVICE_OSM_KEY, SLIPWAY_OSM_TAG, NOT_SHORE_WATER_OSM_KEY, WATER_OSM_KEY, NATURAL_OSM_KEY, OSM_TAGS, FOOTWAY_OSM_TAG, PATH_OSM_TAG, PEDESTRIAN_OSM_TAG, MAN_MADE_OSM_KEY, PIER_OSM_TAG, GOLF_OSM_KEY, FAIRWAY_OSM_TAG
+from constants import GEOMETRY_OSM_COLUMN, BOUNDING_BOX_OSM_KEY, SHAPE_TEMPLATES_FOLDER, OSM_LAND_SHAPEFILE, ROADS_OSM_KEY, BRIDGE_OSM_TAG, SERVICE_OSM_KEY, SLIPWAY_OSM_TAG, NOT_SHORE_WATER_OSM_KEY, WATER_OSM_KEY, NATURAL_OSM_KEY, OSM_TAGS, FOOTWAY_OSM_TAG, PATH_OSM_TAG, PEDESTRIAN_OSM_TAG, MAN_MADE_OSM_KEY, PIER_OSM_TAG, GOLF_OSM_KEY, FAIRWAY_OSM_TAG, EOL, CEND
+from utils import pr_bg_orange
 from utils.progress_bar import ProgressBar
 from utils.geometry import close_holes, extend_line
 
@@ -129,8 +130,16 @@ def resize_gdf(gdf, resize_distance, single_sided=True):
     return gdf.to_crs(EPSG.key + str(EPSG.WGS84_degree_unit))
 
 
-def load_gdf_from_geocode(geocode):
-    result = ox.geocode_to_gdf(geocode)
+def load_gdf_from_geocode(geocode, keep_data=False):
+    try:
+        result = ox.geocode_to_gdf(geocode)
+    except ValueError:
+        pr_bg_orange("Geocode (" + geocode + ") not found in OSM data" + EOL + CEND)
+        return
+
+    if keep_data:
+        return result
+
     result = resize_gdf(result, 2.5)
 
     if not result.empty:

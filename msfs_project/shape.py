@@ -199,7 +199,7 @@ class MsfsShapeGroup:
             self.group_generated = bool(group.get(xml.GROUP_GENERATED_ATTR))
 
 
-class MsfsShape:
+class MsfsShapes:
     polygons: list
     group: MsfsShapeGroup
 
@@ -213,7 +213,7 @@ class MsfsShape:
             self.__init_from_xml(xml, group_display_name)
 
     def to_xml(self, xml):
-        xml.add_shape(self)
+        xml.add_shapes(self)
 
     @staticmethod
     def remove_from_xml(xml, group_name):

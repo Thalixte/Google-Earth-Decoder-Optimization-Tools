@@ -43,3 +43,6 @@ def pr_bg_red(skk): isolated_print(CREDBG, format(skk), CEND)
 
 
 def pr_bg_green(skk): isolated_print(CGREENBG, format(skk), CEND)
+
+
+def pr_bg_orange(skk): isolated_print(CORANGEBG, format(skk), CEND)

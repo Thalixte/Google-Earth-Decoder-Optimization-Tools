@@ -31,6 +31,7 @@ from osmnx.utils_geo import bbox_to_poly
 
 import bpy
 from constants import *
+from msfs_project.landmark import MsfsLandmarks
 from msfs_project.geoid import get_geoid_height
 from msfs_project.height_map_xml import HeightMapXml
 from msfs_project.height_map import MsfsHeightMaps
@@ -41,10 +42,10 @@ from msfs_project.objects_xml import ObjectsXml
 from msfs_project.scene_object import MsfsSceneObject
 from msfs_project.collider import MsfsCollider
 from msfs_project.tile import MsfsTile
-from msfs_project.shape import MsfsShape
+from msfs_project.shape import MsfsShapes
 from utils import replace_in_file, is_octant, backup_file, install_python_lib, ScriptError, print_title, \
-    get_backup_file_path, isolated_print, chunks, create_bounding_box_from_tiles, clip_gdf, create_terraform_polygons_gdf, create_land_mass_gdf, create_exclusion_masks_from_tiles, preserve_holes, create_exclusion_building_polygons_gdf, create_whole_water_gdf, create_water_exclusion_gdf, create_ground_exclusion_gdf, union_gdf, load_gdf, prepare_roads_gdf, \
-    prepare_sea_gdf, prepare_bbox_gdf, prepare_gdf, create_exclusion_vegetation_polygons_gdf, load_gdf_from_geocode, difference_gdf, create_shore_water_gdf, resize_gdf, prepare_golf_gdf
+    get_backup_file_path, isolated_print, chunks, create_bounding_box_from_tiles, clip_gdf, create_terraform_polygons_gdf, create_land_mass_gdf, create_exclusion_masks_from_tiles, preserve_holes, create_exclusion_building_polygons_gdf, create_whole_water_gdf, create_ground_exclusion_gdf, load_gdf, prepare_roads_gdf, \
+    prepare_sea_gdf, prepare_bbox_gdf, prepare_gdf, create_exclusion_vegetation_polygons_gdf, load_gdf_from_geocode, difference_gdf, create_shore_water_gdf, resize_gdf, prepare_golf_gdf, pr_bg_orange
 from pathlib import Path
 
 from utils.compressonator import Compressonator
@@ -82,6 +83,7 @@ class MsfsProject:
     tiles: dict
     shapes: dict
     height_maps: dict
+    landmarks: list
     colliders: dict
     objects_xml: ObjectsXml
     coords: tuple
@@ -292,8 +294,15 @@ class MsfsProject:
 
     def exclude_3d_data_from_geocode(self, settings):
         geocode = settings.geocode
-        self.__create_tiles_bounding_boxes()
-        self.__exclude_lods_3d_data_from_geocode(self.__create_geocode_osm_files(geocode), settings)
+        geocode_gdf = self.__create_geocode_osm_files(geocode)
+
+        if geocode_gdf:
+            self.__create_tiles_bounding_boxes()
+            self.__exclude_lods_3d_data_from_geocode(geocode_gdf, settings)
+
+    def create_landmark_from_geocode(self, settings):
+        geocode = settings.geocode
+        self.__create_landmark_from_geocode(geocode, settings)
 
     def keep_common_tiles(self, project_to_compare):
         if self.objects_xml and project_to_compare.objects_xml:
@@ -322,6 +331,7 @@ class MsfsProject:
         self.tiles = dict()
         self.shapes = dict()
         self.height_maps = dict()
+        self.landmarks = dict()
         self.colliders = dict()
 
         if init_structure:
@@ -414,6 +424,7 @@ class MsfsProject:
         self.__retrieve_scene_objects()
         self.__retrieve_shapes()
         self.__retrieve_height_maps()
+        self.__retrieve_landmarks()
 
     def __retrieve_scene_objects(self):
         pbar = ProgressBar(list(Path(self.model_lib_folder).rglob(XML_FILE_PATTERN)), title="Retrieve project infos")
@@ -450,9 +461,12 @@ class MsfsProject:
             pbar.update("%s" % path.name)
 
     def __retrieve_shapes(self):
-        self.shapes = {TERRAFORMING_POLYGONS_DISPLAY_NAME: MsfsShape(xml=self.objects_xml, group_display_name=TERRAFORMING_POLYGONS_DISPLAY_NAME),
-                       EXCLUSION_BUILDING_POLYGONS_DISPLAY_NAME: MsfsShape(xml=self.objects_xml, group_display_name=EXCLUSION_BUILDING_POLYGONS_DISPLAY_NAME),
-                       EXCLUSION_VEGETATION_POLYGONS_DISPLAY_NAME: MsfsShape(xml=self.objects_xml, group_display_name=EXCLUSION_VEGETATION_POLYGONS_DISPLAY_NAME)}
+        self.shapes = {TERRAFORMING_POLYGONS_DISPLAY_NAME: MsfsShapes(xml=self.objects_xml, group_display_name=TERRAFORMING_POLYGONS_DISPLAY_NAME),
+                       EXCLUSION_BUILDING_POLYGONS_DISPLAY_NAME: MsfsShapes(xml=self.objects_xml, group_display_name=EXCLUSION_BUILDING_POLYGONS_DISPLAY_NAME),
+                       EXCLUSION_VEGETATION_POLYGONS_DISPLAY_NAME: MsfsShapes(xml=self.objects_xml, group_display_name=EXCLUSION_VEGETATION_POLYGONS_DISPLAY_NAME)}
+
+    def __retrieve_landmarks(self):
+        self.landmarks = MsfsLandmarks(xml=self.objects_xml)
 
     def __retrieve_height_maps(self):
         self.height_maps = {HEIGHT_MAPS_DISPLAY_NAME: MsfsHeightMaps(xml=self.objects_xml, group_display_name=HEIGHT_MAPS_DISPLAY_NAME)}
@@ -554,7 +568,7 @@ class MsfsProject:
                 if tile_candidate.name == tile.name:
                     tile_candidates.remove(tile_candidate)
                     continue
-                if tile.name != tile_candidate.name and tile.contains(tile_candidate):
+                if tile.name != tile_candidate.name and tile.contains(tile_candidate.coords):
                     linked_tiles[tile].append(tile_candidate)
                     tile_candidates.remove(tile_candidate)
                     sorted_tiles_by_name.remove(tile_candidate)
@@ -894,9 +908,9 @@ class MsfsProject:
         osm_xml.create_from_geodataframes([exclusion_vegetation_polygons.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')], b)
 
         new_group_id = self.objects_xml.get_new_group_id()
-        self.shapes[TERRAFORMING_POLYGONS_DISPLAY_NAME] = MsfsShape(shape_gdf=terraform_polygons, group_display_name=TERRAFORMING_POLYGONS_DISPLAY_NAME, group_id=new_group_id, flatten=True)
-        self.shapes[EXCLUSION_BUILDING_POLYGONS_DISPLAY_NAME] = MsfsShape(shape_gdf=exclusion_building_polygons, group_display_name=EXCLUSION_BUILDING_POLYGONS_DISPLAY_NAME, group_id=new_group_id+1, exclude_buildings=True, exclude_roads=True)
-        self.shapes[EXCLUSION_VEGETATION_POLYGONS_DISPLAY_NAME] = MsfsShape(shape_gdf=exclusion_vegetation_polygons, group_display_name=EXCLUSION_VEGETATION_POLYGONS_DISPLAY_NAME, group_id=new_group_id+2, exclude_vegetation=True)
+        self.shapes[TERRAFORMING_POLYGONS_DISPLAY_NAME] = MsfsShapes(shape_gdf=terraform_polygons, group_display_name=TERRAFORMING_POLYGONS_DISPLAY_NAME, group_id=new_group_id, flatten=True)
+        self.shapes[EXCLUSION_BUILDING_POLYGONS_DISPLAY_NAME] = MsfsShapes(shape_gdf=exclusion_building_polygons, group_display_name=EXCLUSION_BUILDING_POLYGONS_DISPLAY_NAME, group_id=new_group_id + 1, exclude_buildings=True, exclude_roads=True)
+        self.shapes[EXCLUSION_VEGETATION_POLYGONS_DISPLAY_NAME] = MsfsShapes(shape_gdf=exclusion_vegetation_polygons, group_display_name=EXCLUSION_VEGETATION_POLYGONS_DISPLAY_NAME, group_id=new_group_id + 2, exclude_vegetation=True)
 
         # reload the xml file to retrieve the last updates
         self.objects_xml = ObjectsXml(self.scene_folder, self.SCENE_OBJECTS_FILE)
@@ -910,9 +924,11 @@ class MsfsProject:
         print_title("RETRIEVE GEOCODE OSM FILES")
 
         geocode_gdf = load_gdf_from_geocode(geocode)
-        # for debugging purpose, generate the osm file
-        osm_xml = OsmXml(self.osmfiles_folder, GEOCODE_OSM_FILE_PREFIX + "_" + EXCLUSION_OSM_FILE_PREFIX + OSM_FILE_EXT)
-        osm_xml.create_from_geodataframes([preserve_holes(geocode_gdf)], b, True, [(HEIGHT_OSM_TAG, 1000)])
+
+        if geocode_gdf:
+            # for debugging purpose, generate the osm file
+            osm_xml = OsmXml(self.osmfiles_folder, GEOCODE_OSM_FILE_PREFIX + "_" + EXCLUSION_OSM_FILE_PREFIX + OSM_FILE_EXT)
+            osm_xml.create_from_geodataframes([preserve_holes(geocode_gdf)], b, True, [(HEIGHT_OSM_TAG, 1000)])
 
         return geocode_gdf
 
@@ -963,6 +979,18 @@ class MsfsProject:
     def __exclude_lods_3d_data_from_geocode(self, geocode_gdf, settings):
         lods_data = self.__retrieve_lods_to_exclude_3d_data_from_geocode(geocode_gdf, settings)
         self.__multithread_process_data(lods_data, "cleanup_lod_3d_data.py", "EXCLUDE LODS 3D DATA TILES FROM GEOCODE", "excluded")
+
+    def __create_landmark_from_geocode(self, geocode, settings):
+        geocode_gdf = self.__retrieve_osm_data_from_geocode(geocode)
+        landmarks = MsfsLandmarks(geocode_gdf=geocode_gdf, tiles=self.tiles, owner=settings.author_name)
+
+        for landmark_location in landmarks.landmark_locations:
+            # valid landmarks have a correct altitude
+            if landmark_location.has_alt:
+                self.objects_xml.remove_landmarks(name=landmark_location.name)
+                landmark_location.to_xml(self.objects_xml)
+            else:
+                pr_bg_orange("Geocode (" + geocode + ") found in OSM data, but not in the scenery" + EOL + CEND)
 
     def __find_different_tiles(self, tiles, tiles_to_compare):
         different_tiles = []
@@ -1050,3 +1078,10 @@ class MsfsProject:
                 return tile_to_compare
 
         return False
+
+    @staticmethod
+    def __retrieve_osm_data_from_geocode(geocode):
+        ox.config(use_cache=True, log_level=lg.DEBUG)
+        print_title("RETRIEVE OSM GEOCODE DATA")
+
+        return load_gdf_from_geocode(geocode, keep_data=True)

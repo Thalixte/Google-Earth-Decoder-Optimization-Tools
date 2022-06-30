@@ -18,6 +18,9 @@
 
 import os
 import xml.etree.ElementTree as Et
+
+from fontTools import unicodedata
+
 from constants import *
 from utils import pretty_print, line_prepender
 
@@ -53,8 +56,19 @@ class Xml:
 
         line_prepender(self.file_path, XML_HEADER)
 
+    def to_parseable(self, tree):
+        t = Et.tostring(tree)
+        t = t.lower().replace(b"'", b"")
+        t = self.remove_accents(t.decode(ENCODING))
+        return Et.fromstring(t)
+
     @staticmethod
     def remove_tags(parents, elems):
         for parent in parents:
             for elem in elems:
                 parent.remove(elem)
+
+    @staticmethod
+    def remove_accents(input_str):
+        nfkd_form = unicodedata.normalize('NFKD', input_str)
+        return u"".join([c for c in nfkd_form if not unicodedata.combining(c)])
