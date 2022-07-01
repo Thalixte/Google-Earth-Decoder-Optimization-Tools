@@ -991,7 +991,7 @@ class MsfsProject:
 
     def __create_landmark_from_geocode(self, geocode, settings):
         geocode_gdf = self.__retrieve_osm_data_from_geocode(geocode)
-        landmarks = MsfsLandmarks(geocode_gdf=geocode_gdf, tiles=self.tiles, owner=settings.author_name)
+        landmarks = MsfsLandmarks(geocode_gdf=geocode_gdf, tiles=self.tiles, owner=settings.author_name, type=settings.landmark_type, offset=settings.landmark_offset)
 
         for landmark_location in landmarks.landmark_locations:
             # valid landmarks have a correct altitude
