@@ -321,7 +321,7 @@ class ObjectsXml(Xml):
             self.OWNER_ATTR: str(landmark_location.owner),
             self.LAT_ATTR: str(landmark_location.pos.lat),
             self.LON_ATTR: str(landmark_location.pos.lon),
-            self.ALTITUDE_ATTR: str(landmark_location.pos.alt),
+            self.ALT_ATTR: str(landmark_location.pos.alt),
             self.OFFSET_ATTR: str(landmark_location.offset),
             self.TYPE_ATTR: str(landmark_location.type)
         })
