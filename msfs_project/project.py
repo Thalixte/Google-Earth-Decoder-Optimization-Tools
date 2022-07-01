@@ -296,9 +296,12 @@ class MsfsProject:
         geocode = settings.geocode
         geocode_gdf = self.__create_geocode_osm_files(geocode)
 
-        if geocode_gdf:
+        if geocode_gdf is None:
+            return geocode_gdf
+
+        if not geocode_gdf.empty:
             self.__create_tiles_bounding_boxes()
-            self.__exclude_lods_3d_data_from_geocode(geocode_gdf, settings)
+            self.__exclude_lods_3d_data_from_geocode(geocode, geocode_gdf, settings)
 
     def create_landmark_from_geocode(self, settings):
         geocode = settings.geocode
@@ -678,7 +681,7 @@ class MsfsProject:
 
         return chunks(data, self.NB_PARALLEL_TASKS)
 
-    def __retrieve_lods_to_exclude_3d_data_from_geocode(self, geocode_gdf, settings):
+    def __retrieve_lods_to_exclude_3d_data_from_geocode(self, geocode, geocode_gdf, settings):
         data = []
         for tile in self.tiles.values():
             if not os.path.isdir(tile.folder):
@@ -708,6 +711,9 @@ class MsfsProject:
                 data.append({"name": lod.name, "params": ["--folder", str(lod.folder), "--model_file", str(lod.model_file),
                                                           "--positioning_file_path", str(os.path.join(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)),
                                                           "--mask_file_path", str(mask_file_path)]})
+
+        if not data:
+            pr_bg_orange("Geocode (" + geocode + ") found in OSM data, but not in the scenery" + EOL + CEND)
 
         return chunks(data, self.NB_PARALLEL_TASKS)
 
@@ -925,7 +931,10 @@ class MsfsProject:
 
         geocode_gdf = load_gdf_from_geocode(geocode)
 
-        if geocode_gdf:
+        if geocode_gdf is None:
+            return geocode_gdf
+
+        if not geocode_gdf.empty:
             # for debugging purpose, generate the osm file
             osm_xml = OsmXml(self.osmfiles_folder, GEOCODE_OSM_FILE_PREFIX + "_" + EXCLUSION_OSM_FILE_PREFIX + OSM_FILE_EXT)
             osm_xml.create_from_geodataframes([preserve_holes(geocode_gdf)], b, True, [(HEIGHT_OSM_TAG, 1000)])
@@ -976,8 +985,8 @@ class MsfsProject:
 
         self.objects_xml.save()
 
-    def __exclude_lods_3d_data_from_geocode(self, geocode_gdf, settings):
-        lods_data = self.__retrieve_lods_to_exclude_3d_data_from_geocode(geocode_gdf, settings)
+    def __exclude_lods_3d_data_from_geocode(self, geocode, geocode_gdf, settings):
+        lods_data = self.__retrieve_lods_to_exclude_3d_data_from_geocode(geocode, geocode_gdf, settings)
         self.__multithread_process_data(lods_data, "cleanup_lod_3d_data.py", "EXCLUDE LODS 3D DATA TILES FROM GEOCODE", "excluded")
 
     def __create_landmark_from_geocode(self, geocode, settings):
