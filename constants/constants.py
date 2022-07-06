@@ -173,6 +173,7 @@ HEATH_OSM_TAG = "heath"
 WETLAND_OSM_TAG = "wetland"
 BARE_ROCK_OSM_TAG = "bare_rock"
 CLIFF_OSM_TAG = "cliff"
+FELL_OSM_TAG = "fell"
 COASTLINE_OSM_TAG = "coastline"
 GEOMETRY_OSM_COLUMN = "geometry"
 MARITIME_OSM_KEY = "maritime"
@@ -250,7 +251,8 @@ OSM_TAGS = {
     AEROWAY_OSM_KEY: [],
     ROCKS_OSM_KEY: [
         BARE_ROCK_OSM_TAG,
-        CLIFF_OSM_TAG
+        CLIFF_OSM_TAG,
+        FELL_OSM_TAG
     ],
     PITCH_OSM_KEY: [
         PITCH_OSM_TAG

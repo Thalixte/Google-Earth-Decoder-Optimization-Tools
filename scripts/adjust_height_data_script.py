@@ -52,7 +52,7 @@ def adjust_height_data(script_settings):
         isolated_print(EOL)
         print_title("ADJUST HEIGHT DATA")
 
-        msfs_project.cleanup_3d_data(script_settings, clean_3d_data=False)
+        msfs_project.prepare_3d_data(script_settings, generate_height_data=True)
 
         if script_settings.build_package_enabled:
             build_package(msfs_project, script_settings)

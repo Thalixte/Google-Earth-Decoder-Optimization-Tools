@@ -50,13 +50,14 @@ class MsfsLod:
     UNBAKED_TEXTURE_NAME_PATTERN = "([a-zA-Z0-9\s_\\.\-\(\):])(LOD)(\d+)(_)(\d+).(" + PNG_TEXTURE_FORMAT + "|" + JPG_TEXTURE_FORMAT + ")"
     LOD_SUFFIX = "_LOD"
 
-    def __init__(self, lod_level, min_size, folder, model_file):
+    def __init__(self, lod_level, min_size, folder, model_file, optimization_in_progress=False):
         self.lod_level = lod_level
         self.min_size = int(min_size) if min_size else 0
         self.name = os.path.splitext(model_file)[0]
         self.folder = folder
-        self.optimization_in_progress = os.path.isdir(os.path.join(self.folder, self.name))
-        self.folder = self.folder if not self.optimization_in_progress else os.path.join(self.folder, self.name)
+        self.optimization_in_progress = optimization_in_progress or os.path.isdir(os.path.join(self.folder, self.name))
+        if self.optimization_in_progress and os.path.isdir(os.path.join(self.folder, self.name)):
+            self.folder = os.path.join(self.folder, self.name)
         self.model_file = model_file
         self.optimized = self.__is_optimized(self.model_file)
         self.cleaned = self.__is_cleaned(self.model_file)
@@ -140,12 +141,20 @@ class MsfsLod:
 
         # Import the gltf files located in the object folder
         import_model_files(model_files)
+        has_unbaked_textures = False
+        textures = []
 
-        if bake_textures_enabled and self.has_unbaked_textures():
+        for model_file in model_files:
+            lod = MsfsLod(int(self.folder[-2:]), 0, self.folder, os.path.basename(model_file), optimization_in_progress=True)
+            textures.extend(lod.textures)
+            if lod.has_unbaked_textures():
+                has_unbaked_textures = True
+
+        if bake_textures_enabled and has_unbaked_textures:
             isolated_print("bake textures for", self.name)
             bake_texture_files(os.path.join(os.path.dirname(self.folder), TEXTURE_FOLDER), self.name + "." + output_texture_format)
         else:
-            for texture in self.textures:
+            for texture in textures:
                 shutil.copyfile(os.path.join(self.folder, texture.file), os.path.join(os.path.dirname(self.folder), TEXTURE_FOLDER, texture.file))
 
         isolated_print("fix bounding box for", self.name)
@@ -241,11 +250,15 @@ class MsfsLod:
 
         for buffer in model_file.data[MsfsGltf.BUFFERS_TAG]:
             self.binaries.append(MsfsBinary(file_path, self.folder, buffer[MsfsGltf.URI_TAG]))
+
         for idx, image in enumerate(model_file.data[MsfsGltf.IMAGES_TAG]):
             mime_type = str()
             if MsfsGltf.MIME_TYPE_TAG in image.keys():
                 mime_type = image[MsfsGltf.MIME_TYPE_TAG]
-            self.textures.append(MsfsTexture(idx, file_path, self.folder if self.optimization_in_progress else os.path.join(self.folder, TEXTURE_FOLDER), image[MsfsGltf.URI_TAG], mime_type))
+
+            texture_path = self.folder if self.optimization_in_progress else os.path.join(self.folder, TEXTURE_FOLDER)
+            if os.path.isfile(os.path.join(texture_path, image[MsfsGltf.URI_TAG])):
+                self.textures.append(MsfsTexture(idx, file_path, self.folder if self.optimization_in_progress else os.path.join(self.folder, TEXTURE_FOLDER), image[MsfsGltf.URI_TAG], mime_type))
 
     def __is_optimized(self, model_file):
         model_file = MsfsGltf(os.path.join(self.folder, model_file))

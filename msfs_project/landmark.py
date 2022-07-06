@@ -39,7 +39,7 @@ class MsfsLandmarkLocation:
 
         self.instance_id = "{" + str(uuid4()).upper() + "}"
         self.owner = owner or str()
-        self.pos = MsfsPosition(geocode_gdf.lat, geocode_gdf.lon, 0.0)
+        self.pos = MsfsPosition(geocode_gdf.lat, geocode_gdf.lon, "{:.6f}".format(0.0))
         self.offset = "{:.6f}".format(float(offset) or 0.0)
 
         if type in self.LANDMARK_LOCATION_TYPE.__dict__.values():
@@ -66,7 +66,7 @@ class MsfsLandmarkLocation:
         coords = (self.pos.lat, self.pos.lat, self.pos.lon, self.pos.lon)
         for tile in tiles.values():
             if tile.contains(coords):
-                self.pos.alt = tile.pos.alt
+                # self.pos.alt = tile.pos.alt
                 self.has_alt = True
                 return
 
@@ -82,9 +82,6 @@ class MsfsLandmarks:
 
         if xml is not None:
             self.__init_from_xml(xml)
-
-    def to_xml(self, xml):
-        xml.add_landmarks(self)
 
     def __init_from_gdf(self, geocode_gdf, tiles=None, owner=None, type=None, offset=None):
         for index, row in geocode_gdf.iterrows():

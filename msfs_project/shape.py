@@ -122,7 +122,7 @@ class MsfsShapePolygon:
         self.exclusion_flags.value = "1" if exclude_roads else "0"
         self.layer.value = "50000"
         self.flatten_mode.value = "1" if flatten else "0"
-        self.flatten_falloff.value = "150.000000"
+        self.flatten_falloff.value = "100.000000"
 
         self.attributes += [
             self.unique_guid,

@@ -83,7 +83,7 @@ class MsfsProject:
     tiles: dict
     shapes: dict
     height_maps: dict
-    landmarks: list
+    landmarks: MsfsLandmarks
     colliders: dict
     objects_xml: ObjectsXml
     coords: tuple
@@ -271,11 +271,12 @@ class MsfsProject:
 
             pbar.update("splitted tiles added, replacing the previous %s tile" % previous_tile.name)
 
-    def cleanup_3d_data(self, settings, clean_3d_data=True):
-        self.__remove_colliders()
+    def prepare_3d_data(self, settings, generate_height_data=False, clean_3d_data=False):
         self.__create_tiles_bounding_boxes()
         self.__create_osm_files()
-        self.__generate_height_map_data(settings)
+
+        if generate_height_data:
+            self.__generate_height_map_data(settings)
 
         if clean_3d_data:
             # self.__reduce_number_of_vertices()
@@ -334,7 +335,6 @@ class MsfsProject:
         self.tiles = dict()
         self.shapes = dict()
         self.height_maps = dict()
-        self.landmarks = dict()
         self.colliders = dict()
 
         if init_structure:
@@ -478,7 +478,7 @@ class MsfsProject:
         pop_objects = []
         for guid, object in objects.items():
             # first, check if the object is unused
-            if not object.valid or (not self.objects_xml.find_scenery_objects(guid) and not self.objects_xml.find_scenery_objects_in_group(guid)):
+            if not self.objects_xml.find_scenery_objects(guid) and not self.objects_xml.find_scenery_objects_in_group(guid):
                 # unused object, so remove the files related to it
                 object.remove_files()
                 pop_objects.append(guid)
@@ -627,7 +627,12 @@ class MsfsProject:
             has_rocks = tile.has_rocks
             ground_mask_file_path = os.path.join(self.osmfiles_folder, GROUND_OSM_KEY + "_" + EXCLUSION_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)
             water_mask_file_path = os.path.join(self.osmfiles_folder, WATER_OSM_KEY + "_" + EXCLUSION_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)
-            params = ["--folder", str(tile.folder), "--name", str(tile.name), "--definition_file", str(tile.definition_file),
+
+            # when the original tiles are available in the backup, use them, otherwise use the current modified tiles (which give less accurate results than the original ones)
+            backup_path = os.path.join(os.path.join(self.backup_folder, "cleanup_3d_data"), self.model_lib_folder)
+            tile_folder = backup_path if os.path.isdir(backup_path) else tile.folder
+
+            params = ["--folder", str(tile_folder), "--name", str(tile.name), "--definition_file", str(tile.definition_file),
                       "--height_map_xml_folder", str(self.xmlfiles_folder), "--group_id", str(new_group_id), "--altitude", str(tile.pos.alt), "--height_adjustment", str(height_adjustment)]
 
             if has_rocks:
@@ -662,8 +667,25 @@ class MsfsProject:
 
     def __retrieve_lods_to_cleanup(self):
         data = []
+        tiles = []
         for tile in self.tiles.values():
             mask_file_path = os.path.join(self.osmfiles_folder, EXCLUSION_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)
+
+            if not os.path.isfile(mask_file_path):
+                continue
+
+            if not os.path.isdir(tile.folder):
+                continue
+
+            if not tile.valid:
+                continue
+
+            collider = self.__get_tile_collider(tile.name)
+            has_collider = (collider is not None)
+
+            if has_collider:
+                self.__remove_tile_collider(tile.name)
+                tiles.append(tile)
 
             for lod in tile.lods:
                 if not os.path.isdir(lod.folder):
@@ -679,11 +701,13 @@ class MsfsProject:
                                                           "--positioning_file_path", str(os.path.join(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)),
                                                           "--mask_file_path", str(mask_file_path)]})
 
-        return chunks(data, self.NB_PARALLEL_TASKS)
+        return tiles, chunks(data, self.NB_PARALLEL_TASKS)
 
     def __retrieve_lods_to_exclude_3d_data_from_geocode(self, geocode, geocode_gdf, settings):
         data = []
+        tiles = []
         for tile in self.tiles.values():
+
             if not os.path.isdir(tile.folder):
                 continue
 
@@ -693,13 +717,24 @@ class MsfsProject:
             excluded = clip_gdf(geocode_gdf, tile.bbox_gdf)
             if excluded.empty:
                 continue
+
+            collider = self.__get_tile_collider(tile.name)
+            has_collider = (collider is not None)
+
             if settings.backup_enabled:
-                tile.backup_files(os.path.join(self.backup_folder, "exclude_3d_data_from_geocode"))
+                backup_path = os.path.join(os.path.join(self.backup_folder, "exclude_3d_data_from_geocode"), geocode)
+                tile.backup_files(backup_path)
+                if has_collider:
+                    collider.backup_files(backup_path)
 
             mask_file_path = os.path.join(self.osmfiles_folder, GEOCODE_OSM_FILE_PREFIX + "_" + EXCLUSION_OSM_FILE_PREFIX + OSM_FILE_EXT)
 
             if not os.path.isfile(mask_file_path):
                 continue
+
+            if has_collider:
+                self.__remove_tile_collider(tile.name)
+                tiles.append(tile)
 
             for lod in tile.lods:
                 if not os.path.isdir(lod.folder):
@@ -715,7 +750,7 @@ class MsfsProject:
         if not data:
             pr_bg_orange("Geocode (" + geocode + ") found in OSM data, but not in the scenery" + EOL + CEND)
 
-        return chunks(data, self.NB_PARALLEL_TASKS)
+        return tiles, chunks(data, self.NB_PARALLEL_TASKS)
 
     def __optimize_tile_lods(self, lods_data):
         self.__multithread_process_data(lods_data, "optimize_tile_lod.py", "OPTIMIZE THE TILES", "optimized")
@@ -791,6 +826,13 @@ class MsfsProject:
         for guid, collider in self.colliders.items():
             self.objects_xml.remove_object(guid)
             pbar.update("%s removed" % collider.name)
+        self.__clean_objects(self.colliders)
+
+    def __remove_tile_collider(self, tile_name):
+        print_title("REMOVE " + tile_name + " COLLIDER")
+        for guid, collider in self.colliders.items():
+            if collider.name.replace(COLLIDER_SUFFIX, str()) == tile_name:
+                self.objects_xml.remove_object(guid)
         self.__clean_objects(self.colliders)
 
     def __generate_height_map_data(self, settings):
@@ -914,9 +956,9 @@ class MsfsProject:
         osm_xml.create_from_geodataframes([exclusion_vegetation_polygons.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')], b)
 
         new_group_id = self.objects_xml.get_new_group_id()
-        self.shapes[TERRAFORMING_POLYGONS_DISPLAY_NAME] = MsfsShapes(shape_gdf=terraform_polygons, group_display_name=TERRAFORMING_POLYGONS_DISPLAY_NAME, group_id=new_group_id, flatten=True)
         self.shapes[EXCLUSION_BUILDING_POLYGONS_DISPLAY_NAME] = MsfsShapes(shape_gdf=exclusion_building_polygons, group_display_name=EXCLUSION_BUILDING_POLYGONS_DISPLAY_NAME, group_id=new_group_id + 1, exclude_buildings=True)
         self.shapes[EXCLUSION_VEGETATION_POLYGONS_DISPLAY_NAME] = MsfsShapes(shape_gdf=exclusion_vegetation_polygons, group_display_name=EXCLUSION_VEGETATION_POLYGONS_DISPLAY_NAME, group_id=new_group_id + 2, exclude_vegetation=True)
+        self.shapes[TERRAFORMING_POLYGONS_DISPLAY_NAME] = MsfsShapes(shape_gdf=terraform_polygons, group_display_name=TERRAFORMING_POLYGONS_DISPLAY_NAME, group_id=new_group_id, flatten=True)
 
         # reload the xml file to retrieve the last updates
         self.objects_xml = ObjectsXml(self.scene_folder, self.SCENE_OBJECTS_FILE)
@@ -959,8 +1001,12 @@ class MsfsProject:
         self.__multithread_process_data(lods_data, "reduce_lod_number_of_vertices.py", "REDUCE THE NUMBER OF VERTICES FOR ALL TILE LODS", "number of vertices reduced")
 
     def __cleanup_lods_3d_data(self):
-        lods_data = self.__retrieve_lods_to_cleanup()
+        tiles_with_collider, lods_data = self.__retrieve_lods_to_cleanup()
         self.__multithread_process_data(lods_data, "cleanup_lod_3d_data.py", "CLEANUP LODS 3D DATA TILES", "cleaned")
+        for tile in tiles_with_collider:
+            for lod in tile.lods:
+                lod.remove_road_and_collision_tags()
+            tile.add_collider()
 
     def __adjust_height_data(self, height_adjustment):
         if HEIGHT_MAPS_DISPLAY_NAME not in self.height_maps: return
@@ -986,8 +1032,12 @@ class MsfsProject:
         self.objects_xml.save()
 
     def __exclude_lods_3d_data_from_geocode(self, geocode, geocode_gdf, settings):
-        lods_data = self.__retrieve_lods_to_exclude_3d_data_from_geocode(geocode, geocode_gdf, settings)
+        tiles_with_collider, lods_data = self.__retrieve_lods_to_exclude_3d_data_from_geocode(geocode, geocode_gdf, settings)
         self.__multithread_process_data(lods_data, "cleanup_lod_3d_data.py", "EXCLUDE LODS 3D DATA TILES FROM GEOCODE", "excluded")
+        for tile in tiles_with_collider:
+            for lod in tile.lods:
+                lod.remove_road_and_collision_tags()
+            tile.add_collider()
 
     def __create_landmark_from_geocode(self, geocode, settings):
         geocode_gdf = self.__retrieve_osm_data_from_geocode(geocode)
@@ -1014,6 +1064,13 @@ class MsfsProject:
             pbar.update("%s found" % tile.name)
 
         return different_tiles
+
+    def __get_tile_collider(self, tile_name):
+        for guid, collider in self.colliders.items():
+            if collider.name.replace(COLLIDER_SUFFIX, str()) == tile_name:
+                return collider
+
+        return None
 
     @staticmethod
     def __backup_objects(objects: dict, backup_path, pbar_title="backup files"):

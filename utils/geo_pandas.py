@@ -370,17 +370,20 @@ def create_shore_water_gdf(orig_water, orig_natural_water, sea, bbox):
 def create_terraform_polygons_gdf(pitch, construction, golf):
     terraform_gdf = union_gdf(pitch, construction)
     # terraform_gdf = union_gdf(terraform_gdf, golf)
-    return preserve_holes(resize_gdf(terraform_gdf, -10), split_method=PRESERVE_HOLES_METHOD.derivation_split)
+    result = preserve_holes(resize_gdf(terraform_gdf, -10), split_method=PRESERVE_HOLES_METHOD.derivation_split)
+    return result.dissolve()
 
 
 def create_exclusion_building_polygons_gdf(bbox, exclusion):
     adjusted_exclusion = resize_gdf(exclusion, 20)
     adjusted_exclusion = union_gdf(bbox, adjusted_exclusion)
-    return preserve_holes(adjusted_exclusion, split_method=PRESERVE_HOLES_METHOD.derivation_split)
+    result = preserve_holes(adjusted_exclusion, split_method=PRESERVE_HOLES_METHOD.derivation_split)
+    return result.dissolve()
 
 
 def create_exclusion_vegetation_polygons_gdf(exclusion):
-    return preserve_holes(exclusion, split_method=PRESERVE_HOLES_METHOD.derivation_split)
+    result = preserve_holes(exclusion, split_method=PRESERVE_HOLES_METHOD.derivation_split)
+    return result.dissolve()
 
 
 def clip_gdf(gdf, clip):

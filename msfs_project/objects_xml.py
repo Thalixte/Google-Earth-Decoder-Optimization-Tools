@@ -315,20 +315,24 @@ class ObjectsXml(Xml):
             self.DATA_ATTR: str(height_map.height_data)})
 
     def __add_landmark_location(self, landmark_location):
-        return Et.SubElement(self.root, self.LANDMARK_LOCATION_TAG, attrib={
+        attrib = {
             self.INSTANCE_ID_ATTR: str(landmark_location.instance_id),
             self.NAME_ATTR: str(landmark_location.name),
-            self.OWNER_ATTR: str(landmark_location.owner),
             self.LAT_ATTR: str(landmark_location.pos.lat),
             self.LON_ATTR: str(landmark_location.pos.lon),
             self.ALT_ATTR: str(landmark_location.pos.alt),
             self.OFFSET_ATTR: str(landmark_location.offset),
             self.TYPE_ATTR: str(landmark_location.type)
-        })
+        }
+
+        if landmark_location.type == landmark_location.LANDMARK_LOCATION_TYPE.city:
+            attrib[self.OWNER_ATTR] = str(landmark_location.owner)
+
+        return Et.SubElement(self.root, self.LANDMARK_LOCATION_TAG, attrib=attrib)
 
     def __update_scenery_object_pos(self, tile, found_scenery_objects, settings):
         for scenery_object in found_scenery_objects:
-            new_lat = Decimal(scenery_object.get(self.LAT_ATTR)) + Decimal(settings.lat_correction)
-            new_lon = Decimal(scenery_object.get(self.LON_ATTR)) + Decimal(settings.lon_correction)
+            new_lat = Decimal(tile.pos.lat) + Decimal(settings.lat_correction)
+            new_lon = Decimal(tile.pos.lon) + Decimal(settings.lon_correction)
             scenery_object.set(self.LAT_ATTR, str(new_lat))
             scenery_object.set(self.LON_ATTR, str(new_lon))
