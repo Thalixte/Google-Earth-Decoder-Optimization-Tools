@@ -49,6 +49,7 @@ class Settings:
     height_adjustment: float
     landmark_offset: float
     sections = list
+    decoder_output_path = str
 
     def __init__(self, sources_path=str()):
         self.sources_path = sources_path
@@ -75,6 +76,7 @@ class Settings:
         self.height_adjustment = 0.0
         self.landmark_offset = 0.0
         self.sections = []
+        self.decoder_output_path = str()
 
         config = cp.ConfigParser()
         if os.path.isfile(INI_FILE):
