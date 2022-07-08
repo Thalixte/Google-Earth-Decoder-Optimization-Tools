@@ -92,7 +92,7 @@ class MsfsLod:
     def remove_file(self):
         file_path = os.path.join(self.folder, self.model_file)
         if os.path.isfile(file_path):
-            os.remove(os.path.join(file_path))
+            os.remove(file_path)
             print(self.model_file, "removed")
 
     def create_optimization_folder(self, other_tiles=[]):

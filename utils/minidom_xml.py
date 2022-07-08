@@ -10,7 +10,7 @@ def create_new_definition_file(file_path, has_lods=True):
     new_guid = "{" + str(uuid4()) + "}"
     root = minidom.Document()
     model_info = root.createElement(MsfsObjectXml.MODEL_INFO_TAG)
-    model_info.setAttribute(MsfsObjectXml.GUID_ATTR, new_guid)
+    model_info.setAttribute(MsfsObjectXml.GUID_ATTR, new_guid.upper())
     model_info.setAttribute(MsfsObjectXml.VERSION_ATTR, MsfsObjectXml.MODEL_INFO_VERSION)
     root.appendChild(model_info)
     if has_lods:

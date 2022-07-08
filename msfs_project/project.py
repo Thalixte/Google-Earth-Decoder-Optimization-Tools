@@ -30,6 +30,7 @@ import logging as lg
 from osmnx.utils_geo import bbox_to_poly
 
 import bpy
+from blender import convert_obj_file_to_gltf_file
 from constants import *
 from msfs_project.landmark import MsfsLandmarks
 from msfs_project.geoid import get_geoid_height
@@ -39,17 +40,18 @@ from msfs_project.osm_xml import OsmXml
 from msfs_project.project_xml import MsfsProjectXml
 from msfs_project.package_definitions_xml import MsfsPackageDefinitionsXml
 from msfs_project.objects_xml import ObjectsXml
+from msfs_project.object_xml import MsfsObjectXml
 from msfs_project.scene_object import MsfsSceneObject
 from msfs_project.collider import MsfsCollider
 from msfs_project.tile import MsfsTile
 from msfs_project.shape import MsfsShapes
 from utils import replace_in_file, is_octant, backup_file, install_python_lib, ScriptError, print_title, \
     get_backup_file_path, isolated_print, chunks, create_bounding_box_from_tiles, clip_gdf, create_terraform_polygons_gdf, create_land_mass_gdf, create_exclusion_masks_from_tiles, preserve_holes, create_exclusion_building_polygons_gdf, create_whole_water_gdf, create_ground_exclusion_gdf, load_gdf, prepare_roads_gdf, \
-    prepare_sea_gdf, prepare_bbox_gdf, prepare_gdf, create_exclusion_vegetation_polygons_gdf, load_gdf_from_geocode, difference_gdf, create_shore_water_gdf, resize_gdf, prepare_golf_gdf, pr_bg_orange
+    prepare_sea_gdf, prepare_bbox_gdf, prepare_gdf, create_exclusion_vegetation_polygons_gdf, load_gdf_from_geocode, difference_gdf, create_shore_water_gdf, resize_gdf, prepare_golf_gdf, pr_bg_orange, load_json_file
 from pathlib import Path
 
 from utils.compressonator import Compressonator
-from utils.minidom_xml import add_scenery_object
+from utils.minidom_xml import add_scenery_object, create_new_definition_file, add_new_lod
 from utils.progress_bar import ProgressBar
 
 
@@ -163,6 +165,8 @@ class MsfsProject:
         lods = [lod for tile in self.tiles.values() for lod in tile.lods]
         self.__convert_tiles_textures(src_format, dest_format)
         self.update_min_size_values(settings)
+        self.objects_xml.update_objects_position(self, settings)
+
         # some tile lods are not optimized
         if self.__optimization_needed():
             self.__create_optimization_folders()
@@ -174,8 +178,6 @@ class MsfsProject:
             lod.optimization_in_progress = False
             lod.prepare_for_msfs()
             pbar.update("%s prepared for msfs" % lod.name)
-
-        self.objects_xml.update_objects_position(self, settings)
 
     def fix_tiles_lightning_issues(self, settings):
         isolated_print(EOL)
@@ -307,6 +309,9 @@ class MsfsProject:
     def create_landmark_from_geocode(self, settings):
         geocode = settings.geocode
         self.__create_landmark_from_geocode(geocode, settings)
+
+    def import_old_google_earth_decoder_tiles(self, settings):
+        self.__import_old_google_earth_decoder_tiles(settings)
 
     def keep_common_tiles(self, project_to_compare):
         if self.objects_xml and project_to_compare.objects_xml:
@@ -1051,6 +1056,51 @@ class MsfsProject:
             else:
                 pr_bg_orange("Geocode (" + geocode + ") found in OSM data, but not in the scenery" + EOL + CEND)
 
+    def __import_old_google_earth_decoder_tiles(self, settings):
+        obj_files = [model_file for model_file in Path(settings.decoder_output_path).glob(OBJ_FILE_PATTERN)]
+        if not obj_files:
+            return
+
+        lod_levels = self.__guess_lods_from_obj_files(obj_files)
+
+        if not lod_levels: return
+
+        min_lod = lod_levels[0]
+        depth = len(lod_levels)
+        objects_xml_path =os.path.join(self.scene_folder, self.SCENE_OBJECTS_FILE)
+
+        if os.path.isfile(objects_xml_path):
+            os.remove(objects_xml_path)
+            print(objects_xml_path, "removed")
+
+        self.objects_xml = ObjectsXml(self.scene_folder, self.SCENE_OBJECTS_FILE)
+
+        pbar = ProgressBar(obj_files, title="CONVERT THE DECODED GOOGLE EARTH TILES TO GLTF")
+        for obj_file in pbar.iterable:
+            obj_file_name = os.path.basename(obj_file).replace(OBJ_FILE_EXT, str())
+
+            if len(obj_file_name) == min_lod:
+                alt = 0.0
+                convert_obj_file_to_gltf_file(obj_file, self.model_lib_folder, TEXTURE_FOLDER, depth)
+                create_new_definition_file(os.path.join(self.model_lib_folder, obj_file_name + XML_FILE_EXT))
+                xml = MsfsObjectXml(self.model_lib_folder, obj_file_name + XML_FILE_EXT)
+                tile = MsfsTile(self.model_lib_folder, obj_file_name, obj_file_name + XML_FILE_EXT)
+
+                for lod in tile.lods:
+                    add_new_lod(xml.file_path, lod.model_file, lod.min_size)
+                    lod.prepare_for_msfs()
+
+                # reinitialize the tile to get the updated lod definitions
+                tile = MsfsTile(self.model_lib_folder, obj_file_name, obj_file_name + XML_FILE_EXT)
+                tile.update_min_size_values(settings.target_min_size_values)
+                data = load_json_file(os.path.join(settings.decoder_output_path, obj_file_name + POS_FILE_EXT))
+                if data:
+                    alt = data[2] - EARTH_RADIUS
+                tile.pos.alt = alt
+                tile.to_xml(self.objects_xml, xml.guid)
+
+            pbar.update("%s converted" % obj_file_name)
+
     def __find_different_tiles(self, tiles, tiles_to_compare):
         different_tiles = []
         pbar = ProgressBar(tiles.items(), title="FIND THE DIFFERENT TILES")
@@ -1151,3 +1201,17 @@ class MsfsProject:
         print_title("RETRIEVE OSM GEOCODE DATA")
 
         return load_gdf_from_geocode(geocode, keep_data=True)
+
+    @staticmethod
+    def __guess_lods_from_obj_files(obj_files):
+        result = []
+        for obj_file in obj_files:
+            obj_file_name = os.path.basename(obj_file).replace(OBJ_FILE_EXT, str())
+            lod = len(obj_file_name)
+            if lod not in result:
+                result.append(lod)
+
+        if result:
+            result.sort()
+
+        return result

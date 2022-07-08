@@ -18,6 +18,7 @@
 
 import os
 from collections import defaultdict
+from pathlib import Path
 
 import numpy as np
 import pygeodesy
@@ -31,8 +32,9 @@ import mathutils
 from blender.blender_gis import import_osm_file
 from blender.image import get_image_node, fix_texture_size_for_package_compilation
 from blender.memory import remove_mesh_from_memory
-from constants import EOL, GEOIDS_DATASET_FOLDER, EGM2008_5_DATASET
-from utils import ScriptError, isolated_print, MsfsGltf, retrieve_height_data, create_grid_from_hmatrix
+from blender.material import set_msfs_material
+from constants import EOL, GEOIDS_DATASET_FOLDER, EGM2008_5_DATASET, OBJ_FILE_EXT
+from utils import ScriptError, isolated_print, MsfsGltf
 from utils.progress_bar import ProgressBar
 
 SELECT_ACTION = "SELECT"
@@ -48,6 +50,8 @@ MEDIAN_POS = "MEDIAN"
 BOUNDS_POS = "BOUNDS"
 GLTF_SEPARATE_EXPORT_FORMAT = "GLTF_SEPARATE"
 COPY_COLLECTION_NAME = "CopyCollection"
+SUB_TILES_RANGE = "[0-7]"
+TILE_LOD_SUFFIX = "_LOD0"
 
 
 def keep_objects(objects_to_keep):
@@ -115,6 +119,27 @@ def export_to_optimized_gltf_files(file, texture_folder, use_selection=False, ex
     model_file = MsfsGltf(file)
     model_file.add_optimization_tag()
     model_file.dump()
+
+
+##############################################################################
+# Convert an obj file to a gltf file
+##############################################################################
+def convert_obj_file_to_gltf_file(file, output_folder, texture_folder, depth):
+    file_name = os.path.basename(file).replace(OBJ_FILE_EXT, str())
+    file_path = os.path.dirname(file)
+    current_depth = depth
+    while current_depth > 0:
+        clean_scene()
+        name_filter = file_name
+        for i in range(0, current_depth-1):
+            name_filter = name_filter + SUB_TILES_RANGE
+        for lod_file in Path(file_path).glob(name_filter + OBJ_FILE_EXT):
+            bpy.ops.import_scene.obj(filepath=str(lod_file), axis_up='Z', axis_forward='-X')
+
+        set_msfs_material()
+        current_name = file_name + TILE_LOD_SUFFIX + str(depth - current_depth)
+        bpy.ops.export_scene.gltf(export_format=GLTF_SEPARATE_EXPORT_FORMAT, filepath=output_folder + os.path.sep + current_name, export_texture_dir=texture_folder)
+        current_depth -= 1
 
 
 ##################################################################

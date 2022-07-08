@@ -19,6 +19,8 @@
 ######################################################
 # Material management methods
 ######################################################
+import bpy
+
 OUTPUT_MATERIAL_NODE_TYPE = "OUTPUT_MATERIAL"
 
 
@@ -26,3 +28,10 @@ def get_material_output(material):
     for node in material.node_tree.nodes:
         if node.type == OUTPUT_MATERIAL_NODE_TYPE:
             return node
+
+
+def set_msfs_material():
+    for obj in bpy.data.objects:
+        material = obj.data.materials[0]
+        nodes = material.node_tree.nodes
+        principled = next(n for n in nodes if n.type == 'BSDF_PRINCIPLED')

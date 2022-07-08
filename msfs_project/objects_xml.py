@@ -16,6 +16,7 @@
 #
 #  <pep8 compliant>
 import copy
+import os
 from decimal import Decimal
 
 from utils.progress_bar import ProgressBar
@@ -68,6 +69,7 @@ class ObjectsXml(Xml):
     INSTANCE_ID_ATTR = "instanceId"
     OFFSET_ATTR = "offset"
     OWNER_ATTR = "owner"
+    VERSION_ATTR = "version"
 
     LIBRARY_OBJECTS_SEARCH_PATTERN = "./" + SCENERY_OBJECT_TAG + "/" + LIBRARY_OBJECT_TAG
     SCENERY_OBJECT_SEARCH_PATTERN = LIBRARY_OBJECTS_SEARCH_PATTERN + "[@" + NAME_ATTR + "='"
@@ -86,8 +88,16 @@ class ObjectsXml(Xml):
     LANDMARK_LOCATION_SEARCH_PATTERN = LANDMARKS_SEARCH_PATTERN + "[@" + NAME_ATTR + "='"
     LANDMARK_LOCATION_INSTANCE_ID_SEARCH_PATTERN = LANDMARKS_SEARCH_PATTERN + "[@" + INSTANCE_ID_ATTR + "='"
 
+    FS_DATA_VERSION = 9.0
+
     def __init__(self, file_folder, file_name):
         super().__init__(file_folder, file_name)
+
+        if not os.path.isfile(self.file_path):
+            self.root = Et.Element(self.FS_DATA_TAG)
+            self.root.set(self.VERSION_ATTR, str(self.FS_DATA_VERSION))
+            self.tree = tree = Et.ElementTree(self.root)
+
         self.__convert_objects_guid_to_upper()
 
     def get_object_altitude(self, guid):
@@ -137,6 +147,9 @@ class ObjectsXml(Xml):
                 self.root.remove(landmark_location)
 
         self.save()
+
+    def add_scenery_object(self, scenery_object, guid):
+        self.__add_scenery_object(scenery_object, guid)
 
     def add_shapes(self, shape):
         for polygon in shape.polygons:
@@ -270,30 +283,54 @@ class ObjectsXml(Xml):
 
             pbar.update("%s" % collider.name + " : new lat: " + str(collider.pos.lat + float(settings.lat_correction)) + " : new lon: " + str(collider.pos.lon + float(settings.lon_correction)))
 
+    def __add_scenery_object(self, scenery_object, guid):
+        scenery_object_elem = Et.SubElement(self.root, self.SCENERY_OBJECT_TAG, attrib={
+            self.ALT_ATTR: "{:.14f}".format(scenery_object.pos.alt),
+            self.ALTITUDE_IS_AGL_ATTR: str(False),
+            self.BANK_ATTR: "{:.6f}".format(0.0),
+            self.IMAGE_COMPLEXITY_ATTR: str("VERY_SPARSE"),
+            self.LAT_ATTR: "{:.14f}".format(scenery_object.pos.lat),
+            self.LON_ATTR: "{:.14f}".format(scenery_object.pos.lon),
+            self.PITCH_ATTR: "{:.6f}".format(0.0),
+            self.SNAP_TO_GROUND_ATTR: str(False),
+            self.SNAP_TO_NORMAL_ATTR: str(False)
+        })
+
+        Et.SubElement(scenery_object_elem, self.LIBRARY_OBJECT_TAG, attrib={
+            self.NAME_ATTR: guid,
+            self.SCALE_ATTR: "{:.6f}".format(1.0)
+        })
+
+        return scenery_object_elem
+
     def __add_generated_group(self, group):
         return Et.SubElement(self.root, group.tag, attrib={
             self.DISPLAY_NAME_ATTR: group.display_name,
             self.GROUP_INDEX_ATTR: str(group.group_index),
             self.GROUP_ID_ATTR: str(group.group_id),
-            self.GROUP_GENERATED_ATTR: str(group.group_generated).upper()})
+            self.GROUP_GENERATED_ATTR: str(group.group_generated).upper()
+        })
 
     def __add_shape_polygon(self, polygon):
         return Et.SubElement(self.root, polygon.tag, attrib={
             self.PARENT_GROUP_ID_ATTR: str(polygon.parent_group_id),
             self.GROUP_INDEX_ATTR: str(polygon.group_index),
-            self.ALTITUDE_ATTR: str(polygon.altitude)})
+            self.ALTITUDE_ATTR: str(polygon.altitude)
+        })
 
     def __add_shape_polygon_attribute(self, polygon, attribute):
         return Et.SubElement(polygon, attribute.tag, attrib={
             self.NAME_ATTR: attribute.name,
             self.GUID_ATTR: attribute.guid,
             self.TYPE_ATTR: attribute.type,
-            self.VALUE_ATTR: str(attribute.value)})
+            self.VALUE_ATTR: str(attribute.value)
+        })
 
     def __add_shape_polygon_vertex(self, polygon, vertex):
         return Et.SubElement(polygon, vertex.tag, attrib={
             self.LAT_ATTR: str(vertex.lat),
-            self.LON_ATTR: str(vertex.lon)})
+            self.LON_ATTR: str(vertex.lon)
+        })
 
     def __add_height_map_rectangle(self, height_map):
         return Et.SubElement(self.root, self.RECTANGLE_TAG, attrib={
@@ -307,12 +344,14 @@ class ObjectsXml(Xml):
             self.ALTITUDE_ATTR: str(height_map.altitude),
             self.LATITUDE2_ATTR: str(height_map.pos2.lat),
             self.LONGITUDE2_ATTR: str(height_map.mid.lon),
-            self.ALTITUDE2_ATTR: str(height_map.altitude)})
+            self.ALTITUDE2_ATTR: str(height_map.altitude)
+        })
 
     def __add_height_map(self, rectangle, height_map):
         return Et.SubElement(rectangle, self.HEIGHT_MAP_TAG, attrib={
             self.WIDTH_ATTR: str(height_map.size),
-            self.DATA_ATTR: str(height_map.height_data)})
+            self.DATA_ATTR: str(height_map.height_data)
+        })
 
     def __add_landmark_location(self, landmark_location):
         attrib = {

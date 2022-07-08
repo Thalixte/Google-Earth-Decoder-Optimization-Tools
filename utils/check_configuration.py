@@ -31,7 +31,7 @@ RESULT_MSG_LENGTH = 40
 ######################################################
 # check configuration methods
 ######################################################
-def check_configuration(settings, msfs_project, check_optimisation=False, check_lily_texture_packer=False, check_built_package=False, check_compressonator=False):
+def check_configuration(settings, msfs_project, check_optimisation=False, check_lily_texture_packer=False, check_built_package=False, check_compressonator=False, check_description_file=True):
     error_msg = "Configuration error found ! "
     warning_msg = "Configuration warning ! "
 
@@ -87,11 +87,12 @@ def check_configuration(settings, msfs_project, check_optimisation=False, check_
         raise ScriptError(error_msg + "The folder containing the description files of the scene (" + msfs_project.scene_folder + ") was not found. Please check the scene_folder value")
     pr_ok_green(str("scene_folder value").ljust(RESULT_MSG_LENGTH))
 
-    # check if the description file of the scene is reachable
-    if not os.path.isfile(msfs_project.scene_objects_xml_file_path):
-        pr_ko_red(str("scene_file_name value").ljust(RESULT_MSG_LENGTH))
-        raise ScriptError(error_msg + "Description file of the scene (" + msfs_project.scene_objects_xml_file_path + ") not found. Please check the scene_file_name value")
-    pr_ok_green(str("scene_file_name value").ljust(RESULT_MSG_LENGTH))
+    if check_description_file:
+        # check if the description file of the scene is reachable
+        if not os.path.isfile(msfs_project.scene_objects_xml_file_path):
+            pr_ko_red(str("scene_file_name value").ljust(RESULT_MSG_LENGTH))
+            raise ScriptError(error_msg + "Description file of the scene (" + msfs_project.scene_objects_xml_file_path + ") not found. Please check the scene_file_name value")
+        pr_ok_green(str("scene_file_name value").ljust(RESULT_MSG_LENGTH))
 
     # check if the folder containing the textures of the scene exists
     if not os.path.isdir(msfs_project.texture_folder):

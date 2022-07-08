@@ -39,6 +39,8 @@ class MsfsObjectXml(Xml):
         if guid is not None:
             self.guid = guid.upper()
 
+        self.save()
+
     def find_scenery_lods(self):
         return self.root.findall(self.SCENERY_OBJECT_LODS_SEARCH_PATTERN)
 

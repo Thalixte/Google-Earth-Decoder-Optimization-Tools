@@ -31,9 +31,13 @@ class Xml:
     tree: object
     root: object
 
+    ROOT_TAG = "root"
+
     PATTERN_SUFFIX = "']"
     PARENT_SUFFIX = "/.."
     PARENT_PATTERN_SUFFIX = PATTERN_SUFFIX + PARENT_SUFFIX
+
+    FS_DATA_VERSION = 9.0
 
     def __init__(self, file_folder, file_name):
         self.file_path = os.path.join(file_folder, file_name)
@@ -42,7 +46,7 @@ class Xml:
             self.tree = Et.parse(self.file_path, parser=Et.XMLParser(encoding=ENCODING))
             self.root = self.tree.getroot()
         else:
-            self.root = Et.Element("root")
+            self.root = Et.Element(self.ROOT_TAG)
             self.tree = tree = Et.ElementTree(self.root)
 
     def save(self):

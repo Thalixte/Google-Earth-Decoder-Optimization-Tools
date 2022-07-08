@@ -77,7 +77,6 @@ class MsfsTile(MsfsSceneObject):
 
         return new_collider
 
-
     def define_max_coords(self, other_coords):
         n1, s1, w1, e1 = self.coords
         n2, s2, w2, e2 = other_coords
