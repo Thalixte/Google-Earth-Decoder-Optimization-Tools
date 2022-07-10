@@ -8186,15 +8186,15 @@
     var maxLod = 19;
     // Maximum lod for which data is downloaded.
     var minLod = 17;
-	var lat = 51.218704;
-	var lon = 4.402457;
-	var l = 400.0;
-	var w = 400.0;
+	var lat = 51.211897502440074;
+	var lon = 4.4131196512073005;
+	var l = 1000.0;
+	var w = 1000.0;
 
 
     // Output folder
-	var decoderFolder = 'C:\\Non_Sauvegardé\\perso\\python\\decoder';
-	var projectFolder = 'C:\\Non_Sauvegardé\\perso\\python\\decoder\\Anvers';
+	var decoderFolder = 'C:\\MSFS SDK\\Google-Earth-Decoder-optimisation-tools\\decoder';
+	var projectFolder = 'C:\\MSFS SDK\\Google-Earth-Decoder-optimisation-tools\\decoder\\Anvers';
     var outputFolder = projectFolder + '\\decoder_export';
 
     deleteFolderRecursive(outputFolder);

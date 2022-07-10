@@ -227,7 +227,8 @@ OSM_TAGS = {
         FOREST_OSM_TAG,
         WOOD_OSM_TAG,
         GRASSLAND_OSM_TAG,
-        SCRUB_OSM_TAG
+        SCRUB_OSM_TAG,
+        FELL_OSM_TAG
     ],
     WATER_OSM_KEY: [
         RIVER_OSM_TAG,
@@ -254,8 +255,7 @@ OSM_TAGS = {
     AEROWAY_OSM_KEY: [],
     ROCKS_OSM_KEY: [
         BARE_ROCK_OSM_TAG,
-        CLIFF_OSM_TAG,
-        FELL_OSM_TAG
+        CLIFF_OSM_TAG
     ],
     PITCH_OSM_KEY: [
         PITCH_OSM_TAG

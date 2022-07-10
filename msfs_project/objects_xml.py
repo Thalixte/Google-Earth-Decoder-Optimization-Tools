@@ -286,14 +286,15 @@ class ObjectsXml(Xml):
     def __add_scenery_object(self, scenery_object, guid):
         scenery_object_elem = Et.SubElement(self.root, self.SCENERY_OBJECT_TAG, attrib={
             self.ALT_ATTR: "{:.14f}".format(scenery_object.pos.alt),
-            self.ALTITUDE_IS_AGL_ATTR: str(False),
+            self.ALTITUDE_IS_AGL_ATTR: str(False).upper(),
             self.BANK_ATTR: "{:.6f}".format(0.0),
+            self.HEADING_ATTR: "{:.6f}".format(0.0),
             self.IMAGE_COMPLEXITY_ATTR: str("VERY_SPARSE"),
             self.LAT_ATTR: "{:.14f}".format(scenery_object.pos.lat),
             self.LON_ATTR: "{:.14f}".format(scenery_object.pos.lon),
             self.PITCH_ATTR: "{:.6f}".format(0.0),
-            self.SNAP_TO_GROUND_ATTR: str(False),
-            self.SNAP_TO_NORMAL_ATTR: str(False)
+            self.SNAP_TO_GROUND_ATTR: str(False).upper(),
+            self.SNAP_TO_NORMAL_ATTR: str(False).upper()
         })
 
         Et.SubElement(scenery_object_elem, self.LIBRARY_OBJECT_TAG, attrib={
