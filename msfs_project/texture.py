@@ -20,7 +20,6 @@ import os
 
 from PIL import ImageEnhance
 from PIL.Image import merge
-from numpy.array_api import asarray
 
 from msfs_project.lod_resource import MsfsLodResource
 from msfs_project.gltf import MsfsGltf
@@ -85,6 +84,7 @@ class MsfsTexture(MsfsLodResource):
                 image = self.__adjust_brightness(image, float(settings.brightness))
                 image = self.__adjust_contrast(image, float(settings.contrast))
                 image = self.__adjust_saturation(image, float(settings.saturation))
+                image = self.__adjust_hue(image, float(settings.hue))
                 image.save(file_path)
         except:
             print("Colors adjustment failed")
@@ -97,12 +97,20 @@ class MsfsTexture(MsfsLodResource):
         model_file.update_image(self.idx, self.file, self.mime_type)
 
     def __adjust_colors(self, image, red_factor, green_factor, blue_factor):
+        image = image.convert(self.RGB_FORMAT)
         rr, gg, bb = image.split()
         rr = rr.point(lambda p: 0 if p == 0 else int(p * red_factor))
         gg = gg.point(lambda p: 0 if p == 0 else int(p * green_factor))
         bb = bb.point(lambda p: 0 if p == 0 else int(p * blue_factor))
         image = merge(self.RGB_FORMAT, (rr, gg, bb))
 
+        return image.convert(self.RGBA_FORMAT)
+
+    def __adjust_hue(self, image, deviation):
+        image = image.convert(self.HSV_FORMAT)
+        hh, ss, vv = image.split()
+        hh = hh.point(lambda p: 0 if p == 0 else int(p + deviation))
+        image = merge(self.HSV_FORMAT, (hh, ss, vv))
         return image.convert(self.RGBA_FORMAT)
 
     @staticmethod
