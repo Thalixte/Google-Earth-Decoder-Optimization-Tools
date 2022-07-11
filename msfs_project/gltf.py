@@ -84,6 +84,17 @@ class MsfsGltf:
             image[self.URI_TAG] = image[self.URI_TAG].replace(lod_name + "/", str())
             image[self.URI_TAG] = image[self.URI_TAG].replace(TEXTURE_FOLDER + "/", str())
 
+    def rename_texture(self, texture_name, new_texture_name):
+        if not self.data: return
+        if not self.IMAGES_TAG in self.data.keys(): return
+
+        for image in self.data[self.IMAGES_TAG]:
+            texture_name = texture_name.split(".")[0]
+            if image[self.NAME_TAG] == texture_name:
+                image[self.NAME_TAG] = new_texture_name.split(".")[0]
+                image[self.URI_TAG] = new_texture_name
+                return
+
     def add_texture_path(self):
         if not self.data: return
         if not self.IMAGES_TAG in self.data.keys(): return

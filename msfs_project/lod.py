@@ -26,7 +26,8 @@ from blender import import_model_files, bake_texture_files, fix_object_bounding_
 from constants import PNG_TEXTURE_FORMAT, JPG_TEXTURE_FORMAT, GLTF_FILE_PATTERN, GLTF_FILE_EXT, XML_FILE_EXT, TEXTURE_FOLDER
 from msfs_project.binary import MsfsBinary
 from msfs_project.texture import MsfsTexture
-from utils import backup_file, isolated_print, MsfsGltf
+from msfs_project.gltf import MsfsGltf
+from utils import backup_file, isolated_print
 from utils.minidom_xml import create_new_definition_file, add_new_lod
 
 
@@ -237,6 +238,19 @@ class MsfsLod:
 
     def calculate_height_data(self, lat, lon, altitude, height_adjustment, inverted=False, positioning_file_path="", water_mask_file_path="", ground_mask_file_path=""):
         return generate_model_height_data(os.path.join(self.folder, self.model_file), lat, lon, altitude, height_adjustment, inverted=inverted, positioning_file_path=positioning_file_path, water_mask_file_path=water_mask_file_path, ground_mask_file_path=ground_mask_file_path)
+
+    def fix_imported_texture_names(self):
+        file_path = os.path.join(self.folder, self.model_file)
+        model_file = MsfsGltf(file_path)
+
+        for i, texture in enumerate(self.textures):
+            file_suffix = "_" + str(i)
+            new_texture_name = self.name + file_suffix + os.path.splitext(texture.file)[1]
+            os.rename(os.path.join(texture.folder, texture.file), os.path.join(texture.folder, new_texture_name))
+            # update gltf model file
+            model_file.rename_texture(texture.file, new_texture_name)
+            model_file.dump()
+            texture.name = new_texture_name
 
     def __retrieve_gltf_resources(self):
         self.binaries = []

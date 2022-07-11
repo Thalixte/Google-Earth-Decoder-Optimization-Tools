@@ -19,7 +19,7 @@ import importlib
 import os
 
 from msfs_project.lod_resource import MsfsLodResource
-from utils import MsfsGltf
+from msfs_project.gltf import MsfsGltf
 
 
 class MsfsTexture(MsfsLodResource):

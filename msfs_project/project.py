@@ -1092,6 +1092,10 @@ class MsfsProject:
 
                 # reinitialize the tile to get the updated lod definitions
                 tile = MsfsTile(self.model_lib_folder, obj_file_name, obj_file_name + XML_FILE_EXT)
+
+                for lod in tile.lods:
+                    lod.fix_imported_texture_names()
+
                 tile.update_min_size_values(settings.target_min_size_values)
                 data = load_json_file(os.path.join(settings.decoder_output_path, obj_file_name + POS_FILE_EXT))
                 if data:

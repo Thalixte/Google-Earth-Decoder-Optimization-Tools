@@ -34,7 +34,8 @@ from blender.image import get_image_node, fix_texture_size_for_package_compilati
 from blender.memory import remove_mesh_from_memory
 from blender.material import set_msfs_material
 from constants import EOL, GEOIDS_DATASET_FOLDER, EGM2008_5_DATASET, OBJ_FILE_EXT
-from utils import ScriptError, isolated_print, MsfsGltf
+from msfs_project.gltf import MsfsGltf
+from utils import ScriptError, isolated_print
 from utils.progress_bar import ProgressBar
 
 SELECT_ACTION = "SELECT"

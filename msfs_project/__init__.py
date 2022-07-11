@@ -26,6 +26,7 @@ from .height_map import *
 from .landmark import *
 from .lod import *
 from .position import *
+from .gltf import *
 from .project_xml import *
 from .objects_xml import *
 from .object_xml import *
