@@ -1094,6 +1094,7 @@ class MsfsProject:
                 tile = MsfsTile(self.model_lib_folder, obj_file_name, obj_file_name + XML_FILE_EXT)
 
                 for lod in tile.lods:
+                    lod.adjust_texture_colors(settings)
                     lod.fix_imported_texture_names()
 
                 tile.update_min_size_values(settings.target_min_size_values)

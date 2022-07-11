@@ -50,6 +50,16 @@ class Settings:
     landmark_offset: float
     sections = list
     decoder_output_path = str
+    red_level: float
+    green_level: float
+    blue_level: float
+    brightness: float
+    contrast: float
+    saturation: float
+    hue: float
+
+    LODS_SECTION = "LODS"
+    TARGET_MIN_SIZE_VALUES_SETTING = "target_min_size_values"
 
     def __init__(self, sources_path=str()):
         self.sources_path = sources_path
@@ -77,6 +87,13 @@ class Settings:
         self.landmark_offset = 0.0
         self.sections = []
         self.decoder_output_path = str()
+        self.red_level = 1.0
+        self.green_level = 1.0
+        self.blue_level = 1.0
+        self.brightness = 1.0
+        self.contrast = 1.0
+        self.saturation = 1.0
+        self.hue = 1.0
 
         config = cp.ConfigParser()
         if os.path.isfile(INI_FILE):
@@ -120,6 +137,14 @@ class Settings:
 
         self.landmark_offset = "{:.9f}".format(float(str(self.landmark_offset))).rstrip("0").rstrip(".")
 
+        self.red_level = "{:.2f}".format(float(str(self.red_level))).rstrip("0").rstrip(".")
+        self.green_level = "{:.2f}".format(float(str(self.green_level))).rstrip("0").rstrip(".")
+        self.blue_level = "{:.2f}".format(float(str(self.blue_level))).rstrip("0").rstrip(".")
+        self.brightness = "{:.2f}".format(float(str(self.brightness))).rstrip("0").rstrip(".")
+        self.contrast = "{:.2f}".format(float(str(self.contrast))).rstrip("0").rstrip(".")
+        self.saturation = "{:.2f}".format(float(str(self.saturation))).rstrip("0").rstrip(".")
+        self.hue = "{:.2f}".format(float(str(self.hue))).rstrip("0").rstrip(".")
+
         if self.definition_file_to_merge == str() and self.project_path_to_merge != str():
             self.definition_file_to_merge = os.path.basename(self.project_path_to_merge).capitalize() + XML_FILE_EXT
 
@@ -134,7 +159,7 @@ class Settings:
             for name, value in config.items(section_name):
                 config.set(section_name, name, str(getattr(self, name)))
 
-        config.set("LODS", "target_min_size_values", ", ".join(self.target_min_size_values))
+        config.set(self.LODS_SECTION, self.TARGET_MIN_SIZE_VALUES_SETTING, ", ".join(self.target_min_size_values))
 
         with open(os.path.join(self.sources_path, INI_FILE), "w", encoding=ENCODING) as configfile:
             config.write(configfile)

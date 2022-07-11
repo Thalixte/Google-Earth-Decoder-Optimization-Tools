@@ -18,6 +18,10 @@
 import importlib
 import os
 
+from PIL import ImageEnhance
+from PIL.Image import merge
+from numpy.array_api import asarray
+
 from msfs_project.lod_resource import MsfsLodResource
 from msfs_project.gltf import MsfsGltf
 
@@ -28,6 +32,13 @@ class MsfsTexture(MsfsLodResource):
 
     RGB_FORMAT = "RGB"
     RGBA_FORMAT = "RGBA"
+    HSV_FORMAT = "HSV"
+    RED_RGB_IDX = 0
+    GREEN_RGB_IDX = 1
+    BLUE_RGB_IDX = 2
+    HUE_IDX = 0
+    SATURATION_IDX = 1
+    VALUE_IDX = 2
 
     def __init__(self, idx, model_file_path, folder, file, mime_type=str()):
         super().__init__(model_file_path, folder, file)
@@ -60,8 +71,51 @@ class MsfsTexture(MsfsLodResource):
 
         return True
 
+    def adjust_colors(self, settings):
+        import PIL
+        importlib.reload(PIL)
+        from PIL import Image
+
+        try:
+            file_path = os.path.join(self.folder, self.file)
+
+            if os.path.isfile(file_path):
+                image = Image.open(file_path)
+                image = self.__adjust_colors(image, float(settings.red_level), float(settings.green_level), float(settings.blue_level))
+                image = self.__adjust_brightness(image, float(settings.brightness))
+                image = self.__adjust_contrast(image, float(settings.contrast))
+                image = self.__adjust_saturation(image, float(settings.saturation))
+                image.save(file_path)
+        except:
+            print("Colors adjustment failed")
+            return False
+
+        return True
+
     def __update_model_file(self):
         model_file = MsfsGltf(os.path.join(self.model_file_path))
         model_file.update_image(self.idx, self.file, self.mime_type)
 
+    def __adjust_colors(self, image, red_factor, green_factor, blue_factor):
+        rr, gg, bb = image.split()
+        rr = rr.point(lambda p: 0 if p == 0 else int(p * red_factor))
+        gg = gg.point(lambda p: 0 if p == 0 else int(p * green_factor))
+        bb = bb.point(lambda p: 0 if p == 0 else int(p * blue_factor))
+        image = merge(self.RGB_FORMAT, (rr, gg, bb))
 
+        return image.convert(self.RGBA_FORMAT)
+
+    @staticmethod
+    def __adjust_brightness(image, factor):
+        enhancer = ImageEnhance.Brightness(image)
+        return enhancer.enhance(factor)
+
+    @staticmethod
+    def __adjust_contrast(image, factor):
+        enhancer = ImageEnhance.Contrast(image)
+        return enhancer.enhance(factor)
+
+    @staticmethod
+    def __adjust_saturation(image, factor):
+        enhancer = ImageEnhance.Color(image)
+        return enhancer.enhance(factor)

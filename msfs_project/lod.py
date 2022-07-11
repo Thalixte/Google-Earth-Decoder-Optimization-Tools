@@ -252,6 +252,10 @@ class MsfsLod:
             model_file.dump()
             texture.name = new_texture_name
 
+    def adjust_texture_colors(self, settings):
+        for i, texture in enumerate(self.textures):
+            texture.adjust_colors(settings)
+
     def __retrieve_gltf_resources(self):
         self.binaries = []
         self.textures = []
