@@ -15,6 +15,7 @@
 #  #
 #
 #  <pep8 compliant>
+import shutil
 
 from utils import Settings, get_sources_path, reload_modules, isolated_print
 
@@ -36,6 +37,15 @@ def import_old_google_earth_decoder_tiles(script_settings):
     try:
         # instantiate the msfsProject and create the necessary resources if it does not exist
         msfs_project = MsfsProject(script_settings.projects_path, script_settings.project_name, script_settings.definition_file, script_settings.author_name, script_settings.sources_path, fast_init=True)
+
+        try: shutil.rmtree(msfs_project.model_lib_folder, ignore_errors=True)
+        except: pass
+
+        try: shutil.rmtree(msfs_project.scene_folder, ignore_errors=True)
+        except: pass
+
+        try: shutil.rmtree(msfs_project.texture_folder, ignore_errors=True)
+        except: pass
 
         if not os.path.isdir(msfs_project.model_lib_folder):
             os.makedirs(msfs_project.model_lib_folder, exist_ok=True)
