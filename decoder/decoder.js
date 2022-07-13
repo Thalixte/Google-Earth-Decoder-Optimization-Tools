@@ -7702,7 +7702,13 @@
     	
     function getMetaUrl(rootPath, childPath, epoch)
     {
-        return metaPath + rootPath + childPath + '!2u' + epoch;
+        return metaPath + rootPath + childPath + '!2u928';
+    }
+
+    function getAltDataUrl(data, index, childPath)
+    {
+        var result = dataPath + data.headNodePath + childPath + '!2u896' + '!2e6';
+        return result + '!4b' + (data.availableViewDirectionsArray == null ? data.defaultAvailableViewDirections : data.availableViewDirectionsArray[index]);
     }
 
     function getDataUrl(data, index, childPath)
@@ -8136,14 +8142,18 @@
                     if (!(data.c.flags[value] & 8) && currentLod <= maxLod && currentLod >= minLod)
                     {
                         let dataUrl = getDataUrl(data.c, value, key);
+                        let altDataUrl = getAltDataUrl(data.c, value, key);
 
                         if( currentLod == minLod)
                         {
                             minLodIsInRange.push(dataId)
                         }
 
-                        console.log("Data url: " + dataUrl);
-                        await loadData(dataUrl).then(data => writeObj(outputFolder, dataId, data));
+                        console.log("alt Data url: " + dataUrl);
+                        await loadData(altDataUrl).then(data => writeObj(outputFolder, dataId, data));
+
+//                        console.log("Data url: " + dataUrl);
+//                        await loadData(dataUrl).then(data => writeObj(outputFolder, dataId, data));
                     }
                     if (key.length == 4 && !(data.c.flags[value] & 8) && currentLod <= minLod)
                     {
@@ -8186,10 +8196,12 @@
     var maxLod = 19;
     // Maximum lod for which data is downloaded.
     var minLod = 17;
-	var lat = 51.211897502440074;
-	var lon = 4.4131196512073005;
-	var l = 1000.0;
-	var w = 1000.0;
+//	var lat = 51.211897502440074;
+//	var lon = 4.4131196512073005;
+	var lat = 51.221812;
+	var lon = 4.440807;
+	var l = 2000.0;
+	var w = 2000.0;
 
 
     // Output folder

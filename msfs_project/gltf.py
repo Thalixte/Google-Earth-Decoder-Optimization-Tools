@@ -212,7 +212,7 @@ class MsfsGltf:
             return result
 
         if self.MESHES_TAG in self.data.keys():
-            for mesh in self.data[self.MESHES_TAG]:
+            for mesh in self.data[self.NODES_TAG]:
                 if self.NAME_TAG in mesh.keys():
                     result.append(mesh[self.NAME_TAG].split("_", 1)[0])
 

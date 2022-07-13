@@ -69,6 +69,7 @@ class MsfsTile(MsfsSceneObject):
         new_collider = None
         for idx, lod in enumerate(self.lods):
             if idx < (len(self.lods) - 1): continue
+            if not os.path.isfile(os.path.join(lod.folder, lod.model_file)): continue
             collider_model_file = self.name + COLLIDER_SUFFIX + GLTF_FILE_EXT
             collider_definition_file_name = self.name + COLLIDER_SUFFIX + XML_FILE_EXT
             lod.create_collider(collider_model_file)
@@ -78,6 +79,9 @@ class MsfsTile(MsfsSceneObject):
         return new_collider
 
     def define_max_coords(self, other_coords):
+        if not self.coords: return tuple([0, 0, 0, 0])
+        if not other_coords: return self.coords
+
         n1, s1, w1, e1 = self.coords
         n2, s2, w2, e2 = other_coords
 
@@ -147,23 +151,26 @@ class MsfsTile(MsfsSceneObject):
 
     def __calculate_coords(self):
         self.coords = get_coords_from_file_name(self.name)
-        lod = self.lods[0]
-        subtiles = lod.get_subtiles()
+        if self.lods:
+            lod = self.lods[0]
+            subtiles = lod.get_subtiles()
 
-        for subtile in subtiles:
-            subtile_coords = get_coords_from_file_name(subtile, is_subtile=True)
-            if subtile_coords:
-                self.coords = self.define_max_coords(subtile_coords)
+            for subtile in subtiles:
+                subtile_coords = get_coords_from_file_name(subtile, is_subtile=True)
+                if subtile_coords:
+                    self.coords = self.define_max_coords(subtile_coords)
 
     def __calculate_pos(self):
         result = get_position_from_file_name(self.name)
-        lod = self.lods[0]
-        subtiles = lod.get_subtiles()
 
-        for subtile in subtiles:
-            subtile_pos = get_position_from_file_name(subtile, is_subtile=True)
-            if subtile_pos:
-                result = self.__define_min_pos(result, subtile_pos)
+        if self.lods:
+            lod = self.lods[0]
+            subtiles = lod.get_subtiles()
+
+            for subtile in subtiles:
+                subtile_pos = get_position_from_file_name(subtile, is_subtile=True)
+                if subtile_pos:
+                    result = self.__define_min_pos(result, subtile_pos)
 
         return result
 

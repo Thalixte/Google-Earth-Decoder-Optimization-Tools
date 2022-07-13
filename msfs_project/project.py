@@ -252,7 +252,8 @@ class MsfsProject:
         for tile in self.tiles.values():
             tile_guid = tile.xml.guid
             new_collider = tile.add_collider()
-            self.__add_object_in_objects_xml(tile_guid, new_collider)
+            if new_collider is not None:
+                self.__add_object_in_objects_xml(tile_guid, new_collider)
             pbar.update("collider added for %s tile" % tile.name)
 
     def split_tiles(self):

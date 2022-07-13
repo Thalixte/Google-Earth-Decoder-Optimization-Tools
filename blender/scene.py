@@ -135,12 +135,19 @@ def convert_obj_file_to_gltf_file(file, output_folder, texture_folder, depth):
         for i in range(0, current_depth-1):
             name_filter = name_filter + SUB_TILES_RANGE
         for lod_file in Path(file_path).glob(name_filter + OBJ_FILE_EXT):
+            lod_file_name = os.path.basename(lod_file).replace(OBJ_FILE_EXT, str())
+            prior_objects = [obj for obj in bpy.context.scene.objects]
             bpy.ops.import_scene.obj(filepath=str(lod_file), axis_up='Z', axis_forward='-X')
+            new_current_objects = [obj for obj in bpy.context.scene.objects]
+            new_objects = set(new_current_objects) - set(prior_objects)
+            for i, obj in enumerate(new_objects):
+                obj.name = lod_file_name + "_" + str(i)
 
         set_msfs_material()
         current_name = file_name + TILE_LOD_SUFFIX + str(depth - current_depth)
         bpy.ops.export_scene.gltf(export_format=GLTF_SEPARATE_EXPORT_FORMAT, filepath=output_folder + os.path.sep + current_name, export_texture_dir=texture_folder)
         current_depth -= 1
+        clean_scene()
 
 
 ##################################################################
