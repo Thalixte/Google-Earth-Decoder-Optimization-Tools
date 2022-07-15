@@ -16,12 +16,15 @@
 #
 #  <pep8 compliant>
 
+import pandas as pd
+import geopandas as gpd
+
 from uuid import uuid4
 
 from shapely.geometry import Polygon, MultiPolygon
 
-from constants import TERRAFORMING_POLYGONS_DISPLAY_NAME
-from utils import SHAPELY_TYPE
+from constants import TERRAFORMING_POLYGONS_DISPLAY_NAME, GEOMETRY_OSM_COLUMN
+from utils import SHAPELY_TYPE, clip_gdf, EPSG
 
 
 class MsfsShapeAttribute:
@@ -81,7 +84,7 @@ class MsfsShapePolygon:
     airport_size = MsfsShapeAttribute
     layer = MsfsShapeAttribute
 
-    def __init__(self, polygon=None, xml=None, elem=None, parent_group_id=None, group_index=None, flatten=False, exclude_buildings=False, exclude_roads=False, exclude_vegetation=False):
+    def __init__(self, polygon=None, tiles=None, xml=None, elem=None, parent_group_id=None, group_index=None, flatten=False, exclude_buildings=False, exclude_roads=False, exclude_vegetation=False):
         self.tag = SHAPELY_TYPE.polygon
         self.altitude = 0.0
         self.parent_group_id = parent_group_id
@@ -108,12 +111,12 @@ class MsfsShapePolygon:
         self.layer = MsfsShapeAttribute(name="Layer", guid="{9E2B4C3E-7D84-453F-9DCC-B6498FF46703}", type=self.SHAPE_ATTRIBUTE_TYPE.uint32, value="1")
 
         if polygon is not None:
-            self.__init_from_polygon(polygon, flatten=flatten, exclude_buildings=exclude_buildings, exclude_roads=exclude_roads, exclude_vegetation=exclude_vegetation)
+            self.__init_from_polygon(polygon, tiles=tiles, flatten=flatten, exclude_buildings=exclude_buildings, exclude_roads=exclude_roads, exclude_vegetation=exclude_vegetation)
 
         if xml is not None and elem is not None:
             self.__init_from_xml(xml, elem)
 
-    def __init_from_polygon(self, polygon, flatten=False, exclude_buildings=False, exclude_roads=False, exclude_vegetation=False):
+    def __init_from_polygon(self, polygon, tiles=None, flatten=False, exclude_buildings=False, exclude_roads=False, exclude_vegetation=False):
         self.unique_guid.value = uuid4()
         self.exclude_detected_buildings.value = "1" if exclude_buildings else "0"
         self.exclude_osm_buildings.value = "1" if exclude_buildings else "0"
@@ -135,6 +138,9 @@ class MsfsShapePolygon:
             self.flatten_mode,
             self.flatten_falloff
         ]
+
+        if tiles is not None:
+            self.__find_altitude_from_tiles(polygon, tiles)
 
         if exclude_vegetation:
             self.vegetation_scale.value = "0"
@@ -158,6 +164,12 @@ class MsfsShapePolygon:
         vertices = xml.find_polygon_vertices(elem)
         for vertice in vertices:
             self.vertices.append(self.__set_vertice_from_xml(xml, vertice))
+
+    def __find_altitude_from_tiles(self, polygon, tiles):
+        coords = (polygon.centroid.coords.xy[1][0], polygon.centroid.xy[1][0], polygon.centroid.xy[0][0], polygon.centroid.xy[0][0])
+        for tile in tiles.values():
+            if tile.contains(coords):
+                self.altitude = min(self.altitude, tile.pos.alt)
 
     @staticmethod
     def __set_vertice_from_xml(xml, elem):
@@ -203,11 +215,11 @@ class MsfsShapes:
     polygons: list
     group: MsfsShapeGroup
 
-    def __init__(self, shape_gdf=None, xml=None, group_display_name=TERRAFORMING_POLYGONS_DISPLAY_NAME, group_id=None, flatten=False, exclude_buildings=False, exclude_roads=False, exclude_vegetation=False):
+    def __init__(self, shape_gdf=None, xml=None, group_display_name=TERRAFORMING_POLYGONS_DISPLAY_NAME, group_id=None, tiles=None, flatten=False, exclude_buildings=False, exclude_roads=False, exclude_vegetation=False):
         self.polygons = []
 
         if shape_gdf is not None:
-            self.__init_from_gdf(shape_gdf, group_display_name, group_id, flatten=flatten, exclude_buildings=exclude_buildings, exclude_roads=exclude_roads, exclude_vegetation=exclude_vegetation)
+            self.__init_from_gdf(shape_gdf, group_display_name, group_id, tiles=tiles, flatten=flatten, exclude_buildings=exclude_buildings, exclude_roads=exclude_roads, exclude_vegetation=exclude_vegetation)
 
         if xml is not None:
             self.__init_from_xml(xml, group_display_name)
@@ -219,7 +231,7 @@ class MsfsShapes:
     def remove_from_xml(xml, group_name):
         xml.remove_shapes(group_name)
 
-    def __init_from_gdf(self, shape_gdf, group_display_name, group_id, flatten=False, exclude_buildings=False, exclude_roads=False, exclude_vegetation=False):
+    def __init_from_gdf(self, shape_gdf, group_display_name, group_id, tiles=None, flatten=False, exclude_buildings=False, exclude_roads=False, exclude_vegetation=False):
         self.group = MsfsShapeGroup(group_display_name=group_display_name, group_id=group_id)
 
         for index, row in shape_gdf.iterrows():
@@ -233,7 +245,7 @@ class MsfsShapes:
 
             group_index = index[1]+1 if isinstance(index, list) or isinstance(index, tuple) else index+1
             for polygon in polygons:
-                self.polygons.append(MsfsShapePolygon(polygon=polygon, parent_group_id=group_id, group_index=group_index, flatten=flatten, exclude_buildings=exclude_buildings, exclude_roads=exclude_roads, exclude_vegetation=exclude_vegetation))
+                self.polygons.append(MsfsShapePolygon(polygon=polygon, tiles=tiles, parent_group_id=group_id, group_index=group_index, flatten=flatten, exclude_buildings=exclude_buildings, exclude_roads=exclude_roads, exclude_vegetation=exclude_vegetation))
 
     def __init_from_xml(self, xml, group_name):
         polygons = xml.find_polygons(group_name=group_name)

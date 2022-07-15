@@ -964,7 +964,7 @@ class MsfsProject:
         new_group_id = self.objects_xml.get_new_group_id()
         self.shapes[EXCLUSION_BUILDING_POLYGONS_DISPLAY_NAME] = MsfsShapes(shape_gdf=exclusion_building_polygons, group_display_name=EXCLUSION_BUILDING_POLYGONS_DISPLAY_NAME, group_id=new_group_id + 1, exclude_buildings=True)
         self.shapes[EXCLUSION_VEGETATION_POLYGONS_DISPLAY_NAME] = MsfsShapes(shape_gdf=exclusion_vegetation_polygons, group_display_name=EXCLUSION_VEGETATION_POLYGONS_DISPLAY_NAME, group_id=new_group_id + 2, exclude_vegetation=True)
-        self.shapes[TERRAFORMING_POLYGONS_DISPLAY_NAME] = MsfsShapes(shape_gdf=terraform_polygons, group_display_name=TERRAFORMING_POLYGONS_DISPLAY_NAME, group_id=new_group_id, flatten=True)
+        self.shapes[TERRAFORMING_POLYGONS_DISPLAY_NAME] = MsfsShapes(shape_gdf=terraform_polygons, group_display_name=TERRAFORMING_POLYGONS_DISPLAY_NAME, group_id=new_group_id, tiles=self.tiles, flatten=True)
 
         # reload the xml file to retrieve the last updates
         self.objects_xml = ObjectsXml(self.scene_folder, self.SCENE_OBJECTS_FILE)
