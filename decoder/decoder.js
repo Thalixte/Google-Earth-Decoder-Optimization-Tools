@@ -7697,18 +7697,13 @@
 
     var metaPath = 'https://kh.google.com/rt/earth/BulkMetadata/pb=!1m2!1s';
     var dataPath = 'https://kh.google.com/rt/earth/NodeData/pb=!1m2!1s';
-    var rootMeta = 'https://kh.google.com/rt/earth/BulkMetadata/pb=!1m2!1s!2u874';
+    // fix to retrieve the last versioned Google Earth metadata
+    var rootMeta = 'https://kh.google.com/rt/earth/BulkMetadata/pb=!1m2!1s!2u000';
     var earthRadius = 6370995;
     	
     function getMetaUrl(rootPath, childPath, epoch)
     {
-        return metaPath + rootPath + childPath + '!2u928';
-    }
-
-    function getAltDataUrl(data, index, childPath)
-    {
-        var result = dataPath + data.headNodePath + childPath + '!2u896' + '!2e6';
-        return result + '!4b' + (data.availableViewDirectionsArray == null ? data.defaultAvailableViewDirections : data.availableViewDirectionsArray[index]);
+        return metaPath + rootPath + childPath + '!2u' + epoch;
     }
 
     function getDataUrl(data, index, childPath)
@@ -8142,18 +8137,14 @@
                     if (!(data.c.flags[value] & 8) && currentLod <= maxLod && currentLod >= minLod)
                     {
                         let dataUrl = getDataUrl(data.c, value, key);
-                        let altDataUrl = getAltDataUrl(data.c, value, key);
 
                         if( currentLod == minLod)
                         {
                             minLodIsInRange.push(dataId)
                         }
 
-                        console.log("alt Data url: " + dataUrl);
-                        await loadData(altDataUrl).then(data => writeObj(outputFolder, dataId, data));
-
-//                        console.log("Data url: " + dataUrl);
-//                        await loadData(dataUrl).then(data => writeObj(outputFolder, dataId, data));
+                        console.log("Data url: " + dataUrl);
+                        await loadData(dataUrl).then(data => writeObj(outputFolder, dataId, data));
                     }
                     if (key.length == 4 && !(data.c.flags[value] & 8) && currentLod <= minLod)
                     {
