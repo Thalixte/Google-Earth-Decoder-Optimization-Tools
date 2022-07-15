@@ -144,6 +144,9 @@ def convert_obj_file_to_gltf_file(file, output_folder, texture_folder, depth):
                 obj.name = lod_file_name + "_" + str(i)
 
         set_msfs_material()
+        # fix tile optimization placement by applying rotation on the imported tile
+        bpy.ops.object.select_all(action=SELECT_ACTION)
+        bpy.ops.object.transform_apply(location=False, rotation=True, scale=False)
         current_name = file_name + TILE_LOD_SUFFIX + str(depth - current_depth)
         bpy.ops.export_scene.gltf(export_format=GLTF_SEPARATE_EXPORT_FORMAT, filepath=output_folder + os.path.sep + current_name, export_texture_dir=texture_folder)
         current_depth -= 1
