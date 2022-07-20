@@ -25,7 +25,7 @@ from osmnx.utils_geo import bbox_to_poly
 from shapely.geometry import Polygon, JOIN_STYLE, CAP_STYLE, MultiPolygon, LineString, MultiPoint, Point, mapping
 from shapely.ops import linemerge, unary_union, polygonize, nearest_points
 
-from constants import GEOMETRY_OSM_COLUMN, BOUNDING_BOX_OSM_KEY, SHAPE_TEMPLATES_FOLDER, OSM_LAND_SHAPEFILE, ROADS_OSM_KEY, BRIDGE_OSM_TAG, SERVICE_OSM_KEY, SLIPWAY_OSM_TAG, NOT_SHORE_WATER_OSM_KEY, WATER_OSM_KEY, NATURAL_OSM_KEY, OSM_TAGS, FOOTWAY_OSM_TAG, PATH_OSM_TAG, PEDESTRIAN_OSM_TAG, MAN_MADE_OSM_KEY, PIER_OSM_TAG, GOLF_OSM_KEY, FAIRWAY_OSM_TAG, EOL, CEND
+from constants import GEOMETRY_OSM_COLUMN, BOUNDING_BOX_OSM_KEY, SHAPE_TEMPLATES_FOLDER, OSM_LAND_SHAPEFILE, ROADS_OSM_KEY, BRIDGE_OSM_TAG, SERVICE_OSM_KEY, SLIPWAY_OSM_TAG, NOT_SHORE_WATER_OSM_KEY, WATER_OSM_KEY, NATURAL_OSM_KEY, OSM_TAGS, FOOTWAY_OSM_TAG, PATH_OSM_TAG, PEDESTRIAN_OSM_TAG, MAN_MADE_OSM_KEY, PIER_OSM_TAG, GOLF_OSM_KEY, FAIRWAY_OSM_TAG, EOL, CEND, TUNNEL_OSM_TAG, SEAMARK_TYPE_OSM_TAG
 from utils import pr_bg_orange
 from utils.progress_bar import ProgressBar
 from utils.geometry import close_holes, extend_line
@@ -135,12 +135,12 @@ def load_gdf_from_geocode(geocode, keep_data=False):
         result = ox.geocode_to_gdf(geocode)
     except ValueError:
         pr_bg_orange("Geocode (" + geocode + ") not found in OSM data" + EOL + CEND)
-        return
+        return gpd.GeoDataFrame(columns=[GEOMETRY_OSM_COLUMN], geometry=GEOMETRY_OSM_COLUMN)
 
     if keep_data:
         return result
 
-    result = resize_gdf(result, 2.5)
+    result = resize_gdf(result, 5)
 
     if not result.empty:
         result = result[[GEOMETRY_OSM_COLUMN]]
@@ -171,6 +171,10 @@ def load_gdf(coords, key, tags, shp_file_path="", is_roads=False, is_buildings=F
                 keys.append(GOLF_OSM_KEY)
 
         if is_roads:
+            if SEAMARK_TYPE_OSM_TAG in result:
+                keys.append(SEAMARK_TYPE_OSM_TAG)
+            if TUNNEL_OSM_TAG in result:
+                keys.append(TUNNEL_OSM_TAG)
             if BRIDGE_OSM_TAG in result:
                 keys.append(BRIDGE_OSM_TAG)
             if SERVICE_OSM_KEY in result:
@@ -198,6 +202,9 @@ def load_gdf(coords, key, tags, shp_file_path="", is_roads=False, is_buildings=F
 
 
 def prepare_gdf(gdf):
+    if gdf is None:
+        return None
+
     result = gdf.copy()
 
     if not result.empty:
@@ -207,36 +214,50 @@ def prepare_gdf(gdf):
 
 
 def prepare_roads_gdf(gdf):
-    result = gdf.copy()
-    has_pier = False
+    result = gpd.GeoDataFrame(columns=[GEOMETRY_OSM_COLUMN], geometry=GEOMETRY_OSM_COLUMN, crs=EPSG.key + str(EPSG.WGS84_degree_unit))
+    roads = gdf.copy()
+    has_bridge = False
     has_bridge_path = False
+    has_seamark_bridge = False
+    bridge = None
+    bridge_path = None
+    seamark_bridge = None
 
-    if not result.empty:
-        result = result[~result[GEOMETRY_OSM_COLUMN].isna()]
-
-        # fix for pier footways
-        if MAN_MADE_OSM_KEY in result:
-            pier = result[(result[ROADS_OSM_KEY] == FOOTWAY_OSM_TAG) & (result[MAN_MADE_OSM_KEY] == PIER_OSM_TAG)]
-            pier = pier.append(result[(result[ROADS_OSM_KEY] == FOOTWAY_OSM_TAG) & (result[BRIDGE_OSM_TAG] == "yes")])
-            pier = resize_gdf(pier, 12, single_sided=False)
-            has_pier = not pier.empty
+    if not roads.empty:
+        roads = roads[~roads[GEOMETRY_OSM_COLUMN].isna()]
 
         # fix for bridge paths
-        if BRIDGE_OSM_TAG in result:
-            bridge_path = result[(result[ROADS_OSM_KEY] == PATH_OSM_TAG) & (result[BRIDGE_OSM_TAG] == "yes")]
+        if BRIDGE_OSM_TAG in roads:
+            bridge_path = roads[(roads[ROADS_OSM_KEY] == PATH_OSM_TAG) & (roads[BRIDGE_OSM_TAG] == "yes")]
             has_bridge_path = not bridge_path.empty
 
-        result = resize_gdf(result, 22, single_sided=False)
-        result = result[~(result[SERVICE_OSM_KEY] == SLIPWAY_OSM_TAG)]
-        result = result[~(result[ROADS_OSM_KEY] == FOOTWAY_OSM_TAG)]
-        result = result[~(result[ROADS_OSM_KEY] == PEDESTRIAN_OSM_TAG)]
         if not has_bridge_path:
-            result = result[~(result[ROADS_OSM_KEY] == PATH_OSM_TAG)]
+            roads = roads[~(roads[ROADS_OSM_KEY] == PATH_OSM_TAG)]
+
+        if TUNNEL_OSM_TAG in result:
+            roads = roads[~(roads[TUNNEL_OSM_TAG] == "yes")]
+
+        if BRIDGE_OSM_TAG in result:
+            bridge = roads[(roads[BRIDGE_OSM_TAG] == "yes") | (roads[BRIDGE_OSM_TAG] == "movable")]
+            has_bridge = True
+
+        if SEAMARK_TYPE_OSM_TAG in result:
+            seamark_bridge = roads[(roads[SEAMARK_TYPE_OSM_TAG] == BRIDGE_OSM_TAG)]
+            has_seamark_bridge = True
+
+        if has_bridge:
+            result = result.append(bridge)
+
+        if has_bridge_path:
+            result = result.append(bridge_path)
+
+        if has_seamark_bridge:
+            result = result.append(seamark_bridge)
+
+        result = resize_gdf(result, 22, single_sided=False)
+
         result = result[(result.geom_type == SHAPELY_TYPE.polygon) | (result.geom_type == SHAPELY_TYPE.multiPolygon)]
         result[GEOMETRY_OSM_COLUMN] = result[GEOMETRY_OSM_COLUMN].buffer(0)
-
-        if has_pier:
-            result = result.append(pier)
 
     return result
 
@@ -262,13 +283,26 @@ def prepare_golf_gdf(gdf):
     return result[[GEOMETRY_OSM_COLUMN]].dissolve()
 
 
+def prepare_park_gdf(gdf):
+    if gdf is None:
+        return gpd.GeoDataFrame(columns=[GEOMETRY_OSM_COLUMN], geometry=GEOMETRY_OSM_COLUMN)
+
+    result = gdf.copy()
+
+    if not result.empty:
+        result = result[(result.geom_type == SHAPELY_TYPE.polygon) | (result.geom_type == SHAPELY_TYPE.multiPolygon)]
+        result = resize_gdf(result, 10)
+
+    return result
+
+
 def prepare_bbox_gdf(bbox, land_mass, boundary):
     result = clip_gdf(bbox, land_mass)
     result = clip_gdf(result, boundary)
     return resize_gdf(result, 20)
 
 
-def prepare_buildings_gdf(gdf, key):
+def prepare_buildings_gdf(gdf):
     result = gdf.copy()
 
     if not result.empty:
@@ -278,8 +312,8 @@ def prepare_buildings_gdf(gdf, key):
     return result
 
 
-def create_land_mass_gdf(bbox, b):
-    result = gpd.read_file(os.path.join(SHAPE_TEMPLATES_FOLDER, OSM_LAND_SHAPEFILE), bbox=b).clip(bbox.geometry)
+def create_land_mass_gdf(sources_path, bbox, b):
+    result = gpd.read_file(os.path.join(sources_path, os.path.join(SHAPE_TEMPLATES_FOLDER, OSM_LAND_SHAPEFILE)), bbox=b).clip(bbox.geometry)
     return result[[GEOMETRY_OSM_COLUMN]].dissolve()
 
 
@@ -337,12 +371,14 @@ def create_water_exclusion_gdf(natural_water, water, sea, roads):
     return result.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)
 
 
-def create_ground_exclusion_gdf(landuse, leisure, natural, aeroway, roads):
+def create_ground_exclusion_gdf(landuse, leisure, natural, aeroway, roads, park, airport):
     result = gpd.GeoDataFrame(columns=[GEOMETRY_OSM_COLUMN], geometry=GEOMETRY_OSM_COLUMN)
     result = union_gdf(result, landuse)
     result = union_gdf(result, leisure)
     result = union_gdf(result, natural)
     result = union_gdf(result, aeroway)
+    result = union_gdf(result, park)
+    result = union_gdf(result, airport)
 
     if not roads.empty and BRIDGE_OSM_TAG in roads:
         bridges = roads[roads[BRIDGE_OSM_TAG] == "yes"]
@@ -367,18 +403,20 @@ def create_shore_water_gdf(orig_water, orig_natural_water, sea, bbox):
     return result.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)
 
 
-def create_terraform_polygons_gdf(pitch, construction, golf):
-    terraform_gdf = union_gdf(pitch, construction)
-    # terraform_gdf = union_gdf(terraform_gdf, golf)
+def create_terraform_polygons_gdf(gdf, ground_exclusion):
+    terraform_gdf = gdf.copy()
+    terraform_gdf = difference_gdf(terraform_gdf, ground_exclusion)
     result = preserve_holes(resize_gdf(terraform_gdf, -10), split_method=PRESERVE_HOLES_METHOD.derivation_split)
     return result.dissolve()
 
 
-def create_exclusion_building_polygons_gdf(bbox, exclusion):
+def create_exclusion_building_polygons_gdf(bbox, exclusion, park, airport):
     adjusted_exclusion = resize_gdf(exclusion, 20)
     adjusted_exclusion = union_gdf(bbox, adjusted_exclusion)
+    adjusted_exclusion = difference_gdf(adjusted_exclusion, park)
+    adjusted_exclusion = difference_gdf(adjusted_exclusion, airport)
     result = preserve_holes(adjusted_exclusion, split_method=PRESERVE_HOLES_METHOD.derivation_split)
-    return result.dissolve()
+    return result
 
 
 def create_exclusion_vegetation_polygons_gdf(exclusion):

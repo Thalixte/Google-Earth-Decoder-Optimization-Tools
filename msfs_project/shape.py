@@ -16,15 +16,12 @@
 #
 #  <pep8 compliant>
 
-import pandas as pd
-import geopandas as gpd
-
 from uuid import uuid4
 
 from shapely.geometry import Polygon, MultiPolygon
 
-from constants import TERRAFORMING_POLYGONS_DISPLAY_NAME, GEOMETRY_OSM_COLUMN
-from utils import SHAPELY_TYPE, clip_gdf, EPSG
+from constants import PITCH_TERRAFORM_POLYGONS_DISPLAY_NAME
+from utils import SHAPELY_TYPE
 
 
 class MsfsShapeAttribute:
@@ -187,7 +184,7 @@ class MsfsShapeGroup:
     group_id: int
     group_generated: bool
 
-    def __init__(self, xml=None, elem=None, group_display_name=TERRAFORMING_POLYGONS_DISPLAY_NAME, group_id=None):
+    def __init__(self, xml=None, elem=None, group_display_name=PITCH_TERRAFORM_POLYGONS_DISPLAY_NAME, group_id=None):
         self.tag = "Group"
         self.display_name = group_display_name
         self.group_index = 1
@@ -206,16 +203,19 @@ class MsfsShapeGroup:
         groups = xml.root.findall(xml.PARENT_GROUP_SEARCH_PATTERN + elem.get(xml.PARENT_GROUP_ID_ATTR) + xml.PATTERN_SUFFIX)
         for group in groups:
             self.display_name = group.get(xml.DISPLAY_NAME_ATTR)
-            self.group_index = int(group.get(xml.GROUP_INDEX_ATTR))
-            self.group_id = int(group.get(xml.GROUP_ID_ATTR))
-            self.group_generated = bool(group.get(xml.GROUP_GENERATED_ATTR))
+            if group.get(xml.GROUP_INDEX_ATTR) is not None:
+                self.group_index = int(group.get(xml.GROUP_INDEX_ATTR))
+            if group.get(xml.GROUP_ID_ATTR) is not None:
+                self.group_id = int(group.get(xml.GROUP_ID_ATTR))
+            if group.get(xml.GROUP_GENERATED_ATTR) is not None:
+                self.group_generated = bool(group.get(xml.GROUP_GENERATED_ATTR))
 
 
 class MsfsShapes:
     polygons: list
     group: MsfsShapeGroup
 
-    def __init__(self, shape_gdf=None, xml=None, group_display_name=TERRAFORMING_POLYGONS_DISPLAY_NAME, group_id=None, tiles=None, flatten=False, exclude_buildings=False, exclude_roads=False, exclude_vegetation=False):
+    def __init__(self, shape_gdf=None, xml=None, group_display_name=PITCH_TERRAFORM_POLYGONS_DISPLAY_NAME, group_id=None, tiles=None, flatten=False, exclude_buildings=False, exclude_roads=False, exclude_vegetation=False):
         self.polygons = []
 
         if shape_gdf is not None:

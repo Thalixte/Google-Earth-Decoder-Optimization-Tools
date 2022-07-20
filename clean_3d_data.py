@@ -58,7 +58,7 @@ from utils import *
 from constants import *
 
 # Specify the script to be included
-script_files = ["cleanup_3d_data_script.py"]
+script_files = ["clean_3d_data_script.py"]
 
 for script_file in script_files:
     # Compile and execute script file

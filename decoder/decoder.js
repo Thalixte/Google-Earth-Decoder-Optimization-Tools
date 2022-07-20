@@ -5,7 +5,7 @@
         n = n.split(".");
         var p = nb;
         n[0]in p || "undefined" == typeof p.execScript || p.execScript("var " + n[0]);
-        for (var G; n.length && (G = n.shift()); )
+        for (var G; n.length && (G = n.shift()); )rootMeta
             n.length || void 0 === r ? p[G] && p[G] !== Object.prototype[G] ? p = p[G] : p = p[G] = {} : p[G] = r
     }
     var ub = Date.now;
@@ -7698,7 +7698,7 @@
     var metaPath = 'https://kh.google.com/rt/earth/BulkMetadata/pb=!1m2!1s';
     var dataPath = 'https://kh.google.com/rt/earth/NodeData/pb=!1m2!1s';
     // fix to retrieve the last versioned Google Earth metadata
-    var rootMeta = 'https://kh.google.com/rt/earth/BulkMetadata/pb=!1m2!1s!2u000';
+    var rootMeta = 'https://kh.google.com/rt/earth/BulkMetadata/pb=!1m2!1s!2u863';
     var earthRadius = 6370995;
     	
     function getMetaUrl(rootPath, childPath, epoch)
@@ -8187,17 +8187,17 @@
     var maxLod = 19;
     // Maximum lod for which data is downloaded.
     var minLod = 17;
-	var lat = 51.211897502440074;
-	var lon = 4.4131196512073005;
-	// var lat = 51.221812;
-	// var lon = 4.440807;
-	var l = 2000.0;
-	var w = 2000.0;
+//	var lat = 51.211897502440074;
+//	var lon = 4.4131196512073005;
+	 var lat = 42.69680728933484;
+	 var lon = 2.8981409577382027;
+	var l = 100.0;
+	var w = 100.0;
 
 
     // Output folder
-	var decoderFolder = 'C:\\Non_Sauvegardé\\perso\\python\\decoder';
-	var projectFolder = 'C:\\Non_Sauvegardé\\perso\\python\\decoder\\Anvers';
+	var decoderFolder = 'C:\\MSFS SDK\\Google-Earth-Decoder-optimisation-tools\\decoder';
+	var projectFolder = 'C:\\MSFS SDK\\Google-Earth-Decoder-optimisation-tools\\decoder\\Perpignan';
     var outputFolder = projectFolder + '\\decoder_export';
 
     deleteFolderRecursive(outputFolder);

@@ -100,7 +100,9 @@ MAX_PHOTOGRAMMETRY_LOD = 23
 
 TARGET_MIN_SIZE_VALUE_PROPERTY_PREFIX = "target_min_size_value_"
 
-TERRAFORMING_POLYGONS_DISPLAY_NAME = "GEDOT_generated_terraforming_polygons"
+PITCH_TERRAFORM_POLYGONS_DISPLAY_NAME = "GEDOT_generated_pitch_terraform_polygons"
+CONSTRUCTION_TERRAFORM_POLYGONS_DISPLAY_NAME = "GEDOT_generated_construction_terraform_polygons"
+GOLF_TERRAFORM_POLYGONS_DISPLAY_NAME = "GEDOT_generated_golf_terraform_polygons"
 EXCLUSION_BUILDING_POLYGONS_DISPLAY_NAME = "GEDOT_generated_exclusion_building_polygons"
 EXCLUSION_VEGETATION_POLYGONS_DISPLAY_NAME = "GEDOT_generated_exclusion_vegetation_polygons"
 HEIGHT_MAPS_DISPLAY_NAME = "GEDOT_generated_height_maps"
@@ -145,6 +147,7 @@ PITCH_OSM_KEY = "pitch"
 CONSTRUCTION_OSM_KEY = "construction"
 GRASS_OSM_KEY = "grass"
 GOLF_OSM_KEY = "golf"
+PARK_OSM_KEY = "park"
 NOT_SHORE_WATER_OSM_KEY = "not_shore"
 
 FOREST_OSM_TAG = "forest"
@@ -189,6 +192,8 @@ TREE_TAG = "tree"
 TREE_ROW_TAG = "tree_row"
 ORCHARD_OSM_TAG = "orchard"
 BRIDGE_OSM_TAG = "bridge"
+TUNNEL_OSM_TAG = "tunnel"
+SEAMARK_TYPE_OSM_TAG = "seamark:type"
 SLIPWAY_OSM_TAG="slipway"
 PEDESTRIAN_OSM_TAG="pedestrian"
 FOOTWAY_OSM_TAG="footway"
@@ -197,6 +202,8 @@ FAIRWAY_OSM_TAG = "fairway"
 CONSTRUCTION_OSM_TAG = "construction"
 DISPLAY_NAME_OSM_TAG = "display_name"
 NAME_OSM_TAG = "name"
+
+AIRPORT_GEOCODE = "airport"
 
 EXCLUSION_OSM_FILE_PREFIX = "exclusion"
 BOUNDING_BOX_OSM_FILE_PREFIX = "bbox"
@@ -268,6 +275,9 @@ OSM_TAGS = {
     ],
     GOLF_OSM_KEY: [
         FAIRWAY_OSM_TAG
+    ],
+    PARK_OSM_KEY: [
+        PARK_OSM_TAG
     ],
     NOT_SHORE_WATER_OSM_KEY: [
         WATER_OSM_KEY,

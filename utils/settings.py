@@ -44,6 +44,7 @@ class Settings:
     lat_correction: float
     lon_correction: float
     compressonator_exe_path = str
+    city: str
     geocode: str
     landmark_type: str
     height_adjustment: float
@@ -57,6 +58,7 @@ class Settings:
     contrast: float
     saturation: float
     hue: float
+    exclude_parks: str
 
     LODS_SECTION = "LODS"
     TARGET_MIN_SIZE_VALUES_SETTING = "target_min_size_values"
@@ -81,6 +83,7 @@ class Settings:
         self.lat_correction = 0.0
         self.lon_correction = 0.0
         self.compressonator_exe_path = str()
+        self.city = str()
         self.geocode = str()
         self.landmark_type = str()
         self.height_adjustment = 0.0
@@ -94,6 +97,7 @@ class Settings:
         self.contrast = 1.0
         self.saturation = 1.0
         self.hue = 1.0
+        self.exclude_parks = "False"
 
         config = cp.ConfigParser()
         if os.path.isfile(INI_FILE):
@@ -144,6 +148,9 @@ class Settings:
         self.contrast = "{:.2f}".format(float(str(self.contrast))).rstrip("0").rstrip(".")
         self.saturation = "{:.2f}".format(float(str(self.saturation))).rstrip("0").rstrip(".")
         self.hue = "{:.2f}".format(float(str(self.hue))).rstrip("0").rstrip(".")
+
+        # check if the backup of the project files is enabled
+        self.exclude_parks = json.loads(self.exclude_parks.lower())
 
         if self.definition_file_to_merge == str() and self.project_path_to_merge != str():
             self.definition_file_to_merge = os.path.basename(self.project_path_to_merge).capitalize() + XML_FILE_EXT

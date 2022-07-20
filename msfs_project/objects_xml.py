@@ -252,7 +252,7 @@ class ObjectsXml(Xml):
             group_id = int(gid)
             result = group_id if group_id > result else result
 
-        return result+1
+        return result + 1
 
     def __convert_objects_guid_to_upper(self):
         for tag in self.root.findall(self.LIBRARY_OBJECTS_SEARCH_PATTERN):
