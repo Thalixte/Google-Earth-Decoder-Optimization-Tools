@@ -219,9 +219,11 @@ def prepare_roads_gdf(gdf):
     has_bridge = False
     has_bridge_path = False
     has_seamark_bridge = False
+    has_pîer = False
     bridge = None
     bridge_path = None
     seamark_bridge = None
+    pier = None
 
     if not roads.empty:
         roads = roads[~roads[GEOMETRY_OSM_COLUMN].isna()]
@@ -245,6 +247,12 @@ def prepare_roads_gdf(gdf):
             seamark_bridge = roads[(roads[SEAMARK_TYPE_OSM_TAG] == BRIDGE_OSM_TAG)]
             has_seamark_bridge = True
 
+        if MAN_MADE_OSM_KEY in roads:
+            pier = roads[(roads[ROADS_OSM_KEY] == FOOTWAY_OSM_TAG) & (roads[MAN_MADE_OSM_KEY] == PIER_OSM_TAG)]
+            pier = pier.append(roads[(roads[ROADS_OSM_KEY] == FOOTWAY_OSM_TAG) & (roads[BRIDGE_OSM_TAG] == "yes")])
+            pier = resize_gdf(pier, 12, single_sided=False)
+            has_pier = not pier.empty
+
         if has_bridge:
             result = result.append(bridge)
 
@@ -255,6 +263,9 @@ def prepare_roads_gdf(gdf):
             result = result.append(seamark_bridge)
 
         result = resize_gdf(result, 22, single_sided=False)
+
+        if has_pier:
+            result = result.append(pier)
 
         result = result[(result.geom_type == SHAPELY_TYPE.polygon) | (result.geom_type == SHAPELY_TYPE.multiPolygon)]
         result[GEOMETRY_OSM_COLUMN] = result[GEOMETRY_OSM_COLUMN].buffer(0)
