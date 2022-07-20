@@ -392,7 +392,7 @@ def create_ground_exclusion_gdf(landuse, leisure, natural, aeroway, roads, park,
     result = union_gdf(result, airport)
 
     if not roads.empty and BRIDGE_OSM_TAG in roads:
-        bridges = roads[roads[BRIDGE_OSM_TAG] == "yes"]
+        bridges = roads[(roads[BRIDGE_OSM_TAG] == "yes") | (roads[BRIDGE_OSM_TAG] == "movable")]
         result = difference_gdf(result, bridges)
 
     return result.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)
