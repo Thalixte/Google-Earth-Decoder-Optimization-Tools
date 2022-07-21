@@ -219,7 +219,7 @@ def prepare_roads_gdf(gdf):
     has_bridge = False
     has_bridge_path = False
     has_seamark_bridge = False
-    has_pîer = False
+    has_pier = False
     bridge = None
     bridge_path = None
     seamark_bridge = None
@@ -227,6 +227,9 @@ def prepare_roads_gdf(gdf):
 
     if not roads.empty:
         roads = roads[~roads[GEOMETRY_OSM_COLUMN].isna()]
+
+        if TUNNEL_OSM_TAG in roads:
+            roads = roads[roads[TUNNEL_OSM_TAG].isna()]
 
         # fix for bridge paths
         if BRIDGE_OSM_TAG in roads:
@@ -236,14 +239,11 @@ def prepare_roads_gdf(gdf):
         if not has_bridge_path:
             roads = roads[~(roads[ROADS_OSM_KEY] == PATH_OSM_TAG)]
 
-        if TUNNEL_OSM_TAG in result:
-            roads = roads[~(roads[TUNNEL_OSM_TAG] == "yes")]
-
-        if BRIDGE_OSM_TAG in result:
-            bridge = roads[(roads[BRIDGE_OSM_TAG] == "yes") | (roads[BRIDGE_OSM_TAG] == "movable")]
+        if BRIDGE_OSM_TAG in roads:
+            bridge = roads[~(roads[BRIDGE_OSM_TAG].isna())]
             has_bridge = True
 
-        if SEAMARK_TYPE_OSM_TAG in result:
+        if SEAMARK_TYPE_OSM_TAG in roads:
             seamark_bridge = roads[(roads[SEAMARK_TYPE_OSM_TAG] == BRIDGE_OSM_TAG)]
             has_seamark_bridge = True
 
@@ -392,7 +392,7 @@ def create_ground_exclusion_gdf(landuse, leisure, natural, aeroway, roads, park,
     result = union_gdf(result, airport)
 
     if not roads.empty and BRIDGE_OSM_TAG in roads:
-        bridges = roads[(roads[BRIDGE_OSM_TAG] == "yes") | (roads[BRIDGE_OSM_TAG] == "movable")]
+        bridges = roads[~(roads[BRIDGE_OSM_TAG].isna())]
         result = difference_gdf(result, bridges)
 
     return result.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)
