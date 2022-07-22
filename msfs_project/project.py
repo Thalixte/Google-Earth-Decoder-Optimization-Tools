@@ -926,7 +926,7 @@ class MsfsProject:
         airport = prepare_gdf(orig_airport)
         golf = prepare_golf_gdf(orig_grass)
         if settings.exclude_parks:
-            park = prepare_park_gdf(orig_park)
+            park = clip_gdf(prepare_park_gdf(orig_park), bbox)
         else:
             park = orig_park
 
