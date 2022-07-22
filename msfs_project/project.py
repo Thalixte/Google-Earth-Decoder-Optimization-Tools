@@ -896,7 +896,8 @@ class MsfsProject:
         # load all necessary GeoPandas Dataframes
         orig_land_mass = create_land_mass_gdf(self.sources_folder, orig_bbox, b)
         orig_boundary = load_gdf(self.coords, BOUNDARY_OSM_KEY, True, shp_file_path=os.path.join(self.shpfiles_folder, BOUNDARY_OSM_KEY + SHP_FILE_EXT))
-        orig_roads = load_gdf(self.coords, ROADS_OSM_KEY, True, shp_file_path=os.path.join(self.shpfiles_folder, ROADS_OSM_KEY + SHP_FILE_EXT), is_roads=True)
+        orig_road = load_gdf(self.coords, ROAD_OSM_KEY, True, shp_file_path=os.path.join(self.shpfiles_folder, ROAD_OSM_KEY + SHP_FILE_EXT), is_roads=True)
+        orig_railway = load_gdf(self.coords, RAILWAY_OSM_KEY, True, shp_file_path=os.path.join(self.shpfiles_folder, RAILWAY_OSM_KEY + SHP_FILE_EXT), is_roads=True)
         orig_sea = load_gdf(self.coords, BOUNDARY_OSM_KEY, True, shp_file_path=os.path.join(self.shpfiles_folder, SEA_OSM_TAG + SHP_FILE_EXT), is_sea=True, land_mass=orig_land_mass, bbox=orig_bbox)
         orig_landuse = load_gdf(self.coords, LANDUSE_OSM_KEY, OSM_TAGS[LANDUSE_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, LANDUSE_OSM_KEY + SHP_FILE_EXT))
         orig_grass = load_gdf(self.coords, LANDUSE_OSM_KEY, OSM_TAGS[GRASS_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, GRASS_OSM_KEY + SHP_FILE_EXT), is_grass=True)
@@ -910,7 +911,7 @@ class MsfsProject:
         orig_park = load_gdf(self.coords, LEISURE_OSM_KEY, OSM_TAGS[PARK_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, PARK_OSM_KEY + SHP_FILE_EXT))
         orig_airport = load_gdf_from_geocode(AIRPORT_GEOCODE + ", " + settings.city.lower())
 
-        roads = prepare_roads_gdf(orig_roads)
+        road = prepare_roads_gdf(orig_road, orig_railway)
         sea = prepare_sea_gdf(orig_sea)
         bbox = prepare_bbox_gdf(orig_bbox, orig_land_mass, orig_boundary)
 
@@ -935,13 +936,13 @@ class MsfsProject:
         osm_xml.create_from_geodataframes([preserve_holes(whole_water.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore'))], b, True, [(HEIGHT_OSM_TAG, 1000)])
 
         # create water exclusion masks to cleanup 3d data tiles
-        water_exclusion = difference_gdf(resize_gdf(whole_water, -5), roads)
+        water_exclusion = difference_gdf(resize_gdf(whole_water, -5), road)
         # for debugging purpose, generate the water exclusion osm file
         osm_xml = OsmXml(self.osmfiles_folder, WATER_OSM_KEY + "_" + EXCLUSION_OSM_FILE_PREFIX + OSM_FILE_EXT)
         osm_xml.create_from_geodataframes([preserve_holes(water_exclusion.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore'))], b, True, [(HEIGHT_OSM_TAG, 1000)])
 
         # create ground exclusion masks to cleanup 3d data tiles
-        ground_exclusion = create_ground_exclusion_gdf(landuse, leisure, natural, aeroway, roads, park, airport)
+        ground_exclusion = create_ground_exclusion_gdf(landuse, leisure, natural, aeroway, road, park, airport)
         # for debugging purpose, generate the ground exclusion osm file
         osm_xml = OsmXml(self.osmfiles_folder, GROUND_OSM_KEY + "_" + EXCLUSION_OSM_FILE_PREFIX + OSM_FILE_EXT)
         osm_xml.create_from_geodataframes([preserve_holes(ground_exclusion.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore'))], b, True, [(HEIGHT_OSM_TAG, 1000)])

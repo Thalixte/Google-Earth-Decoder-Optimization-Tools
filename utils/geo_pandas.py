@@ -22,10 +22,10 @@ import geopandas as gpd
 import osmnx as ox
 from osmnx.utils_geo import bbox_to_poly
 
-from shapely.geometry import Polygon, JOIN_STYLE, CAP_STYLE, MultiPolygon, LineString, MultiPoint, Point, mapping
+from shapely.geometry import Polygon, JOIN_STYLE, CAP_STYLE, MultiPolygon, LineString, MultiPoint, Point
 from shapely.ops import linemerge, unary_union, polygonize, nearest_points
 
-from constants import GEOMETRY_OSM_COLUMN, BOUNDING_BOX_OSM_KEY, SHAPE_TEMPLATES_FOLDER, OSM_LAND_SHAPEFILE, ROADS_OSM_KEY, BRIDGE_OSM_TAG, SERVICE_OSM_KEY, SLIPWAY_OSM_TAG, NOT_SHORE_WATER_OSM_KEY, WATER_OSM_KEY, NATURAL_OSM_KEY, OSM_TAGS, FOOTWAY_OSM_TAG, PATH_OSM_TAG, PEDESTRIAN_OSM_TAG, MAN_MADE_OSM_KEY, PIER_OSM_TAG, GOLF_OSM_KEY, FAIRWAY_OSM_TAG, EOL, CEND, TUNNEL_OSM_TAG, SEAMARK_TYPE_OSM_TAG
+from constants import GEOMETRY_OSM_COLUMN, BOUNDING_BOX_OSM_KEY, SHAPE_TEMPLATES_FOLDER, OSM_LAND_SHAPEFILE, ROAD_OSM_KEY, BRIDGE_OSM_TAG, SERVICE_OSM_KEY, NOT_SHORE_WATER_OSM_KEY, WATER_OSM_KEY, NATURAL_OSM_KEY, OSM_TAGS, FOOTWAY_OSM_TAG, PATH_OSM_TAG, MAN_MADE_OSM_KEY, PIER_OSM_TAG, GOLF_OSM_KEY, FAIRWAY_OSM_TAG, EOL, CEND, TUNNEL_OSM_TAG, SEAMARK_TYPE_OSM_TAG
 from utils import pr_bg_orange
 from utils.progress_bar import ProgressBar
 from utils.geometry import close_holes, extend_line
@@ -213,9 +213,11 @@ def prepare_gdf(gdf):
     return result
 
 
-def prepare_roads_gdf(gdf):
+def prepare_roads_gdf(gdf, railway_gdf):
     result = gpd.GeoDataFrame(columns=[GEOMETRY_OSM_COLUMN], geometry=GEOMETRY_OSM_COLUMN, crs=EPSG.key + str(EPSG.WGS84_degree_unit))
     roads = gdf.copy()
+    railways = railway_gdf.copy()
+    roads = roads.append(railways)
     has_bridge = False
     has_bridge_path = False
     has_seamark_bridge = False
@@ -233,11 +235,11 @@ def prepare_roads_gdf(gdf):
 
         # fix for bridge paths
         if BRIDGE_OSM_TAG in roads:
-            bridge_path = roads[(roads[ROADS_OSM_KEY] == PATH_OSM_TAG) & (roads[BRIDGE_OSM_TAG] == "yes")]
+            bridge_path = roads[(roads[ROAD_OSM_KEY] == PATH_OSM_TAG) & ~(roads[BRIDGE_OSM_TAG].isna())]
             has_bridge_path = not bridge_path.empty
 
         if not has_bridge_path:
-            roads = roads[~(roads[ROADS_OSM_KEY] == PATH_OSM_TAG)]
+            roads = roads[~(roads[ROAD_OSM_KEY] == PATH_OSM_TAG)]
 
         if BRIDGE_OSM_TAG in roads:
             bridge = roads[~(roads[BRIDGE_OSM_TAG].isna())]
@@ -248,8 +250,8 @@ def prepare_roads_gdf(gdf):
             has_seamark_bridge = True
 
         if MAN_MADE_OSM_KEY in roads:
-            pier = roads[(roads[ROADS_OSM_KEY] == FOOTWAY_OSM_TAG) & (roads[MAN_MADE_OSM_KEY] == PIER_OSM_TAG)]
-            pier = pier.append(roads[(roads[ROADS_OSM_KEY] == FOOTWAY_OSM_TAG) & (roads[BRIDGE_OSM_TAG] == "yes")])
+            pier = roads[(roads[ROAD_OSM_KEY] == FOOTWAY_OSM_TAG) & (roads[MAN_MADE_OSM_KEY] == PIER_OSM_TAG)]
+            pier = pier.append(roads[(roads[ROAD_OSM_KEY] == FOOTWAY_OSM_TAG) & ~(roads[BRIDGE_OSM_TAG].isna())])
             pier = resize_gdf(pier, 12, single_sided=False)
             has_pier = not pier.empty
 
@@ -381,7 +383,7 @@ def create_water_exclusion_gdf(natural_water, water, sea, roads):
     return result.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)
 
 
-def create_ground_exclusion_gdf(landuse, leisure, natural, aeroway, roads, park, airport):
+def create_ground_exclusion_gdf(landuse, leisure, natural, aeroway, road, park, airport):
     result = gpd.GeoDataFrame(columns=[GEOMETRY_OSM_COLUMN], geometry=GEOMETRY_OSM_COLUMN)
     result = union_gdf(result, landuse)
     result = union_gdf(result, leisure)
@@ -390,8 +392,8 @@ def create_ground_exclusion_gdf(landuse, leisure, natural, aeroway, roads, park,
     result = union_gdf(result, park)
     result = union_gdf(result, airport)
 
-    if not roads.empty and BRIDGE_OSM_TAG in roads:
-        bridges = roads[~(roads[BRIDGE_OSM_TAG].isna())]
+    if not road.empty and BRIDGE_OSM_TAG in road:
+        bridges = road[~(road[BRIDGE_OSM_TAG].isna())]
         result = difference_gdf(result, bridges)
 
     return result.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)
