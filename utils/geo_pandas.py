@@ -303,6 +303,7 @@ def prepare_park_gdf(gdf):
     result = gdf.copy()
 
     if not result.empty:
+        result = resize_gdf(result, -5)
         result = result[(result.geom_type == SHAPELY_TYPE.polygon) | (result.geom_type == SHAPELY_TYPE.multiPolygon)]
 
     return result

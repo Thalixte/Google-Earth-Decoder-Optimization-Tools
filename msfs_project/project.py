@@ -631,15 +631,15 @@ class MsfsProject:
             if not tile.valid:
                 continue
 
-            if tile.cleaned:
-                continue
-
             has_rocks = tile.has_rocks
             ground_mask_file_path = os.path.join(self.osmfiles_folder, GROUND_OSM_KEY + "_" + EXCLUSION_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)
             water_mask_file_path = os.path.join(self.osmfiles_folder, WATER_OSM_KEY + "_" + EXCLUSION_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)
 
             # when the original tiles are available in the backup, use them, otherwise use the current modified tiles (which give less accurate results than the original ones)
-            backup_path = os.path.join(os.path.join(self.backup_folder, "cleanup_3d_data"), self.model_lib_folder)
+            backup_subfolder = os.path.join(self.PACKAGE_SOURCES_FOLDER, os.path.basename(self.model_lib_folder))
+            backup_path = os.path.join(os.path.join(self.backup_folder, "prepare_3d_data"), backup_subfolder)
+            if os.path.isdir(os.path.join(os.path.join(self.backup_folder, "clean_3d_data"), backup_subfolder)):
+                backup_path = os.path.join(os.path.join(self.backup_folder, "clean_3d_data"), backup_subfolder)
             tile_folder = backup_path if os.path.isdir(backup_path) else tile.folder
 
             params = ["--folder", str(tile_folder), "--name", str(tile.name), "--definition_file", str(tile.definition_file),

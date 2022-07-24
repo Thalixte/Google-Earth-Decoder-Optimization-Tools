@@ -47,7 +47,7 @@ def generate_height_data(script_settings):
         check_configuration(script_settings, msfs_project)
 
         if script_settings.backup_enabled:
-            msfs_project.backup(Path(os.path.abspath(__file__)).stem.replace(SCRIPT_PREFIX, str()))
+            msfs_project.backup(Path(os.path.abspath(__file__)).stem.replace(SCRIPT_PREFIX, str()), all_files=False)
 
         isolated_print(EOL)
         print_title("PREPARE 3D DATA")
