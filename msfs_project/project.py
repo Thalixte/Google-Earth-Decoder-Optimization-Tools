@@ -47,7 +47,7 @@ from msfs_project.tile import MsfsTile
 from msfs_project.shape import MsfsShapes
 from utils import replace_in_file, is_octant, backup_file, install_python_lib, ScriptError, print_title, \
     get_backup_file_path, isolated_print, chunks, create_bounding_box_from_tiles, clip_gdf, create_terraform_polygons_gdf, create_land_mass_gdf, create_exclusion_masks_from_tiles, preserve_holes, create_exclusion_building_polygons_gdf, create_whole_water_gdf, create_ground_exclusion_gdf, load_gdf, prepare_roads_gdf, \
-    prepare_sea_gdf, prepare_bbox_gdf, prepare_gdf, create_exclusion_vegetation_polygons_gdf, load_gdf_from_geocode, difference_gdf, create_shore_water_gdf, resize_gdf, prepare_golf_gdf, pr_bg_orange, load_json_file, prepare_park_gdf
+    prepare_sea_gdf, prepare_bbox_gdf, prepare_gdf, create_exclusion_vegetation_polygons_gdf, load_gdf_from_geocode, difference_gdf, create_shore_water_gdf, resize_gdf, prepare_golf_gdf, pr_bg_orange, load_json_file, prepare_park_gdf, prepare_building_gdf
 from pathlib import Path
 
 from utils.compressonator import Compressonator
@@ -281,6 +281,15 @@ class MsfsProject:
         self.__create_osm_files(settings)
 
         if generate_height_data:
+            # ensure to clean the xml folder containing the heightmaps data by removing it
+            try:
+                shutil.rmtree(self.xmlfiles_folder)
+            except:
+                pass
+
+            # create the xml folder if it does not exist
+            os.makedirs(self.xmlfiles_folder, exist_ok=True)
+
             self.__generate_height_map_data(settings)
 
         if clean_3d_data:
@@ -397,12 +406,6 @@ class MsfsProject:
 
         # create the shp folder if it does not exist
         os.makedirs(self.shpfiles_folder, exist_ok=True)
-
-        # ensure to clean the xml folder containing the heightmaps data by removing it
-        # try:
-        #     shutil.rmtree(self.xmlfiles_folder)
-        # except:
-        #     pass
 
         # create the xml folder if it does not exist
         os.makedirs(self.xmlfiles_folder, exist_ok=True)
@@ -866,11 +869,6 @@ class MsfsProject:
             self.objects_xml.add_height_map_group(height_maps.rectangles[0])
         self.objects_xml.save()
 
-        # try:
-        #     shutil.rmtree(self.xmlfiles_folder)
-        # except:
-        #     pass
-
     def __create_tiles_bounding_boxes(self):
         valid_tiles = [tile for tile in list(self.tiles.values()) if tile.valid]
         pbar = ProgressBar(valid_tiles, title="CREATE BOUNDING BOX OSM FILES FOR EACH TILE")
@@ -910,6 +908,7 @@ class MsfsProject:
         orig_construction = load_gdf(self.coords, LANDUSE_OSM_KEY, OSM_TAGS[CONSTRUCTION_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, CONSTRUCTION_OSM_KEY + SHP_FILE_EXT))
         orig_park = load_gdf(self.coords, LEISURE_OSM_KEY, OSM_TAGS[PARK_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, PARK_OSM_KEY + SHP_FILE_EXT))
         orig_airport = load_gdf_from_geocode(AIRPORT_GEOCODE + ", " + settings.city.lower())
+        orig_building = load_gdf(self.coords, BUILDING_OSM_KEY, True, shp_file_path=os.path.join(self.shpfiles_folder, BUILDING_OSM_KEY + SHP_FILE_EXT))
 
         road = prepare_roads_gdf(orig_road, orig_railway)
         sea = prepare_sea_gdf(orig_sea)
@@ -924,9 +923,10 @@ class MsfsProject:
         pitch = clip_gdf(prepare_gdf(orig_pitch), bbox)
         construction = clip_gdf(prepare_gdf(orig_construction), bbox)
         airport = prepare_gdf(orig_airport)
+        building = clip_gdf(prepare_building_gdf(orig_building), bbox)
         golf = prepare_golf_gdf(orig_grass)
         if settings.exclude_parks:
-            park = clip_gdf(prepare_park_gdf(orig_park), bbox)
+            park = clip_gdf(prepare_park_gdf(orig_park, orig_road), bbox)
         else:
             park = orig_park
 
@@ -950,7 +950,7 @@ class MsfsProject:
         rocks = load_gdf(self.coords, NATURAL_OSM_KEY, OSM_TAGS[ROCKS_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, ROCKS_OSM_KEY + SHP_FILE_EXT))
         rocks = prepare_gdf(rocks)
 
-        create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, water_exclusion, ground_exclusion_mask=ground_exclusion, rocks=rocks, title="CREATE EXCLUSION MASKS OSM FILES")
+        create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, water_exclusion, keep_building_mask=building, ground_exclusion_mask=ground_exclusion, rocks=rocks, title="CREATE EXCLUSION MASKS OSM FILES")
         create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, ground_exclusion, file_prefix=GROUND_OSM_KEY + "_", title="CREATE GROUND EXCLUSION MASKS OSM FILES")
         create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, whole_water, keep_holes=False, file_prefix=WATER_OSM_KEY + "_", title="CREATE WATER EXCLUSION MASKS OSM FILES")
 
@@ -1070,6 +1070,12 @@ class MsfsProject:
             for lod in tile.lods:
                 lod.remove_road_and_collision_tags()
             tile.add_collider()
+        lods = [lod for tile in self.tiles.values() for lod in tile.lods]
+        pbar = ProgressBar(list(lods), title="PREPARE THE TILES FOR MSFS")
+        for lod in lods:
+            lod.optimization_in_progress = False
+            lod.prepare_for_msfs()
+            pbar.update("%s prepared for msfs" % lod.name)
 
     def __create_landmark_from_geocode(self, geocode, settings):
         geocode_gdf = self.__retrieve_osm_data_from_geocode(geocode)

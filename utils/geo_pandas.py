@@ -111,13 +111,13 @@ def create_bounding_box(coords):
     return gpd.GeoDataFrame(pd.DataFrame([], index=[0]), crs=EPSG.key + str(EPSG.WGS84_degree_unit), geometry=[b]), b
 
 
-def create_exclusion_masks_from_tiles(tiles, dest_folder, b, exclusion_mask, ground_exclusion_mask=None, rocks=None, keep_holes=True, file_prefix="", title="CREATE EXCLUSION MASKS OSM FILES"):
+def create_exclusion_masks_from_tiles(tiles, dest_folder, b, exclusion_mask, keep_building_mask=None, ground_exclusion_mask=None, rocks=None, keep_holes=True, file_prefix="", title="CREATE EXCLUSION MASKS OSM FILES"):
     valid_tiles = [tile for tile in list(tiles.values()) if tile.valid]
     pbar = ProgressBar(valid_tiles, title=title)
     exclusion = exclusion_mask.copy()
 
     for i, tile in enumerate(valid_tiles):
-        tile.create_exclusion_mask_osm_file(dest_folder, b, exclusion, ground_exclusion_mask=ground_exclusion_mask, rocks=rocks, keep_holes=keep_holes, file_prefix=file_prefix)
+        tile.create_exclusion_mask_osm_file(dest_folder, b, exclusion, keep_building_mask=keep_building_mask, ground_exclusion_mask=ground_exclusion_mask, rocks=rocks, keep_holes=keep_holes, file_prefix=file_prefix)
         pbar.update("exclusion mask created for %s tile" % tile.name)
 
 
@@ -296,14 +296,19 @@ def prepare_golf_gdf(gdf):
     return result[[GEOMETRY_OSM_COLUMN]].dissolve()
 
 
-def prepare_park_gdf(gdf):
+def prepare_park_gdf(gdf, road):
     if gdf is None:
         return gpd.GeoDataFrame(columns=[GEOMETRY_OSM_COLUMN], geometry=GEOMETRY_OSM_COLUMN)
 
     result = gdf.copy()
 
     if not result.empty:
-        result = resize_gdf(result, -5)
+        result = resize_gdf(result, 20)
+
+        if not road.empty:
+            road = road[road[ROAD_OSM_KEY] == "primary"]
+            road = resize_gdf(road, 28, single_sided=False)
+            result = difference_gdf(result, road)
         result = result[(result.geom_type == SHAPELY_TYPE.polygon) | (result.geom_type == SHAPELY_TYPE.multiPolygon)]
 
     return result
@@ -315,14 +320,14 @@ def prepare_bbox_gdf(bbox, land_mass, boundary):
     return resize_gdf(result, 20)
 
 
-def prepare_buildings_gdf(gdf):
+def prepare_building_gdf(gdf):
     result = gdf.copy()
 
     if not result.empty:
         result = resize_gdf(result, 5)
         result = result[(result.geom_type == SHAPELY_TYPE.polygon) | (result.geom_type == SHAPELY_TYPE.multiPolygon)]
 
-    return result
+    return result.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY).assign(boundary=BOUNDING_BOX_OSM_KEY)
 
 
 def create_land_mass_gdf(sources_path, bbox, b):
@@ -390,8 +395,8 @@ def create_ground_exclusion_gdf(landuse, leisure, natural, aeroway, road, park, 
     result = union_gdf(result, leisure)
     result = union_gdf(result, natural)
     result = union_gdf(result, aeroway)
-    result = union_gdf(result, park)
     result = union_gdf(result, airport)
+    result = union_gdf(result, park)
 
     if not road.empty and BRIDGE_OSM_TAG in road:
         bridges = road[~(road[BRIDGE_OSM_TAG].isna())]
@@ -426,8 +431,8 @@ def create_terraform_polygons_gdf(gdf, ground_exclusion):
 def create_exclusion_building_polygons_gdf(bbox, exclusion, park, airport):
     adjusted_exclusion = resize_gdf(exclusion, 20)
     adjusted_exclusion = union_gdf(bbox, adjusted_exclusion)
-    adjusted_exclusion = difference_gdf(adjusted_exclusion, park)
     adjusted_exclusion = difference_gdf(adjusted_exclusion, airport)
+    adjusted_exclusion = resize_gdf(adjusted_exclusion, -50)
     result = preserve_holes(adjusted_exclusion, split_method=PRESERVE_HOLES_METHOD.derivation_split)
     return result
 

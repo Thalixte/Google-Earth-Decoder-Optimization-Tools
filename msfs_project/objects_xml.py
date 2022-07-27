@@ -153,6 +153,9 @@ class ObjectsXml(Xml):
 
     def add_shapes(self, shape):
         for polygon in shape.polygons:
+            if not polygon.vertices:
+                continue
+
             polygon_elem = self.__add_shape_polygon(polygon)
 
             for attribute in polygon.attributes:
@@ -161,9 +164,11 @@ class ObjectsXml(Xml):
             for vertex in polygon.vertices:
                 self.__add_shape_polygon_vertex(polygon_elem, vertex)
 
-        groups = self.find_groups(group_name=shape.group.display_name)
-        if not groups:
-            self.__add_generated_group(shape.group)
+        if hasattr(shape, "group"):
+            groups = self.find_groups(group_name=shape.group.display_name)
+
+            if not groups:
+                self.__add_generated_group(shape.group)
 
         self.save()
 

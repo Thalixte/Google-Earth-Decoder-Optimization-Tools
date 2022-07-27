@@ -25,7 +25,7 @@ from msfs_project.height_map import MsfsHeightMap
 from msfs_project.collider import MsfsCollider
 from msfs_project.scene_object import MsfsSceneObject
 from msfs_project.position import MsfsPosition
-from utils import get_coords_from_file_name, get_position_from_file_name, resize_gdf, preserve_holes, clip_gdf, create_bounding_box, union_gdf
+from utils import get_coords_from_file_name, get_position_from_file_name, resize_gdf, preserve_holes, clip_gdf, create_bounding_box, union_gdf, difference_gdf, PRESERVE_HOLES_METHOD
 from utils.minidom_xml import create_new_definition_file
 from msfs_project.osm_xml import OsmXml
 
@@ -107,7 +107,7 @@ class MsfsTile(MsfsSceneObject):
         osm_xml = OsmXml(dest_folder, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + self.name + OSM_FILE_EXT)
         osm_xml.create_from_geodataframes([self.bbox_gdf.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')], b)
 
-    def create_exclusion_mask_osm_file(self, dest_folder, b, exclusion_mask, ground_exclusion_mask=None, rocks=None, keep_holes=True, file_prefix=""):
+    def create_exclusion_mask_osm_file(self, dest_folder, b, exclusion_mask, keep_building_mask=None, ground_exclusion_mask=None, rocks=None, keep_holes=True, file_prefix=""):
         bbox_gdf = resize_gdf(self.bbox_gdf, 10 if keep_holes else 200)
         exclusion_mask_gdf = exclusion_mask.clip(bbox_gdf)
 
@@ -119,11 +119,16 @@ class MsfsTile(MsfsSceneObject):
             tile_ground_exclusion_mask = ground_exclusion_mask.clip(bbox_gdf)
             exclusion_mask_gdf = union_gdf(exclusion_mask_gdf, tile_ground_exclusion_mask)
 
+        if keep_building_mask is not None:
+            if not keep_building_mask.empty:
+                keep_building_mask = clip_gdf(keep_building_mask, bbox_gdf)
+                exclusion_mask_gdf = difference_gdf(exclusion_mask_gdf, keep_building_mask)
+
         if not exclusion_mask_gdf.empty:
             file_name = file_prefix + EXCLUSION_OSM_FILE_PREFIX + "_" + self.name + OSM_FILE_EXT
             exclusion_mask = exclusion_mask_gdf.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')
             if keep_holes:
-                exclusion_mask = preserve_holes(exclusion_mask)
+                exclusion_mask = preserve_holes(exclusion_mask, split_method=PRESERVE_HOLES_METHOD.derivation_split)
 
             osm_xml = OsmXml(dest_folder, file_name)
             osm_xml.create_from_geodataframes([exclusion_mask], b, True, [(HEIGHT_OSM_TAG, 1000)])
