@@ -52,7 +52,7 @@ def create_terraform_and_exclusion_polygons(script_settings):
         isolated_print(EOL)
         print_title("ADJUST HEIGHT DATA")
 
-        msfs_project.prepare_3d_data(script_settings)
+        msfs_project.prepare_3d_data(script_settings, create_polygons=True)
 
         if script_settings.build_package_enabled:
             build_package(msfs_project, script_settings)

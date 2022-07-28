@@ -201,13 +201,16 @@ def load_gdf(coords, key, tags, shp_file_path="", is_roads=False, is_buildings=F
     return result
 
 
-def prepare_gdf(gdf):
+def prepare_gdf(gdf, resize=0):
     if gdf is None:
         return None
 
     result = gdf.copy()
 
     if not result.empty:
+        if resize != 0:
+            result = resize_gdf(result, resize)
+
         result = result[(result.geom_type == SHAPELY_TYPE.polygon) | (result.geom_type == SHAPELY_TYPE.multiPolygon)]
 
     return result

@@ -52,7 +52,7 @@ def generate_height_data(script_settings):
         isolated_print(EOL)
         print_title("PREPARE 3D DATA")
 
-        msfs_project.prepare_3d_data(script_settings, generate_height_data=True, clean_3d_data=False)
+        msfs_project.prepare_3d_data(script_settings, generate_height_data=True, clean_3d_data=False, create_polygons=False)
 
         if script_settings.build_package_enabled:
             build_package(msfs_project, script_settings)

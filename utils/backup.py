@@ -20,7 +20,7 @@ import os
 import shutil
 
 
-def backup_file(backup_path, folder, file, dry_mode=False, pbar=None):
+def backup_file(backup_path, folder, file, dry_mode=False, pbar=None, overwrite=False):
     file_path = os.path.join(folder, file)
     backup_file_path = get_backup_file_path(backup_path, folder, file)
     previous_path = str()
@@ -34,7 +34,7 @@ def backup_file(backup_path, folder, file, dry_mode=False, pbar=None):
             previous_path = path + os.sep
 
     if os.path.isfile(file_path):
-        if not os.path.isfile(backup_file_path):
+        if not os.path.isfile(backup_file_path) or overwrite:
             if not dry_mode:
                 shutil.copyfile(file_path, backup_file_path)
             if pbar is not None:

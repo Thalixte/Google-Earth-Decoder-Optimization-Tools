@@ -206,7 +206,7 @@ class MsfsProject:
         backup_path = os.path.join(self.backup_folder, backup_subfolder)
         if not os.path.isfile(get_backup_file_path(backup_path, self.scene_folder, self.SCENE_OBJECTS_FILE)):
             pbar = ProgressBar([self.SCENE_OBJECTS_FILE], title="backup " + self.SCENE_OBJECTS_FILE)
-            backup_file(backup_path, self.scene_folder, self.SCENE_OBJECTS_FILE, pbar=pbar)
+            backup_file(backup_path, self.scene_folder, self.SCENE_OBJECTS_FILE, pbar=pbar, overwrite=True)
 
     def update_min_size_values(self, settings):
         pbar = ProgressBar(list())
@@ -276,9 +276,9 @@ class MsfsProject:
 
             pbar.update("splitted tiles added, replacing the previous %s tile" % previous_tile.name)
 
-    def prepare_3d_data(self, settings, generate_height_data=False, clean_3d_data=False):
+    def prepare_3d_data(self, settings, generate_height_data=False, clean_3d_data=False, create_polygons=True):
         self.__create_tiles_bounding_boxes()
-        self.__create_osm_files(settings)
+        self.__create_osm_files(settings, create_polygons=create_polygons)
 
         if generate_height_data:
             # ensure to clean the xml folder containing the heightmaps data by removing it
@@ -876,15 +876,15 @@ class MsfsProject:
             tile.create_bbox_osm_file(self.osmfiles_folder, self.min_lod_level)
             pbar.update("osm files created for %s tile" % tile.name)
 
-    def __create_osm_files(self, settings):
+    def __create_osm_files(self, settings, create_polygons=True):
         ox.config(use_cache=True, log_level=lg.DEBUG)
-        self.__create_osm_exclusion_files(bbox_to_poly(self.coords[1], self.coords[0], self.coords[2], self.coords[3]), create_bounding_box_from_tiles(self.tiles), settings)
+        self.__create_osm_exclusion_files(bbox_to_poly(self.coords[1], self.coords[0], self.coords[2], self.coords[3]), create_bounding_box_from_tiles(self.tiles), settings, create_polygons=create_polygons)
 
     def __create_geocode_osm_files(self, geocode):
         ox.config(use_cache=True, log_level=lg.DEBUG)
         return self.__create_geocode_osm_exclusion_files(geocode, bbox_to_poly(self.coords[1], self.coords[0], self.coords[2], self.coords[3]))
 
-    def __create_osm_exclusion_files(self, b, orig_bbox, settings):
+    def __create_osm_exclusion_files(self, b, orig_bbox, settings, create_polygons=True):
         print_title("RETRIEVE OSM DATA (MAY TAKE SOME TIME TO COMPLETE, BE PATIENT...)")
 
         # for debugging purpose, generate the osm file
@@ -915,8 +915,8 @@ class MsfsProject:
         bbox = prepare_bbox_gdf(orig_bbox, orig_land_mass, orig_boundary)
 
         landuse = clip_gdf(prepare_gdf(orig_landuse), bbox)
-        leisure = clip_gdf(prepare_gdf(orig_leisure), bbox)
-        natural = clip_gdf(prepare_gdf(orig_natural), bbox)
+        leisure = clip_gdf(prepare_gdf(orig_leisure, resize=20), bbox)
+        natural = clip_gdf(prepare_gdf(orig_natural, resize=20), bbox)
         natural_water = clip_gdf(prepare_gdf(orig_natural_water), bbox)
         water = clip_gdf(prepare_gdf(orig_water), bbox)
         aeroway = clip_gdf(prepare_gdf(orig_aeroway), bbox)
@@ -954,49 +954,50 @@ class MsfsProject:
         create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, ground_exclusion, file_prefix=GROUND_OSM_KEY + "_", title="CREATE GROUND EXCLUSION MASKS OSM FILES")
         create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, whole_water, keep_holes=False, file_prefix=WATER_OSM_KEY + "_", title="CREATE WATER EXCLUSION MASKS OSM FILES")
 
-        print_title("CREATE PITCH TERRAFORM POLYGONS GEO DATAFRAMES...)")
-        pitch_terraform_polygons = create_terraform_polygons_gdf(pitch, ground_exclusion)
-        # for debugging purpose
-        osm_xml = OsmXml(self.osmfiles_folder, "pitch_terraform_polygons" + OSM_FILE_EXT)
-        osm_xml.create_from_geodataframes([pitch_terraform_polygons.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')], b)
+        if create_polygons:
+            print_title("CREATE PITCH TERRAFORM POLYGONS GEO DATAFRAMES...)")
+            pitch_terraform_polygons = create_terraform_polygons_gdf(pitch, ground_exclusion)
+            # for debugging purpose
+            osm_xml = OsmXml(self.osmfiles_folder, "pitch_terraform_polygons" + OSM_FILE_EXT)
+            osm_xml.create_from_geodataframes([pitch_terraform_polygons.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')], b)
 
-        print_title("CREATE CONSTRUCTION TERRAFORM POLYGONS GEO DATAFRAMES...)")
-        construction_terraform_polygons = create_terraform_polygons_gdf(construction, ground_exclusion)
-        # for debugging purpose
-        osm_xml = OsmXml(self.osmfiles_folder, "construction_terraform_polygons" + OSM_FILE_EXT)
-        osm_xml.create_from_geodataframes([construction_terraform_polygons.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')], b)
+            print_title("CREATE CONSTRUCTION TERRAFORM POLYGONS GEO DATAFRAMES...)")
+            construction_terraform_polygons = create_terraform_polygons_gdf(construction, ground_exclusion)
+            # for debugging purpose
+            osm_xml = OsmXml(self.osmfiles_folder, "construction_terraform_polygons" + OSM_FILE_EXT)
+            osm_xml.create_from_geodataframes([construction_terraform_polygons.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')], b)
 
-        # print_title("CREATE GOLF TERRAFORM POLYGONS GEO DATAFRAMES...)")
-        # golf_terraform_polygons = create_terraform_polygons_gdf(golf, ground_exclusion)
-        # # for debugging purpose
-        # osm_xml = OsmXml(self.osmfiles_folder, "golf_terraform_polygons" + OSM_FILE_EXT)
-        # osm_xml.create_from_geodataframes([golf_terraform_polygons.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')], b)
+            # print_title("CREATE GOLF TERRAFORM POLYGONS GEO DATAFRAMES...)")
+            # golf_terraform_polygons = create_terraform_polygons_gdf(golf, ground_exclusion)
+            # # for debugging purpose
+            # osm_xml = OsmXml(self.osmfiles_folder, "golf_terraform_polygons" + OSM_FILE_EXT)
+            # osm_xml.create_from_geodataframes([golf_terraform_polygons.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')], b)
 
-        print_title("CREATE EXCLUSION BUILDINGS POLYGONS GEO DATAFRAMES...)")
-        shore_water = create_shore_water_gdf(orig_water, orig_natural_water, sea, bbox)
-        exclusion_building_polygons = create_exclusion_building_polygons_gdf(orig_bbox, shore_water, park, airport)
-        # for debugging purpose
-        osm_xml = OsmXml(self.osmfiles_folder, "exclusion_building_polygons" + OSM_FILE_EXT)
-        osm_xml.create_from_geodataframes([exclusion_building_polygons.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')], b)
+            print_title("CREATE EXCLUSION BUILDINGS POLYGONS GEO DATAFRAMES...)")
+            shore_water = create_shore_water_gdf(orig_water, orig_natural_water, sea, bbox)
+            exclusion_building_polygons = create_exclusion_building_polygons_gdf(orig_bbox, shore_water, park, airport)
+            # for debugging purpose
+            osm_xml = OsmXml(self.osmfiles_folder, "exclusion_building_polygons" + OSM_FILE_EXT)
+            osm_xml.create_from_geodataframes([exclusion_building_polygons.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')], b)
 
-        print_title("CREATE EXCLUSION VEGETATION POLYGONS GEO DATAFRAMES...)")
-        exclusion_vegetation_polygons = create_exclusion_vegetation_polygons_gdf(shore_water)
-        # for debugging purpose
-        osm_xml = OsmXml(self.osmfiles_folder, "exclusion_vegetation_polygons" + OSM_FILE_EXT)
-        osm_xml.create_from_geodataframes([exclusion_vegetation_polygons.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')], b)
+            print_title("CREATE EXCLUSION VEGETATION POLYGONS GEO DATAFRAMES...)")
+            exclusion_vegetation_polygons = create_exclusion_vegetation_polygons_gdf(shore_water)
+            # for debugging purpose
+            osm_xml = OsmXml(self.osmfiles_folder, "exclusion_vegetation_polygons" + OSM_FILE_EXT)
+            osm_xml.create_from_geodataframes([exclusion_vegetation_polygons.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')], b)
 
-        new_group_id = self.objects_xml.get_new_group_id()
-        self.shapes[EXCLUSION_BUILDING_POLYGONS_DISPLAY_NAME] = MsfsShapes(shape_gdf=exclusion_building_polygons, group_display_name=EXCLUSION_BUILDING_POLYGONS_DISPLAY_NAME, group_id=new_group_id, exclude_buildings=True)
-        self.shapes[EXCLUSION_VEGETATION_POLYGONS_DISPLAY_NAME] = MsfsShapes(shape_gdf=exclusion_vegetation_polygons, group_display_name=EXCLUSION_VEGETATION_POLYGONS_DISPLAY_NAME, group_id=new_group_id + 1, exclude_vegetation=True)
-        self.shapes[PITCH_TERRAFORM_POLYGONS_DISPLAY_NAME] = MsfsShapes(shape_gdf=pitch_terraform_polygons, group_display_name=PITCH_TERRAFORM_POLYGONS_DISPLAY_NAME, group_id=new_group_id + 2, tiles=self.tiles, flatten=True)
-        self.shapes[CONSTRUCTION_TERRAFORM_POLYGONS_DISPLAY_NAME] = MsfsShapes(shape_gdf=construction_terraform_polygons, group_display_name=CONSTRUCTION_TERRAFORM_POLYGONS_DISPLAY_NAME, group_id=new_group_id + 3, tiles=self.tiles, flatten=False)
-        # self.shapes[GOLF_TERRAFORM_POLYGONS_DISPLAY_NAME] = MsfsShapes(shape_gdf=golf_terraform_polygons, group_display_name=GOLF_TERRAFORM_POLYGONS_DISPLAY_NAME, group_id=new_group_id + 4, tiles=self.tiles, flatten=True)
+            new_group_id = self.objects_xml.get_new_group_id()
+            self.shapes[EXCLUSION_BUILDING_POLYGONS_DISPLAY_NAME] = MsfsShapes(shape_gdf=exclusion_building_polygons, group_display_name=EXCLUSION_BUILDING_POLYGONS_DISPLAY_NAME, group_id=new_group_id, exclude_buildings=True)
+            self.shapes[EXCLUSION_VEGETATION_POLYGONS_DISPLAY_NAME] = MsfsShapes(shape_gdf=exclusion_vegetation_polygons, group_display_name=EXCLUSION_VEGETATION_POLYGONS_DISPLAY_NAME, group_id=new_group_id + 1, exclude_vegetation=True)
+            self.shapes[PITCH_TERRAFORM_POLYGONS_DISPLAY_NAME] = MsfsShapes(shape_gdf=pitch_terraform_polygons, group_display_name=PITCH_TERRAFORM_POLYGONS_DISPLAY_NAME, group_id=new_group_id + 2, tiles=self.tiles, flatten=True)
+            self.shapes[CONSTRUCTION_TERRAFORM_POLYGONS_DISPLAY_NAME] = MsfsShapes(shape_gdf=construction_terraform_polygons, group_display_name=CONSTRUCTION_TERRAFORM_POLYGONS_DISPLAY_NAME, group_id=new_group_id + 3, tiles=self.tiles, flatten=False)
+            # self.shapes[GOLF_TERRAFORM_POLYGONS_DISPLAY_NAME] = MsfsShapes(shape_gdf=golf_terraform_polygons, group_display_name=GOLF_TERRAFORM_POLYGONS_DISPLAY_NAME, group_id=new_group_id + 4, tiles=self.tiles, flatten=True)
 
-        # reload the xml file to retrieve the last updates
-        self.objects_xml = ObjectsXml(self.scene_folder, self.SCENE_OBJECTS_FILE)
-        for group_name, shape in self.shapes.items():
-            shape.remove_from_xml(self.objects_xml, group_name)
-            shape.to_xml(self.objects_xml)
+            # reload the xml file to retrieve the last updates
+            self.objects_xml = ObjectsXml(self.scene_folder, self.SCENE_OBJECTS_FILE)
+            for group_name, shape in self.shapes.items():
+                shape.remove_from_xml(self.objects_xml, group_name)
+                shape.to_xml(self.objects_xml)
 
         self.__remove_full_water_tiles(water_exclusion)
 

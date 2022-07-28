@@ -15,6 +15,7 @@
 #  #
 #
 #  <pep8 compliant>
+from pathlib import Path
 
 import osmnx as ox
 import logging as lg
@@ -51,6 +52,9 @@ def create_landmark_from_geocode(script_settings):
             msfs_project = MsfsProject(script_settings.projects_path, script_settings.project_name, script_settings.definition_file, script_settings.author_name, script_settings.sources_path)
 
             check_configuration(script_settings, msfs_project)
+
+            if script_settings.backup_enabled:
+                msfs_project.backup(Path(os.path.abspath(__file__)).stem.replace(SCRIPT_PREFIX, str()), all_files=False)
 
             isolated_print(EOL)
             print_title("CREATE LANDMARK")

@@ -46,7 +46,8 @@ class MsfsHeightMapGroup:
         groups = xml.root.findall(xml.PARENT_GROUP_SEARCH_PATTERN + elem.get(xml.PARENT_GROUP_ID_ATTR) + xml.PATTERN_SUFFIX)
         for group in groups:
             self.display_name = group.get(xml.DISPLAY_NAME_ATTR)
-            self.group_index = int(group.get(xml.GROUP_INDEX_ATTR))
+            group_index = elem.get(xml.GROUP_INDEX_ATTR)
+            self.group_index = int(group_index) if group_index is not None else -1
             self.group_id = int(group.get(xml.GROUP_ID_ATTR))
             self.group_generated = bool(group.get(xml.GROUP_GENERATED_ATTR))
 
