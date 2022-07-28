@@ -318,6 +318,17 @@ class MsfsProject:
             self.__create_tiles_bounding_boxes()
             self.__exclude_lods_3d_data_from_geocode(geocode, geocode_gdf, settings)
 
+    def isolate_3d_data_from_geocode(self, settings):
+        geocode = settings.geocode
+        geocode_gdf = self.__create_geocode_osm_files(geocode)
+
+        if geocode_gdf is None:
+            return geocode_gdf
+
+        if not geocode_gdf.empty:
+            self.__create_tiles_bounding_boxes()
+            self.__isolate_lods_3d_data_from_geocode(geocode, geocode_gdf, settings)
+
     def create_landmark_from_geocode(self, settings):
         geocode = settings.geocode
         self.__create_landmark_from_geocode(geocode, settings)
@@ -716,7 +727,7 @@ class MsfsProject:
 
         return tiles, chunks(data, self.NB_PARALLEL_TASKS)
 
-    def __retrieve_lods_to_exclude_3d_data_from_geocode(self, geocode, geocode_gdf, settings):
+    def __retrieve_lods_to_exclude_or_isolate_3d_data_from_geocode(self, geocode, geocode_gdf, backup_subfolder, settings):
         data = []
         tiles = []
         for tile in self.tiles.values():
@@ -727,15 +738,15 @@ class MsfsProject:
             if not tile.valid:
                 continue
 
-            excluded = clip_gdf(geocode_gdf, tile.bbox_gdf)
-            if excluded.empty:
+            processed = clip_gdf(geocode_gdf, tile.bbox_gdf)
+            if processed.empty:
                 continue
 
             collider = self.__get_tile_collider(tile.name)
             has_collider = (collider is not None)
 
             if settings.backup_enabled:
-                backup_path = os.path.join(os.path.join(self.backup_folder, "exclude_3d_data_from_geocode"), geocode)
+                backup_path = os.path.join(os.path.join(self.backup_folder, backup_subfolder), geocode)
                 tile.backup_files(backup_path)
                 if has_collider:
                     collider.backup_files(backup_path)
@@ -1065,8 +1076,22 @@ class MsfsProject:
         self.objects_xml.save()
 
     def __exclude_lods_3d_data_from_geocode(self, geocode, geocode_gdf, settings):
-        tiles_with_collider, lods_data = self.__retrieve_lods_to_exclude_3d_data_from_geocode(geocode, geocode_gdf, settings)
+        tiles_with_collider, lods_data = self.__retrieve_lods_to_exclude_or_isolate_3d_data_from_geocode(geocode, geocode_gdf, "exclude_3d_data_from_geocode", settings)
         self.__multithread_process_data(lods_data, "cleanup_lod_3d_data.py", "EXCLUDE LODS 3D DATA TILES FROM GEOCODE", "excluded")
+        for tile in tiles_with_collider:
+            for lod in tile.lods:
+                lod.remove_road_and_collision_tags()
+            tile.add_collider()
+        lods = [lod for tile in self.tiles.values() for lod in tile.lods]
+        pbar = ProgressBar(list(lods), title="PREPARE THE TILES FOR MSFS")
+        for lod in lods:
+            lod.optimization_in_progress = False
+            lod.prepare_for_msfs()
+            pbar.update("%s prepared for msfs" % lod.name)
+
+    def __isolate_lods_3d_data_from_geocode(self, geocode, geocode_gdf, settings):
+        tiles_with_collider, lods_data = self.__retrieve_lods_to_exclude_or_isolate_3d_data_from_geocode(geocode, geocode_gdf, "isolate_3d_data_from_geocode", settings)
+        self.__multithread_process_data(lods_data, "isolate_lod_3d_data.py", "ISOLATE LODS 3D DATA TILES FROM GEOCODE", "excluded")
         for tile in tiles_with_collider:
             for lod in tile.lods:
                 lod.remove_road_and_collision_tags()
@@ -1083,7 +1108,7 @@ class MsfsProject:
         landmarks = MsfsLandmarks(geocode_gdf=geocode_gdf, tiles=self.tiles, owner=settings.author_name, type=settings.landmark_type, offset=settings.landmark_offset)
 
         for landmark_location in landmarks.landmark_locations:
-            # valid landmarks have a correct altitude
+            # if a landmark has a correct altitude, it is valid
             if landmark_location.has_alt:
                 self.objects_xml.remove_landmarks(name=landmark_location.name)
                 landmark_location.to_xml(self.objects_xml)
@@ -1203,8 +1228,8 @@ class MsfsProject:
                 params = [str(bpy.app.binary_path), "--background", "--python", os.path.join(os.path.dirname(os.path.dirname(__file__)), script_name), "--"]
 
                 for obj in chunck:
-                    print("-------------------------------------------------------------------------------")
-                    print("prepare command line: ", "\"" + str(bpy.app.binary_path) + "\" --background --python \"" + os.path.join(os.path.dirname(os.path.dirname(__file__)), script_name) + "\" -- " + str(" ").join(obj["params"]))
+                    isolated_print("-------------------------------------------------------------------------------")
+                    isolated_print("prepare command line: ", "\"" + str(bpy.app.binary_path) + "\" --background --python \"" + os.path.join(os.path.dirname(os.path.dirname(__file__)), script_name) + "\" -- " + str(" ").join(obj["params"]))
 
                 si = subprocess.STARTUPINFO()
                 si.dwFlags = subprocess.STARTF_USESTDHANDLES | subprocess.HIGH_PRIORITY_CLASS

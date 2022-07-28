@@ -55,6 +55,11 @@ SUB_TILES_RANGE = "[0-7]"
 TILE_LOD_SUFFIX = "_LOD0"
 
 
+class BOOLEAN_MODIFIER_OPERATION:
+    DIFFERENCE = "DIFFERENCE"
+    INTERSECT = "INTERSECT"
+
+
 def keep_objects(objects_to_keep):
     if len(objects_to_keep) > 0:
         for obj_to_keep in objects_to_keep:
@@ -433,7 +438,7 @@ def reduce_number_of_vertices(model_file_path):
     bpy.ops.object.select_all(action=SELECT_ACTION)
 
 
-def cleanup_3d_data(model_file_path, intersect=False):
+def process_3d_data(model_file_path, intersect=False):
     import_model_files([model_file_path], clean=False)
     objects = bpy.context.scene.objects
 
@@ -450,12 +455,13 @@ def cleanup_3d_data(model_file_path, intersect=False):
                     continue
 
                 booly.object = mask
-                booly.operation = "INTERSECT" if intersect else "DIFFERENCE"
+                booly.operation = BOOLEAN_MODIFIER_OPERATION.INTERSECT if intersect else BOOLEAN_MODIFIER_OPERATION.DIFFERENCE
                 booly.solver = "EXACT"
                 booly.use_hole_tolerant = True
                 for modifier in obj.modifiers:
                     bpy.ops.object.modifier_apply(modifier=modifier.name)
 
+    stop
     if mask:
         for obj in objects:
             if obj != mask and obj != grid:
@@ -496,14 +502,14 @@ def generate_model_height_data(model_file_path, lat, lon, altitude, height_adjus
     # fix wrong height data for bridges on water
     if os.path.exists(positioning_file_path) and os.path.exists(water_mask_file_path):
         align_model_with_mask(model_file_path, positioning_file_path, water_mask_file_path, objects_to_keep=[grid])
-        cleanup_3d_data(model_file_path, intersect=True)
+        process_3d_data(model_file_path, intersect=True)
         tile = get_tile_for_ray_cast(model_file_path, imported=False, objects_to_keep=[grid])
         hmatrix = fix_bridge_height_data_on_water(tile, depsgraph, lat, lon, altitude, hmatrix_base=hmatrix)
 
     # fix wrong height data for tiles that has bare rocks or cliff inside them
     if inverted and os.path.exists(positioning_file_path) and os.path.exists(ground_mask_file_path):
         align_model_with_mask(model_file_path, positioning_file_path, ground_mask_file_path, objects_to_keep=[grid])
-        cleanup_3d_data(model_file_path, intersect=True)
+        process_3d_data(model_file_path, intersect=True)
         tile = get_tile_for_ray_cast(model_file_path, imported=False, objects_to_keep=[grid])
         hmatrix = calculate_height_map_from_coords_from_top(tile, grid_dimension, coords, depsgraph, lat, lon, altitude, hmatrix_base=hmatrix)
 

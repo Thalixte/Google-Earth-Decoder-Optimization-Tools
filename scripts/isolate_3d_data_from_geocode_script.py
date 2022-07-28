@@ -39,20 +39,17 @@ from utils import check_configuration, ScriptError, build_package, pr_bg_green, 
 from msfs_project import MsfsProject
 
 
-def clean_3d_data(script_settings):
+def isolate_3d_data_from_geocode(script_settings):
     try:
         # instantiate the msfsProject and create the necessary resources if it does not exist
         msfs_project = MsfsProject(script_settings.projects_path, script_settings.project_name, script_settings.definition_file, script_settings.author_name, script_settings.sources_path)
 
         check_configuration(script_settings, msfs_project)
 
-        if script_settings.backup_enabled:
-            msfs_project.backup(Path(os.path.abspath(__file__)).stem.replace(SCRIPT_PREFIX, str()))
-
         isolated_print(EOL)
         print_title("CLEANUP 3D DATA")
 
-        msfs_project.prepare_3d_data(script_settings, generate_height_data=False, clean_3d_data=True, create_polygons=False)
+        msfs_project.isolate_3d_data_from_geocode(settings)
 
         if script_settings.build_package_enabled:
             build_package(msfs_project, script_settings)
@@ -74,4 +71,4 @@ def clean_3d_data(script_settings):
 
 
 if __name__ == "__main__":
-    clean_3d_data(settings)
+    isolate_3d_data_from_geocode(settings)

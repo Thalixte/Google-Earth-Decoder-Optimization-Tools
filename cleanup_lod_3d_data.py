@@ -60,7 +60,7 @@ if cwd not in sys.path:
 
 from utils import *
 from blender import clean_scene
-from msfs_project import MsfsLod
+from msfs_project import MsfsLod, PROCESS_TYPE
 
 # clear and open the system console
 # open_console()
@@ -125,6 +125,6 @@ try:
     settings = Settings(get_sources_path())
 
     lod = MsfsLod(os.path.splitext(args.model_file)[0][-2:], 0, args.folder, args.model_file)
-    lod.cleanup_3d_data(args.positioning_file_path, args.mask_file_path)
+    lod.process_3d_data(args.positioning_file_path, args.mask_file_path, process_type=PROCESS_TYPE.cleanup_3d_data)
 except:
     pass

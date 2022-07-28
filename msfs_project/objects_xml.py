@@ -310,19 +310,27 @@ class ObjectsXml(Xml):
         return scenery_object_elem
 
     def __add_generated_group(self, group):
-        return Et.SubElement(self.root, group.tag, attrib={
+        attrib = {
             self.DISPLAY_NAME_ATTR: group.display_name,
-            self.GROUP_INDEX_ATTR: str(group.group_index),
             self.GROUP_ID_ATTR: str(group.group_id),
             self.GROUP_GENERATED_ATTR: str(group.group_generated).upper()
-        })
+        }
+
+        if group.group_index > 0:
+            attrib[self.GROUP_INDEX_ATTR] = str(group.group_index)
+
+        return Et.SubElement(self.root, group.tag, attrib=attrib)
 
     def __add_shape_polygon(self, polygon):
-        return Et.SubElement(self.root, polygon.tag, attrib={
+        attrib = {
             self.PARENT_GROUP_ID_ATTR: str(polygon.parent_group_id),
-            self.GROUP_INDEX_ATTR: str(polygon.group_index),
             self.ALTITUDE_ATTR: str(polygon.altitude)
-        })
+        }
+
+        if polygon.group_index > 0:
+            attrib[self.GROUP_INDEX_ATTR] = str(polygon.group_index)
+
+        return Et.SubElement(self.root, polygon.tag, attrib=attrib)
 
     def __add_shape_polygon_attribute(self, polygon, attribute):
         return Et.SubElement(polygon, attribute.tag, attrib={
