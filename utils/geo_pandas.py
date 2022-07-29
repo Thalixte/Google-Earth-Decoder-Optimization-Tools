@@ -111,13 +111,13 @@ def create_bounding_box(coords):
     return gpd.GeoDataFrame(pd.DataFrame([], index=[0]), crs=EPSG.key + str(EPSG.WGS84_degree_unit), geometry=[b]), b
 
 
-def create_exclusion_masks_from_tiles(tiles, dest_folder, b, exclusion_mask, keep_building_mask=None, ground_exclusion_mask=None, rocks=None, keep_holes=True, file_prefix="", title="CREATE EXCLUSION MASKS OSM FILES"):
+def create_exclusion_masks_from_tiles(tiles, dest_folder, b, exclusion_mask, keep_building_mask=None, airport_mask=None, ground_exclusion_mask=None, rocks=None, keep_holes=True, file_prefix="", title="CREATE EXCLUSION MASKS OSM FILES"):
     valid_tiles = [tile for tile in list(tiles.values()) if tile.valid]
     pbar = ProgressBar(valid_tiles, title=title)
     exclusion = exclusion_mask.copy()
 
     for i, tile in enumerate(valid_tiles):
-        tile.create_exclusion_mask_osm_file(dest_folder, b, exclusion, keep_building_mask=keep_building_mask, ground_exclusion_mask=ground_exclusion_mask, rocks=rocks, keep_holes=keep_holes, file_prefix=file_prefix)
+        tile.create_exclusion_mask_osm_file(dest_folder, b, exclusion, keep_building_mask=keep_building_mask, airport_mask=airport_mask, ground_exclusion_mask=ground_exclusion_mask, rocks=rocks, keep_holes=keep_holes, file_prefix=file_prefix)
         pbar.update("exclusion mask created for %s tile" % tile.name)
 
 
@@ -447,6 +447,9 @@ def create_exclusion_vegetation_polygons_gdf(exclusion):
 
 def clip_gdf(gdf, clip):
     result = gdf.copy()
+
+    if clip.empty:
+        return result
 
     if not result.empty:
         result[GEOMETRY_OSM_COLUMN] = result[GEOMETRY_OSM_COLUMN].clip(clip)

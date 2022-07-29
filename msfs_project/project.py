@@ -925,14 +925,14 @@ class MsfsProject:
         orig_pitch = load_gdf(self.coords, LEISURE_OSM_KEY, OSM_TAGS[PITCH_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, PITCH_OSM_KEY + SHP_FILE_EXT))
         orig_construction = load_gdf(self.coords, LANDUSE_OSM_KEY, OSM_TAGS[CONSTRUCTION_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, CONSTRUCTION_OSM_KEY + SHP_FILE_EXT))
         orig_park = load_gdf(self.coords, LEISURE_OSM_KEY, OSM_TAGS[PARK_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, PARK_OSM_KEY + SHP_FILE_EXT))
-        orig_airport = load_gdf_from_geocode(AIRPORT_GEOCODE + ", " + settings.city.lower())
         orig_building = load_gdf(self.coords, BUILDING_OSM_KEY, True, shp_file_path=os.path.join(self.shpfiles_folder, BUILDING_OSM_KEY + SHP_FILE_EXT))
+        orig_airport = load_gdf_from_geocode(AIRPORT_GEOCODE + ", " + settings.city.lower())
 
         road = prepare_roads_gdf(orig_road, orig_railway)
         sea = prepare_sea_gdf(orig_sea)
         bbox = prepare_bbox_gdf(orig_bbox, orig_land_mass, orig_boundary)
 
-        landuse = clip_gdf(prepare_gdf(orig_landuse), bbox)
+        landuse = clip_gdf(prepare_gdf(orig_landuse, resize=20), bbox)
         leisure = clip_gdf(prepare_gdf(orig_leisure, resize=20), bbox)
         natural = clip_gdf(prepare_gdf(orig_natural, resize=20), bbox)
         natural_water = clip_gdf(prepare_gdf(orig_natural_water), bbox)
@@ -968,7 +968,7 @@ class MsfsProject:
         rocks = load_gdf(self.coords, NATURAL_OSM_KEY, OSM_TAGS[ROCKS_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, ROCKS_OSM_KEY + SHP_FILE_EXT))
         rocks = prepare_gdf(rocks)
 
-        create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, water_exclusion, keep_building_mask=building, ground_exclusion_mask=ground_exclusion, rocks=rocks, title="CREATE EXCLUSION MASKS OSM FILES")
+        create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, water_exclusion, keep_building_mask=building, airport_mask=airport, ground_exclusion_mask=ground_exclusion, rocks=rocks, title="CREATE EXCLUSION MASKS OSM FILES")
         create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, ground_exclusion, file_prefix=GROUND_OSM_KEY + "_", title="CREATE GROUND EXCLUSION MASKS OSM FILES")
         create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, whole_water, keep_holes=False, file_prefix=WATER_OSM_KEY + "_", title="CREATE WATER EXCLUSION MASKS OSM FILES")
 
