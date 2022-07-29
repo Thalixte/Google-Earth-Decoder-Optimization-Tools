@@ -207,6 +207,10 @@ class MsfsLod:
             for definition_file in tile.new_tiles.values():
                 add_new_lod(definition_file, self.model_file, min_size_value)
 
+        model_file = MsfsGltf(os.path.join(self.folder, self.model_file))
+        model_file.remove_texture_path(self.name)
+        model_file.dump()
+
     def reduce_number_of_vertices(self):
         # Import the gltf files located in the object folder
         model_file = MsfsGltf(os.path.join(self.folder, self.model_file))
@@ -216,6 +220,9 @@ class MsfsLod:
         reduce_number_of_vertices(os.path.join(self.folder, self.model_file))
         export_to_optimized_gltf_files(os.path.join(self.folder, self.model_file), TEXTURE_FOLDER, use_selection=True, export_extras=False)
         clean_scene()
+        model_file = MsfsGltf(os.path.join(self.folder, self.model_file))
+        model_file.remove_texture_path(self.name)
+        model_file.dump()
 
     def process_3d_data(self, positioning_file_path, mask_file_path, process_type=PROCESS_TYPE.cleanup_3d_data):
         # Import the gltf files located in the object folder
@@ -231,6 +238,7 @@ class MsfsLod:
             process_3d_data(os.path.join(self.folder, self.model_file), intersect=True)
         export_to_optimized_gltf_files(os.path.join(self.folder, self.model_file), TEXTURE_FOLDER, use_selection=True, export_extras=False)
         model_file = MsfsGltf(os.path.join(self.folder, self.model_file))
+        model_file.remove_texture_path(self.name)
         model_file.add_cleaned_tag()
         model_file.dump()
         clean_scene()
@@ -245,7 +253,15 @@ class MsfsLod:
         return result
 
     def calculate_height_data(self, lat, lon, altitude, height_adjustment, inverted=False, positioning_file_path="", water_mask_file_path="", ground_mask_file_path=""):
-        return generate_model_height_data(os.path.join(self.folder, self.model_file), lat, lon, altitude, height_adjustment, inverted=inverted, positioning_file_path=positioning_file_path, water_mask_file_path=water_mask_file_path, ground_mask_file_path=ground_mask_file_path)
+        model_file = MsfsGltf(os.path.join(self.folder, self.model_file))
+        model_file.remove_texture_path(self.name)
+        model_file.add_texture_path()
+        model_file.dump()
+        result = generate_model_height_data(os.path.join(self.folder, self.model_file), lat, lon, altitude, height_adjustment, inverted=inverted, positioning_file_path=positioning_file_path, water_mask_file_path=water_mask_file_path, ground_mask_file_path=ground_mask_file_path)
+        model_file = MsfsGltf(os.path.join(self.folder, self.model_file))
+        model_file.remove_texture_path(self.name)
+        model_file.dump()
+        return result
 
     def fix_imported_texture_names(self):
         file_path = os.path.join(self.folder, self.model_file)

@@ -461,7 +461,6 @@ def process_3d_data(model_file_path, intersect=False):
                 for modifier in obj.modifiers:
                     bpy.ops.object.modifier_apply(modifier=modifier.name)
 
-    stop
     if mask:
         for obj in objects:
             if obj != mask and obj != grid:

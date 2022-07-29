@@ -160,6 +160,13 @@ class MsfsProject:
         self.__clean_objects(self.colliders)
         self.__clean_objects(self.objects)
 
+        lods = [lod for tile in self.tiles.values() for lod in tile.lods]
+        pbar = ProgressBar(list(lods), title="PREPARE THE TILES FOR MSFS")
+        for lod in lods:
+            lod.optimization_in_progress = False
+            lod.prepare_for_msfs()
+            pbar.update("%s prepared for msfs" % lod.name)
+
     def optimize(self, settings):
         isolated_print(EOL)
         dest_format = settings.output_texture_format
@@ -1228,8 +1235,8 @@ class MsfsProject:
                 params = [str(bpy.app.binary_path), "--background", "--python", os.path.join(os.path.dirname(os.path.dirname(__file__)), script_name), "--"]
 
                 for obj in chunck:
-                    isolated_print("-------------------------------------------------------------------------------")
-                    isolated_print("prepare command line: ", "\"" + str(bpy.app.binary_path) + "\" --background --python \"" + os.path.join(os.path.dirname(os.path.dirname(__file__)), script_name) + "\" -- " + str(" ").join(obj["params"]))
+                    print("-------------------------------------------------------------------------------")
+                    print("prepare command line: ", "\"" + str(bpy.app.binary_path) + "\" --background --python \"" + os.path.join(os.path.dirname(os.path.dirname(__file__)), script_name) + "\" -- " + str(" ").join(obj["params"]))
 
                 si = subprocess.STARTUPINFO()
                 si.dwFlags = subprocess.STARTF_USESTDHANDLES | subprocess.HIGH_PRIORITY_CLASS
