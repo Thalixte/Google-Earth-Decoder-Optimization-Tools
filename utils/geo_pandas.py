@@ -106,6 +106,10 @@ def create_bounding_box_from_tiles(tiles):
     return result
 
 
+def create_empty_gdf():
+    return gpd.GeoDataFrame(columns=[GEOMETRY_OSM_COLUMN], geometry=GEOMETRY_OSM_COLUMN)
+
+
 def create_bounding_box(coords):
     b = bbox_to_poly(coords[1], coords[0], coords[2], coords[3])
     return gpd.GeoDataFrame(pd.DataFrame([], index=[0]), crs=EPSG.key + str(EPSG.WGS84_degree_unit), geometry=[b]), b
@@ -135,7 +139,7 @@ def load_gdf_from_geocode(geocode, keep_data=False):
         result = ox.geocode_to_gdf(geocode)
     except ValueError:
         pr_bg_orange("Geocode (" + geocode + ") not found in OSM data" + EOL + CEND)
-        return gpd.GeoDataFrame(columns=[GEOMETRY_OSM_COLUMN], geometry=GEOMETRY_OSM_COLUMN)
+        return create_empty_gdf()
 
     if keep_data:
         return result
@@ -288,7 +292,7 @@ def prepare_sea_gdf(gdf):
 
 
 def prepare_golf_gdf(gdf):
-    result = gpd.GeoDataFrame(columns=[GEOMETRY_OSM_COLUMN], geometry=GEOMETRY_OSM_COLUMN)
+    result = create_empty_gdf()
 
     if GOLF_OSM_KEY in gdf:
         result = gdf[(gdf[GOLF_OSM_KEY] == FAIRWAY_OSM_TAG)]
@@ -301,7 +305,7 @@ def prepare_golf_gdf(gdf):
 
 def prepare_park_gdf(gdf, road):
     if gdf is None:
-        return gpd.GeoDataFrame(columns=[GEOMETRY_OSM_COLUMN], geometry=GEOMETRY_OSM_COLUMN)
+        return create_empty_gdf()
 
     result = gdf.copy()
 
@@ -339,7 +343,7 @@ def create_land_mass_gdf(sources_path, bbox, b):
 
 
 def create_buildings_and_water_gdf(buildings, water):
-    result = gpd.GeoDataFrame(columns=[GEOMETRY_OSM_COLUMN], geometry=GEOMETRY_OSM_COLUMN)
+    result = create_empty_gdf()
 
     result = union_gdf(result, resize_gdf(water, 5))
     result = union_gdf(result, buildings)
@@ -349,7 +353,7 @@ def create_buildings_and_water_gdf(buildings, water):
 
 
 def create_exclusion_gdf(landuse, leisure, natural, natural_water, water, sea, aeroway, roads):
-    result = gpd.GeoDataFrame(columns=[GEOMETRY_OSM_COLUMN], geometry=GEOMETRY_OSM_COLUMN)
+    result = create_empty_gdf()
     result = union_gdf(result, landuse)
     result = union_gdf(result, resize_gdf(leisure, 20))
     result = union_gdf(result, natural)
@@ -366,7 +370,7 @@ def create_exclusion_gdf(landuse, leisure, natural, natural_water, water, sea, a
 
 
 def create_water_bridge_exclusion_gdf(natural_water, water, sea, roads):
-    result = gpd.GeoDataFrame(columns=[GEOMETRY_OSM_COLUMN], geometry=GEOMETRY_OSM_COLUMN)
+    result = create_empty_gdf()
     result = union_gdf(result, intersect_gdf(water, roads))
     result = union_gdf(result, intersect_gdf(natural_water, roads))
     result = union_gdf(result, intersect_gdf(sea, roads))
@@ -375,7 +379,7 @@ def create_water_bridge_exclusion_gdf(natural_water, water, sea, roads):
 
 
 def create_whole_water_gdf(natural_water, water, sea):
-    result = gpd.GeoDataFrame(columns=[GEOMETRY_OSM_COLUMN], geometry=GEOMETRY_OSM_COLUMN)
+    result = create_empty_gdf()
     result = union_gdf(result, water)
     result = union_gdf(result, natural_water)
     result = union_gdf(result, sea)
@@ -384,7 +388,7 @@ def create_whole_water_gdf(natural_water, water, sea):
 
 
 def create_water_exclusion_gdf(natural_water, water, sea, roads):
-    result = gpd.GeoDataFrame(columns=[GEOMETRY_OSM_COLUMN], geometry=GEOMETRY_OSM_COLUMN)
+    result = create_empty_gdf()
     result = union_gdf(result, difference_gdf(water, roads))
     result = union_gdf(result, difference_gdf(natural_water, roads))
     result = union_gdf(result, difference_gdf(sea, roads))
@@ -393,7 +397,7 @@ def create_water_exclusion_gdf(natural_water, water, sea, roads):
 
 
 def create_ground_exclusion_gdf(landuse, leisure, natural, aeroway, road, park, airport):
-    result = gpd.GeoDataFrame(columns=[GEOMETRY_OSM_COLUMN], geometry=GEOMETRY_OSM_COLUMN)
+    result = create_empty_gdf()
     result = union_gdf(result, landuse)
     result = union_gdf(result, leisure)
     result = union_gdf(result, natural)

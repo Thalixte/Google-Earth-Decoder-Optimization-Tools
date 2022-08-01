@@ -58,6 +58,8 @@ class Settings:
     contrast: float
     saturation: float
     hue: float
+    high_precision: str
+    exclude_ground: str
     exclude_parks: str
 
     LODS_SECTION = "LODS"
@@ -97,6 +99,8 @@ class Settings:
         self.contrast = 1.0
         self.saturation = 1.0
         self.hue = 1.0
+        self.high_precision = "False"
+        self.exclude_ground = "True"
         self.exclude_parks = "False"
 
         config = cp.ConfigParser()
@@ -149,7 +153,8 @@ class Settings:
         self.saturation = "{:.2f}".format(float(str(self.saturation))).rstrip("0").rstrip(".")
         self.hue = "{:.2f}".format(float(str(self.hue))).rstrip("0").rstrip(".")
 
-        # check if the backup of the project files is enabled
+        self.high_precision = json.loads(self.high_precision.lower())
+        self.exclude_ground = json.loads(self.exclude_ground.lower())
         self.exclude_parks = json.loads(self.exclude_parks.lower())
 
         if self.definition_file_to_merge == str() and self.project_path_to_merge != str():

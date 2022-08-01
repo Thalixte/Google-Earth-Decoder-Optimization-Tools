@@ -47,7 +47,7 @@ from msfs_project.tile import MsfsTile
 from msfs_project.shape import MsfsShapes
 from utils import replace_in_file, is_octant, backup_file, install_python_lib, ScriptError, print_title, \
     get_backup_file_path, isolated_print, chunks, create_bounding_box_from_tiles, clip_gdf, create_terraform_polygons_gdf, create_land_mass_gdf, create_exclusion_masks_from_tiles, preserve_holes, create_exclusion_building_polygons_gdf, create_whole_water_gdf, create_ground_exclusion_gdf, load_gdf, prepare_roads_gdf, \
-    prepare_sea_gdf, prepare_bbox_gdf, prepare_gdf, create_exclusion_vegetation_polygons_gdf, load_gdf_from_geocode, difference_gdf, create_shore_water_gdf, resize_gdf, prepare_golf_gdf, pr_bg_orange, load_json_file, prepare_park_gdf, prepare_building_gdf
+    prepare_sea_gdf, prepare_bbox_gdf, prepare_gdf, create_exclusion_vegetation_polygons_gdf, load_gdf_from_geocode, difference_gdf, create_shore_water_gdf, resize_gdf, prepare_golf_gdf, pr_bg_orange, load_json_file, prepare_park_gdf, prepare_building_gdf, create_empty_gdf, union_gdf
 from pathlib import Path
 
 from utils.compressonator import Compressonator
@@ -160,12 +160,13 @@ class MsfsProject:
         self.__clean_objects(self.colliders)
         self.__clean_objects(self.objects)
 
-        lods = [lod for tile in self.tiles.values() for lod in tile.lods]
-        pbar = ProgressBar(list(lods), title="PREPARE THE TILES FOR MSFS")
-        for lod in lods:
-            lod.optimization_in_progress = False
-            lod.prepare_for_msfs()
-            pbar.update("%s prepared for msfs" % lod.name)
+        if not self.colliders:
+            lods = [lod for tile in self.tiles.values() for lod in tile.lods]
+            pbar = ProgressBar(list(lods), title="PREPARE THE TILES FOR MSFS")
+            for lod in lods:
+                lod.optimization_in_progress = False
+                lod.prepare_for_msfs()
+                pbar.update("%s prepared for msfs" % lod.name)
 
     def optimize(self, settings):
         isolated_print(EOL)
@@ -642,7 +643,7 @@ class MsfsProject:
 
         return chunks(data, self.NB_PARALLEL_TASKS)
 
-    def __retrieve_tiles_to_calculate_height_map(self, new_group_id=-1, parallel=True, height_adjustment=0.5):
+    def __retrieve_tiles_to_calculate_height_map(self, new_group_id=-1, parallel=True, height_adjustment=0.5, high_precision=False):
         data = []
 
         for guid, tile in self.tiles.items():
@@ -652,7 +653,7 @@ class MsfsProject:
             if not tile.valid:
                 continue
 
-            has_rocks = tile.has_rocks
+            has_rocks = tile.has_rocks and not high_precision
             ground_mask_file_path = os.path.join(self.osmfiles_folder, GROUND_OSM_KEY + "_" + EXCLUSION_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)
             water_mask_file_path = os.path.join(self.osmfiles_folder, WATER_OSM_KEY + "_" + EXCLUSION_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)
 
@@ -678,6 +679,7 @@ class MsfsProject:
                                "--water_mask_file_path", str(water_mask_file_path)])
 
             params.extend(["--has_rocks", str(has_rocks)])
+            params.extend(["--high_precision", str(high_precision)])
             data.append({"name": tile.name, "params": params})
 
         return chunks(data, self.NB_PARALLEL_TASKS if parallel else 1)
@@ -870,7 +872,7 @@ class MsfsProject:
         self.objects_xml.remove_height_maps(HEIGHT_MAPS_DISPLAY_NAME, True)
         new_group_id = self.objects_xml.get_new_group_id()
 
-        tiles_data = self.__retrieve_tiles_to_calculate_height_map(new_group_id=new_group_id, parallel=True, height_adjustment=float(settings.height_adjustment))
+        tiles_data = self.__retrieve_tiles_to_calculate_height_map(new_group_id=new_group_id, parallel=True, height_adjustment=float(settings.height_adjustment), high_precision=settings.high_precision)
         self.__multithread_process_data(tiles_data, "calculate_tile_height_data.py", "CALCULATE HEIGHT MAPS FOR EACH TILE", "height map calculated")
         self.__add_height_maps_to_objects_xml()
 
@@ -888,6 +890,15 @@ class MsfsProject:
         self.objects_xml.save()
 
     def __create_tiles_bounding_boxes(self):
+        # ensure to clean the xml folder containing the heightmaps data by removing it
+        try:
+            shutil.rmtree(self.osmfiles_folder)
+        except:
+            pass
+
+        # create the osm folder if it does not exist
+        os.makedirs(self.osmfiles_folder, exist_ok=True)
+
         valid_tiles = [tile for tile in list(self.tiles.values()) if tile.valid]
         pbar = ProgressBar(valid_tiles, title="CREATE BOUNDING BOX OSM FILES FOR EACH TILE")
         for i, tile in enumerate(valid_tiles):
@@ -932,9 +943,9 @@ class MsfsProject:
         sea = prepare_sea_gdf(orig_sea)
         bbox = prepare_bbox_gdf(orig_bbox, orig_land_mass, orig_boundary)
 
-        landuse = clip_gdf(prepare_gdf(orig_landuse, resize=20), bbox)
-        leisure = clip_gdf(prepare_gdf(orig_leisure, resize=20), bbox)
-        natural = clip_gdf(prepare_gdf(orig_natural, resize=20), bbox)
+        landuse = clip_gdf(prepare_gdf(orig_landuse), bbox)
+        leisure = clip_gdf(prepare_gdf(orig_leisure), bbox)
+        natural = clip_gdf(prepare_gdf(orig_natural), bbox)
         natural_water = clip_gdf(prepare_gdf(orig_natural_water), bbox)
         water = clip_gdf(prepare_gdf(orig_water), bbox)
         aeroway = clip_gdf(prepare_gdf(orig_aeroway), bbox)
@@ -946,7 +957,7 @@ class MsfsProject:
         if settings.exclude_parks:
             park = clip_gdf(prepare_park_gdf(orig_park, orig_road), bbox)
         else:
-            park = orig_park
+            park = create_empty_gdf()
 
         whole_water = create_whole_water_gdf(natural_water, water, sea)
         # for debugging purpose, generate the water exclusion osm file
@@ -968,7 +979,12 @@ class MsfsProject:
         rocks = load_gdf(self.coords, NATURAL_OSM_KEY, OSM_TAGS[ROCKS_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, ROCKS_OSM_KEY + SHP_FILE_EXT))
         rocks = prepare_gdf(rocks)
 
-        create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, water_exclusion, keep_building_mask=building, airport_mask=airport, ground_exclusion_mask=ground_exclusion, rocks=rocks, title="CREATE EXCLUSION MASKS OSM FILES")
+        exclusion = union_gdf(water_exclusion, ground_exclusion if settings.exclude_ground else create_empty_gdf())
+        # for debugging purpose, generate the water exclusion osm file
+        osm_xml = OsmXml(self.osmfiles_folder, EXCLUSION_OSM_FILE_PREFIX + OSM_FILE_EXT)
+        osm_xml.create_from_geodataframes([preserve_holes(exclusion.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore'))], b, True, [(HEIGHT_OSM_TAG, 1000)])
+
+        create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, water_exclusion, keep_building_mask=building, airport_mask=airport, ground_exclusion_mask=ground_exclusion if settings.exclude_ground else create_empty_gdf(), rocks=rocks, title="CREATE EXCLUSION MASKS OSM FILES")
         create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, ground_exclusion, file_prefix=GROUND_OSM_KEY + "_", title="CREATE GROUND EXCLUSION MASKS OSM FILES")
         create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, whole_water, keep_holes=False, file_prefix=WATER_OSM_KEY + "_", title="CREATE WATER EXCLUSION MASKS OSM FILES")
 
@@ -1006,7 +1022,7 @@ class MsfsProject:
 
             new_group_id = self.objects_xml.get_new_group_id()
             self.shapes[EXCLUSION_BUILDING_POLYGONS_DISPLAY_NAME] = MsfsShapes(shape_gdf=exclusion_building_polygons, group_display_name=EXCLUSION_BUILDING_POLYGONS_DISPLAY_NAME, group_id=new_group_id, exclude_buildings=True)
-            self.shapes[EXCLUSION_VEGETATION_POLYGONS_DISPLAY_NAME] = MsfsShapes(shape_gdf=exclusion_vegetation_polygons, group_display_name=EXCLUSION_VEGETATION_POLYGONS_DISPLAY_NAME, group_id=new_group_id + 1, exclude_vegetation=True)
+            self.shapes[EXCLUSION_VEGETATION_POLYGONS_DISPLAY_NAME] = MsfsShapes(shape_gdf=exclusion_vegetation_polygons, group_display_name=EXCLUSION_VEGETATION_POLYGONS_DISPLAY_NAME, group_id=new_group_id + 1, exclude_vegetation=True, exclude_buildings=True)
             self.shapes[PITCH_TERRAFORM_POLYGONS_DISPLAY_NAME] = MsfsShapes(shape_gdf=pitch_terraform_polygons, group_display_name=PITCH_TERRAFORM_POLYGONS_DISPLAY_NAME, group_id=new_group_id + 2, tiles=self.tiles, flatten=True)
             self.shapes[CONSTRUCTION_TERRAFORM_POLYGONS_DISPLAY_NAME] = MsfsShapes(shape_gdf=construction_terraform_polygons, group_display_name=CONSTRUCTION_TERRAFORM_POLYGONS_DISPLAY_NAME, group_id=new_group_id + 3, tiles=self.tiles, flatten=False)
             # self.shapes[GOLF_TERRAFORM_POLYGONS_DISPLAY_NAME] = MsfsShapes(shape_gdf=golf_terraform_polygons, group_display_name=GOLF_TERRAFORM_POLYGONS_DISPLAY_NAME, group_id=new_group_id + 4, tiles=self.tiles, flatten=True)

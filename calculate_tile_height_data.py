@@ -136,6 +136,11 @@ try:
         help="path of the ground exclusion mask file",
     )
 
+    parser.add_argument(
+        "-hp", "--high_precision", dest="high_precision", type=str, required=True,
+        help="indicates if the the most detailed tile is used for height calculation",
+    )
+
 
     args = parser.parse_args(argv)
 
@@ -164,18 +169,22 @@ try:
         raise ScriptError("Error: --height_adjustment=\"some string\" argument not given, aborting.")
 
     if not args.has_rocks:
-        raise ScriptError("Error: --has_rocks=\"some string\" argument not given, aborting.")
+        raise ScriptError("Error: --has_rocks=\"true/false\" argument not given, aborting.")
+
+    if not args.high_precision:
+        raise ScriptError("Error: --high_precision=\"true/false\" argument not given, aborting.")
 
     clean_scene()
 
     settings = Settings(get_sources_path())
     has_rocks = json.loads(args.has_rocks.lower())
+    high_precision = json.loads(args.high_precision.lower())
 
     ground_mask_file_path = args.ground_mask_file_path if has_rocks else str()
     positioning_file_path = args.positioning_file_path if args.positioning_file_path else str()
     water_mask_file_path = args.water_mask_file_path if args.water_mask_file_path else str()
 
     tile = MsfsTile(args.folder, args.name, args.definition_file)
-    tile.generate_height_data(HeightMapXml(args.height_map_xml_folder, HEIGHT_MAP_SUFFIX + args.name + XML_FILE_EXT), args.group_id, float(args.altitude), float(args.height_adjustment), inverted=has_rocks, positioning_file_path=positioning_file_path, water_mask_file_path=water_mask_file_path, ground_mask_file_path=ground_mask_file_path)
+    tile.generate_height_data(HeightMapXml(args.height_map_xml_folder, HEIGHT_MAP_SUFFIX + args.name + XML_FILE_EXT), args.group_id, float(args.altitude), float(args.height_adjustment), high_precision=high_precision, inverted=has_rocks, positioning_file_path=positioning_file_path, water_mask_file_path=water_mask_file_path, ground_mask_file_path=ground_mask_file_path)
 except:
     pass

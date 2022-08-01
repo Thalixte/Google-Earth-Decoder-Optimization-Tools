@@ -141,12 +141,15 @@ class MsfsTile(MsfsSceneObject):
         if not file_prefix:
             self.exclusion_mask_gdf = exclusion_mask_gdf
 
-    def generate_height_data(self, height_map_xml, group_id, altitude, height_adjustment, inverted=False, positioning_file_path="", water_mask_file_path="", ground_mask_file_path=""):
+    def generate_height_data(self, height_map_xml, group_id, altitude, height_adjustment, high_precision=False, inverted=False, positioning_file_path="", water_mask_file_path="", ground_mask_file_path=""):
         if not self.lods:
             return
 
         min_lod_idx = len(self.lods) - 1
         lod = self.lods[min_lod_idx]
+
+        if high_precision and len(self.lods) > 0:
+            lod = self.lods[0]
 
         if os.path.isdir(lod.folder):
             height_data, width, altitude, grid_limit = lod.calculate_height_data(self.coords[0], self.coords[2], altitude, height_adjustment, inverted=inverted, positioning_file_path=positioning_file_path, water_mask_file_path=water_mask_file_path, ground_mask_file_path=ground_mask_file_path)

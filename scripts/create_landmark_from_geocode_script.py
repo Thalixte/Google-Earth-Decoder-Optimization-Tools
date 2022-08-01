@@ -47,7 +47,7 @@ def create_landmark_from_geocode(script_settings):
         isolated_print(EOL)
         geocode_gdf = load_gdf_from_geocode(settings.geocode, keep_data=True)
 
-        if geocode_gdf is not None:
+        if not geocode_gdf.empty:
             # instantiate the msfsProject and create the necessary resources if it does not exist
             msfs_project = MsfsProject(script_settings.projects_path, script_settings.project_name, script_settings.definition_file, script_settings.author_name, script_settings.sources_path)
 
