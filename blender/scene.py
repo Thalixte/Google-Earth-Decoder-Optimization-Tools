@@ -373,6 +373,7 @@ def align_model_with_mask(model_file_path, positioning_file_path, mask_file_path
     bpy.ops.object.select_all(action=SELECT_ACTION)
 
     bpy.ops.object.align(bb_quality=True, align_mode='OPT_2', relative_to='OPT_4', align_axis={'X', 'Y'})
+    bpy.ops.object.align(bb_quality=True, align_mode='OPT_1', relative_to='OPT_4', align_axis={'Z'})
 
     bpy.ops.object.select_all(action=DESELECT_ACTION)
 
@@ -380,6 +381,7 @@ def align_model_with_mask(model_file_path, positioning_file_path, mask_file_path
 
     transform_x = src.matrix_world.translation[0]
     transform_y = src.matrix_world.translation[1]
+    transform_z = src.matrix_world.translation[2]
 
     clean_scene(objects_to_keep=objects_to_keep)
 
@@ -402,6 +404,7 @@ def align_model_with_mask(model_file_path, positioning_file_path, mask_file_path
     target.rotation_euler = rot_z
     target.location[0] = transform_x
     target.location[1] = transform_y
+    target.location[2] = transform_z
 
     bpy.ops.object.select_all(action=DESELECT_ACTION)
 
@@ -607,6 +610,8 @@ def prepare_ray_cast(grid_factor=5.0):
     bpy.ops.object.select_all(action=SELECT_ACTION)
 
     bpy.ops.object.align(bb_quality=True, align_mode='OPT_3', relative_to='OPT_4', align_axis={'X', 'Y'})
+    apply_transform(grid, use_location=True, use_rotation=False, use_scale=False)
+    bpy.ops.object.align(bb_quality=True, align_mode='OPT_1', relative_to='OPT_4', align_axis={'Z'})
     apply_transform(grid, use_location=True, use_rotation=False, use_scale=False)
 
     coords = [v.co for v in grid.data.vertices]
