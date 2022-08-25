@@ -29,8 +29,10 @@ OK = "OK"
 KO = "KO"
 EOL = "\n"
 INI_FILE = "optimization_tools.ini"
-MSFS_BUILD_EXE="fspackagetool.exe"
+MSFS_BUILD_EXE = "fspackagetool.exe"
 EARTH_RADIUS = 6371010
+
+ROAD_LANE_WIDTH = 3.0
 
 PNG_TEXTURE_FORMAT = "png"
 JPG_TEXTURE_FORMAT = "jpg"
@@ -150,6 +152,10 @@ GRASS_OSM_KEY = "grass"
 GOLF_OSM_KEY = "golf"
 PARK_OSM_KEY = "park"
 NOT_SHORE_WATER_OSM_KEY = "not_shore"
+ELEMENT_TY_OSM_KEY = "element_ty"
+OSMID_OSM_KEY = "osmid"
+LANES_OSM_KEY = "lanes"
+ONEWAY_OSM_KEY = "oneway"
 
 FOREST_OSM_TAG = "forest"
 NATURE_RESERVE_OSM_TAG = "nature_reserve"
@@ -214,6 +220,25 @@ GEOCODE_OSM_FILE_PREFIX = "geocode"
 
 FEET_TO_METER_RATIO = 0.3048
 TILE_THICKNESS = 0.5
+
+MOTORWAY_ROAD_TYPE = "motorway"
+MOTORWAY_LINK_ROAD_TYPE = "motorway_link"
+PRIMARY_ROAD_TYPE = "primary"
+SECONDARY_ROAD_TYPE = "secondary"
+TERTIARY_ROAD_TYPE = "tertiary"
+RESIDENTIAL_ROAD_TYPE =  "residential"
+PEDESTRIAN_ROAD_TYPE = "pedestrian"
+FOOTWAY_ROAD_TYPE = "footway"
+SERVICE_ROAD_TYPE = "service"
+RAILWAY_ROAD_TYPE = "railway"
+
+ROAD_WITH_BORDERS = [
+    MOTORWAY_ROAD_TYPE,
+    MOTORWAY_LINK_ROAD_TYPE,
+    PRIMARY_ROAD_TYPE,
+    SECONDARY_ROAD_TYPE,
+    TERTIARY_ROAD_TYPE
+]
 
 OSM_TAGS = {
     BOUNDARY_OSM_KEY: [

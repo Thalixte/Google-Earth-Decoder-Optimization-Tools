@@ -16,7 +16,7 @@
 #
 #  <pep8 compliant>
 
-from utils import Settings, get_sources_path, reload_modules, print_title, isolated_print
+from utils import Settings, get_sources_path, reload_modules, print_title, isolated_print, load_gdf_from_geocode
 
 settings = Settings(get_sources_path())
 
@@ -41,6 +41,10 @@ from msfs_project import MsfsProject
 
 def exclude_3d_data_from_geocode(script_settings):
     try:
+        isolated_print(EOL)
+        # geocode_gdf = load_gdf_from_geocode(settings.geocode, keep_data=True)
+
+        # if not geocode_gdf.empty:
         # instantiate the msfsProject and create the necessary resources if it does not exist
         msfs_project = MsfsProject(script_settings.projects_path, script_settings.project_name, script_settings.definition_file, script_settings.author_name, script_settings.sources_path)
 

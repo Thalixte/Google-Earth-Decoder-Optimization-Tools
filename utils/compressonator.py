@@ -43,7 +43,7 @@ class Compressonator:
     DDS_PATTERN = "*." + DDS_FORMAT
     DDS_CONVERSION_FORMAT = "DXT1"
     BASE_COLOR_INDEX = 0
-    NB_PARALLEL_TASKS = 20
+    NB_PARALLEL_TASKS = 10
 
     def __init__(self, path, model_lib_folder):
         self.path = path

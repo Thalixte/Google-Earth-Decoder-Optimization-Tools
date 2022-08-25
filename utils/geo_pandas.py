@@ -15,6 +15,7 @@
 #  #
 #
 #  <pep8 compliant>
+import math
 import os
 
 import pandas as pd
@@ -25,7 +26,8 @@ from osmnx.utils_geo import bbox_to_poly
 from shapely.geometry import Polygon, JOIN_STYLE, CAP_STYLE, MultiPolygon, LineString, MultiPoint, Point
 from shapely.ops import linemerge, unary_union, polygonize, nearest_points
 
-from constants import GEOMETRY_OSM_COLUMN, BOUNDING_BOX_OSM_KEY, SHAPE_TEMPLATES_FOLDER, OSM_LAND_SHAPEFILE, ROAD_OSM_KEY, BRIDGE_OSM_TAG, SERVICE_OSM_KEY, NOT_SHORE_WATER_OSM_KEY, WATER_OSM_KEY, NATURAL_OSM_KEY, OSM_TAGS, FOOTWAY_OSM_TAG, PATH_OSM_TAG, MAN_MADE_OSM_KEY, PIER_OSM_TAG, GOLF_OSM_KEY, FAIRWAY_OSM_TAG, EOL, CEND, TUNNEL_OSM_TAG, SEAMARK_TYPE_OSM_TAG
+from constants import GEOMETRY_OSM_COLUMN, BOUNDING_BOX_OSM_KEY, SHAPE_TEMPLATES_FOLDER, OSM_LAND_SHAPEFILE, ROAD_OSM_KEY, BRIDGE_OSM_TAG, SERVICE_OSM_KEY, NOT_SHORE_WATER_OSM_KEY, WATER_OSM_KEY, NATURAL_OSM_KEY, OSM_TAGS, FOOTWAY_OSM_TAG, PATH_OSM_TAG, MAN_MADE_OSM_KEY, PIER_OSM_TAG, GOLF_OSM_KEY, FAIRWAY_OSM_TAG, EOL, CEND, TUNNEL_OSM_TAG, SEAMARK_TYPE_OSM_TAG, BUILDING_OSM_KEY, SHP_FILE_EXT, ELEMENT_TY_OSM_KEY, OSMID_OSM_KEY, RAILWAY_OSM_KEY, LANES_OSM_KEY, ONEWAY_OSM_KEY, ROAD_WITH_BORDERS, \
+    ROAD_LANE_WIDTH, GEOCODE_OSM_FILE_PREFIX, PEDESTRIAN_ROAD_TYPE, FOOTWAY_ROAD_TYPE, SERVICE_ROAD_TYPE
 from utils import pr_bg_orange
 from utils.progress_bar import ProgressBar
 from utils.geometry import close_holes, extend_line
@@ -134,20 +136,69 @@ def resize_gdf(gdf, resize_distance, single_sided=True):
     return gdf.to_crs(EPSG.key + str(EPSG.WGS84_degree_unit))
 
 
-def load_gdf_from_geocode(geocode, keep_data=False):
+def load_gdf_from_geocode(geocode, geocode_margin=5.0, keep_data=False, coords=None, shpfiles_folder=None):
     try:
         result = ox.geocode_to_gdf(geocode)
     except ValueError:
+        result = create_empty_gdf()
+        pass
+
+    if result.empty:
+        try:
+            result = ox.geocode_to_gdf(geocode, by_osmid=True)
+        except ValueError:
+            result = create_empty_gdf()
+            pass
+
+    orig_building = load_gdf(coords, BUILDING_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, BUILDING_OSM_KEY + SHP_FILE_EXT), is_buildings=True)
+
+    if result.empty:
+        try:
+            if coords is not None and shpfiles_folder is not None:
+                geocode_infos = geocode.split(",")
+                element_type = geocode_infos[0].strip()
+                osmid = geocode_infos[1].strip()
+                if ELEMENT_TY_OSM_KEY in orig_building and OSMID_OSM_KEY in orig_building:
+                    result = orig_building[(orig_building[ELEMENT_TY_OSM_KEY] == element_type) & (orig_building[OSMID_OSM_KEY] == int(osmid))]
+        except ValueError:
+            pr_bg_orange("Geocode (" + geocode + ") not found in OSM data" + EOL + CEND)
+            return create_empty_gdf()
+
+    if result.empty:
         pr_bg_orange("Geocode (" + geocode + ") not found in OSM data" + EOL + CEND)
         return create_empty_gdf()
+
+    bounds_coords = result.bounds.iloc[0]
+    result_coords = (bounds_coords["maxy"], bounds_coords["miny"], bounds_coords["maxx"], bounds_coords["minx"])
+    result_bbox, b = create_bounding_box(result_coords)
+    result_bbox = resize_gdf(result_bbox, 200)
+    orig_building = orig_building.clip(result_bbox, keep_geom_type=True)
+    building_mask = difference_gdf(orig_building, result)
+    if not building_mask.empty:
+        building_mask.to_file(os.path.join(shpfiles_folder, GEOCODE_OSM_FILE_PREFIX + "_" + BUILDING_OSM_KEY + SHP_FILE_EXT))
+
+    result = resize_gdf(result, geocode_margin)
 
     if keep_data:
         return result
 
-    result = resize_gdf(result, 5)
-
     if not result.empty:
         result = result[[GEOMETRY_OSM_COLUMN]]
+
+    orig_road = load_gdf(coords, ROAD_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, ROAD_OSM_KEY + SHP_FILE_EXT), is_roads=True)
+    orig_railway = load_gdf(coords, RAILWAY_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, RAILWAY_OSM_KEY + SHP_FILE_EXT), is_roads=True)
+    road = prepare_roads_gdf(orig_road, orig_railway)
+    road = road.clip(result_bbox, keep_geom_type=True)
+    # for debugging purpose, generate the shp file
+    if not road.empty:
+        road.to_file(os.path.join(shpfiles_folder, GEOCODE_OSM_FILE_PREFIX + "_" + ROAD_OSM_KEY + SHP_FILE_EXT))
+        road = clip_gdf(road, result)
+        road = road[[GEOMETRY_OSM_COLUMN]]
+        result = difference_gdf(result, road)
+
+    if not building_mask.empty:
+        building_mask = building_mask[[GEOMETRY_OSM_COLUMN]]
+        result = difference_gdf(result, building_mask)
 
     return result.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)
 
@@ -185,6 +236,14 @@ def load_gdf(coords, key, tags, shp_file_path="", is_roads=False, is_buildings=F
                 keys.append(SERVICE_OSM_KEY)
             if MAN_MADE_OSM_KEY in result:
                 keys.append(MAN_MADE_OSM_KEY)
+            if LANES_OSM_KEY in result:
+                keys.append(LANES_OSM_KEY)
+            if ONEWAY_OSM_KEY in result:
+                keys.append(ONEWAY_OSM_KEY)
+
+        if is_buildings and has_cache:
+            keys.append(ELEMENT_TY_OSM_KEY)
+            keys.append(OSMID_OSM_KEY)
 
         result = result[keys]
 
@@ -220,7 +279,7 @@ def prepare_gdf(gdf, resize=0):
     return result
 
 
-def prepare_roads_gdf(gdf, railway_gdf):
+def prepare_roads_gdf(gdf, railway_gdf, bridge_only = True):
     result = gpd.GeoDataFrame(columns=[GEOMETRY_OSM_COLUMN], geometry=GEOMETRY_OSM_COLUMN, crs=EPSG.key + str(EPSG.WGS84_degree_unit))
     roads = gdf.copy()
     railways = railway_gdf.copy()
@@ -240,38 +299,50 @@ def prepare_roads_gdf(gdf, railway_gdf):
         if TUNNEL_OSM_TAG in roads:
             roads = roads[roads[TUNNEL_OSM_TAG].isna()]
 
-        # fix for bridge paths
-        if BRIDGE_OSM_TAG in roads:
-            bridge_path = roads[(roads[ROAD_OSM_KEY] == PATH_OSM_TAG) & ~(roads[BRIDGE_OSM_TAG].isna())]
-            has_bridge_path = not bridge_path.empty
+        if bridge_only:
+            # fix for bridge paths
+            if BRIDGE_OSM_TAG in roads:
+                bridge_path = roads[(roads[ROAD_OSM_KEY] == PATH_OSM_TAG) & ~(roads[BRIDGE_OSM_TAG].isna())]
+                has_bridge_path = not bridge_path.empty
 
-        if not has_bridge_path:
-            roads = roads[~(roads[ROAD_OSM_KEY] == PATH_OSM_TAG)]
+            if not has_bridge_path:
+                roads = roads[~(roads[ROAD_OSM_KEY] == PATH_OSM_TAG)]
 
-        if BRIDGE_OSM_TAG in roads:
-            bridge = roads[~(roads[BRIDGE_OSM_TAG].isna())]
-            has_bridge = True
+            if BRIDGE_OSM_TAG in roads:
+                bridge = roads[~(roads[BRIDGE_OSM_TAG].isna())]
+                has_bridge = True
 
-        if SEAMARK_TYPE_OSM_TAG in roads:
-            seamark_bridge = roads[(roads[SEAMARK_TYPE_OSM_TAG] == BRIDGE_OSM_TAG)]
-            has_seamark_bridge = True
+            if SEAMARK_TYPE_OSM_TAG in roads:
+                seamark_bridge = roads[(roads[SEAMARK_TYPE_OSM_TAG] == BRIDGE_OSM_TAG)]
+                has_seamark_bridge = True
 
-        if MAN_MADE_OSM_KEY in roads:
-            pier = roads[(roads[ROAD_OSM_KEY] == FOOTWAY_OSM_TAG) & (roads[MAN_MADE_OSM_KEY] == PIER_OSM_TAG)]
-            pier = pier.append(roads[(roads[ROAD_OSM_KEY] == FOOTWAY_OSM_TAG) & ~(roads[BRIDGE_OSM_TAG].isna())])
-            pier = resize_gdf(pier, 12, single_sided=False)
-            has_pier = not pier.empty
+            if MAN_MADE_OSM_KEY in roads:
+                pier = roads[(roads[ROAD_OSM_KEY] == FOOTWAY_OSM_TAG) & (roads[MAN_MADE_OSM_KEY] == PIER_OSM_TAG)]
+                pier = pier.append(roads[(roads[ROAD_OSM_KEY] == FOOTWAY_OSM_TAG) & ~(roads[BRIDGE_OSM_TAG].isna())])
+                pier = resize_gdf(pier, 12, single_sided=False)
+                has_pier = not pier.empty
 
-        if has_bridge:
-            result = result.append(bridge)
+            if has_bridge:
+                result = result.append(bridge)
 
-        if has_bridge_path:
-            result = result.append(bridge_path)
+            if has_bridge_path:
+                result = result.append(bridge_path)
 
-        if has_seamark_bridge:
-            result = result.append(seamark_bridge)
+            if has_seamark_bridge:
+                result = result.append(seamark_bridge)
+        else:
+            if TUNNEL_OSM_TAG in roads:
+                roads = roads[roads[TUNNEL_OSM_TAG].isna()]
 
-        result = resize_gdf(result, 22, single_sided=False)
+            result = roads.copy()
+            result = result[~(result[ROAD_OSM_KEY] == PEDESTRIAN_ROAD_TYPE) & ~(result[ROAD_OSM_KEY] == FOOTWAY_ROAD_TYPE) & ~(result[ROAD_OSM_KEY] == SERVICE_ROAD_TYPE)]
+
+        result = result.reset_index(drop=True)
+        result = result.to_crs(EPSG.key + str(EPSG.WGS84_meter_unit))
+        for index, row in result.iterrows():
+            road_width = calculate_road_width(row)
+            result.loc[index, GEOMETRY_OSM_COLUMN] = row[GEOMETRY_OSM_COLUMN].buffer(road_width, resolution=32, cap_style=CAP_STYLE.square, join_style=JOIN_STYLE.mitre, mitre_limit=20.0, single_sided=False)
+        result = result.to_crs(EPSG.key + str(EPSG.WGS84_degree_unit))
 
         if has_pier:
             result = result.append(pier)
@@ -396,10 +467,10 @@ def create_water_exclusion_gdf(natural_water, water, sea, roads):
     return result.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)
 
 
-def create_ground_exclusion_gdf(landuse, leisure, natural, aeroway, road, park, airport):
+def create_ground_exclusion_gdf(landuse, nature_reserve, natural, aeroway, road, park, airport):
     result = create_empty_gdf()
     result = union_gdf(result, landuse)
-    result = union_gdf(result, leisure)
+    result = union_gdf(result, nature_reserve)
     result = union_gdf(result, natural)
     result = union_gdf(result, aeroway)
     result = union_gdf(result, airport)
@@ -636,3 +707,20 @@ def create_grid_from_hmatrix(hmatrix, lat, lon):
     gdf[GEOMETRY_OSM_COLUMN] = result
 
     return gdf
+
+
+def calculate_road_width(row):
+    road_type = row[ROAD_OSM_KEY]
+    lanes = row[LANES_OSM_KEY]
+    oneway = row[ONEWAY_OSM_KEY]
+    is_oneway = oneway == "yes"
+    is_railway = not pd.isna(row[RAILWAY_OSM_KEY])
+    if is_railway or pd.isna(row[LANES_OSM_KEY]) or row[LANES_OSM_KEY] is None:
+        lanes = 1 if is_oneway else 2
+
+    lanes = float(lanes)
+    road_width = lanes * ROAD_LANE_WIDTH
+    if road_type in ROAD_WITH_BORDERS or is_railway:
+        road_width += (lanes * 2)
+
+    return road_width

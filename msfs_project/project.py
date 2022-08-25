@@ -46,8 +46,8 @@ from msfs_project.collider import MsfsCollider
 from msfs_project.tile import MsfsTile
 from msfs_project.shape import MsfsShapes
 from utils import replace_in_file, is_octant, backup_file, install_python_lib, ScriptError, print_title, \
-    get_backup_file_path, isolated_print, chunks, create_bounding_box_from_tiles, clip_gdf, create_terraform_polygons_gdf, create_land_mass_gdf, create_exclusion_masks_from_tiles, preserve_holes, create_exclusion_building_polygons_gdf, create_whole_water_gdf, create_ground_exclusion_gdf, load_gdf, prepare_roads_gdf, \
-    prepare_sea_gdf, prepare_bbox_gdf, prepare_gdf, create_exclusion_vegetation_polygons_gdf, load_gdf_from_geocode, difference_gdf, create_shore_water_gdf, resize_gdf, prepare_golf_gdf, pr_bg_orange, load_json_file, prepare_park_gdf, prepare_building_gdf, create_empty_gdf, union_gdf
+    get_backup_file_path, isolated_print, chunks, create_bounding_box_from_tiles, clip_gdf, create_terraform_polygons_gdf, create_land_mass_gdf, create_exclusion_masks_from_tiles, preserve_holes, create_exclusion_building_polygons_gdf, create_whole_water_gdf, create_ground_exclusion_gdf, load_gdf, \
+    prepare_sea_gdf, prepare_bbox_gdf, prepare_gdf, create_exclusion_vegetation_polygons_gdf, load_gdf_from_geocode, difference_gdf, create_shore_water_gdf, resize_gdf, prepare_golf_gdf, pr_bg_orange, load_json_file, prepare_park_gdf, prepare_building_gdf, create_empty_gdf, union_gdf, prepare_roads_gdf
 from pathlib import Path
 
 from utils.compressonator import Compressonator
@@ -285,7 +285,7 @@ class MsfsProject:
             pbar.update("splitted tiles added, replacing the previous %s tile" % previous_tile.name)
 
     def prepare_3d_data(self, settings, generate_height_data=False, clean_3d_data=False, create_polygons=True):
-        self.__create_tiles_bounding_boxes()
+        self.__create_tiles_bounding_boxes(init_osm_folder=True)
         self.__create_osm_files(settings, create_polygons=create_polygons)
 
         if generate_height_data:
@@ -317,7 +317,7 @@ class MsfsProject:
 
     def exclude_3d_data_from_geocode(self, settings):
         geocode = settings.geocode
-        geocode_gdf = self.__create_geocode_osm_files(geocode)
+        geocode_gdf = self.__create_geocode_osm_files(geocode, settings, self.coords, self.shpfiles_folder)
 
         if geocode_gdf is None:
             return geocode_gdf
@@ -328,7 +328,7 @@ class MsfsProject:
 
     def isolate_3d_data_from_geocode(self, settings):
         geocode = settings.geocode
-        geocode_gdf = self.__create_geocode_osm_files(geocode)
+        geocode_gdf = self.__create_geocode_osm_files(geocode, settings)
 
         if geocode_gdf is None:
             return geocode_gdf
@@ -738,7 +738,8 @@ class MsfsProject:
 
     def __retrieve_lods_to_exclude_or_isolate_3d_data_from_geocode(self, geocode, geocode_gdf, backup_subfolder, settings):
         data = []
-        tiles = []
+        modified_tiles = []
+        tiles_with_collider = []
         for tile in self.tiles.values():
 
             if not os.path.isdir(tile.folder):
@@ -767,7 +768,7 @@ class MsfsProject:
 
             if has_collider:
                 self.__remove_tile_collider(tile.name)
-                tiles.append(tile)
+                tiles_with_collider.append(tile)
 
             for lod in tile.lods:
                 if not os.path.isdir(lod.folder):
@@ -779,11 +780,12 @@ class MsfsProject:
                 data.append({"name": lod.name, "params": ["--folder", str(lod.folder), "--model_file", str(lod.model_file),
                                                           "--positioning_file_path", str(os.path.join(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)),
                                                           "--mask_file_path", str(mask_file_path)]})
+                modified_tiles.append(tile)
 
         if not data:
             pr_bg_orange("Geocode (" + geocode + ") found in OSM data, but not in the scenery" + EOL + CEND)
 
-        return tiles, chunks(data, self.NB_PARALLEL_TASKS)
+        return modified_tiles, tiles_with_collider, chunks(data, self.NB_PARALLEL_TASKS)
 
     def __optimize_tile_lods(self, lods_data):
         self.__multithread_process_data(lods_data, "optimize_tile_lod.py", "OPTIMIZE THE TILES", "optimized")
@@ -889,15 +891,16 @@ class MsfsProject:
             self.objects_xml.add_height_map_group(height_maps.rectangles[0])
         self.objects_xml.save()
 
-    def __create_tiles_bounding_boxes(self):
-        # ensure to clean the xml folder containing the heightmaps data by removing it
-        try:
-            shutil.rmtree(self.osmfiles_folder)
-        except:
-            pass
+    def __create_tiles_bounding_boxes(self, init_osm_folder=False):
+        if init_osm_folder:
+            # ensure to clean the xml folder containing the heightmaps data by removing it
+            try:
+                shutil.rmtree(self.osmfiles_folder)
+            except:
+                pass
 
-        # create the osm folder if it does not exist
-        os.makedirs(self.osmfiles_folder, exist_ok=True)
+            # create the osm folder if it does not exist
+            os.makedirs(self.osmfiles_folder, exist_ok=True)
 
         valid_tiles = [tile for tile in list(self.tiles.values()) if tile.valid]
         pbar = ProgressBar(valid_tiles, title="CREATE BOUNDING BOX OSM FILES FOR EACH TILE")
@@ -909,9 +912,9 @@ class MsfsProject:
         ox.config(use_cache=True, log_level=lg.DEBUG)
         self.__create_osm_exclusion_files(bbox_to_poly(self.coords[1], self.coords[0], self.coords[2], self.coords[3]), create_bounding_box_from_tiles(self.tiles), settings, create_polygons=create_polygons)
 
-    def __create_geocode_osm_files(self, geocode):
+    def __create_geocode_osm_files(self, geocode, settings, coords, shpfiles_folder):
         ox.config(use_cache=True, log_level=lg.DEBUG)
-        return self.__create_geocode_osm_exclusion_files(geocode, bbox_to_poly(self.coords[1], self.coords[0], self.coords[2], self.coords[3]))
+        return self.__create_geocode_osm_exclusion_files(geocode, bbox_to_poly(self.coords[1], self.coords[0], self.coords[2], self.coords[3]), float(settings.geocode_margin), coords, shpfiles_folder)
 
     def __create_osm_exclusion_files(self, b, orig_bbox, settings, create_polygons=True):
         print_title("RETRIEVE OSM DATA (MAY TAKE SOME TIME TO COMPLETE, BE PATIENT...)")
@@ -928,7 +931,7 @@ class MsfsProject:
         orig_sea = load_gdf(self.coords, BOUNDARY_OSM_KEY, True, shp_file_path=os.path.join(self.shpfiles_folder, SEA_OSM_TAG + SHP_FILE_EXT), is_sea=True, land_mass=orig_land_mass, bbox=orig_bbox)
         orig_landuse = load_gdf(self.coords, LANDUSE_OSM_KEY, OSM_TAGS[LANDUSE_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, LANDUSE_OSM_KEY + SHP_FILE_EXT))
         orig_grass = load_gdf(self.coords, LANDUSE_OSM_KEY, OSM_TAGS[GRASS_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, GRASS_OSM_KEY + SHP_FILE_EXT), is_grass=True)
-        orig_leisure = load_gdf(self.coords, LEISURE_OSM_KEY, OSM_TAGS[LEISURE_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, LEISURE_OSM_KEY + SHP_FILE_EXT))
+        orig_nature_reserve = load_gdf(self.coords, LEISURE_OSM_KEY, OSM_TAGS[LEISURE_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, LEISURE_OSM_KEY + SHP_FILE_EXT))
         orig_natural = load_gdf(self.coords, NATURAL_OSM_KEY, OSM_TAGS[NATURAL_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, NATURAL_OSM_KEY + SHP_FILE_EXT))
         orig_natural_water = load_gdf(self.coords, NATURAL_OSM_KEY, OSM_TAGS[NATURAL_WATER_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, NATURAL_WATER_OSM_KEY + SHP_FILE_EXT))
         orig_water = load_gdf(self.coords, WATER_OSM_KEY, OSM_TAGS[WATER_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, WATER_OSM_KEY + SHP_FILE_EXT))
@@ -944,7 +947,6 @@ class MsfsProject:
         bbox = prepare_bbox_gdf(orig_bbox, orig_land_mass, orig_boundary)
 
         landuse = clip_gdf(prepare_gdf(orig_landuse), bbox)
-        leisure = clip_gdf(prepare_gdf(orig_leisure), bbox)
         natural = clip_gdf(prepare_gdf(orig_natural), bbox)
         natural_water = clip_gdf(prepare_gdf(orig_natural_water), bbox)
         water = clip_gdf(prepare_gdf(orig_water), bbox)
@@ -958,6 +960,10 @@ class MsfsProject:
             park = clip_gdf(prepare_park_gdf(orig_park, orig_road), bbox)
         else:
             park = create_empty_gdf()
+        if settings.exclude_nature_reserve:
+            nature_reserve = clip_gdf(prepare_gdf(orig_nature_reserve), bbox)
+        else:
+            nature_reserve = create_empty_gdf()
 
         whole_water = create_whole_water_gdf(natural_water, water, sea)
         # for debugging purpose, generate the water exclusion osm file
@@ -971,7 +977,7 @@ class MsfsProject:
         osm_xml.create_from_geodataframes([preserve_holes(water_exclusion.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore'))], b, True, [(HEIGHT_OSM_TAG, 1000)])
 
         # create ground exclusion masks to cleanup 3d data tiles
-        ground_exclusion = create_ground_exclusion_gdf(landuse, leisure, natural, aeroway, road, park, airport)
+        ground_exclusion = create_ground_exclusion_gdf(landuse, nature_reserve, natural, aeroway, road, park, airport)
         # for debugging purpose, generate the ground exclusion osm file
         osm_xml = OsmXml(self.osmfiles_folder, GROUND_OSM_KEY + "_" + EXCLUSION_OSM_FILE_PREFIX + OSM_FILE_EXT)
         osm_xml.create_from_geodataframes([preserve_holes(ground_exclusion.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore'))], b, True, [(HEIGHT_OSM_TAG, 1000)])
@@ -1035,10 +1041,10 @@ class MsfsProject:
 
         self.__remove_full_water_tiles(water_exclusion)
 
-    def __create_geocode_osm_exclusion_files(self, geocode, b):
+    def __create_geocode_osm_exclusion_files(self, geocode, b, geocode_margin, coords, shpfiles_folder):
         print_title("RETRIEVE GEOCODE OSM FILES")
 
-        geocode_gdf = load_gdf_from_geocode(geocode)
+        geocode_gdf = load_gdf_from_geocode(geocode, geocode_margin=geocode_margin, coords=coords, shpfiles_folder=shpfiles_folder)
 
         if geocode_gdf is None:
             return geocode_gdf
@@ -1047,6 +1053,8 @@ class MsfsProject:
             # for debugging purpose, generate the osm file
             osm_xml = OsmXml(self.osmfiles_folder, GEOCODE_OSM_FILE_PREFIX + "_" + EXCLUSION_OSM_FILE_PREFIX + OSM_FILE_EXT)
             osm_xml.create_from_geodataframes([preserve_holes(geocode_gdf)], b, True, [(HEIGHT_OSM_TAG, 1000)])
+        else:
+            pr_bg_orange("Geocode (" + geocode + ") not found in OSM data" + EOL + CEND)
 
         return geocode_gdf
 
@@ -1099,13 +1107,13 @@ class MsfsProject:
         self.objects_xml.save()
 
     def __exclude_lods_3d_data_from_geocode(self, geocode, geocode_gdf, settings):
-        tiles_with_collider, lods_data = self.__retrieve_lods_to_exclude_or_isolate_3d_data_from_geocode(geocode, geocode_gdf, "exclude_3d_data_from_geocode", settings)
+        modified_tiles, tiles_with_collider, lods_data = self.__retrieve_lods_to_exclude_or_isolate_3d_data_from_geocode(geocode, geocode_gdf, "exclude_3d_data_from_geocode", settings)
         self.__multithread_process_data(lods_data, "cleanup_lod_3d_data.py", "EXCLUDE LODS 3D DATA TILES FROM GEOCODE", "excluded")
         for tile in tiles_with_collider:
             for lod in tile.lods:
                 lod.remove_road_and_collision_tags()
             tile.add_collider()
-        lods = [lod for tile in self.tiles.values() for lod in tile.lods]
+        lods = [lod for tile in modified_tiles for lod in tile.lods]
         pbar = ProgressBar(list(lods), title="PREPARE THE TILES FOR MSFS")
         for lod in lods:
             lod.optimization_in_progress = False
@@ -1113,13 +1121,13 @@ class MsfsProject:
             pbar.update("%s prepared for msfs" % lod.name)
 
     def __isolate_lods_3d_data_from_geocode(self, geocode, geocode_gdf, settings):
-        tiles_with_collider, lods_data = self.__retrieve_lods_to_exclude_or_isolate_3d_data_from_geocode(geocode, geocode_gdf, "isolate_3d_data_from_geocode", settings)
+        modified_tiles, tiles_with_collider, lods_data = self.__retrieve_lods_to_exclude_or_isolate_3d_data_from_geocode(geocode, geocode_gdf, "isolate_3d_data_from_geocode", settings)
         self.__multithread_process_data(lods_data, "isolate_lod_3d_data.py", "ISOLATE LODS 3D DATA TILES FROM GEOCODE", "excluded")
         for tile in tiles_with_collider:
             for lod in tile.lods:
                 lod.remove_road_and_collision_tags()
             tile.add_collider()
-        lods = [lod for tile in self.tiles.values() for lod in tile.lods]
+        lods = [lod for tile in modified_tiles for lod in tile.lods]
         pbar = ProgressBar(list(lods), title="PREPARE THE TILES FOR MSFS")
         for lod in lods:
             lod.optimization_in_progress = False

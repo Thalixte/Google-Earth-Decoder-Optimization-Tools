@@ -16,7 +16,7 @@
 #
 #  <pep8 compliant>
 
-from utils import Settings, get_sources_path, reload_modules, print_title, isolated_print
+from utils import Settings, get_sources_path, reload_modules, print_title, isolated_print, load_gdf_from_geocode
 
 settings = Settings(get_sources_path())
 
@@ -41,18 +41,22 @@ from msfs_project import MsfsProject
 
 def isolate_3d_data_from_geocode(script_settings):
     try:
-        # instantiate the msfsProject and create the necessary resources if it does not exist
-        msfs_project = MsfsProject(script_settings.projects_path, script_settings.project_name, script_settings.definition_file, script_settings.author_name, script_settings.sources_path)
-
-        check_configuration(script_settings, msfs_project)
-
         isolated_print(EOL)
-        print_title("CLEANUP 3D DATA")
+        geocode_gdf = load_gdf_from_geocode(settings.geocode, keep_data=True)
 
-        msfs_project.isolate_3d_data_from_geocode(settings)
+        if not geocode_gdf.empty:
+            # instantiate the msfsProject and create the necessary resources if it does not exist
+            msfs_project = MsfsProject(script_settings.projects_path, script_settings.project_name, script_settings.definition_file, script_settings.author_name, script_settings.sources_path)
 
-        if script_settings.build_package_enabled:
-            build_package(msfs_project, script_settings)
+            check_configuration(script_settings, msfs_project)
+
+            isolated_print(EOL)
+            print_title("CLEANUP 3D DATA")
+
+            msfs_project.isolate_3d_data_from_geocode(settings)
+
+            if script_settings.build_package_enabled:
+                build_package(msfs_project, script_settings)
 
         pr_bg_green("Script correctly applied" + constants.CEND)
 

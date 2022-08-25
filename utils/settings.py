@@ -46,6 +46,7 @@ class Settings:
     compressonator_exe_path = str
     city: str
     geocode: str
+    geocode_margin: float
     landmark_type: str
     height_adjustment: float
     landmark_offset: float
@@ -60,6 +61,7 @@ class Settings:
     hue: float
     high_precision: str
     exclude_ground: str
+    exclude_nature_reserve: str
     exclude_parks: str
 
     LODS_SECTION = "LODS"
@@ -87,6 +89,7 @@ class Settings:
         self.compressonator_exe_path = str()
         self.city = str()
         self.geocode = str()
+        self.geocode_margin = 5.0
         self.landmark_type = str()
         self.height_adjustment = 0.0
         self.landmark_offset = 0.0
@@ -101,6 +104,7 @@ class Settings:
         self.hue = 1.0
         self.high_precision = "False"
         self.exclude_ground = "True"
+        self.exclude_nature_reserve = "False"
         self.exclude_parks = "False"
 
         config = cp.ConfigParser()
@@ -145,6 +149,8 @@ class Settings:
 
         self.landmark_offset = "{:.9f}".format(float(str(self.landmark_offset))).rstrip("0").rstrip(".")
 
+        self.geocode_margin = "{:.2f}".format(float(str(self.geocode_margin))).rstrip("0").rstrip(".")
+
         self.red_level = "{:.2f}".format(float(str(self.red_level))).rstrip("0").rstrip(".")
         self.green_level = "{:.2f}".format(float(str(self.green_level))).rstrip("0").rstrip(".")
         self.blue_level = "{:.2f}".format(float(str(self.blue_level))).rstrip("0").rstrip(".")
@@ -155,6 +161,7 @@ class Settings:
 
         self.high_precision = json.loads(self.high_precision.lower())
         self.exclude_ground = json.loads(self.exclude_ground.lower())
+        self.exclude_nature_reserve = json.loads(self.exclude_nature_reserve.lower())
         self.exclude_parks = json.loads(self.exclude_parks.lower())
 
         if self.definition_file_to_merge == str() and self.project_path_to_merge != str():

@@ -121,6 +121,14 @@ def import_model_files(model_files, clean=True, objects_to_keep=[]):
 ##############################################################################
 def export_to_optimized_gltf_files(file, texture_folder, use_selection=False, export_extras=True):
     isolated_print("export to", file, "with associated textures", EOL)
+
+    # clean non mesh data
+    objs = bpy.context.selected_objects
+    for obj in objs:
+        if obj.type != MESH_OBJECT_TYPE:
+            obj.select_set(True)
+            bpy.ops.object.delete()
+
     bpy.ops.export_scene.gltf(export_format=GLTF_SEPARATE_EXPORT_FORMAT, export_extras=export_extras, export_keep_originals=True, filepath=file, export_texture_dir=texture_folder, use_selection=use_selection)
     model_file = MsfsGltf(file)
     model_file.add_optimization_tag()
@@ -350,11 +358,26 @@ def align_model_with_mask(model_file_path, positioning_file_path, mask_file_path
 
     import_model_files([model_file_path], objects_to_keep=objects_to_keep)
     bpy.ops.object.select_all(action=SELECT_ACTION)
+    objs = bpy.context.selected_objects
+    bpy.ops.object.select_all(action=DESELECT_ACTION)
+    mesh = None
+
+    for obj in objs:
+        if obj.type != MESH_OBJECT_TYPE:
+            obj.select_set(True)
+            bpy.ops.object.delete()
+        else:
+            mesh = obj
+
+    bpy.context.view_layer.objects.active = mesh
+    bpy.ops.object.select_all(action=SELECT_ACTION)
     keep_objects(objects_to_keep)
+
     bpy.ops.object.join()
     rot_z = 0.0
 
     import_osm_file(positioning_file_path)
+    bpy.ops.transform.resize(value=(1.0045, 1.0045, 1))
 
     for obj in bpy.context.selected_objects:
         obj.name = "Ways"
@@ -372,7 +395,8 @@ def align_model_with_mask(model_file_path, positioning_file_path, mask_file_path
 
     bpy.ops.object.select_all(action=SELECT_ACTION)
 
-    bpy.ops.object.align(bb_quality=True, align_mode='OPT_2', relative_to='OPT_4', align_axis={'X', 'Y'})
+    bpy.ops.object.align(bb_quality=True, align_mode='OPT_1', relative_to='OPT_4', align_axis={'X'})
+    bpy.ops.object.align(bb_quality=True, align_mode='OPT_3', relative_to='OPT_4', align_axis={'Y'})
     bpy.ops.object.align(bb_quality=True, align_mode='OPT_1', relative_to='OPT_4', align_axis={'Z'})
 
     bpy.ops.object.select_all(action=DESELECT_ACTION)
@@ -461,20 +485,13 @@ def process_3d_data(model_file_path, intersect=False):
                 booly.operation = BOOLEAN_MODIFIER_OPERATION.INTERSECT if intersect else BOOLEAN_MODIFIER_OPERATION.DIFFERENCE
                 booly.solver = "EXACT"
                 booly.use_hole_tolerant = True
-                for modifier in obj.modifiers:
-                    bpy.ops.object.modifier_apply(modifier=modifier.name)
-
-    if mask:
-        for obj in objects:
-            if obj != mask and obj != grid:
-                bpy.context.view_layer.objects.active = obj
                 weighted_normal = obj.modifiers.new(name="weighty", type="WEIGHTED_NORMAL")
 
                 if not weighted_normal:
                     continue
 
                 weighted_normal.weight = 100
-                weighted_normal.thresh = 10.0
+                weighted_normal.thresh = 0.0
                 weighted_normal.keep_sharp = True
                 weighted_normal.use_face_influence = True
                 for modifier in obj.modifiers:
@@ -556,13 +573,16 @@ def get_tile_for_ray_cast(model_file_path, imported=True, objects_to_keep=[]):
     keep_objects(objects_to_keep)
     objs = bpy.context.selected_objects
     bpy.ops.object.select_all(action=DESELECT_ACTION)
+    mesh = None
 
     for obj in objs:
         if obj.type != MESH_OBJECT_TYPE:
             obj.select_set(True)
             bpy.ops.object.delete()
+        else:
+            mesh = obj
 
-    bpy.context.view_layer.objects.active = obj
+    bpy.context.view_layer.objects.active = mesh
     bpy.ops.object.select_all(action=SELECT_ACTION)
     keep_objects(objects_to_keep)
     bpy.ops.object.join()
