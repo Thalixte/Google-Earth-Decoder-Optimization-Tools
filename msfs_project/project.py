@@ -940,7 +940,7 @@ class MsfsProject:
         orig_construction = load_gdf(self.coords, LANDUSE_OSM_KEY, OSM_TAGS[CONSTRUCTION_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, CONSTRUCTION_OSM_KEY + SHP_FILE_EXT))
         orig_park = load_gdf(self.coords, LEISURE_OSM_KEY, OSM_TAGS[PARK_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, PARK_OSM_KEY + SHP_FILE_EXT))
         orig_building = load_gdf(self.coords, BUILDING_OSM_KEY, True, shp_file_path=os.path.join(self.shpfiles_folder, BUILDING_OSM_KEY + SHP_FILE_EXT))
-        orig_airport = load_gdf_from_geocode(AIRPORT_GEOCODE + ", " + settings.city.lower())
+        orig_airport = load_gdf_from_geocode(AIRPORT_GEOCODE + ", " + settings.city.lower(), shpfiles_folder=self.shpfiles_folder, keep_data=True)
 
         road = prepare_roads_gdf(orig_road, orig_railway)
         sea = prepare_sea_gdf(orig_sea)

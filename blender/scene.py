@@ -115,19 +115,24 @@ def import_model_files(model_files, clean=True, objects_to_keep=[]):
         except:
             continue
 
+    if not objects_to_keep:
+        # clean non mesh data
+        objs = bpy.context.selected_objects
+        bpy.ops.object.select_all(action=DESELECT_ACTION)
+
+        for obj in objs:
+            if obj.type != MESH_OBJECT_TYPE:
+                obj.select_set(True)
+                bpy.ops.object.delete()
+
+        bpy.ops.object.select_all(action=SELECT_ACTION)
+
 
 ##############################################################################
 # Export and optimize the tile in a new gltf file, with bin file and textures
 ##############################################################################
 def export_to_optimized_gltf_files(file, texture_folder, use_selection=False, export_extras=True):
     isolated_print("export to", file, "with associated textures", EOL)
-
-    # clean non mesh data
-    objs = bpy.context.selected_objects
-    for obj in objs:
-        if obj.type != MESH_OBJECT_TYPE:
-            obj.select_set(True)
-            bpy.ops.object.delete()
 
     bpy.ops.export_scene.gltf(export_format=GLTF_SEPARATE_EXPORT_FORMAT, export_extras=export_extras, export_keep_originals=True, filepath=file, export_texture_dir=texture_folder, use_selection=use_selection)
     model_file = MsfsGltf(file)
@@ -456,7 +461,7 @@ def reduce_number_of_vertices(model_file_path):
             continue
 
         weighted_normal.weight = 50
-        weighted_normal.thresh = 10.0
+        weighted_normal.thresh = 0.0
         weighted_normal.keep_sharp = True
         weighted_normal.use_face_influence = True
         for modifier in obj.modifiers:
