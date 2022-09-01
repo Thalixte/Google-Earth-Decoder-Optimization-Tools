@@ -502,6 +502,22 @@ def process_3d_data(model_file_path, intersect=False):
                 for modifier in obj.modifiers:
                     bpy.ops.object.modifier_apply(modifier=modifier.name)
 
+        for obj in objects:
+            if obj != mask and obj != grid:
+                bpy.context.view_layer.objects.active = obj
+                weighted_normal = obj.modifiers.new(name="weighty", type="WEIGHTED_NORMAL")
+
+                if not weighted_normal:
+                    continue
+
+                weighted_normal.mode = "FACE_AREA_WITH_ANGLE"
+                weighted_normal.weight = 50
+                weighted_normal.thresh = 0.01
+                weighted_normal.keep_sharp = True
+                weighted_normal.use_face_influence = True
+                for modifier in obj.modifiers:
+                    bpy.ops.object.modifier_apply(modifier=modifier.name)
+
     bpy.ops.object.select_all(action=DESELECT_ACTION)
     mask.select_set(True)
     bpy.ops.object.delete()
