@@ -60,6 +60,11 @@ class BOOLEAN_MODIFIER_OPERATION:
     INTERSECT = "INTERSECT"
 
 
+class EXCLUSION_TYPE:
+    GROUND = "GROUND"
+    WATER = "WATER"
+
+
 def keep_objects(objects_to_keep):
     if len(objects_to_keep) > 0:
         for obj_to_keep in objects_to_keep:
@@ -547,11 +552,14 @@ def generate_model_height_data(model_file_path, lat, lon, altitude, height_adjus
         hmatrix = fix_bridge_height_data_on_water(tile, depsgraph, lat, lon, altitude, hmatrix_base=hmatrix)
 
     # fix wrong height data for tiles that has bare rocks or cliff inside them
-    if inverted and os.path.exists(positioning_file_path) and os.path.exists(ground_mask_file_path):
+    if os.path.exists(positioning_file_path) and os.path.exists(ground_mask_file_path):
         align_model_with_mask(model_file_path, positioning_file_path, ground_mask_file_path, objects_to_keep=[grid])
         process_3d_data(model_file_path, intersect=True)
         tile = get_tile_for_ray_cast(model_file_path, imported=False, objects_to_keep=[grid])
-        hmatrix = calculate_height_map_from_coords_from_top(tile, grid_dimension, coords, depsgraph, lat, lon, altitude, hmatrix_base=hmatrix)
+        if inverted:
+            hmatrix = calculate_height_map_from_coords_from_top(tile, grid_dimension, coords, depsgraph, lat, lon, altitude, hmatrix_base=hmatrix)
+        else:
+            adjust_height_data_on_ground_exclusion(tile, depsgraph, lat, lon, altitude, hmatrix_base=hmatrix)
 
     new_collection = bpy.data.collections.new(name="coords")
     assert (new_collection is not bpy.context.scene.collection)
@@ -809,6 +817,14 @@ def calculate_height_map_from_coords_from_top(tile, grid_dimension, coords, deps
 
 
 def fix_bridge_height_data_on_water(tile, depsgraph, lat, lon, altitude, hmatrix_base=None):
+    return adjust_height_data_on_exclusion_area(tile, depsgraph, lat, lon, altitude, EXCLUSION_TYPE.WATER, hmatrix_base)
+
+
+def adjust_height_data_on_ground_exclusion(tile, depsgraph, lat, lon, altitude, hmatrix_base=None):
+    return adjust_height_data_on_exclusion_area(tile, depsgraph, lat, lon, altitude, EXCLUSION_TYPE.GROUND, hmatrix_base)
+
+
+def adjust_height_data_on_exclusion_area(tile, depsgraph, lat, lon, altitude, exclusion_type, hmatrix_base=None):
     results = hmatrix_base.copy()
     geoid_height = get_geoid_height(lat, lon)
     new_coords = []
@@ -826,9 +842,10 @@ def fix_bridge_height_data_on_water(tile, depsgraph, lat, lon, altitude, hmatrix
                     new_coords.append(result[1])
 
     if new_coords:
-        # fix noise in the height map data
-        new_coords = spatial_median_kdtree(np.array(new_coords), 100)
-        # new_coords = spatial_median(np.array(new_coords), 20)
+        if exclusion_type == EXCLUSION_TYPE.WATER:
+            # fix noise in the height map data
+            new_coords = spatial_median_kdtree(np.array(new_coords), 100)
+            # new_coords = spatial_median(np.array(new_coords), 20)
 
         for i, co in enumerate(new_coords):
             p1 = co

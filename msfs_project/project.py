@@ -667,12 +667,11 @@ class MsfsProject:
             params = ["--folder", str(tile_folder), "--name", str(tile.name), "--definition_file", str(tile.definition_file),
                       "--height_map_xml_folder", str(self.xmlfiles_folder), "--group_id", str(new_group_id), "--altitude", str(tile.pos.alt), "--height_adjustment", str(height_adjustment)]
 
-            if has_rocks:
-                if os.path.isfile(ground_mask_file_path):
-                    params.extend(["--positioning_file_path", str(os.path.join(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)),
-                                   "--ground_mask_file_path", str(ground_mask_file_path)])
-                else:
-                    has_rocks = False
+            if os.path.isfile(ground_mask_file_path):
+                params.extend(["--positioning_file_path", str(os.path.join(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)),
+                               "--ground_mask_file_path", str(ground_mask_file_path)])
+            else:
+                has_rocks = False
 
             if os.path.isfile(water_mask_file_path):
                 params.extend(["--positioning_file_path", str(os.path.join(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)),

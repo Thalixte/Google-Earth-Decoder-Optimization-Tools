@@ -180,7 +180,7 @@ try:
     has_rocks = json.loads(args.has_rocks.lower())
     high_precision = json.loads(args.high_precision.lower())
 
-    ground_mask_file_path = args.ground_mask_file_path if has_rocks else str()
+    ground_mask_file_path = args.ground_mask_file_path if args.ground_mask_file_path else str()
     positioning_file_path = args.positioning_file_path if args.positioning_file_path else str()
     water_mask_file_path = args.water_mask_file_path if args.water_mask_file_path else str()
 
