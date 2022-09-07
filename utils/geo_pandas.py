@@ -279,7 +279,7 @@ def prepare_gdf(gdf, resize=0):
     return result
 
 
-def prepare_roads_gdf(gdf, railway_gdf, bridge_only = True):
+def prepare_roads_gdf(gdf, railway_gdf, bridge_only=True, automatic_road_width_calculation=True):
     result = gpd.GeoDataFrame(columns=[GEOMETRY_OSM_COLUMN], geometry=GEOMETRY_OSM_COLUMN, crs=EPSG.key + str(EPSG.WGS84_degree_unit))
     roads = gdf.copy()
     railways = railway_gdf.copy()
@@ -340,7 +340,7 @@ def prepare_roads_gdf(gdf, railway_gdf, bridge_only = True):
         result = result.reset_index(drop=True)
         result = result.to_crs(EPSG.key + str(EPSG.WGS84_meter_unit))
         for index, row in result.iterrows():
-            road_width = calculate_road_width(row)
+            road_width = calculate_road_width(row) if automatic_road_width_calculation else 22
             result.loc[index, GEOMETRY_OSM_COLUMN] = row[GEOMETRY_OSM_COLUMN].buffer(road_width, resolution=32, cap_style=CAP_STYLE.square, join_style=JOIN_STYLE.mitre, mitre_limit=20.0, single_sided=False)
         result = result.to_crs(EPSG.key + str(EPSG.WGS84_degree_unit))
 
@@ -502,6 +502,7 @@ def create_shore_water_gdf(orig_water, orig_natural_water, sea, bbox):
 def create_terraform_polygons_gdf(gdf, ground_exclusion):
     terraform_gdf = gdf.copy()
     terraform_gdf = difference_gdf(terraform_gdf, ground_exclusion)
+    terraform_gdf = terraform_gdf.dissolve()
     result = preserve_holes(resize_gdf(terraform_gdf, -10), split_method=PRESERVE_HOLES_METHOD.derivation_split)
     return result.dissolve()
 
@@ -511,13 +512,15 @@ def create_exclusion_building_polygons_gdf(bbox, exclusion, park, airport):
     adjusted_exclusion = union_gdf(bbox, adjusted_exclusion)
     adjusted_exclusion = difference_gdf(adjusted_exclusion, airport)
     adjusted_exclusion = resize_gdf(adjusted_exclusion, -50)
+    adjusted_exclusion = adjusted_exclusion.dissolve()
     result = preserve_holes(adjusted_exclusion, split_method=PRESERVE_HOLES_METHOD.derivation_split)
     return result
 
 
 def create_exclusion_vegetation_polygons_gdf(exclusion):
+    exclusion = exclusion.dissolve()
     result = preserve_holes(exclusion, split_method=PRESERVE_HOLES_METHOD.derivation_split)
-    return result.dissolve()
+    return result
 
 
 def clip_gdf(gdf, clip):

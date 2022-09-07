@@ -53,6 +53,7 @@ GLTF_SEPARATE_EXPORT_FORMAT = "GLTF_SEPARATE"
 COPY_COLLECTION_NAME = "CopyCollection"
 SUB_TILES_RANGE = "[0-7]"
 TILE_LOD_SUFFIX = "_LOD0"
+GEOID_HEIGHT_ORIGIN_MARGIN = 5.0
 
 
 class BOOLEAN_MODIFIER_OPERATION:
@@ -403,11 +404,7 @@ def align_model_with_mask(model_file_path, positioning_file_path, mask_file_path
         obj.select_set(True)
         obj.rotation_euler = rot_z
 
-    bpy.ops.object.select_all(action=SELECT_ACTION)
-
-    bpy.ops.object.align(bb_quality=True, align_mode='OPT_1', relative_to='OPT_4', align_axis={'X'})
-    bpy.ops.object.align(bb_quality=True, align_mode='OPT_3', relative_to='OPT_4', align_axis={'Y'})
-    bpy.ops.object.align(bb_quality=True, align_mode='OPT_1', relative_to='OPT_4', align_axis={'Z'})
+    bpy.ops.object.align(bb_quality=True, align_mode='OPT_3', relative_to='OPT_2', align_axis={'X', 'Y'})
 
     bpy.ops.object.select_all(action=DESELECT_ACTION)
 
@@ -501,23 +498,7 @@ def process_3d_data(model_file_path, intersect=False):
                     continue
 
                 weighted_normal.weight = 100
-                weighted_normal.thresh = 0.0
-                weighted_normal.keep_sharp = True
-                weighted_normal.use_face_influence = True
-                for modifier in obj.modifiers:
-                    bpy.ops.object.modifier_apply(modifier=modifier.name)
-
-        for obj in objects:
-            if obj != mask and obj != grid:
-                bpy.context.view_layer.objects.active = obj
-                weighted_normal = obj.modifiers.new(name="weighty", type="WEIGHTED_NORMAL")
-
-                if not weighted_normal:
-                    continue
-
-                weighted_normal.mode = "FACE_AREA_WITH_ANGLE"
-                weighted_normal.weight = 50
-                weighted_normal.thresh = 0.01
+                weighted_normal.thresh = 10.0
                 weighted_normal.keep_sharp = True
                 weighted_normal.use_face_influence = True
                 for modifier in obj.modifiers:
@@ -767,7 +748,7 @@ def calculate_height_map_from_coords_from_bottom(tile, grid_dimension, coords, d
             h = result[1][2]
             if len(results[y]) <= (int(grid_dimension/2)-1):
                 h = h + altitude + geoid_height
-                h = h if h >= geoid_height else geoid_height - height_adjustment
+                # h = h if h >= geoid_height - GEOID_HEIGHT_ORIGIN_MARGIN else geoid_height - height_adjustment
                 results[y][x] = h + height_adjustment
 
     return results
