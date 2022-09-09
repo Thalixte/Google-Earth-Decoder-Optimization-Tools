@@ -464,7 +464,7 @@ class MsfsProject:
         for i, path in enumerate(pbar.iterable):
             if not is_octant(path.stem):
                 msfs_scene_object = MsfsSceneObject(self.model_lib_folder, path.stem, path.name)
-                if not self.objects_xml.find_scenery_objects(msfs_scene_object.xml.guid):
+                if not self.objects_xml.find_scenery_objects(msfs_scene_object.xml.guid) and not self.objects_xml.find_scenery_objects_in_group(msfs_scene_object.xml.guid):
                     msfs_scene_object.remove_files()
                     pbar.update("%s" % path.name)
                     continue
@@ -474,7 +474,7 @@ class MsfsProject:
 
             if COLLIDER_SUFFIX in path.stem:
                 msfs_collider = MsfsCollider(self.model_lib_folder, path.stem, path.name, self.objects_xml)
-                if not self.objects_xml.find_scenery_objects(msfs_collider.xml.guid):
+                if not self.objects_xml.find_scenery_objects(msfs_collider.xml.guid) and not self.objects_xml.find_scenery_objects_in_group(msfs_collider.xml.guid):
                     msfs_collider.remove_files()
                     pbar.update("%s" % path.name)
                     continue
@@ -483,7 +483,7 @@ class MsfsProject:
                 continue
 
             msfs_tile = MsfsTile(self.model_lib_folder, path.stem, path.name, self.objects_xml)
-            if not self.objects_xml.find_scenery_objects(msfs_tile.xml.guid):
+            if not self.objects_xml.find_scenery_objects(msfs_tile.xml.guid) and not self.objects_xml.find_scenery_objects_in_group(msfs_tile.xml.guid):
                 msfs_tile.remove_files()
                 pbar.update("%s" % path.name)
                 continue
