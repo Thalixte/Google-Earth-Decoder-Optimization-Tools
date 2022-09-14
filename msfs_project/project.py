@@ -317,7 +317,7 @@ class MsfsProject:
 
     def exclude_3d_data_from_geocode(self, settings):
         geocode = settings.geocode
-        geocode_gdf = self.__create_geocode_osm_files(geocode, settings, self.coords, self.shpfiles_folder)
+        geocode_gdf = self.__create_geocode_osm_files(geocode, settings, settings.preserve_roads, settings.preserve_buildings, self.coords, self.shpfiles_folder)
 
         if geocode_gdf is None:
             return geocode_gdf
@@ -328,7 +328,7 @@ class MsfsProject:
 
     def isolate_3d_data_from_geocode(self, settings):
         geocode = settings.geocode
-        geocode_gdf = self.__create_geocode_osm_files(geocode, settings)
+        geocode_gdf = self.__create_geocode_osm_files(geocode, settings, False, False)
 
         if geocode_gdf is None:
             return geocode_gdf
@@ -911,9 +911,9 @@ class MsfsProject:
         ox.config(use_cache=True, log_level=lg.DEBUG)
         self.__create_osm_exclusion_files(bbox_to_poly(self.coords[1], self.coords[0], self.coords[2], self.coords[3]), create_bounding_box_from_tiles(self.tiles), settings, create_polygons=create_polygons)
 
-    def __create_geocode_osm_files(self, geocode, settings, coords, shpfiles_folder):
+    def __create_geocode_osm_files(self, geocode, settings, preserve_roads, preserve_buildings, coords, shpfiles_folder):
         ox.config(use_cache=True, log_level=lg.DEBUG)
-        return self.__create_geocode_osm_exclusion_files(geocode, bbox_to_poly(self.coords[1], self.coords[0], self.coords[2], self.coords[3]), float(settings.geocode_margin), coords, shpfiles_folder)
+        return self.__create_geocode_osm_exclusion_files(geocode, bbox_to_poly(self.coords[1], self.coords[0], self.coords[2], self.coords[3]), float(settings.geocode_margin), preserve_roads, preserve_buildings, coords, shpfiles_folder)
 
     def __create_osm_exclusion_files(self, b, orig_bbox, settings, create_polygons=True):
         print_title("RETRIEVE OSM DATA (MAY TAKE SOME TIME TO COMPLETE, BE PATIENT...)")
@@ -1045,10 +1045,10 @@ class MsfsProject:
 
         self.__remove_full_water_tiles(water_exclusion)
 
-    def __create_geocode_osm_exclusion_files(self, geocode, b, geocode_margin, coords, shpfiles_folder):
+    def __create_geocode_osm_exclusion_files(self, geocode, b, geocode_margin, preserve_roads, preserve_buildings, coords, shpfiles_folder):
         print_title("RETRIEVE GEOCODE OSM FILES")
 
-        geocode_gdf = load_gdf_from_geocode(geocode, geocode_margin=geocode_margin, coords=coords, shpfiles_folder=shpfiles_folder)
+        geocode_gdf = load_gdf_from_geocode(geocode, geocode_margin=geocode_margin, preserve_roads=preserve_roads, preserve_buildings=preserve_buildings, coords=coords, shpfiles_folder=shpfiles_folder)
 
         if geocode_gdf is None:
             return geocode_gdf

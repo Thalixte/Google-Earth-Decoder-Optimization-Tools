@@ -90,6 +90,8 @@ class Settings:
         self.city = str()
         self.geocode = str()
         self.geocode_margin = 5.0
+        self.preserve_roads = "True"
+        self.preserve_buildings = "True"
         self.landmark_type = str()
         self.height_adjustment = 0.0
         self.landmark_offset = 0.0
@@ -163,6 +165,9 @@ class Settings:
         self.exclude_ground = json.loads(self.exclude_ground.lower())
         self.exclude_nature_reserve = json.loads(self.exclude_nature_reserve.lower())
         self.exclude_parks = json.loads(self.exclude_parks.lower())
+
+        self.preserve_roads = json.loads(self.preserve_roads.lower())
+        self.preserve_buildings = json.loads(self.preserve_buildings.lower())
 
         if self.definition_file_to_merge == str() and self.project_path_to_merge != str():
             self.definition_file_to_merge = os.path.basename(self.project_path_to_merge).capitalize() + XML_FILE_EXT

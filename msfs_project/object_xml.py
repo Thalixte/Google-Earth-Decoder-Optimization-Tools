@@ -46,3 +46,12 @@ class MsfsObjectXml(Xml):
 
     def find_scenery_lod_models(self, file_name):
         return self.root.findall(self.SCENERY_OBJECT_LOD_MODEL_FILE_SEARCH_PATTERN + file_name + self.PATTERN_SUFFIX)
+
+    def find_scenery_lod_models_parents(self, file_name):
+        return self.root.findall(self.SCENERY_OBJECT_LOD_MODEL_FILE_SEARCH_PATTERN + file_name + self.PARENT_PATTERN_SUFFIX)
+
+    def remove_lod(self, file_name):
+        for parent_lod_tag in self.find_scenery_lod_models_parents(file_name):
+            for lod in self.find_scenery_lod_models(file_name):
+                parent_lod_tag.remove(lod)
+        self.save()

@@ -57,7 +57,10 @@ class MsfsSceneObject(MsfsObject):
         if not self.xml.find_scenery_lods(): return
         for i, lod in enumerate(self.lods):
             if not lod.valid or not self.xml.find_scenery_lod_models(lod.model_file):
-                lod.remove_files()
+                lod.remove_files(lod.model_file)
+                self.xml.remove_lod(lod.model_file)
+                if not self.xml.find_scenery_lods():
+                    self.remove_file()
                 pop_lods.append(i)
         self.lods.pop(i)
 

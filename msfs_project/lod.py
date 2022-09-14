@@ -86,6 +86,10 @@ class MsfsLod:
         if remove_textures:
             for texture in self.textures:
                 texture.remove_file()
+        #  ensure that all the files are removed
+        for file_path in Path(os.path.dirname(self.folder)).rglob(self.name + ".*"):
+            os.remove(file_path)
+            print(self.model_file, "removed")
         self.remove_file()
 
     def backup_file(self, backup_path, dry_mode=False, pbar=None):
