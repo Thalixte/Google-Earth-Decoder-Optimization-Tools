@@ -15,8 +15,6 @@
 #  #
 #
 #  <pep8 compliant>
-import os.path
-import shutil
 
 from constants import TEXTURE_FOLDER
 from utils import load_json_file, save_json_file, insert_key_value

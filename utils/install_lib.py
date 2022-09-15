@@ -20,6 +20,7 @@ import os
 import site
 import subprocess
 import sys
+import urllib3
 from glob import glob1
 from importlib import import_module
 
@@ -77,3 +78,11 @@ def install_python_lib(lib, install_pip=False):
 
 def is_installed(python_lib_path, lib):
     return os.path.isdir(os.path.join(python_lib_path, lib)) or len(glob1(python_lib_path, lib + WILDCARD)) > 0 or os.path.isdir(os.path.join(site.USER_SITE, lib)) or len(glob1(site.USER_SITE, lib + WILDCARD)) > 0
+
+
+def download_whl_file(url, dest):
+    urllib3.disable_warnings()
+    with urllib3.PoolManager() as http:
+        r = http.request('GET', url)
+        with open(dest, 'wb') as fout:
+            fout.write(r.data)

@@ -20,10 +20,7 @@
 # Octant methods
 ##################################################################
 
-import os
 from collections import namedtuple
-
-from utils import isolated_print
 
 NULL_COORDS = (0, 0, 0, 0)
 

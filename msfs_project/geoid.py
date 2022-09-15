@@ -17,8 +17,14 @@
 #  <pep8 compliant>
 
 import os
+from utils import install_python_lib
 
-import pygeodesy
+try:
+    import pygeodesy
+except ModuleNotFoundError:
+    install_python_lib('pygeodesy')
+    import pygeodesy
+
 from pygeodesy.ellipsoidalKarney import LatLon
 from constants import GEOIDS_DATASET_FOLDER, EGM2008_5_DATASET
 

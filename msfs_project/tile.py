@@ -17,8 +17,13 @@
 #  <pep8 compliant>
 
 import os
+from utils import install_python_lib
 
-import geopandas as gpd
+try:
+    import geopandas as gpd
+except ModuleNotFoundError:
+    install_python_lib('geopandas')
+    import geopandas as gpd
 
 from constants import GLTF_FILE_EXT, COLLIDER_SUFFIX, XML_FILE_EXT, BOUNDARY_OSM_KEY, OSM_FILE_EXT, BOUNDING_BOX_OSM_FILE_PREFIX, EXCLUSION_OSM_FILE_PREFIX, HEIGHT_OSM_TAG
 from msfs_project.height_map import MsfsHeightMap

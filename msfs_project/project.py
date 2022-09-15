@@ -24,8 +24,14 @@ import io
 import shutil
 import os
 import subprocess
+from utils import install_python_lib
 
-import osmnx as ox
+try:
+    import osmnx as ox
+except ModuleNotFoundError:
+    install_python_lib('osmnx')
+    import osmnx as ox
+
 import logging as lg
 from osmnx.utils_geo import bbox_to_poly
 
@@ -45,7 +51,7 @@ from msfs_project.scene_object import MsfsSceneObject
 from msfs_project.collider import MsfsCollider
 from msfs_project.tile import MsfsTile
 from msfs_project.shape import MsfsShapes
-from utils import replace_in_file, is_octant, backup_file, install_python_lib, ScriptError, print_title, \
+from utils import replace_in_file, is_octant, backup_file, ScriptError, print_title, \
     get_backup_file_path, isolated_print, chunks, create_bounding_box_from_tiles, clip_gdf, create_terraform_polygons_gdf, create_land_mass_gdf, create_exclusion_masks_from_tiles, preserve_holes, create_exclusion_building_polygons_gdf, create_whole_water_gdf, create_ground_exclusion_gdf, load_gdf, \
     prepare_sea_gdf, prepare_bbox_gdf, prepare_gdf, create_exclusion_vegetation_polygons_gdf, load_gdf_from_geocode, difference_gdf, create_shore_water_gdf, resize_gdf, prepare_golf_gdf, pr_bg_orange, load_json_file, prepare_park_gdf, prepare_building_gdf, create_empty_gdf, union_gdf, prepare_roads_gdf
 from pathlib import Path

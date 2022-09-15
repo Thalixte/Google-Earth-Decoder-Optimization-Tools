@@ -15,10 +15,25 @@
 #  #
 #
 #  <pep8 compliant>
+
+from utils import install_python_lib
+
+try:
+    import pandas as pd
+except ModuleNotFoundError:
+    install_python_lib('pandas')
+    import pandas as pd
+
+try:
+    import shapely
+except ModuleNotFoundError:
+    install_python_lib('shapely')
+    import shapely
+
 from pandas import isna
 from shapely.geometry import Polygon, MultiPolygon
 
-from constants import DUMMY_OBJECT, GEOMETRY_OSM_COLUMN
+from constants import DUMMY_OBJECT
 from utils import Xml
 import xml.etree.ElementTree as Et
 

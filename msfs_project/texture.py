@@ -15,8 +15,16 @@
 #  #
 #
 #  <pep8 compliant>
+
 import importlib
 import os
+from utils import install_python_lib
+
+try:
+    import PIL
+except ModuleNotFoundError:
+    install_python_lib('PIL')
+    import PIL
 
 from PIL import ImageEnhance
 from PIL.Image import merge

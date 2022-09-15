@@ -15,6 +15,7 @@
 #  #
 #
 #  <pep8 compliant>
+
 import copy
 import os
 from decimal import Decimal

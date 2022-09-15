@@ -28,6 +28,7 @@ DUMMY_IMAGE_HEIGHT = 256
 ######################################################
 # Image management methods
 ######################################################
+
 import bpy
 from blender.material import get_material_output
 

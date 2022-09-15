@@ -16,6 +16,14 @@
 #
 #  <pep8 compliant>
 
+from utils import install_python_lib
+
+try:
+    import shapely
+except ModuleNotFoundError:
+    install_python_lib('shapely')
+    import shapely
+
 from uuid import uuid4
 
 from shapely.geometry import Polygon, MultiPolygon

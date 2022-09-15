@@ -37,6 +37,7 @@ ROAD_LANE_WIDTH = 3.0
 PNG_TEXTURE_FORMAT = "png"
 JPG_TEXTURE_FORMAT = "jpg"
 
+WHL_FILE_EXT = ".whl"
 XML_FILE_EXT = ".xml"
 GLTF_FILE_EXT = ".gltf"
 BIN_FILE_EXT = ".bin"
@@ -67,6 +68,12 @@ XML_HEADER = '<?xml version="1.0"?>'
 CLEAR_CONSOLE_CMD = "cls"
 
 PYTHON_COMPIL_OPTION = "exec"
+
+ALTERNATE_PYTHON_LIB_REPO = "https://download.lfd.uci.edu/pythonlibs/archived/"
+GDAL_LIB_PREFIX = "GDAL-3.4.3"
+FIONA_LIB_PREFIX = "Fiona-1.8.21"
+WIN32_SUFFIX = "win32"
+WIN64_SUFFIX = "win_amd64"
 
 CONSTANTS_FOLDER = "constants"
 UTILS_FOLDER = "utils"

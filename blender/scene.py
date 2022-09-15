@@ -19,9 +19,32 @@
 import os
 from collections import defaultdict
 from pathlib import Path
+from utils import pr_bg_orange, install_python_lib
 
-import numpy as np
-import pygeodesy
+try:
+    import numpy as np
+except ModuleNotFoundError:
+    install_python_lib('numpy')
+    import numpy as np
+
+try:
+    import pygeodesy
+except ModuleNotFoundError:
+    install_python_lib('pygeodesy')
+    import pygeodesy
+
+try:
+    import scipy
+except ModuleNotFoundError:
+    install_python_lib('scipy')
+    import scipy
+
+try:
+    import shapely
+except ModuleNotFoundError:
+    install_python_lib('shapely')
+    import shapely
+
 from pygeodesy.ellipsoidalKarney import LatLon
 from scipy.spatial import cKDTree
 from shapely import geometry

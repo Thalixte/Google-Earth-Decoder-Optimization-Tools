@@ -19,10 +19,14 @@
 import os
 import xml.etree.ElementTree as Et
 
-from fontTools import unicodedata
-
 from constants import *
-from utils import pretty_print, line_prepender
+from utils import pretty_print, line_prepender, install_python_lib
+
+try:
+    from fontTools import unicodedata
+except ModuleNotFoundError:
+    install_python_lib('fontTools')
+    from fontTools import unicodedata
 
 
 class Xml:

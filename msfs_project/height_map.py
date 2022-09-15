@@ -15,6 +15,7 @@
 #  #
 #
 #  <pep8 compliant>
+
 from constants import HEIGHT_MAPS_DISPLAY_NAME
 from msfs_project.position import MsfsPosition
 from utils.octant import get_latlonbox_from_file_name

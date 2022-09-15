@@ -18,13 +18,11 @@
 
 import bpy
 
-from utils.isolated_print import isolated_print
 
-
-def remove_mesh_from_memory(passedName):
-    print("removeMeshFromMemory:[%s]." % passedName)
+def remove_mesh_from_memory(passed_name):
+    print("removeMeshFromMemory:[%s]." % passed_name)
     # Extra test because this can crash Blender if not done correctly.
-    mesh = bpy.data.meshes.get(passedName)
+    mesh = bpy.data.meshes.get(passed_name)
     if mesh is not None:
         if mesh.users == 0:
             try:
@@ -36,10 +34,10 @@ def remove_mesh_from_memory(passedName):
             if can_continue:
                 try:
                     bpy.data.meshes.remove(mesh)
-                    print("removeMeshFromMemory: MESH [", passedName, "] removed from memory.")
+                    print("removeMeshFromMemory: MESH [", passed_name, "] removed from memory.")
                     return True
                 except:
-                    print("removeMeshFromMemory: FAILED to remove [", passedName, "] from memory.")
+                    print("removeMeshFromMemory: FAILED to remove [", passed_name, "] from memory.")
                     return False
             else:
                 # Unable to clear users, something is holding a reference to it.
@@ -51,5 +49,5 @@ def remove_mesh_from_memory(passedName):
             return False
     else:
         # We could not fetch it, it does not exist in memory, essentially removed.
-        print("We could not fetch MESH [%s], it does not exist in memory, essentially removed." % passedName)
+        print("We could not fetch MESH [%s], it does not exist in memory, essentially removed." % passed_name)
         return False

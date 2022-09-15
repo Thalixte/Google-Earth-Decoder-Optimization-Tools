@@ -16,7 +16,14 @@
 #
 #  <pep8 compliant>
 
-import geopandas as gpd
+from utils import install_python_lib
+
+try:
+    import geopandas as gpd
+except ModuleNotFoundError:
+    install_python_lib('geoPandas')
+    import geopandas as gpd
+
 from shapely.geometry import MultiPolygon, Polygon, LineString
 from shapely.ops import linemerge, unary_union, polygonize
 
