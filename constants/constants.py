@@ -37,6 +37,8 @@ ROAD_LANE_WIDTH = 3.0
 PNG_TEXTURE_FORMAT = "png"
 JPG_TEXTURE_FORMAT = "jpg"
 
+ZIP_FILE_EXT = ".zip"
+TXT_FILE_EXT = ".txt"
 WHL_FILE_EXT = ".whl"
 XML_FILE_EXT = ".xml"
 GLTF_FILE_EXT = ".gltf"

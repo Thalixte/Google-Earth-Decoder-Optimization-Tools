@@ -31,11 +31,10 @@ import os
 import warnings
 from shapely.errors import ShapelyDeprecationWarning
 
-warnings.simplefilter(action="ignore", category=UserWarning)
-warnings.simplefilter(action="ignore", category=FutureWarning)
-warnings.simplefilter(action="ignore", category=DeprecationWarning)
-warnings.simplefilter(action="ignore", category=ShapelyDeprecationWarning)
-warnings.filterwarnings('ignore', 'GeoSeries.isna', UserWarning)
+warnings.simplefilter(action="ignore", category=UserWarning, append=True)
+warnings.simplefilter(action="ignore", category=FutureWarning, append=True)
+warnings.simplefilter(action="ignore", category=DeprecationWarning, append=True)
+warnings.simplefilter(action="ignore", category=ShapelyDeprecationWarning, append=True)
 
 from constants import *
 from utils import check_configuration, ScriptError, build_package, pr_bg_green, pr_bg_red

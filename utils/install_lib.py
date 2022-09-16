@@ -17,9 +17,12 @@
 #  <pep8 compliant>
 
 import os
+import shutil
 import site
 import subprocess
 import sys
+import tempfile
+from zipfile import ZipFile
 
 import requests
 from glob import glob1
@@ -33,6 +36,7 @@ import bpy
 
 from os.path import normpath, join, dirname
 
+from constants import ALTERNATE_PYTHON_LIB_REPO, WIN64_SUFFIX, WIN32_SUFFIX, WHL_FILE_EXT, ZIP_FILE_EXT, TXT_FILE_EXT
 from utils.script_errors import ScriptError
 
 PIP_LIB = "pip"
@@ -77,6 +81,41 @@ def install_python_lib(lib, install_pip=False):
         return True
 
     return True
+
+
+def install_alternate_python_lib(lib_prefix):
+    is_64bits = sys.maxsize > 2 ** 32
+    whl_file_name = lib_prefix + "-cp" + sys.winver.replace(".", str()) + "-cp" + sys.winver.replace(".", str()) + "-" + (WIN64_SUFFIX if is_64bits else WIN32_SUFFIX) + WHL_FILE_EXT
+    whl_file = os.path.join(tempfile.gettempdir(), whl_file_name)
+    download_file(ALTERNATE_PYTHON_LIB_REPO + whl_file_name, whl_file)
+    install_python_lib(whl_file)
+    if os.path.isfile(whl_file):
+        os.remove(whl_file)
+
+
+def install_shapefile_resource(repo, archive, dest):
+    tmp_file = os.path.join(tempfile.gettempdir(), archive)
+    download_file(repo + archive, tmp_file)
+    with ZipFile(tmp_file) as zip_file:
+        namelist = zip_file.namelist()
+        for file in namelist:
+            filename = os.path.basename(file)
+
+            # skip directories
+            if not filename:
+                continue
+
+            # skip txt files
+            if filename.endswith(TXT_FILE_EXT):
+                continue
+
+            source = zip_file.open(file)
+            target = open(os.path.join(dest, filename), "wb")
+            with source, target:
+                shutil.copyfileobj(source, target)
+
+    if os.path.isfile(tmp_file):
+        os.remove(tmp_file)
 
 
 def is_installed(python_lib_path, lib):
