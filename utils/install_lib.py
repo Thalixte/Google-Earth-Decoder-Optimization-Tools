@@ -20,7 +20,8 @@ import os
 import site
 import subprocess
 import sys
-import urllib3
+
+import requests
 from glob import glob1
 from importlib import import_module
 
@@ -31,10 +32,12 @@ import bpy
 ######################################################
 
 from os.path import normpath, join, dirname
+
 from utils.script_errors import ScriptError
 
 PIP_LIB = "pip"
 WILDCARD = "*"
+CHUNK_SIZE = 1048576
 
 
 def install_python_lib(lib, install_pip=False):
@@ -80,9 +83,21 @@ def is_installed(python_lib_path, lib):
     return os.path.isdir(os.path.join(python_lib_path, lib)) or len(glob1(python_lib_path, lib + WILDCARD)) > 0 or os.path.isdir(os.path.join(site.USER_SITE, lib)) or len(glob1(site.USER_SITE, lib + WILDCARD)) > 0
 
 
-def download_whl_file(url, dest):
-    urllib3.disable_warnings()
-    with urllib3.PoolManager() as http:
-        r = http.request('GET', url)
-        with open(dest, 'wb') as fout:
-            fout.write(r.data)
+def download_file(url, dest):
+    from utils.progress_bar import ProgressBar
+    # use a context manager to make an HTTP request and file
+    with requests.get(url, stream=True) as r:
+        with open(dest, 'wb') as file:
+            # Get the total size, in bytes, from the response header
+            total_size = int(r.headers.get('Content-Length'))
+            # Define the size of the chunk to iterate over (Mb)
+            # iterate over every chunk and calculate % of total
+            pbar = ProgressBar(list())
+            pbar.length = 100
+            for i, chunk in enumerate(r.iter_content(chunk_size=CHUNK_SIZE)):
+                # calculate current percentage
+                c = i * CHUNK_SIZE / total_size * 100
+                file.write(chunk)
+                pbar.update("downloading %s" % url, progress=round(c, 4))
+
+    pbar.update("downloading %s" % url, progress=100)

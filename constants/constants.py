@@ -75,6 +75,9 @@ FIONA_LIB_PREFIX = "Fiona-1.8.21"
 WIN32_SUFFIX = "win32"
 WIN64_SUFFIX = "win_amd64"
 
+LAND_MASS_REPO = "https://osmdata.openstreetmap.de/download/"
+LAND_MASS_ARCHIVE = "land-polygons-split-4326.zip"
+
 CONSTANTS_FOLDER = "constants"
 UTILS_FOLDER = "utils"
 SCRIPT_FOLDER = "scripts"

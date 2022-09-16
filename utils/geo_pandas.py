@@ -20,18 +20,26 @@ import os
 import sys
 import tempfile
 from constants import GEOMETRY_OSM_COLUMN, BOUNDING_BOX_OSM_KEY, SHAPE_TEMPLATES_FOLDER, OSM_LAND_SHAPEFILE, ROAD_OSM_KEY, BRIDGE_OSM_TAG, SERVICE_OSM_KEY, NOT_SHORE_WATER_OSM_KEY, WATER_OSM_KEY, NATURAL_OSM_KEY, OSM_TAGS, FOOTWAY_OSM_TAG, PATH_OSM_TAG, MAN_MADE_OSM_KEY, PIER_OSM_TAG, GOLF_OSM_KEY, FAIRWAY_OSM_TAG, EOL, CEND, TUNNEL_OSM_TAG, SEAMARK_TYPE_OSM_TAG, BUILDING_OSM_KEY, SHP_FILE_EXT, ELEMENT_TY_OSM_KEY, OSMID_OSM_KEY, RAILWAY_OSM_KEY, LANES_OSM_KEY, ONEWAY_OSM_KEY, ROAD_WITH_BORDERS, \
-    ROAD_LANE_WIDTH, GEOCODE_OSM_FILE_PREFIX, PEDESTRIAN_ROAD_TYPE, FOOTWAY_ROAD_TYPE, SERVICE_ROAD_TYPE, LANDUSE_OSM_KEY, CONSTRUCTION_OSM_KEY, GDAL_LIB_PREFIX, WHL_FILE_EXT, ALTERNATE_PYTHON_LIB_REPO, WIN64_SUFFIX, WIN32_SUFFIX, FIONA_LIB_PREFIX
-from utils import pr_bg_orange, install_python_lib, download_whl_file
+    ROAD_LANE_WIDTH, GEOCODE_OSM_FILE_PREFIX, PEDESTRIAN_ROAD_TYPE, FOOTWAY_ROAD_TYPE, SERVICE_ROAD_TYPE, LANDUSE_OSM_KEY, CONSTRUCTION_OSM_KEY, GDAL_LIB_PREFIX, WHL_FILE_EXT, ALTERNATE_PYTHON_LIB_REPO, WIN64_SUFFIX, WIN32_SUFFIX, FIONA_LIB_PREFIX, LAND_MASS_REPO, LAND_MASS_ARCHIVE
+from utils import pr_bg_orange, install_python_lib, download_file
 
 is_64bits = sys.maxsize > 2 ** 32
+
+land_mass_archive = os.path.join(SHAPE_TEMPLATES_FOLDER, LAND_MASS_ARCHIVE)
+download_file(LAND_MASS_REPO + LAND_MASS_ARCHIVE, os.path.join(SHAPE_TEMPLATES_FOLDER, LAND_MASS_ARCHIVE))
+if os.path.isfile(land_mass_archive):
+    os.remove(land_mass_archive)
 
 try:
     import osgeo
 except ModuleNotFoundError:
     whl_file_name = GDAL_LIB_PREFIX + "-cp" + sys.winver.replace(".", "") + "-cp" + sys.winver.replace(".", "") + "-" + (WIN64_SUFFIX if is_64bits else WIN32_SUFFIX) + WHL_FILE_EXT
     whl_file = os.path.join(tempfile.gettempdir(), whl_file_name)
-    gdal_whl = download_whl_file(ALTERNATE_PYTHON_LIB_REPO + whl_file_name, whl_file)
+    download_file(ALTERNATE_PYTHON_LIB_REPO + whl_file_name, whl_file)
     install_python_lib(whl_file)
+    if os.path.isfile(whl_file):
+        os.remove(whl_file)
+
     import osgeo
 
 try:
@@ -54,8 +62,10 @@ try:
 except ModuleNotFoundError:
     whl_file_name = FIONA_LIB_PREFIX + "-cp" + sys.winver.replace(".", "") + "-cp" + sys.winver.replace(".", "") + "-" + (WIN64_SUFFIX if is_64bits else WIN32_SUFFIX) + WHL_FILE_EXT
     whl_file = os.path.join(tempfile.gettempdir(), whl_file_name)
-    gdal_whl = download_whl_file(ALTERNATE_PYTHON_LIB_REPO + whl_file_name, whl_file)
+    download_file(ALTERNATE_PYTHON_LIB_REPO + whl_file_name, whl_file)
     install_python_lib(whl_file)
+    if os.path.isfile(whl_file):
+        os.remove(whl_file)
 
 try:
     import pandas as pd
