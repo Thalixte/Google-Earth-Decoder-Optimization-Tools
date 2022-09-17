@@ -18,6 +18,7 @@
 
 import itertools
 import sys
+import time
 from os.path import basename
 
 import io
@@ -930,41 +931,57 @@ class MsfsProject:
 
         # load all necessary GeoPandas Dataframes
         load_gdf_list = [None] * 17
-        pbar = ProgressBar(load_gdf_list)
-        pbar.display_title("RETRIEVE GEODATAFRAMES (THE FIRST TIME, MAY TAKE SOME TIME TO COMPLETE, BE PATIENT...)")
+        pbar = ProgressBar(load_gdf_list, title="RETRIEVE GEODATAFRAMES (THE FIRST TIME, MAY TAKE SOME TIME TO COMPLETE, BE PATIENT...)", sleep=0.5)
+        pbar.update("retrieving land mass geodataframe...", stall=True)
         orig_land_mass = create_land_mass_gdf(self.sources_folder, orig_bbox, b)
         pbar.update("land mass geodataframe retrieved")
+        pbar.update("retrieving boundary geodataframe...", stall=True)
         orig_boundary = load_gdf(self.coords, BOUNDARY_OSM_KEY, True, shp_file_path=os.path.join(self.shpfiles_folder, BOUNDARY_OSM_KEY + SHP_FILE_EXT))
         pbar.update("boundary geodataframe retrieved")
+        pbar.update("retrieving roads geodataframe...", stall=True)
         orig_road = load_gdf(self.coords, ROAD_OSM_KEY, True, shp_file_path=os.path.join(self.shpfiles_folder, ROAD_OSM_KEY + SHP_FILE_EXT), is_roads=True)
         pbar.update("roads geodataframe retrieved")
+        pbar.update("retrieving railways geodataframe...", stall=True)
         orig_railway = load_gdf(self.coords, RAILWAY_OSM_KEY, True, shp_file_path=os.path.join(self.shpfiles_folder, RAILWAY_OSM_KEY + SHP_FILE_EXT), is_roads=True)
         pbar.update("railways geodataframe retrieved")
+        pbar.update("retrieving sea geodataframe...", stall=True)
         orig_sea = load_gdf(self.coords, BOUNDARY_OSM_KEY, True, shp_file_path=os.path.join(self.shpfiles_folder, SEA_OSM_TAG + SHP_FILE_EXT), is_sea=True, land_mass=orig_land_mass, bbox=orig_bbox)
         pbar.update("sea geodataframe retrieved")
+        pbar.update("retrieving landuses geodataframe...", stall=True)
         orig_landuse = load_gdf(self.coords, LANDUSE_OSM_KEY, OSM_TAGS[LANDUSE_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, LANDUSE_OSM_KEY + SHP_FILE_EXT))
         pbar.update("landuses geodataframe retrieved")
+        pbar.update("retrieving grass geodataframe...", stall=True)
         orig_grass = load_gdf(self.coords, LANDUSE_OSM_KEY, OSM_TAGS[GRASS_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, GRASS_OSM_KEY + SHP_FILE_EXT), is_grass=True)
         pbar.update("grass geodataframe retrieved")
+        pbar.update("retrieving nature geodataframe...", stall=True)
         orig_nature_reserve = load_gdf(self.coords, LEISURE_OSM_KEY, OSM_TAGS[LEISURE_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, LEISURE_OSM_KEY + SHP_FILE_EXT))
         pbar.update("nature reserves geodataframe retrieved")
+        pbar.update("retrieving other naturals geodataframe...", stall=True)
         orig_natural = load_gdf(self.coords, NATURAL_OSM_KEY, OSM_TAGS[NATURAL_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, NATURAL_OSM_KEY + SHP_FILE_EXT))
         pbar.update("other naturals geodataframe retrieved")
+        pbar.update("retrieving waters geodataframe...", stall=True)
         orig_natural_water = load_gdf(self.coords, NATURAL_OSM_KEY, OSM_TAGS[NATURAL_WATER_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, NATURAL_WATER_OSM_KEY + SHP_FILE_EXT))
         pbar.update("natural waters geodataframe retrieved")
+        pbar.update("retrieving other waters geodataframe...", stall=True)
         orig_water = load_gdf(self.coords, WATER_OSM_KEY, OSM_TAGS[WATER_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, WATER_OSM_KEY + SHP_FILE_EXT))
         pbar.update("other waters geodataframe retrieved")
+        pbar.update("retrieving aeroways geodataframe...", stall=True)
         orig_aeroway = load_gdf(self.coords, AEROWAY_OSM_KEY, True, shp_file_path=os.path.join(self.shpfiles_folder, AEROWAY_OSM_KEY + SHP_FILE_EXT))
         pbar.update("aeroways geodataframe retrieved")
+        pbar.update("retrieving pitches geodataframe...", stall=True)
         orig_pitch = load_gdf(self.coords, LEISURE_OSM_KEY, OSM_TAGS[PITCH_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, PITCH_OSM_KEY + SHP_FILE_EXT))
         pbar.update("pitches geodataframe retrieved")
+        pbar.update("retrieving constructions geodataframe...", stall=True)
         orig_construction = load_gdf(self.coords, LANDUSE_OSM_KEY, OSM_TAGS[CONSTRUCTION_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, CONSTRUCTION_OSM_KEY + SHP_FILE_EXT))
         pbar.update("constructions geodataframe retrieved")
+        pbar.update("retrieving parks geodataframe...", stall=True)
         orig_park = load_gdf(self.coords, LEISURE_OSM_KEY, OSM_TAGS[PARK_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, PARK_OSM_KEY + SHP_FILE_EXT))
         pbar.update("parks geodataframe retrieved")
+        pbar.update("retrieving buildings geodataframe...", stall=True)
         orig_building = load_gdf(self.coords, BUILDING_OSM_KEY, True, shp_file_path=os.path.join(self.shpfiles_folder, BUILDING_OSM_KEY + SHP_FILE_EXT))
         pbar.update("buildings geodataframe retrieved")
-        orig_airport = load_gdf_from_geocode(AIRPORT_GEOCODE + ", " + settings.city.lower(), shpfiles_folder=self.shpfiles_folder, keep_data=True)
+        pbar.update("retrieving airports geodataframe...", stall=True)
+        orig_airport = load_gdf_from_geocode(AIRPORT_GEOCODE + ", " + settings.city.lower(), shpfiles_folder=self.shpfiles_folder, keep_data=True, display_warnings=False)
         pbar.update("airports geodataframe retrieved")
 
         road = prepare_roads_gdf(orig_road, orig_railway, automatic_road_width_calculation=False)

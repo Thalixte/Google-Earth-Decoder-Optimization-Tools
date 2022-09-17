@@ -185,7 +185,7 @@ def resize_gdf(gdf, resize_distance, single_sided=True):
     return gdf.to_crs(EPSG.key + str(EPSG.WGS84_degree_unit))
 
 
-def load_gdf_from_geocode(geocode, geocode_margin=5.0, preserve_roads=True, preserve_buildings=True, keep_data=False, coords=None, shpfiles_folder=None):
+def load_gdf_from_geocode(geocode, geocode_margin=5.0, preserve_roads=True, preserve_buildings=True, keep_data=False, coords=None, shpfiles_folder=None, display_warnings=True):
     try:
         warnings.simplefilter("ignore", FutureWarning, append=True)
         result = ox.geocode_to_gdf(geocode)
@@ -220,11 +220,13 @@ def load_gdf_from_geocode(geocode, geocode_margin=5.0, preserve_roads=True, pres
                 if result.empty and ELEMENT_TY_OSM_KEY in road and OSMID_OSM_KEY in road:
                     result = road[(road[ELEMENT_TY_OSM_KEY] == element_type) & (road[OSMID_OSM_KEY] == int(osmid))]
         except ValueError:
-            pr_bg_orange("Geocode (" + geocode + ") not found in OSM data" + EOL + CEND)
+            if display_warnings:
+                pr_bg_orange("Geocode (" + geocode + ") not found in OSM data" + EOL + CEND)
             return create_empty_gdf()
 
     if result.empty:
-        pr_bg_orange("Geocode (" + geocode + ") not found in OSM data" + EOL + CEND)
+        if display_warnings:
+            pr_bg_orange("Geocode (" + geocode + ") not found in OSM data" + EOL + CEND)
         return create_empty_gdf()
 
     bounds_coords = result.bounds.iloc[0]

@@ -61,19 +61,22 @@ class ProgressBar:
         if self.title is not str():
             print_title(self.title)
 
-    def update(self, description=str(), progress=None):
+    def update(self, description=str(), progress=None, stall=False):
         if progress is None and self.range <= 0:
             return
 
-        self.idx += 1
+        if not stall:
+            self.idx += 1
+
         if progress is None:
             progress = self.idx / self.range
             block = int(round(self.length * progress))
         else:
             block = int(progress)
             progress = progress / 100
+
         description = DONE_PROCESS if progress >= 1 else description
-        msg = self.__get_color(progress) + "\r[{0}] {1}%: {2}".format("\u25A0" * block + "-" * (self.length - block), round(progress * 100, 2), description + CEND)
+        msg = self.__get_color(progress) + "\r[{0}] {1}{2}".format("\u25A0" * block + "-" * (self.length - block), str(round(progress * 100, 2)) + "%: " if progress > 0 else str(), description + CEND)
 
         if progress is None:
             sys.stdout.close()
