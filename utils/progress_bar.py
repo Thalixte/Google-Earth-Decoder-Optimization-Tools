@@ -20,6 +20,7 @@ import sys
 import time
 
 import os
+import warnings
 from types import GeneratorType
 
 from constants import EOL, CRED, CORANGE, CGREEN, CEND
@@ -76,6 +77,7 @@ class ProgressBar:
 
         if progress is None:
             sys.stdout.close()
+        warnings.simplefilter("ignore", ResourceWarning, append=True)
         sys.stdout = sys.__stdout__
         sys.stdout.write(msg.ljust(MSG_LENGTH))
         sys.stdout.flush()

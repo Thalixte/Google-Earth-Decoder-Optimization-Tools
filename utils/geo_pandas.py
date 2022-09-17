@@ -19,6 +19,8 @@
 import os
 import warnings
 
+from shapely.errors import ShapelyDeprecationWarning
+
 from constants import GEOMETRY_OSM_COLUMN, BOUNDING_BOX_OSM_KEY, SHAPE_TEMPLATES_FOLDER, OSM_LAND_SHAPEFILE, ROAD_OSM_KEY, BRIDGE_OSM_TAG, SERVICE_OSM_KEY, NOT_SHORE_WATER_OSM_KEY, WATER_OSM_KEY, NATURAL_OSM_KEY, OSM_TAGS, FOOTWAY_OSM_TAG, PATH_OSM_TAG, MAN_MADE_OSM_KEY, PIER_OSM_TAG, GOLF_OSM_KEY, FAIRWAY_OSM_TAG, EOL, CEND, TUNNEL_OSM_TAG, SEAMARK_TYPE_OSM_TAG, BUILDING_OSM_KEY, SHP_FILE_EXT, ELEMENT_TY_OSM_KEY, OSMID_OSM_KEY, RAILWAY_OSM_KEY, LANES_OSM_KEY, ONEWAY_OSM_KEY, ROAD_WITH_BORDERS, \
     ROAD_LANE_WIDTH, GEOCODE_OSM_FILE_PREFIX, PEDESTRIAN_ROAD_TYPE, FOOTWAY_ROAD_TYPE, SERVICE_ROAD_TYPE, LANDUSE_OSM_KEY, CONSTRUCTION_OSM_KEY, GDAL_LIB_PREFIX, FIONA_LIB_PREFIX, LAND_MASS_REPO, LAND_MASS_ARCHIVE
 from utils import pr_bg_orange, install_python_lib, install_alternate_python_lib, install_shapefile_resource
@@ -233,6 +235,8 @@ def load_gdf_from_geocode(geocode, geocode_margin=5.0, preserve_roads=True, pres
     orig_building = orig_building.clip(result_bbox, keep_geom_type=True)
     building_mask = difference_gdf(orig_building, result)
     if not building_mask.empty:
+        warnings.simplefilter("ignore", FutureWarning, append=True)
+        warnings.simplefilter("ignore", UserWarning, append=True)
         building_mask.to_file(os.path.join(shpfiles_folder, GEOCODE_OSM_FILE_PREFIX + "_" + BUILDING_OSM_KEY + SHP_FILE_EXT))
 
     result = resize_gdf(result, geocode_margin)
@@ -250,6 +254,8 @@ def load_gdf_from_geocode(geocode, geocode_margin=5.0, preserve_roads=True, pres
         road = road.clip(result_bbox, keep_geom_type=True)
         # for debugging purpose, generate the shp file
         if not road.empty:
+            warnings.simplefilter("ignore", FutureWarning, append=True)
+            warnings.simplefilter("ignore", UserWarning, append=True)
             road.to_file(os.path.join(shpfiles_folder, GEOCODE_OSM_FILE_PREFIX + "_" + ROAD_OSM_KEY + SHP_FILE_EXT))
             road = clip_gdf(road, result)
             road = road[[GEOMETRY_OSM_COLUMN]]
@@ -311,6 +317,7 @@ def load_gdf(coords, key, tags, shp_file_path="", keep_geocode_data=False, is_ro
                 result = resize_gdf(result, 0.00001)
 
             try:
+                warnings.simplefilter("ignore", FutureWarning, append=True)
                 warnings.simplefilter("ignore", UserWarning, append=True)
                 result.to_file(shp_file_path)
             except:
@@ -626,6 +633,7 @@ def preserve_holes(gdf, split_method=PRESERVE_HOLES_METHOD.centroid_split):
     if result_p.type == SHAPELY_TYPE.polygon:
         result_p = [result_p]
 
+    warnings.simplefilter("ignore", ShapelyDeprecationWarning, append=True)
     for input_p in result_p:
         if input_p.interiors:
             if split_method == PRESERVE_HOLES_METHOD.centroid_split:
@@ -668,6 +676,7 @@ def centroid_split_method(input_p, keep_polys):
         proj_other_centroid_pts = [Point([pt.x, 0]) for pt in other_centroid_pts.geoms]
 
         proj_pts = nearest_points(proj_centroid_pt, MultiPoint(proj_other_centroid_pts))
+        warnings.simplefilter("ignore", ShapelyDeprecationWarning, append=True)
         next_proj_centroid_pt = proj_pts[1]
 
         if next_proj_centroid_pt.x > next_centroid_pt.x:

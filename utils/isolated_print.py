@@ -22,12 +22,7 @@ import warnings
 
 
 def isolated_print(*args, **kwargs):
-    warnings.simplefilter("ignore", append=True)
-    os.environ["PYTHONWARNINGS"] = "ignore"
+    warnings.simplefilter("ignore", ResourceWarning, append=True)
     sys.stdout = sys.__stdout__
     print(*args, **kwargs)
-    warnings.simplefilter("ignore", append=True)
-    os.environ["PYTHONWARNINGS"] = "ignore"
     sys.stdout = open(os.devnull, 'w')
-    warnings.simplefilter("ignore", append=True)
-    os.environ["PYTHONWARNINGS"] = "ignore"
