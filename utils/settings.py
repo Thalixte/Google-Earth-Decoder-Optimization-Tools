@@ -44,7 +44,7 @@ class Settings:
     lat_correction: float
     lon_correction: float
     compressonator_exe_path = str
-    city: str
+    airport_city: str
     geocode: str
     geocode_margin: float
     landmark_type: str
@@ -87,7 +87,7 @@ class Settings:
         self.lat_correction = 0.0
         self.lon_correction = 0.0
         self.compressonator_exe_path = str()
-        self.city = str()
+        self.airport_city = str()
         self.geocode = str()
         self.geocode_margin = 5.0
         self.preserve_roads = "True"

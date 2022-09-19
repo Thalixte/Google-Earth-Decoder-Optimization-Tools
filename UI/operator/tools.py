@@ -97,6 +97,50 @@ def reload_target_min_size_value(context):
         context.scene.setting_props[TARGET_MIN_SIZE_VALUE_PROPERTY_PREFIX + str(cur_lod)] = int(context.scene.settings.target_min_size_values[idx])
 
 
+def reload_airport_city(context):
+    context.scene.setting_props.airport_city = context.scene.settings.airport_city
+
+
+def reload_high_precision(context):
+    context.scene.setting_props.high_precision = context.scene.settings.high_precision
+
+
+def reload_exclude_ground(context):
+    context.scene.setting_props.exclude_ground = context.scene.settings.exclude_ground
+
+
+def reload_exclude_nature_reserve(context):
+    context.scene.setting_props.exclude_nature_reserve = context.scene.settings.exclude_nature_reserve
+
+
+def reload_exclude_parks(context):
+    context.scene.setting_props.exclude_parks = context.scene.settings.exclude_parks
+
+
+def reload_geocode(context):
+    context.scene.setting_props.geocode = context.scene.settings.geocode
+
+
+def reload_geocode_margin(context):
+    context.scene.setting_props.geocode_margin = float(context.scene.settings.geocode_margin)
+
+
+def reload_preserve_roads(context):
+    context.scene.setting_props.preserve_roads = context.scene.settings.preserve_roads
+
+
+def reload_preserve_buildings(context):
+    context.scene.setting_props.preserve_buildings = context.scene.settings.preserve_buildings
+
+
+def reload_landmark_type(context):
+    context.scene.setting_props.landmark_type = context.scene.settings.landmark_type
+
+
+def reload_landmark_offset(context):
+    context.scene.setting_props.landmark_offset = float(context.scene.settings.landmark_offset)
+
+
 def reload_build_package_enabled(context):
     context.scene.setting_props.build_package_enabled = context.scene.settings.build_package_enabled
 
@@ -167,6 +211,17 @@ def reload_setting_props(context, reload_settings_file=True):
     reload_lat_correction(context)
     reload_lon_correction(context)
     reload_target_min_size_value(context)
+    reload_airport_city(context)
+    reload_high_precision(context)
+    reload_exclude_ground(context)
+    reload_exclude_nature_reserve(context)
+    reload_exclude_parks(context)
+    reload_geocode(context)
+    reload_geocode_margin(context)
+    reload_preserve_roads(context)
+    reload_preserve_buildings(context)
+    reload_landmark_type(context)
+    reload_landmark_offset(context)
     reload_build_package_enabled(context)
     reload_msfs_build_exe_path(context)
     reload_msfs_steam_version(context)

@@ -20,7 +20,7 @@ import os
 
 import bpy
 from bpy.props import StringProperty, BoolProperty, EnumProperty, FloatProperty
-from constants import TARGET_MIN_SIZE_VALUE_PROPERTY_PREFIX, PNG_TEXTURE_FORMAT, JPG_TEXTURE_FORMAT, MAX_PHOTOGRAMMETRY_LOD
+from constants import TARGET_MIN_SIZE_VALUE_PROPERTY_PREFIX, PNG_TEXTURE_FORMAT, JPG_TEXTURE_FORMAT, MAX_PHOTOGRAMMETRY_LOD, POI_LANDMARK_FORMAT_TYPE, CITY_LANDMARK_FORMAT_TYPE
 
 
 class SettingsPropertyGroup(bpy.types.PropertyGroup):
@@ -73,8 +73,41 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
             context.scene.settings.target_min_size_values[idx] = str(cur_value)
             prev_value = int(context.scene.settings.target_min_size_values[idx])
 
+    def airport_city_updated(self, context):
+        context.scene.settings.airport_city = self.airport_city
+
     def build_package_enabled_updated(self, context):
         context.scene.settings.build_package_enabled = self.build_package_enabled
+
+    def high_precision_updated(self, context):
+        context.scene.settings.high_precision = self.high_precision
+
+    def exclude_ground_updated(self, context):
+        context.scene.settings.exclude_ground = self.exclude_ground
+
+    def exclude_nature_reserve_updated(self, context):
+        context.scene.settings.exclude_nature_reserve = self.exclude_nature_reserve
+
+    def exclude_parks_updated(self, context):
+        context.scene.settings.exclude_parks = self.exclude_parks
+
+    def geocode_updated(self, context):
+        context.scene.settings.geocode = self.geocode
+
+    def geocode_margin_updated(self, context):
+        context.scene.settings.geocode_margin = self.geocode_margin
+
+    def preserve_roads_updated(self, context):
+        context.scene.settings.preserve_roads = self.preserve_roads
+
+    def preserve_buildings_updated(self, context):
+        context.scene.settings.preserve_buildings = self.preserve_buildings
+
+    def landmark_type_updated(self, context):
+        context.scene.settings.landmark_type = self.landmark_type
+
+    def landmark_offset_updated(self, context):
+        context.scene.settings.landmark_offset = self.landmark_offset
 
     def msfs_build_exe_path_updated(self, context):
         context.scene.settings.msfs_build_exe_path = self.msfs_build_exe_path_readonly = self.msfs_build_exe_path
@@ -195,6 +228,87 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         precision=6,
         default=float(bpy.types.Scene.settings.lon_correction),
         update=lon_correction_updated,
+    )
+    airport_city: StringProperty(
+        name="City",
+        description="City of the airport to exclude",
+        default=bpy.types.Scene.settings.airport_city,
+        maxlen=256,
+        update=airport_city_updated
+    )
+    high_precision: BoolProperty(
+        name="High precision height data generation",
+        description="Generate the height data, using the most detailed tile lods",
+        default=bpy.types.Scene.settings.high_precision,
+        update=high_precision_updated,
+    )
+    exclude_ground: BoolProperty(
+        name="Exclude ground 3d data",
+        description="Exclude ground 3d data (forests, woods)",
+        default=bpy.types.Scene.settings.exclude_ground,
+        update=exclude_ground_updated,
+    )
+    exclude_nature_reserve: BoolProperty(
+        name="Exclude nature reserves 3d data",
+        description="Exclude nature reserves 3d data",
+        default=bpy.types.Scene.settings.exclude_nature_reserve,
+        update=exclude_nature_reserve_updated,
+    )
+    exclude_parks: BoolProperty(
+        name="Exclude parks 3d data",
+        description="Exclude parks 3d data",
+        default=bpy.types.Scene.settings.exclude_parks,
+        update=exclude_parks_updated,
+    )
+    geocode: StringProperty(
+        name="Geocode",
+        description="Geocode to search from OSM data (for exclusion or isolation) in the form \"location name, city\", or\"(way|relation), osmid\"",
+        default=bpy.types.Scene.settings.geocode,
+        maxlen=256,
+        update=geocode_updated
+    )
+    geocode_margin: FloatProperty(
+        name="Geocode margin",
+        description="Margin of the geocode polygon used to exclude or isolate the 3d data",
+        soft_min=-1.0,
+        soft_max=2.0,
+        step=1,
+        precision=0,
+        default=float(bpy.types.Scene.settings.geocode_margin),
+        update=geocode_margin_updated
+    )
+    preserve_roads: BoolProperty(
+        name="Preserve roads",
+        description="Preserve neighborhood roads when excluding 3d data from geocode",
+        default=bpy.types.Scene.settings.preserve_roads,
+        update=preserve_roads_updated,
+    )
+    preserve_buildings: BoolProperty(
+        name="Preserve buildings",
+        description="Preserve neighborhood buildings when excluding 3d data from geocode",
+        default=bpy.types.Scene.settings.preserve_buildings,
+        update=preserve_buildings_updated,
+    )
+    landmark_type: EnumProperty(
+        name="Landmark type",
+        description="Type of the landmark (POI, City, ...)",
+        items=[
+            (POI_LANDMARK_FORMAT_TYPE, POI_LANDMARK_FORMAT_TYPE, str()),
+            (CITY_LANDMARK_FORMAT_TYPE, CITY_LANDMARK_FORMAT_TYPE, str()),
+        ],
+        default=bpy.types.Scene.settings.landmark_type,
+        update=landmark_type_updated,
+
+    )
+    landmark_offset: FloatProperty(
+        name="Landmark offset",
+        description="Height offset of the landmark",
+        soft_min=-1.0,
+        soft_max=2.0,
+        step=1,
+        precision=0,
+        default=float(bpy.types.Scene.settings.landmark_offset),
+        update=landmark_offset_updated
     )
     build_package_enabled: BoolProperty(
         name="Build package enabled",

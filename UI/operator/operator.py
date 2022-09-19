@@ -32,6 +32,7 @@ from scripts.remove_tile_colliders_script import remove_tile_colliders
 from scripts.update_min_size_values_script import update_min_size_values
 from scripts.compress_built_package_script import compress_built_package
 from scripts.update_tiles_position_script import update_tiles_position
+from scripts.create_terraform_and_exclusion_polygons_script import create_terraform_and_exclusion_polygons
 from utils import open_console
 from .tools import reload_current_operator, reload_setting_props
 from bpy_extras.io_utils import ImportHelper
@@ -180,6 +181,32 @@ class OT_CompressonatorExePathOperator(FileBrowserOperator):
         return {'RUNNING_MODAL'}
 
 
+class OT_CompressonatorExePathOperator(FileBrowserOperator):
+    bl_idname = "wm.compressonator_exe_path_operator"
+    bl_label = "Path to the compressonator bin exe that compresses the package texture files..."
+
+    filter_glob: StringProperty(
+        default="*.exe",
+        options={"HIDDEN"},
+    )
+    filepath: bpy.props.StringProperty(
+        subtype="FILE_PATH"
+    )
+
+    def draw(self, context):
+        super().draw(context)
+
+    def execute(self, context):
+        context.scene.setting_props.compressonator_exe_path = self.filepath
+        reload_current_operator(context)
+        return {'FINISHED'}
+
+    def invoke(self, context, event):
+        self.filepath = context.scene.setting_props.compressonator_exe_path
+        context.window_manager.fileselect_add(self)
+        return {'RUNNING_MODAL'}
+
+
 class ActionOperator(Operator):
     @classmethod
     def poll(cls, context):
@@ -298,6 +325,21 @@ class OT_FixTilesLightningIssuesOperator(ActionOperator):
     def execute(self, context):
         super().execute(context)
         fix_tiles_lightning_issues(context.scene.settings)
+        return {'FINISHED'}
+
+
+class OT_CreateTerraformAndExclusionPolygonsOperator(ActionOperator):
+    bl_idname = "wm.create_terraform_and_exclusion_polygons"
+    bl_label = "Create the terraform and exclusion polygons for the scenery..."
+
+    @classmethod
+    def poll(cls, context):
+        msfs_project = super().poll(context)
+        return os.path.isdir(msfs_project.scene_folder)
+
+    def execute(self, context):
+        super().execute(context)
+        create_terraform_and_exclusion_polygons(context.scene.settings)
         return {'FINISHED'}
 
 

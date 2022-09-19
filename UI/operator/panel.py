@@ -17,7 +17,7 @@
 #  <pep8 compliant>
 
 from bpy_types import Operator
-from constants import MAX_PHOTOGRAMMETRY_LOD, PROJECT_INI_SECTION, TILE_INI_SECTION, LODS_INI_SECTION, COMPRESSONATOR_INI_SECTION, BUILD_INI_SECTION, MERGE_INI_SECTION, BACKUP_INI_SECTION, NONE_ICON, FILE_FOLDER_ICON, FILE_REFRESH_ICON, FILE_TICK_ICON, INFO_ICON, ADD_ICON, REMOVE_ICON
+from constants import MAX_PHOTOGRAMMETRY_LOD, PROJECT_INI_SECTION, TILE_INI_SECTION, LODS_INI_SECTION, OSM_INI_SECTION, GEOCODE_INI_SECTION, COMPRESSONATOR_INI_SECTION, BUILD_INI_SECTION, MERGE_INI_SECTION, BACKUP_INI_SECTION, NONE_ICON, FILE_FOLDER_ICON, FILE_REFRESH_ICON, FILE_TICK_ICON, INFO_ICON, ADD_ICON, REMOVE_ICON
 from .operator import OT_ProjectPathOperator, OT_MsfsBuildExePathOperator, OT_CompressonatorExePathOperator, OT_ReloadSettingsOperator, \
     OT_SaveSettingsOperator, OT_ProjectsPathOperator, OT_ProjectPathToMergeOperator, OT_addLodOperator, OT_removeLowerLodOperator, OT_openSettingsFileOperator
 from .tools import reload_setting_props
@@ -145,6 +145,40 @@ class SettingsOperator(PanelOperator):
         self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "build_package_enabled", "Build package enabled")
         col.separator()
         self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "msfs_steam_version", "Msfs Steam version")
+        self.draw_footer(context, self.layout, self.operator_name)
+
+    def draw_openstreetmap_panel(self, context):
+        split = self.draw_setting_sections_panel(context)
+        col = self.draw_header(split)
+        col.separator()
+        self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "airport_city", "Airport city")
+        col.separator()
+        self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "high_precision", "High precision height data generation")
+        col.separator()
+        self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "exclude_ground", "Exclude ground 3d data")
+        col.separator()
+        self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "exclude_nature_reserve", "Exclude nature reserves 3d data")
+        col.separator()
+        self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "exclude_parks", "Exclude parks 3d data")
+        col.separator()
+        self.draw_footer(context, self.layout, self.operator_name)
+
+    def draw_geocode_panel(self, context):
+        split = self.draw_setting_sections_panel(context)
+        col = self.draw_header(split)
+        col.separator()
+        self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "geocode", "Geocode")
+        col.separator()
+        self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "geocode_margin", "Geocode margin")
+        col.separator()
+        self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "preserve_roads", "Preserve roads")
+        col.separator()
+        self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "preserve_buildings", "Preserve buildings")
+        col.separator()
+        self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "landmark_type", "Landmark type")
+        col.separator()
+        self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "landmark_offset", "Landmark offset")
+        col.separator()
         self.draw_footer(context, self.layout, self.operator_name)
 
     def draw_python_panel(self, context):
@@ -391,6 +425,24 @@ class OT_RemoveTileCollidersPanel(SettingsOperator):
     starting_section = PROJECT_INI_SECTION
     displayed_sections = [
         PROJECT_INI_SECTION,
+        BUILD_INI_SECTION,
+        BACKUP_INI_SECTION,
+    ]
+
+
+class OT_CreateTerraformAndExclusionPolygonsPanel(SettingsOperator):
+    operator_name = "wm.create_terraform_and_exclusion_polygons"
+    id_name = "wm.create_terraform_and_exclusion_polygons_panel"
+    bl_idname = id_name
+    bl_label = "Create the terraform and exclusion polygons for the scenery"
+    operator_description = """Create the terraform and exclusion polygons for the scenery.
+        In the OPENSTREETMAP section, set the city to exclude the airport, if it exists.
+        In the OPENSTREETMAP section, indicate if you want to exclude the ground 3d data (forests, woods), 
+        the nature reserves, and/or the parks (can produce 3d artifacts)."""
+    starting_section = OSM_INI_SECTION
+    displayed_sections = [
+        PROJECT_INI_SECTION,
+        OSM_INI_SECTION,
         BUILD_INI_SECTION,
         BACKUP_INI_SECTION,
     ]

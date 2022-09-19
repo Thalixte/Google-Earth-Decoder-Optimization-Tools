@@ -1067,7 +1067,7 @@ class MsfsProject:
         orig_rocks = load_gdf(self.coords, NATURAL_OSM_KEY, OSM_TAGS[ROCKS_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, ROCKS_OSM_KEY + SHP_FILE_EXT))
         pbar.update("rocks geodataframe retrieved")
         pbar.update("retrieving airports geodataframe...", stall=True)
-        orig_airport = load_gdf_from_geocode(AIRPORT_GEOCODE + ", " + settings.city.lower(), shpfiles_folder=self.shpfiles_folder, keep_data=True, display_warnings=False)
+        orig_airport = load_gdf_from_geocode(AIRPORT_GEOCODE + ", " + settings.airport_city.lower(), shpfiles_folder=self.shpfiles_folder, keep_data=True, display_warnings=False)
         pbar.update("airports geodataframe retrieved")
 
         return orig_land_mass, orig_boundary, orig_road, orig_railway, orig_sea, orig_landuse, orig_grass, orig_nature_reserve, \
