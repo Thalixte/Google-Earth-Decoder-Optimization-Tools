@@ -160,6 +160,8 @@ class SettingsOperator(PanelOperator):
         self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "exclude_parks", "Exclude parks 3d data")
         col.separator()
         if self.operator_name == "wm.generate_height_data" or self.operator_name == "wm.prepare_3d_data":
+            self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "height_adjustment", "Height data adjustment (in meters)")
+            col.separator()
             self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "high_precision", "High precision height data generation")
             col.separator()
         self.draw_footer(context, self.layout, self.operator_name)

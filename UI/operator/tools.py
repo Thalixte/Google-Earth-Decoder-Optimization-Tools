@@ -101,10 +101,6 @@ def reload_airport_city(context):
     context.scene.setting_props.airport_city = context.scene.settings.airport_city
 
 
-def reload_high_precision(context):
-    context.scene.setting_props.high_precision = context.scene.settings.high_precision
-
-
 def reload_exclude_ground(context):
     context.scene.setting_props.exclude_ground = context.scene.settings.exclude_ground
 
@@ -115,6 +111,14 @@ def reload_exclude_nature_reserve(context):
 
 def reload_exclude_parks(context):
     context.scene.setting_props.exclude_parks = context.scene.settings.exclude_parks
+
+
+def reload_high_precision(context):
+    context.scene.setting_props.high_precision = context.scene.settings.high_precision
+
+
+def reload_height_adjustment(context):
+    context.scene.setting_props.height_adjustment = float(context.scene.settings.height_adjustment)
 
 
 def reload_geocode(context):
@@ -212,10 +216,11 @@ def reload_setting_props(context, reload_settings_file=True):
     reload_lon_correction(context)
     reload_target_min_size_value(context)
     reload_airport_city(context)
-    reload_high_precision(context)
     reload_exclude_ground(context)
     reload_exclude_nature_reserve(context)
     reload_exclude_parks(context)
+    reload_high_precision(context)
+    reload_height_adjustment(context)
     reload_geocode(context)
     reload_geocode_margin(context)
     reload_preserve_roads(context)

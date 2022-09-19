@@ -76,12 +76,6 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
     def airport_city_updated(self, context):
         context.scene.settings.airport_city = self.airport_city
 
-    def build_package_enabled_updated(self, context):
-        context.scene.settings.build_package_enabled = self.build_package_enabled
-
-    def high_precision_updated(self, context):
-        context.scene.settings.high_precision = self.high_precision
-
     def exclude_ground_updated(self, context):
         context.scene.settings.exclude_ground = self.exclude_ground
 
@@ -90,6 +84,12 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
 
     def exclude_parks_updated(self, context):
         context.scene.settings.exclude_parks = self.exclude_parks
+
+    def high_precision_updated(self, context):
+        context.scene.settings.high_precision = self.high_precision
+
+    def height_adjustment_updated(self, context):
+        context.scene.settings.height_adjustment = "{:.1f}".format(float(str(self.height_adjustment))).rstrip("0").rstrip(".")
 
     def geocode_updated(self, context):
         context.scene.settings.geocode = self.geocode
@@ -107,7 +107,10 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         context.scene.settings.landmark_type = self.landmark_type
 
     def landmark_offset_updated(self, context):
-        context.scene.settings.landmark_offset = self.landmark_offset
+        context.scene.settings.landmark_offset = "{:.0f}".format(float(str(self.landmark_offset))).rstrip("0").rstrip(".")
+
+    def build_package_enabled_updated(self, context):
+        context.scene.settings.build_package_enabled = self.build_package_enabled
 
     def msfs_build_exe_path_updated(self, context):
         context.scene.settings.msfs_build_exe_path = self.msfs_build_exe_path_readonly = self.msfs_build_exe_path
@@ -236,12 +239,6 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         maxlen=256,
         update=airport_city_updated
     )
-    high_precision: BoolProperty(
-        name="High precision height data generation",
-        description="Generate the height data, using the most detailed tile lods",
-        default=bpy.types.Scene.settings.high_precision,
-        update=high_precision_updated,
-    )
     exclude_ground: BoolProperty(
         name="Exclude ground 3d data",
         description="Exclude ground 3d data (forests, woods)",
@@ -259,6 +256,22 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         description="Exclude parks 3d data",
         default=bpy.types.Scene.settings.exclude_parks,
         update=exclude_parks_updated,
+    )
+    high_precision: BoolProperty(
+        name="High precision height data generation",
+        description="Generate the height data, using the most detailed tile lods",
+        default=bpy.types.Scene.settings.high_precision,
+        update=high_precision_updated,
+    )
+    height_adjustment: FloatProperty(
+        name="Height adjustment",
+        description="Adjust the height data calculation (in meters)",
+        soft_min=-100.0,
+        soft_max=100.0,
+        step=0.1,
+        precision=1,
+        default=float(bpy.types.Scene.settings.height_adjustment),
+        update=height_adjustment_updated
     )
     geocode: StringProperty(
         name="Geocode",
