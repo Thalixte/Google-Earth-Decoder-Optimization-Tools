@@ -479,9 +479,9 @@ def prepare_building_gdf(gdf):
 
 
 def create_land_mass_gdf(sources_path, bbox, b):
-    land_mass_shapefile = os.path.join(SHAPE_TEMPLATES_FOLDER, OSM_LAND_SHAPEFILE)
+    land_mass_shapefile = os.path.join(sources_path, os.path.join(SHAPE_TEMPLATES_FOLDER, OSM_LAND_SHAPEFILE))
     if not os.path.isfile(land_mass_shapefile):
-        install_shapefile_resource(LAND_MASS_REPO, LAND_MASS_ARCHIVE, SHAPE_TEMPLATES_FOLDER)
+        install_shapefile_resource(LAND_MASS_REPO, LAND_MASS_ARCHIVE, os.path.join(sources_path, SHAPE_TEMPLATES_FOLDER))
     result = gpd.read_file(os.path.join(sources_path, land_mass_shapefile), bbox=b).clip(bbox.geometry)
     return result[[GEOMETRY_OSM_COLUMN]].dissolve()
 
