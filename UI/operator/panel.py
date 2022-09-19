@@ -153,14 +153,15 @@ class SettingsOperator(PanelOperator):
         col.separator()
         self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "airport_city", "Airport city")
         col.separator()
-        self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "high_precision", "High precision height data generation")
-        col.separator()
         self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "exclude_ground", "Exclude ground 3d data")
         col.separator()
         self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "exclude_nature_reserve", "Exclude nature reserves 3d data")
         col.separator()
         self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "exclude_parks", "Exclude parks 3d data")
         col.separator()
+        if self.operator_name == "wm.generate_height_data" or self.operator_name == "wm.prepare_3d_data":
+            self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "high_precision", "High precision height data generation")
+            col.separator()
         self.draw_footer(context, self.layout, self.operator_name)
 
     def draw_geocode_panel(self, context):
@@ -402,6 +403,42 @@ class OT_FixTilesLightningIssuesPanel(SettingsOperator):
     ]
 
 
+class OT_CreateTerraformAndExclusionPolygonsPanel(SettingsOperator):
+    operator_name = "wm.create_terraform_and_exclusion_polygons"
+    id_name = "wm.create_terraform_and_exclusion_polygons_panel"
+    bl_idname = id_name
+    bl_label = "Create the terraform and exclusion polygons for the scenery"
+    operator_description = """Create the terraform and exclusion polygons for the scenery.
+        In the OPENSTREETMAP section, set the city to exclude the airport, if it exists.
+        In the OPENSTREETMAP section, indicate if you want to exclude the ground 3d data (forests, woods), 
+        the nature reserves, and/or the parks (can produce 3d artifacts)."""
+    starting_section = OSM_INI_SECTION
+    displayed_sections = [
+        PROJECT_INI_SECTION,
+        OSM_INI_SECTION,
+        BUILD_INI_SECTION,
+        BACKUP_INI_SECTION,
+    ]
+
+
+class OT_GenerateHeightDataPanel(SettingsOperator):
+    operator_name = "wm.generate_height_data"
+    id_name = "wm.generate_height_data_panel"
+    bl_idname = id_name
+    bl_label = "Generate height data based on the profile of the Google Earth tiles"
+    operator_description = """Generate height data based on the profile of the Google Earth tiles.
+        Optionally, in the OPENSTREETMAP section, you can enable high precision if you want to generate 
+        height data based on the highest google Earth tile lods. This can help calculating the data 
+        for mountain areas but it is not suitable for city area, as it will produce noise due to building height"""
+    starting_section = OSM_INI_SECTION
+    displayed_sections = [
+        PROJECT_INI_SECTION,
+        OSM_INI_SECTION,
+        BUILD_INI_SECTION,
+        BACKUP_INI_SECTION,
+    ]
+
+
 class OT_AddTileCollidersPanel(SettingsOperator):
     operator_name = "wm.add_tile_colliders"
     id_name = "wm.add_tile_colliders_panel"
@@ -425,24 +462,6 @@ class OT_RemoveTileCollidersPanel(SettingsOperator):
     starting_section = PROJECT_INI_SECTION
     displayed_sections = [
         PROJECT_INI_SECTION,
-        BUILD_INI_SECTION,
-        BACKUP_INI_SECTION,
-    ]
-
-
-class OT_CreateTerraformAndExclusionPolygonsPanel(SettingsOperator):
-    operator_name = "wm.create_terraform_and_exclusion_polygons"
-    id_name = "wm.create_terraform_and_exclusion_polygons_panel"
-    bl_idname = id_name
-    bl_label = "Create the terraform and exclusion polygons for the scenery"
-    operator_description = """Create the terraform and exclusion polygons for the scenery.
-        In the OPENSTREETMAP section, set the city to exclude the airport, if it exists.
-        In the OPENSTREETMAP section, indicate if you want to exclude the ground 3d data (forests, woods), 
-        the nature reserves, and/or the parks (can produce 3d artifacts)."""
-    starting_section = OSM_INI_SECTION
-    displayed_sections = [
-        PROJECT_INI_SECTION,
-        OSM_INI_SECTION,
         BUILD_INI_SECTION,
         BACKUP_INI_SECTION,
     ]

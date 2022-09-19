@@ -33,6 +33,7 @@ from scripts.update_min_size_values_script import update_min_size_values
 from scripts.compress_built_package_script import compress_built_package
 from scripts.update_tiles_position_script import update_tiles_position
 from scripts.create_terraform_and_exclusion_polygons_script import create_terraform_and_exclusion_polygons
+from scripts.generate_height_data_script import generate_height_data
 from utils import open_console
 from .tools import reload_current_operator, reload_setting_props
 from bpy_extras.io_utils import ImportHelper
@@ -340,6 +341,21 @@ class OT_CreateTerraformAndExclusionPolygonsOperator(ActionOperator):
     def execute(self, context):
         super().execute(context)
         create_terraform_and_exclusion_polygons(context.scene.settings)
+        return {'FINISHED'}
+
+
+class OT_GenerateHeightDataOperator(ActionOperator):
+    bl_idname = "wm.generate_height_data"
+    bl_label = "Generate height data based on the profile of the Google Earth tiles..."
+
+    @classmethod
+    def poll(cls, context):
+        msfs_project = super().poll(context)
+        return os.path.isdir(msfs_project.scene_folder)
+
+    def execute(self, context):
+        super().execute(context)
+        generate_height_data(context.scene.settings)
         return {'FINISHED'}
 
 
