@@ -43,11 +43,13 @@ class MsfsGltf:
     ROAD_TAG = "Road"
     COLLISION_TAG = "Collision"
     ENABLED_TAG = "enabled"
+    EXTRAS_TAG = "extras"
     ASOBO_MATERIAL_DAY_NIGHT_SWITCH_TAG = "ASOBO_material_day_night_switch"
     ASOBO_MATERIAL_FAKE_TERRAIN_TAG = "ASOBO_material_fake_terrain"
     ASOBO_MATERIAL_INVISIBLE_TAG = "ASOBO_material_invisible"
     ASOBO_NORMAL_MAP_CONVENTION_TAG = "ASOBO_normal_map_convention"
     ASOBO_ASSETS_OPTIMIZED_TAG = "ASOBO_asset_optimized"
+    ASOBO_IMAGE_CONVERTED_TAG = "ASOBO_image_converted_meta"
     TANGENT_SPACE_CONVENTION_TAG = "tangent_space_convention"
 
     def __init__(self, file_path):
@@ -62,6 +64,7 @@ class MsfsGltf:
         image = self.data[self.IMAGES_TAG][idx]
         image[self.URI_TAG] = uri
         image[self.MIME_TYPE_TAG] = mime_type
+        image[self.EXTRAS_TAG] = self.ASOBO_IMAGE_CONVERTED_TAG
         self.dump()
 
     def add_optimization_tag(self):
@@ -81,6 +84,7 @@ class MsfsGltf:
         for image in self.data[self.IMAGES_TAG]:
             image[self.URI_TAG] = image[self.URI_TAG].replace(lod_name + "/", str())
             image[self.URI_TAG] = image[self.URI_TAG].replace(TEXTURE_FOLDER + "/", str())
+            image[self.EXTRAS_TAG] = self.ASOBO_IMAGE_CONVERTED_TAG
 
     def rename_texture(self, texture_name, new_texture_name):
         if not self.data: return
@@ -91,6 +95,7 @@ class MsfsGltf:
             if image[self.NAME_TAG] == texture_name:
                 image[self.NAME_TAG] = new_texture_name.split(".")[0]
                 image[self.URI_TAG] = new_texture_name
+                image[self.EXTRAS_TAG] = self.ASOBO_IMAGE_CONVERTED_TAG
                 return
 
     def add_texture_path(self):
@@ -99,6 +104,7 @@ class MsfsGltf:
 
         for image in self.data[self.IMAGES_TAG]:
             image[self.URI_TAG] = TEXTURE_FOLDER + "/" + image[self.URI_TAG]
+            image[self.EXTRAS_TAG] = self.ASOBO_IMAGE_CONVERTED_TAG
 
     def fix_doublesided(self):
         if not self.data: return

@@ -16,7 +16,7 @@
 #
 #  <pep8 compliant>
 
-from constants import HEIGHT_MAPS_DISPLAY_NAME
+from constants import HEIGHT_MAPS_DISPLAY_NAME, HEIGHT_MAP_DISPLAY_NAME
 from msfs_project.position import MsfsPosition
 from utils.octant import get_latlonbox_from_file_name
 
@@ -54,6 +54,7 @@ class MsfsHeightMapGroup:
 
 
 class MsfsHeightMap:
+    display_name: str
     width: float
     size: int
     falloff: int
@@ -67,6 +68,8 @@ class MsfsHeightMap:
     group: MsfsHeightMapGroup
 
     def __init__(self, tile=None, elem=None, height_data=None, xml=None, width=None, altitude=None, grid_limit=None, group_id=None):
+        self.display_name = HEIGHT_MAP_DISPLAY_NAME
+
         if tile is not None and height_data is not None:
             self.__init_from_height_data(tile, height_data, width, altitude, grid_limit, group_id)
 
@@ -91,6 +94,7 @@ class MsfsHeightMap:
         self.group = MsfsHeightMapGroup(group_id=group_id)
 
     def __init_from_xml(self, xml, elem):
+        self.display_name = elem.get(xml.DISPLAY_NAME_ATTR)
         self.falloff = elem.get(xml.FALLOFF_ATTR)
         self.priority = elem.get(xml.PRIORITY_ATTR)
         self.altitude = elem.get(xml.ALTITUDE_ATTR)

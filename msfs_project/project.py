@@ -95,7 +95,7 @@ class MsfsProject:
     height_maps: dict
     landmarks: MsfsLandmarks
     colliders: dict
-    objects_xml: ObjectsXml
+    objects_xml: ObjectsXml | None
     coords: tuple
 
     DUMMY_STRING = "dummy"
@@ -126,6 +126,7 @@ class MsfsProject:
         self.package_definitions_folder = os.path.join(self.project_folder, self.PACKAGE_DEFINITIONS_FOLDER)
         self.package_sources_folder = os.path.join(self.project_folder, self.PACKAGE_SOURCES_FOLDER)
         self.sources_folder = sources_path
+        self.objects_xml = None
 
         if init_structure:
             self.model_lib_folder = os.path.join(self.package_sources_folder, self.MODEL_LIB_FOLDER)
@@ -501,17 +502,20 @@ class MsfsProject:
             pbar.update("%s" % path.name)
 
     def __retrieve_shapes(self):
-        self.shapes = {PITCH_TERRAFORM_POLYGONS_DISPLAY_NAME: MsfsShapes(xml=self.objects_xml, group_display_name=PITCH_TERRAFORM_POLYGONS_DISPLAY_NAME),
-                       CONSTRUCTION_TERRAFORM_POLYGONS_DISPLAY_NAME: MsfsShapes(xml=self.objects_xml, group_display_name=CONSTRUCTION_TERRAFORM_POLYGONS_DISPLAY_NAME),
-                       # GOLF_TERRAFORM_POLYGONS_DISPLAY_NAME: MsfsShapes(xml=self.objects_xml, group_display_name=GOLF_TERRAFORM_POLYGONS_DISPLAY_NAME),
-                       EXCLUSION_BUILDING_POLYGONS_DISPLAY_NAME: MsfsShapes(xml=self.objects_xml, group_display_name=EXCLUSION_BUILDING_POLYGONS_DISPLAY_NAME),
-                       EXCLUSION_VEGETATION_POLYGONS_DISPLAY_NAME: MsfsShapes(xml=self.objects_xml, group_display_name=EXCLUSION_VEGETATION_POLYGONS_DISPLAY_NAME)}
+        if self.objects_xml:
+            self.shapes = {PITCH_TERRAFORM_POLYGONS_DISPLAY_NAME: MsfsShapes(xml=self.objects_xml, group_display_name=PITCH_TERRAFORM_POLYGONS_DISPLAY_NAME),
+                           CONSTRUCTION_TERRAFORM_POLYGONS_DISPLAY_NAME: MsfsShapes(xml=self.objects_xml, group_display_name=CONSTRUCTION_TERRAFORM_POLYGONS_DISPLAY_NAME),
+                           # GOLF_TERRAFORM_POLYGONS_DISPLAY_NAME: MsfsShapes(xml=self.objects_xml, group_display_name=GOLF_TERRAFORM_POLYGONS_DISPLAY_NAME),
+                           EXCLUSION_BUILDING_POLYGONS_DISPLAY_NAME: MsfsShapes(xml=self.objects_xml, group_display_name=EXCLUSION_BUILDING_POLYGONS_DISPLAY_NAME),
+                           EXCLUSION_VEGETATION_POLYGONS_DISPLAY_NAME: MsfsShapes(xml=self.objects_xml, group_display_name=EXCLUSION_VEGETATION_POLYGONS_DISPLAY_NAME)}
 
     def __retrieve_landmarks(self):
-        self.landmarks = MsfsLandmarks(xml=self.objects_xml)
+        if self.objects_xml:
+            self.landmarks = MsfsLandmarks(xml=self.objects_xml)
 
     def __retrieve_height_maps(self):
-        self.height_maps = {HEIGHT_MAPS_DISPLAY_NAME: MsfsHeightMaps(xml=self.objects_xml, group_display_name=HEIGHT_MAPS_DISPLAY_NAME)}
+        if self.objects_xml:
+            self.height_maps = {HEIGHT_MAPS_DISPLAY_NAME: MsfsHeightMaps(xml=self.objects_xml, group_display_name=HEIGHT_MAPS_DISPLAY_NAME)}
 
     def __clean_objects(self, objects: dict):
         pop_objects = []

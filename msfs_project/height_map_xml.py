@@ -23,6 +23,7 @@ import xml.etree.ElementTree as Et
 class HeightMapXml(Xml):
     RECTANGLE_TAG = "Rectangle"
     HEIGHT_MAP_TAG = "Heightmap"
+    DISPLAY_NAME_ATTR = "displayName"
     LATITUDE_ATTR = "latitude"
     LATITUDE2_ATTR = "latitude2"
     LONGITUDE_ATTR = "longitude"
@@ -60,6 +61,7 @@ class HeightMapXml(Xml):
     def __add_height_map_rectangle(self, height_map):
         return Et.SubElement(self.root, self.RECTANGLE_TAG, attrib={
             self.PARENT_GROUP_ID_ATTR: str(height_map.group.group_id),
+            self.DISPLAY_NAME_ATTR: str(height_map.display_name),
             self.WIDTH_ATTR: str(height_map.width),
             self.FALLOFF_ATTR: str(height_map.falloff),
             self.SURFACE_ATTR: height_map.surface,

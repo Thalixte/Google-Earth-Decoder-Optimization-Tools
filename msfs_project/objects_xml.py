@@ -20,6 +20,7 @@ import copy
 import os
 from decimal import Decimal
 
+from constants import HEIGHT_MAP_DISPLAY_NAME
 from utils.progress_bar import ProgressBar
 from utils import Xml
 import xml.etree.ElementTree as Et
@@ -88,6 +89,7 @@ class ObjectsXml(Xml):
     LANDMARKS_SEARCH_PATTERN = "./" + LANDMARK_LOCATION_TAG
     LANDMARK_LOCATION_SEARCH_PATTERN = LANDMARKS_SEARCH_PATTERN + "[@" + NAME_ATTR + "='"
     LANDMARK_LOCATION_INSTANCE_ID_SEARCH_PATTERN = LANDMARKS_SEARCH_PATTERN + "[@" + INSTANCE_ID_ATTR + "='"
+    RECTANGLE_DISPLAY_NAME_SEARCH_PATTERN = RECTANGLES_SEARCH_PATTERN + "[@" + DISPLAY_NAME_ATTR + "='"
 
     FS_DATA_VERSION = 9.0
 
@@ -133,6 +135,9 @@ class ObjectsXml(Xml):
         self.save()
 
     def remove_height_maps(self, group_name, remove_groups):
+        for rectangle in self.find_rectangles(display_name=HEIGHT_MAP_DISPLAY_NAME):
+            self.root.remove(rectangle)
+
         for rectangle in self.find_rectangles(group_name=group_name):
             self.root.remove(rectangle)
 
@@ -212,14 +217,20 @@ class ObjectsXml(Xml):
             pattern = self.POLYGON_SEARCH_PATTERN + str(group_id) + self.PATTERN_SUFFIX
         return self.root.findall(pattern)
 
-    def find_rectangles(self, group_name=None):
+    def find_rectangles(self, display_name=None, group_name=None):
         group_id = -1
         pattern = self.POLYGONS_SEARCH_PATTERN
+        if display_name is not None:
+            pattern = self.RECTANGLE_DISPLAY_NAME_SEARCH_PATTERN + str(display_name) + self.PATTERN_SUFFIX
+            return self.root.findall(pattern)
+
         if group_name is not None:
             related_groups = self.find_groups(group_name=group_name)
             for group in related_groups:
                 group_id = group.get(self.GROUP_ID_ATTR)
             pattern = self.HEIGHT_MAP_SEARCH_PATTERN + str(group_id) + self.PATTERN_SUFFIX
+            return self.root.findall(pattern)
+
         return self.root.findall(pattern)
 
     def find_polygon_attributes(self, root):
@@ -350,6 +361,7 @@ class ObjectsXml(Xml):
     def __add_height_map_rectangle(self, height_map):
         return Et.SubElement(self.root, self.RECTANGLE_TAG, attrib={
             self.PARENT_GROUP_ID_ATTR: str(height_map.group.group_id),
+            self.DISPLAY_NAME_ATTR: str(height_map.display_name),
             self.WIDTH_ATTR: str(height_map.width),
             self.FALLOFF_ATTR: str(height_map.falloff),
             self.SURFACE_ATTR: height_map.surface,

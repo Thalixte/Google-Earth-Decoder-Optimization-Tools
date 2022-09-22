@@ -120,6 +120,7 @@ GOLF_TERRAFORM_POLYGONS_DISPLAY_NAME = "GEDOT_generated_golf_terraform_polygons"
 EXCLUSION_BUILDING_POLYGONS_DISPLAY_NAME = "GEDOT_generated_exclusion_building_polygons"
 EXCLUSION_VEGETATION_POLYGONS_DISPLAY_NAME = "GEDOT_generated_exclusion_vegetation_polygons"
 HEIGHT_MAPS_DISPLAY_NAME = "GEDOT_generated_height_maps"
+HEIGHT_MAP_DISPLAY_NAME = "GEDOT_generated_height_map"
 
 PROJECT_INI_SECTION = "PROJECT"
 MERGE_INI_SECTION = "MERGE"
