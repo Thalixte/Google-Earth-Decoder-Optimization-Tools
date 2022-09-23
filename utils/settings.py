@@ -105,7 +105,7 @@ class Settings:
         self.saturation = 1.0
         self.hue = 1.0
         self.high_precision = "False"
-        self.exclude_ground = "True"
+        self.exclude_ground = "False"
         self.exclude_nature_reserve = "False"
         self.exclude_parks = "False"
 

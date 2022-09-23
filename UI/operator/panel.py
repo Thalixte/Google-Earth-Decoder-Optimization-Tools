@@ -159,7 +159,7 @@ class SettingsOperator(PanelOperator):
         col.separator()
         self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "exclude_parks", "Exclude parks 3d data")
         col.separator()
-        if self.operator_name == "wm.generate_height_data" or self.operator_name == "wm.prepare_3d_data":
+        if self.operator_name is "wm.generate_height_data" or self.operator_name is "wm.prepare_3d_data":
             self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "height_adjustment", "Height data adjustment (in meters)")
             col.separator()
             self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "high_precision", "High precision height data generation")
@@ -172,16 +172,18 @@ class SettingsOperator(PanelOperator):
         col.separator()
         self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "geocode", "Geocode")
         col.separator()
-        self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "geocode_margin", "Geocode margin")
-        col.separator()
-        self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "preserve_roads", "Preserve roads")
-        col.separator()
-        self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "preserve_buildings", "Preserve buildings")
-        col.separator()
-        self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "landmark_type", "Landmark type")
-        col.separator()
-        self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "landmark_offset", "Landmark offset")
-        col.separator()
+        if self.operator_name is not "wm.create_landmark_from_geocode":
+            self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "geocode_margin", "Geocode margin")
+            col.separator()
+            self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "preserve_roads", "Preserve roads")
+            col.separator()
+            self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "preserve_buildings", "Preserve buildings")
+            col.separator()
+        if self.operator_name is "wm.create_landmark_from_geocode":
+            self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "landmark_type", "Landmark type")
+            col.separator()
+            self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "landmark_offset", "Landmark offset")
+            col.separator()
         self.draw_footer(context, self.layout, self.operator_name)
 
     def draw_python_panel(self, context):
@@ -429,13 +431,54 @@ class OT_GenerateHeightDataPanel(SettingsOperator):
     bl_idname = id_name
     bl_label = "Generate height data based on the profile of the Google Earth tiles"
     operator_description = """Generate height data based on the profile of the Google Earth tiles.
-        Optionally, in the OPENSTREETMAP section, you can enable high precision if you want to generate 
+        In the OPENSTREETMAP section, you can enable high precision, by ticking the "high precision" checkbox if you want to generate 
         height data based on the highest google Earth tile lods. This can help calculating the data 
         for mountain areas but it is not suitable for city area, as it will produce noise due to building height"""
     starting_section = OSM_INI_SECTION
     displayed_sections = [
         PROJECT_INI_SECTION,
         OSM_INI_SECTION,
+        BUILD_INI_SECTION,
+        BACKUP_INI_SECTION,
+    ]
+
+
+class OT_Clean3dDataPanel(SettingsOperator):
+    operator_name = "wm.clean_3d_data"
+    id_name = "wm.clean_3d_data_panel"
+    bl_idname = id_name
+    bl_label = "Remove 3d data (water, forests, woods, ...)"
+    operator_description = """Automatically removes 3d data in the Google Earth tiles, based on the OpenStreetMap data.
+        By default, it removes all the water from the Google Earth tiles.
+        You can extend the removal to forests and woods, by ticking the "exclude ground 3d data" checkbox in the OPENSTREETMAP section.
+        You can extend the removal to nature reserves, by ticking the "exclude nature reserves 3d data" checkbox in the OPENSTREETMAP section.
+        You can extend the removal to the parks, by ticking the "exclude parks 3d data" checkbox in the OPENSTREETMAP section.
+        Notice: the method can produce some visual artifacts when removing the forests, woods or parks, because of the Google Earth trees        
+        which exceeds the open street map corresponding area. Those trees will be partially cut. It is the same for building that touch trees"""
+    starting_section = OSM_INI_SECTION
+    displayed_sections = [
+        PROJECT_INI_SECTION,
+        OSM_INI_SECTION,
+        BUILD_INI_SECTION,
+        BACKUP_INI_SECTION,
+    ]
+
+
+class OT_CreateLandmarkFromGeocodePanel(SettingsOperator):
+    operator_name = "wm.create_landmark_from_geocode"
+    id_name = "wm.create_landmark_from_geocode_panel"
+    bl_idname = id_name
+    bl_label = "Create MSFS landmark from geocode"
+    operator_description = """Automatically creates MSFS landmark, based on a geocode.
+        In the GEOCODE section, indicates the geocode for which want to create a landmark in MSFS. This geocode is in the form "location name, city"
+        Example: "Buckingham Palace, London" for a POI, or "London, United Kingdom" for a city. 
+        In the GEOCODE section, choose the type of landmark (POI, city).
+        Optionally, in the GEOCODE section, indicates the landmark height offset to change the height of the landmark point.
+        """
+    starting_section = GEOCODE_INI_SECTION
+    displayed_sections = [
+        PROJECT_INI_SECTION,
+        GEOCODE_INI_SECTION,
         BUILD_INI_SECTION,
         BACKUP_INI_SECTION,
     ]

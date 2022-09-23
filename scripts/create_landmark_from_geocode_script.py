@@ -37,14 +37,14 @@ warnings.simplefilter(action="ignore", category=DeprecationWarning, append=True)
 warnings.simplefilter(action="ignore", category=ShapelyDeprecationWarning, append=True)
 
 from constants import *
-from utils import check_configuration, ScriptError, build_package, pr_bg_green, pr_bg_red
+from utils import check_configuration, ScriptError, build_package, pr_bg_green, pr_bg_red, pr_bg_orange
 from msfs_project import MsfsProject
 
 
 def create_landmark_from_geocode(script_settings):
     try:
         isolated_print(EOL)
-        geocode_gdf = load_gdf_from_geocode(settings.geocode, keep_data=True)
+        geocode_gdf = load_gdf_from_geocode(script_settings.geocode, check_geocode=True)
 
         if not geocode_gdf.empty:
             # instantiate the msfsProject and create the necessary resources if it does not exist
@@ -56,15 +56,13 @@ def create_landmark_from_geocode(script_settings):
                 msfs_project.backup(Path(os.path.abspath(__file__)).stem.replace(SCRIPT_PREFIX, str()), all_files=False)
 
             isolated_print(EOL)
-            print_title("CREATE LANDMARK")
-
-            ox.config(use_cache=True, log_level=lg.DEBUG)
-            print_title("RETRIEVE OSM GEOCODE DATA")
-
-            msfs_project.create_landmark_from_geocode(settings)
+            print_title("CREATE LANDMARK FROM GEOCODE")
+            msfs_project.create_landmark_from_geocode(script_settings)
 
             if script_settings.build_package_enabled:
                 build_package(msfs_project, script_settings)
+        else:
+            pr_bg_orange("Geocode (" + script_settings.geocode + ") not found in OSM data" + EOL + CEND)
 
         pr_bg_green("Script correctly applied" + constants.CEND)
 

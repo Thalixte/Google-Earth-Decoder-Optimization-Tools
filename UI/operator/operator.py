@@ -34,6 +34,8 @@ from scripts.compress_built_package_script import compress_built_package
 from scripts.update_tiles_position_script import update_tiles_position
 from scripts.create_terraform_and_exclusion_polygons_script import create_terraform_and_exclusion_polygons
 from scripts.generate_height_data_script import generate_height_data
+from scripts.clean_3d_data_script import clean_3d_data
+from scripts.create_landmark_from_geocode_script import create_landmark_from_geocode
 from utils import open_console
 from .tools import reload_current_operator, reload_setting_props
 from bpy_extras.io_utils import ImportHelper
@@ -356,6 +358,36 @@ class OT_GenerateHeightDataOperator(ActionOperator):
     def execute(self, context):
         super().execute(context)
         generate_height_data(context.scene.settings)
+        return {'FINISHED'}
+
+
+class OT_Clean3dDataOperator(ActionOperator):
+    bl_idname = "wm.clean_3d_data"
+    bl_label = "Remove 3d data (water, forests, woods, ...)"
+
+    @classmethod
+    def poll(cls, context):
+        msfs_project = super().poll(context)
+        return os.path.isdir(msfs_project.scene_folder)
+
+    def execute(self, context):
+        super().execute(context)
+        clean_3d_data(context.scene.settings)
+        return {'FINISHED'}
+
+
+class OT_CreateLandmarkFromGeocodeOperator(ActionOperator):
+    bl_idname = "wm.create_landmark_from_geocode"
+    bl_label = "Create landmark from geocode"
+
+    @classmethod
+    def poll(cls, context):
+        msfs_project = super().poll(context)
+        return os.path.isdir(msfs_project.scene_folder) and context.scene.settings.geocode != str()
+
+    def execute(self, context):
+        super().execute(context)
+        create_landmark_from_geocode(context.scene.settings)
         return {'FINISHED'}
 
 

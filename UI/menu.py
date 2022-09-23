@@ -32,7 +32,8 @@ from .operator import PanelPropertyGroup, OT_ProjectPathOperator, OT_ProjectsPat
     OT_OptimizeSceneryPanel, OT_UpdateTilesPositionPanel, OT_UpdateMinSizeValuesPanel, OT_CompressBuiltPackagePanel, OT_ProjectPathToMergeOperator, \
     OT_MergeSceneriesPanel, OT_MergeSceneriesOperator, OT_CleanPackageFilesOperator, OT_CleanPackageFilesPanel, OT_FixTilesLightningIssuesPanel, \
     OT_FixTilesLightningIssuesOperator, OT_addLodOperator, OT_removeLowerLodOperator, OT_openSettingsFileOperator, OT_CreateTerraformAndExclusionPolygonsPanel, \
-    OT_CreateTerraformAndExclusionPolygonsOperator, OT_GenerateHeightDataPanel, OT_GenerateHeightDataOperator, OT_AddTileCollidersPanel, OT_RemoveTileCollidersPanel, OT_AddTileCollidersOperator, OT_RemoveTileCollidersOperator
+    OT_CreateTerraformAndExclusionPolygonsOperator, OT_GenerateHeightDataPanel, OT_GenerateHeightDataOperator, OT_Clean3dDataPanel, OT_Clean3dDataOperator, \
+    OT_CreateLandmarkFromGeocodeOperator, OT_CreateLandmarkFromGeocodePanel, OT_AddTileCollidersPanel, OT_RemoveTileCollidersPanel, OT_AddTileCollidersOperator, OT_RemoveTileCollidersOperator
 
 
 class TOPBAR_MT_google_earth_optimization_menus(Menu):
@@ -69,6 +70,10 @@ class TOPBAR_MT_google_earth_optimization_menu(Menu):
         layout.separator()
         layout.operator(OT_GenerateHeightDataPanel.bl_idname)
         layout.separator()
+        layout.operator(OT_Clean3dDataPanel.bl_idname)
+        layout.separator()
+        layout.operator(OT_CreateLandmarkFromGeocodePanel.bl_idname)
+        layout.separator()
         layout.operator(OT_AddTileCollidersPanel.bl_idname)
         layout.separator()
         layout.operator(OT_RemoveTileCollidersPanel.bl_idname)
@@ -100,6 +105,8 @@ classes = (
     OT_FixTilesLightningIssuesOperator,
     OT_CreateTerraformAndExclusionPolygonsOperator,
     OT_GenerateHeightDataOperator,
+    OT_Clean3dDataOperator,
+    OT_CreateLandmarkFromGeocodeOperator,
     OT_AddTileCollidersOperator,
     OT_RemoveTileCollidersOperator,
     OT_CompressBuiltPackageOperator,
@@ -117,6 +124,8 @@ classes = (
     OT_FixTilesLightningIssuesPanel,
     OT_CreateTerraformAndExclusionPolygonsPanel,
     OT_GenerateHeightDataPanel,
+    OT_Clean3dDataPanel,
+    OT_CreateLandmarkFromGeocodePanel,
     OT_AddTileCollidersPanel,
     OT_RemoveTileCollidersPanel,
     OT_CompressBuiltPackagePanel,

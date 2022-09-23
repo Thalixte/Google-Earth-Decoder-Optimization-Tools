@@ -107,7 +107,7 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         context.scene.settings.landmark_type = self.landmark_type
 
     def landmark_offset_updated(self, context):
-        context.scene.settings.landmark_offset = "{:.0f}".format(float(str(self.landmark_offset))).rstrip("0").rstrip(".")
+        context.scene.settings.landmark_offset = "{:.1f}".format(float(str(self.landmark_offset))).rstrip("0").rstrip(".")
 
     def build_package_enabled_updated(self, context):
         context.scene.settings.build_package_enabled = self.build_package_enabled
@@ -316,10 +316,10 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
     landmark_offset: FloatProperty(
         name="Landmark offset",
         description="Height offset of the landmark",
-        soft_min=-1.0,
-        soft_max=2.0,
-        step=1,
-        precision=0,
+        soft_min=-100.0,
+        soft_max=100.0,
+        step=1.0,
+        precision=1,
         default=float(bpy.types.Scene.settings.landmark_offset),
         update=landmark_offset_updated
     )

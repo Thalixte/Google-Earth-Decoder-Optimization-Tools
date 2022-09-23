@@ -1171,7 +1171,11 @@ class MsfsProject:
             pbar.update("%s prepared for msfs" % lod.name)
 
     def __create_landmark_from_geocode(self, geocode, settings):
-        geocode_gdf = self.__retrieve_osm_data_from_geocode(geocode)
+        ox.config(use_cache=True, log_level=lg.DEBUG)
+        print_title("RETRIEVE OSM GEOCODE DATA")
+        geocode_gdf = load_gdf_from_geocode(geocode, keep_data=True, shpfiles_folder=self.shpfiles_folder)
+
+        print_title("WRITE LANDMARK TO SCENERY XML FILE")
         landmarks = MsfsLandmarks(geocode_gdf=geocode_gdf, tiles=self.tiles, owner=settings.author_name, type=settings.landmark_type, offset=settings.landmark_offset)
 
         for landmark_location in landmarks.landmark_locations:
@@ -1366,13 +1370,6 @@ class MsfsProject:
                 return tile_to_compare
 
         return False
-
-    @staticmethod
-    def __retrieve_osm_data_from_geocode(geocode):
-        ox.config(use_cache=True, log_level=lg.DEBUG)
-        print_title("RETRIEVE OSM GEOCODE DATA")
-
-        return load_gdf_from_geocode(geocode, keep_data=True)
 
     @staticmethod
     def __guess_lods_from_obj_files(obj_files):
