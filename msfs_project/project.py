@@ -18,7 +18,6 @@
 
 import itertools
 import sys
-import time
 from os.path import basename
 
 import io
@@ -75,6 +74,7 @@ class MsfsProject:
     business_json_folder: str
     content_info_folder: str
     osmfiles_folder: str
+    osm_cache_folder: str
     shpfiles_folder: str
     xmlfiles_folder: str
     sources_folder: str
@@ -122,6 +122,7 @@ class MsfsProject:
         self.backup_folder = os.path.join(self.project_folder, self.BACKUP_FOLDER)
         self.osmfiles_folder = os.path.join(self.project_folder, self.OSMFILES_FOLDER)
         self.shpfiles_folder = os.path.join(self.project_folder, self.SHPFILES_FOLDER)
+        self.osm_cache_folder = os.path.join(self.project_folder, OSM_CACHE_FOLDER)
         self.xmlfiles_folder = os.path.join(self.project_folder, self.XMLFILES_FOLDER)
         self.package_definitions_folder = os.path.join(self.project_folder, self.PACKAGE_DEFINITIONS_FOLDER)
         self.package_sources_folder = os.path.join(self.project_folder, self.PACKAGE_SOURCES_FOLDER)
@@ -433,6 +434,9 @@ class MsfsProject:
 
         # create the shp folder if it does not exist
         os.makedirs(self.shpfiles_folder, exist_ok=True)
+
+        # create the shp folder if it does not exist
+        os.makedirs(self.osm_cache_folder, exist_ok=True)
 
         # create the xml folder if it does not exist
         os.makedirs(self.xmlfiles_folder, exist_ok=True)
@@ -919,11 +923,11 @@ class MsfsProject:
             pbar.update("osm files created for %s tile" % tile.name)
 
     def __create_osm_files(self, settings, create_polygons=True):
-        ox.config(use_cache=True, log_level=lg.DEBUG)
+        ox.config(use_cache=True, cache_folder=self.osm_cache_folder, log_level=lg.DEBUG)
         self.__create_osm_exclusion_files(bbox_to_poly(self.coords[1], self.coords[0], self.coords[2], self.coords[3]), create_bounding_box_from_tiles(self.tiles), settings, create_polygons=create_polygons)
 
     def __create_geocode_osm_files(self, geocode, settings, preserve_roads, preserve_buildings, coords, shpfiles_folder):
-        ox.config(use_cache=True, log_level=lg.DEBUG)
+        ox.config(use_cache=True, cache_folder=self.osm_cache_folder, log_level=lg.DEBUG)
         return self.__create_geocode_osm_exclusion_files(geocode, bbox_to_poly(self.coords[1], self.coords[0], self.coords[2], self.coords[3]), float(settings.geocode_margin), preserve_roads, preserve_buildings, coords, shpfiles_folder)
 
     def __create_osm_exclusion_files(self, b, orig_bbox, settings, create_polygons=True):
@@ -1171,7 +1175,7 @@ class MsfsProject:
             pbar.update("%s prepared for msfs" % lod.name)
 
     def __create_landmark_from_geocode(self, geocode, settings):
-        ox.config(use_cache=True, log_level=lg.DEBUG)
+        ox.config(use_cache=True, cache_folder=self.osm_cache_folder, log_level=lg.DEBUG)
         print_title("RETRIEVE OSM GEOCODE DATA")
         geocode_gdf = load_gdf_from_geocode(geocode, keep_data=True, shpfiles_folder=self.shpfiles_folder)
 
