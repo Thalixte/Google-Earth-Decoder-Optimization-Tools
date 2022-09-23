@@ -1093,8 +1093,6 @@ class MsfsProject:
             # for debugging purpose, generate the osm file
             osm_xml = OsmXml(self.osmfiles_folder, GEOCODE_OSM_FILE_PREFIX + "_" + EXCLUSION_OSM_FILE_PREFIX + OSM_FILE_EXT)
             osm_xml.create_from_geodataframes([preserve_holes(geocode_gdf)], b, True, [(HEIGHT_OSM_TAG, 1000)])
-        else:
-            pr_bg_orange("Geocode (" + geocode + ") not found in OSM data" + EOL + CEND)
 
         return geocode_gdf
 

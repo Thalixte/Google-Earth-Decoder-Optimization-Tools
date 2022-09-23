@@ -22,7 +22,7 @@ import warnings
 from shapely.errors import ShapelyDeprecationWarning
 
 from constants import GEOMETRY_OSM_COLUMN, BOUNDING_BOX_OSM_KEY, SHAPE_TEMPLATES_FOLDER, OSM_LAND_SHAPEFILE, ROAD_OSM_KEY, BRIDGE_OSM_TAG, SERVICE_OSM_KEY, NOT_SHORE_WATER_OSM_KEY, WATER_OSM_KEY, NATURAL_OSM_KEY, OSM_TAGS, FOOTWAY_OSM_TAG, PATH_OSM_TAG, MAN_MADE_OSM_KEY, PIER_OSM_TAG, GOLF_OSM_KEY, FAIRWAY_OSM_TAG, EOL, CEND, TUNNEL_OSM_TAG, SEAMARK_TYPE_OSM_TAG, BUILDING_OSM_KEY, SHP_FILE_EXT, ELEMENT_TY_OSM_KEY, OSMID_OSM_KEY, RAILWAY_OSM_KEY, LANES_OSM_KEY, ONEWAY_OSM_KEY, ROAD_WITH_BORDERS, \
-    ROAD_LANE_WIDTH, GEOCODE_OSM_FILE_PREFIX, PEDESTRIAN_ROAD_TYPE, FOOTWAY_ROAD_TYPE, SERVICE_ROAD_TYPE, LANDUSE_OSM_KEY, CONSTRUCTION_OSM_KEY, GDAL_LIB_PREFIX, FIONA_LIB_PREFIX, LAND_MASS_REPO, LAND_MASS_ARCHIVE
+    ROAD_LANE_WIDTH, GEOCODE_OSM_FILE_PREFIX, PEDESTRIAN_ROAD_TYPE, FOOTWAY_ROAD_TYPE, SERVICE_ROAD_TYPE, LANDUSE_OSM_KEY, CONSTRUCTION_OSM_KEY, GDAL_LIB_PREFIX, FIONA_LIB_PREFIX, LAND_MASS_REPO, LAND_MASS_ARCHIVE, LEISURE_OSM_KEY
 from utils import pr_bg_orange, install_python_lib, install_alternate_python_lib, install_shapefile_resource
 
 try:
@@ -96,6 +96,11 @@ class SHAPELY_TYPE:
     polygon = "Polygon"
     multiPolygon = "MultiPolygon"
     none = "None"
+
+
+class OSMID_TYPE:
+    way = "way"
+    relation = "relation"
 
 
 class OVERLAY_OPERATOR:
@@ -204,32 +209,55 @@ def load_gdf_from_geocode(geocode, geocode_margin=5.0, preserve_roads=True, pres
             result = create_empty_gdf()
             pass
 
+    load_gdf_list = [None] * 5
+    pbar = ProgressBar(load_gdf_list, title="RETRIEVE GEODATAFRAMES (THE FIRST TIME, MAY TAKE SOME TIME TO COMPLETE, BE PATIENT...)")
+    pbar.update("retrieving buildings geodataframe...", stall=True)
+    # load gdf twice to ensure to retrieve if from cache (to have osmid in a key, not in an index)
+    load_gdf(coords, BUILDING_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, BUILDING_OSM_KEY + SHP_FILE_EXT))
     orig_building = load_gdf(coords, BUILDING_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, BUILDING_OSM_KEY + SHP_FILE_EXT), keep_geocode_data=True)
+    pbar.update("buildings geodataframe retrieved")
+    pbar.update("retrieving leisures geodataframe...", stall=True)
+    # load gdf twice to ensure to retrieve if from cache (to have osmid in a key, not in an index)
+    load_gdf(coords, LEISURE_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, LEISURE_OSM_KEY + SHP_FILE_EXT))
+    orig_leisure = load_gdf(coords, LEISURE_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, LEISURE_OSM_KEY + SHP_FILE_EXT), keep_geocode_data=True)
+    pbar.update("leisures geodataframe retrieved")
+    pbar.update("retrieving constructions geodataframe...", stall=True)
+    # load gdf twice to ensure to retrieve if from cache (to have osmid in a key, not in an index)
+    load_gdf(coords, LANDUSE_OSM_KEY, OSM_TAGS[CONSTRUCTION_OSM_KEY], shp_file_path=os.path.join(shpfiles_folder, CONSTRUCTION_OSM_KEY + SHP_FILE_EXT))
     orig_construction = load_gdf(coords, LANDUSE_OSM_KEY, OSM_TAGS[CONSTRUCTION_OSM_KEY], shp_file_path=os.path.join(shpfiles_folder, CONSTRUCTION_OSM_KEY + SHP_FILE_EXT), keep_geocode_data=True)
+    pbar.update("constructions geodataframe retrieved")
+    pbar.update("retrieving roads geodataframe...", stall=True)
+    # load gdf twice to ensure to retrieve if from cache (to have osmid in a key, not in an index)
+    load_gdf(coords, ROAD_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, ROAD_OSM_KEY + SHP_FILE_EXT), is_roads=True)
     orig_road = load_gdf(coords, ROAD_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, ROAD_OSM_KEY + SHP_FILE_EXT), is_roads=True, keep_geocode_data=True)
+    pbar.update("roads geodataframe retrieved")
+    pbar.update("retrieving railways geodataframe...", stall=True)
+    # load gdf twice to ensure to retrieve if from cache (to have osmid in a key, not in an index)
+    load_gdf(coords, RAILWAY_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, RAILWAY_OSM_KEY + SHP_FILE_EXT), is_roads=True)
     orig_railway = load_gdf(coords, RAILWAY_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, RAILWAY_OSM_KEY + SHP_FILE_EXT), is_roads=True, keep_geocode_data=True)
+    pbar.update("railways geodataframe retrieved")
     road = prepare_roads_gdf(orig_road, orig_railway, automatic_road_width_calculation=False)
 
     if result.empty:
         try:
             if coords is not None and shpfiles_folder is not None:
-                geocode_infos = geocode.split(",")
-                element_type = geocode_infos[0].strip()
-                osmid = geocode_infos[1].strip()
+                osmid = geocode
                 if ELEMENT_TY_OSM_KEY in orig_building and OSMID_OSM_KEY in orig_building:
-                    result = orig_building[(orig_building[ELEMENT_TY_OSM_KEY] == element_type) & (orig_building[OSMID_OSM_KEY] == int(osmid))]
+                    result = orig_building[((orig_building[ELEMENT_TY_OSM_KEY] == OSMID_TYPE.way) | (orig_building[ELEMENT_TY_OSM_KEY] == OSMID_TYPE.relation)) & (orig_building[OSMID_OSM_KEY] == int(osmid))]
+                if ELEMENT_TY_OSM_KEY in orig_leisure and OSMID_OSM_KEY in orig_leisure:
+                    result = orig_leisure[((orig_leisure[ELEMENT_TY_OSM_KEY] == OSMID_TYPE.way) | (orig_leisure[ELEMENT_TY_OSM_KEY] == OSMID_TYPE.relation)) & (orig_leisure[OSMID_OSM_KEY] == int(osmid))]
                 if result.empty and ELEMENT_TY_OSM_KEY in orig_construction and OSMID_OSM_KEY in orig_construction:
-                    result = orig_construction[(orig_construction[ELEMENT_TY_OSM_KEY] == element_type) & (orig_construction[OSMID_OSM_KEY] == int(osmid))]
+                    result = orig_construction[((orig_construction[ELEMENT_TY_OSM_KEY] == OSMID_TYPE.way) | (orig_construction[ELEMENT_TY_OSM_KEY] == OSMID_TYPE.relation)) & (orig_construction[OSMID_OSM_KEY] == int(osmid))]
                 if result.empty and ELEMENT_TY_OSM_KEY in road and OSMID_OSM_KEY in road:
-                    result = road[(road[ELEMENT_TY_OSM_KEY] == element_type) & (road[OSMID_OSM_KEY] == int(osmid))]
+                    result = road[((road[ELEMENT_TY_OSM_KEY] == OSMID_TYPE.way) | (road[ELEMENT_TY_OSM_KEY] == OSMID_TYPE.relation)) & (road[OSMID_OSM_KEY] == int(osmid))]
         except ValueError:
             if display_warnings:
-                pr_bg_orange("Geocode (" + geocode + ") not found in OSM data" + EOL + CEND)
+                pr_bg_orange("Osmid (" + geocode + ") not found in OSM data" + EOL + CEND)
             return create_empty_gdf()
 
     if result.empty:
         if display_warnings:
-            pr_bg_orange("Geocode (" + geocode + ") not found in OSM data" + EOL + CEND)
+            pr_bg_orange(("Osmid" if geocode.isnumeric() else "Geocode") + " (" + geocode + ") not found in OSM data" + EOL + CEND)
         return create_empty_gdf()
 
     bounds_coords = result.bounds.iloc[0]
@@ -284,6 +312,7 @@ def load_gdf(coords, key, tags, shp_file_path="", keep_geocode_data=False, is_ro
         if is_sea and land_mass is not None and bbox is not None:
             result = symmetric_difference_gdf(land_mass, bbox).assign(boundary=BOUNDING_BOX_OSM_KEY)
         else:
+            warnings.simplefilter("ignore", DeprecationWarning, append=True)
             result = ox.geometries_from_bbox(coords[0], coords[1], coords[2], coords[3], tags={key: tags})
             # remove points to fix shapefile saving issues
             result = result[~(result.geom_type == SHAPELY_TYPE.point)]
