@@ -191,6 +191,7 @@ def resize_gdf(gdf, resize_distance, single_sided=True):
 
 
 def load_gdf_from_geocode(geocode, geocode_margin=5.0, preserve_roads=True, preserve_buildings=True, keep_data=False, coords=None, shpfiles_folder=None, display_warnings=True, check_geocode=False):
+    ox.config(use_cache=False)
     try:
         warnings.simplefilter("ignore", FutureWarning, append=True)
         result = ox.geocode_to_gdf(geocode)
