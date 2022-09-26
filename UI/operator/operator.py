@@ -36,6 +36,7 @@ from scripts.create_terraform_and_exclusion_polygons_script import create_terraf
 from scripts.generate_height_data_script import generate_height_data
 from scripts.clean_3d_data_script import clean_3d_data
 from scripts.create_landmark_from_geocode_script import create_landmark_from_geocode
+from scripts.exclude_3d_data_from_geocode_script import exclude_3d_data_from_geocode
 from utils import open_console
 from .tools import reload_current_operator, reload_setting_props
 from bpy_extras.io_utils import ImportHelper
@@ -388,6 +389,21 @@ class OT_CreateLandmarkFromGeocodeOperator(ActionOperator):
     def execute(self, context):
         super().execute(context)
         create_landmark_from_geocode(context.scene.settings)
+        return {'FINISHED'}
+
+
+class OT_Exclude3dDataFromGeocodeOperator(ActionOperator):
+    bl_idname = "wm.exclude_3d_data_from_geocode"
+    bl_label = "Remove a building from the Google Earth 3d data"
+
+    @classmethod
+    def poll(cls, context):
+        msfs_project = super().poll(context)
+        return os.path.isdir(msfs_project.scene_folder) and context.scene.settings.geocode != str()
+
+    def execute(self, context):
+        super().execute(context)
+        exclude_3d_data_from_geocode(context.scene.settings)
         return {'FINISHED'}
 
 

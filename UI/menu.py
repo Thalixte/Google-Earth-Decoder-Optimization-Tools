@@ -33,7 +33,8 @@ from .operator import PanelPropertyGroup, OT_ProjectPathOperator, OT_ProjectsPat
     OT_MergeSceneriesPanel, OT_MergeSceneriesOperator, OT_CleanPackageFilesOperator, OT_CleanPackageFilesPanel, OT_FixTilesLightningIssuesPanel, \
     OT_FixTilesLightningIssuesOperator, OT_addLodOperator, OT_removeLowerLodOperator, OT_openSettingsFileOperator, OT_CreateTerraformAndExclusionPolygonsPanel, \
     OT_CreateTerraformAndExclusionPolygonsOperator, OT_GenerateHeightDataPanel, OT_GenerateHeightDataOperator, OT_Clean3dDataPanel, OT_Clean3dDataOperator, \
-    OT_CreateLandmarkFromGeocodeOperator, OT_CreateLandmarkFromGeocodePanel, OT_AddTileCollidersPanel, OT_RemoveTileCollidersPanel, OT_AddTileCollidersOperator, OT_RemoveTileCollidersOperator
+    OT_CreateLandmarkFromGeocodeOperator, OT_CreateLandmarkFromGeocodePanel, OT_Exclude3dDataFromGeocodeOperator, OT_Exclude3dDataFromGeocodePanel, \
+    OT_AddTileCollidersPanel, OT_RemoveTileCollidersPanel, OT_AddTileCollidersOperator, OT_RemoveTileCollidersOperator
 
 
 class TOPBAR_MT_google_earth_optimization_menus(Menu):
@@ -49,6 +50,17 @@ class TOPBAR_MT_google_earth_optimization_menus(Menu):
 class TOPBAR_MT_google_earth_optimization_menu(Menu):
     bl_idname = "TOPBAR_MT_google_earth_optimization_menu"
     bl_label = "Google Earth Decoder Optimization Tools"
+
+    def draw(self, _context):
+        layout = self.layout
+        layout.menu(TOPBAR_MT_optimization_menu.bl_idname)
+        layout.separator()
+        layout.menu(TOPBAR_MT_openstreetmap_menu.bl_idname)
+
+
+class TOPBAR_MT_optimization_menu(Menu):
+    bl_idname = "TOPBAR_MT_optimization_menu"
+    bl_label = "Optimization Tools"
 
     def draw(self, context):
         layout = self.layout
@@ -66,6 +78,19 @@ class TOPBAR_MT_google_earth_optimization_menu(Menu):
         layout.separator()
         layout.operator(OT_FixTilesLightningIssuesPanel.bl_idname)
         layout.separator()
+        layout.operator(OT_AddTileCollidersPanel.bl_idname)
+        layout.separator()
+        layout.operator(OT_RemoveTileCollidersPanel.bl_idname)
+        layout.separator()
+        layout.operator(OT_CompressBuiltPackagePanel.bl_idname)
+
+
+class TOPBAR_MT_openstreetmap_menu(Menu):
+    bl_idname = "TOPBAR_MT_openstreetmap_menu"
+    bl_label = "OSM Tools"
+
+    def draw(self, context):
+        layout = self.layout
         layout.operator(OT_CreateTerraformAndExclusionPolygonsPanel.bl_idname)
         layout.separator()
         layout.operator(OT_GenerateHeightDataPanel.bl_idname)
@@ -74,11 +99,7 @@ class TOPBAR_MT_google_earth_optimization_menu(Menu):
         layout.separator()
         layout.operator(OT_CreateLandmarkFromGeocodePanel.bl_idname)
         layout.separator()
-        layout.operator(OT_AddTileCollidersPanel.bl_idname)
-        layout.separator()
-        layout.operator(OT_RemoveTileCollidersPanel.bl_idname)
-        layout.separator()
-        layout.operator(OT_CompressBuiltPackagePanel.bl_idname)
+        layout.operator(OT_Exclude3dDataFromGeocodePanel.bl_idname)
 
 
 bl_info = {
@@ -89,6 +110,8 @@ bl_info = {
 classes = (
     TOPBAR_MT_google_earth_optimization_menus,
     TOPBAR_MT_google_earth_optimization_menu,
+    TOPBAR_MT_optimization_menu,
+    TOPBAR_MT_openstreetmap_menu,
     PanelPropertyGroup,
     updatedSettingsPropertyGroup,
     OT_ProjectPathOperator,
@@ -107,6 +130,7 @@ classes = (
     OT_GenerateHeightDataOperator,
     OT_Clean3dDataOperator,
     OT_CreateLandmarkFromGeocodeOperator,
+    OT_Exclude3dDataFromGeocodeOperator,
     OT_AddTileCollidersOperator,
     OT_RemoveTileCollidersOperator,
     OT_CompressBuiltPackageOperator,
@@ -126,6 +150,7 @@ classes = (
     OT_GenerateHeightDataPanel,
     OT_Clean3dDataPanel,
     OT_CreateLandmarkFromGeocodePanel,
+    OT_Exclude3dDataFromGeocodePanel,
     OT_AddTileCollidersPanel,
     OT_RemoveTileCollidersPanel,
     OT_CompressBuiltPackagePanel,

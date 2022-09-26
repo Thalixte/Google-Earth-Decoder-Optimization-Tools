@@ -470,10 +470,33 @@ class OT_CreateLandmarkFromGeocodePanel(SettingsOperator):
     bl_idname = id_name
     bl_label = "Create MSFS landmark from geocode"
     operator_description = """Automatically creates MSFS landmark, based on a geocode.
-        In the GEOCODE section, indicates the geocode for which want to create a landmark in MSFS. This geocode is in the form "location name, city"
+        In the GEOCODE section, set the geocode for which want to create a landmark in MSFS. This geocode is in the form "location name, city"
         Example: "Buckingham Palace, London" for a POI, or "London, United Kingdom" for a city. 
         In the GEOCODE section, choose the type of landmark (POI, city).
         Optionally, in the GEOCODE section, indicates the landmark height offset to change the height of the landmark point.
+        """
+    starting_section = GEOCODE_INI_SECTION
+    displayed_sections = [
+        PROJECT_INI_SECTION,
+        GEOCODE_INI_SECTION,
+        BUILD_INI_SECTION,
+        BACKUP_INI_SECTION,
+    ]
+
+
+class OT_Exclude3dDataFromGeocodePanel(SettingsOperator):
+    operator_name = "wm.exclude_3d_data_from_geocode"
+    id_name = "wm.exclude_3d_data_from_geocode_panel"
+    bl_idname = id_name
+    bl_label = "Remove a building from the Google Earth 3d data"
+    operator_description = """Automatically removes a building from Google Earth 3d data, based on a geocode, or an osmid.
+        In the GEOCODE section, indicates the geocode you want to remove from 3d data. This geocode is in the form "location name, city"
+        Alternatively, in the GEOCODE section, you can set the osmid (Open Street Map id) you want to remove from 3d data.
+        Example: "Buckingham Palace, London" for a geocode, or "5208404", which is the osmid of Buckingham Palace. 
+        In the GEOCODE section, set the geocode margin (as OSM and Google Earth can have a slight difference between building position, 
+        it allows you to remove a greater area to be sure to exclude completely the building).
+        Optionally, in the GEOCODE section, if you want to preserve the roads next to the building to exclude (preserve roads checkbox).
+        Optionally, in the GEOCODE section, if you want to preserve the buildings next to the building to exclude (preserve buildings checkbox).
         """
     starting_section = GEOCODE_INI_SECTION
     displayed_sections = [

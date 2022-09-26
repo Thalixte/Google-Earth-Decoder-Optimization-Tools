@@ -283,10 +283,10 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
     geocode_margin: FloatProperty(
         name="Geocode margin",
         description="Margin of the geocode polygon used to exclude or isolate the 3d data",
-        soft_min=-1.0,
-        soft_max=2.0,
-        step=1,
-        precision=0,
+        soft_min=-10.0,
+        soft_max=20.0,
+        step=0.1,
+        precision=1,
         default=float(bpy.types.Scene.settings.geocode_margin),
         update=geocode_margin_updated
     )

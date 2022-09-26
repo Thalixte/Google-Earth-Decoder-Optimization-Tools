@@ -983,7 +983,7 @@ class MsfsProject:
 
             print_title("CREATE EXCLUSION BUILDINGS POLYGONS GEO DATAFRAMES...)")
             shore_water = create_shore_water_gdf(orig_water, orig_natural_water, sea, bbox)
-            exclusion_building_polygons = create_exclusion_building_polygons_gdf(orig_bbox, shore_water, park, airport)
+            exclusion_building_polygons = create_exclusion_building_polygons_gdf(orig_bbox, shore_water, airport)
             # for debugging purpose
             osm_xml = OsmXml(self.osmfiles_folder, "exclusion_building_polygons" + OSM_FILE_EXT)
             osm_xml.create_from_geodataframes([exclusion_building_polygons.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')], b)
