@@ -291,7 +291,7 @@ class MsfsProject:
 
             pbar.update("splitted tiles added, replacing the previous %s tile" % previous_tile.name)
 
-    def prepare_3d_data(self, settings, generate_height_data=False, clean_3d_data=False, create_polygons=True):
+    def prepare_3d_data(self, settings, generate_height_data=False, clean_3d_data=False, create_polygons=True, clean_all=False):
         self.__create_tiles_bounding_boxes(init_osm_folder=True)
         self.__create_osm_files(settings, create_polygons=create_polygons)
 
@@ -309,7 +309,7 @@ class MsfsProject:
 
         if clean_3d_data:
             # self.__reduce_number_of_vertices()
-            self.__cleanup_lods_3d_data()
+            self.__cleanup_lods_3d_data(clean_all=clean_all)
 
         lods = [lod for tile in self.tiles.values() for lod in tile.lods]
         pbar = ProgressBar(list(lods), title="PREPARE THE TILES FOR MSFS")
@@ -554,7 +554,7 @@ class MsfsProject:
         textures = self.__retrieve_tiles_textures(src_format)
 
         if textures:
-            isolated_print(src_format + " texture files detected in the tiles of the project! Try to install pip, then convert them")
+            isolated_print(src_format + " texture files detected in the tiles of the project! Try to install Pillow lib, then convert them")
             print_title("INSTALL PILLOW")
             install_python_lib("Pillow")
 
@@ -707,7 +707,7 @@ class MsfsProject:
 
         return chunks(data, self.NB_PARALLEL_TASKS)
 
-    def __retrieve_lods_to_cleanup(self):
+    def __retrieve_lods_to_cleanup(self, force_cleanup=False):
         data = []
         tiles = []
         for tile in self.tiles.values():
@@ -736,7 +736,7 @@ class MsfsProject:
                 if not lod.valid:
                     continue
 
-                if lod.cleaned:
+                if lod.cleaned and not force_cleanup:
                     continue
 
                 data.append({"name": lod.name, "params": ["--folder", str(lod.folder), "--model_file", str(lod.model_file),
@@ -1108,8 +1108,8 @@ class MsfsProject:
         lods_data = self.__retrieve_lods_to_decimate()
         self.__multithread_process_data(lods_data, "reduce_lod_number_of_vertices.py", "REDUCE THE NUMBER OF VERTICES FOR ALL TILE LODS", "number of vertices reduced")
 
-    def __cleanup_lods_3d_data(self):
-        tiles_with_collider, lods_data = self.__retrieve_lods_to_cleanup()
+    def __cleanup_lods_3d_data(self, clean_all=False):
+        tiles_with_collider, lods_data = self.__retrieve_lods_to_cleanup(force_cleanup=clean_all)
         self.__multithread_process_data(lods_data, "cleanup_lod_3d_data.py", "CLEANUP LODS 3D DATA TILES", "cleaned")
         for tile in tiles_with_collider:
             for lod in tile.lods:

@@ -153,12 +153,12 @@ class SettingsOperator(PanelOperator):
         col.separator()
         self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "airport_city", "Airport city")
         col.separator()
-        self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "exclude_ground", "Exclude ground 3d data")
-        col.separator()
-        self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "exclude_nature_reserve", "Exclude nature reserves 3d data")
-        col.separator()
-        self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "exclude_parks", "Exclude parks 3d data")
-        col.separator()
+        # self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "exclude_ground", "Exclude ground 3d data")
+        # col.separator()
+        # self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "exclude_nature_reserve", "Exclude nature reserves 3d data")
+        # col.separator()
+        # self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "exclude_parks", "Exclude parks 3d data")
+        # col.separator()
         if self.operator_name is "wm.generate_height_data" or self.operator_name is "wm.prepare_3d_data":
             self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "height_adjustment", "Height data adjustment (in meters)")
             col.separator()
@@ -278,7 +278,7 @@ class OT_InitMsfsSceneryPanel(SettingsOperator):
     operator_name = "wm.init_msfs_scenery_project"
     id_name = "wm.init_msfs_scenery_project_panel"
     bl_idname = id_name
-    bl_label = "Initialize a new MSFS project scenery"
+    bl_label = "1. Initialize a new MSFS scenery project"
     operator_description = """This script creates the MSFS structure of a scenery project, if it does not already exist.
         Once created, you can copy the result of the Google Earth decoder Output folder into the PackageSources folder of the newly created project. 
         You can also create the structure, then in the Google Earth Decoder tool, point the Output folder to the PackageSources folder of the project.
@@ -310,7 +310,7 @@ class OT_OptimizeSceneryPanel(SettingsOperator):
     operator_name = "wm.optimize_msfs_scenery"
     id_name = "wm.optimize_scenery_panel"
     bl_idname = id_name
-    bl_label = "Optimize an existing MSFS scenery project"
+    bl_label = "2. Optimize an existing MSFS scenery project"
     operator_description = """This script optimizes an existing Google Earth Decoder scenery project (textures, Lods, CTD fix).
         If you installed and enabled the Lily Texture Packer Blender addon, and you ticked the "Bake textures enabled" checkbox in the tool menu (section PROJECT), 
         the textures of the project are merged per tile lods, which significantly reduce the number of the project files.        
@@ -429,7 +429,7 @@ class OT_GenerateHeightDataPanel(SettingsOperator):
     operator_name = "wm.generate_height_data"
     id_name = "wm.generate_height_data_panel"
     bl_idname = id_name
-    bl_label = "Generate height data based on the profile of the Google Earth tiles"
+    bl_label = "Generate height data based on Google Earth tiles"
     operator_description = """Generate height data based on the profile of the Google Earth tiles.
         In the OPENSTREETMAP section, you can enable high precision, by ticking the "high precision" checkbox if you want to generate 
         height data based on the highest google Earth tile lods. This can help calculating the data 
@@ -443,16 +443,47 @@ class OT_GenerateHeightDataPanel(SettingsOperator):
     ]
 
 
-class OT_Clean3dDataPanel(SettingsOperator):
-    operator_name = "wm.clean_3d_data"
-    id_name = "wm.clean_3d_data_panel"
+class OT_RemoveWaterFrom3dDataPanel(SettingsOperator):
+    operator_name = "wm.remove_water_from_3d_data"
+    id_name = "wm.remove_water_from_3d_data_panel"
     bl_idname = id_name
-    bl_label = "Remove 3d data (water, forests, woods, ...)"
-    operator_description = """Automatically removes 3d data in the Google Earth tiles, based on the OpenStreetMap data.
-        By default, it removes all the water from the Google Earth tiles.
-        You can extend the removal to forests and woods, by ticking the "exclude ground 3d data" checkbox in the OPENSTREETMAP section.
-        You can extend the removal to nature reserves, by ticking the "exclude nature reserves 3d data" checkbox in the OPENSTREETMAP section.
-        You can extend the removal to the parks, by ticking the "exclude parks 3d data" checkbox in the OPENSTREETMAP section.
+    bl_label = "Remove water from Google Earth tiles"
+    operator_description = """Automatically removes water from the Google Earth tiles, based on the OpenStreetMap data.
+        Optionally, in the OPENSTREETMAP section, set the city of the airport, in case you want to remove an airport"""
+    starting_section = OSM_INI_SECTION
+    displayed_sections = [
+        PROJECT_INI_SECTION,
+        OSM_INI_SECTION,
+        BUILD_INI_SECTION,
+        BACKUP_INI_SECTION,
+    ]
+
+
+class OT_RemoveForestsAndWoodsFrom3dDataPanel(SettingsOperator):
+    operator_name = "wm.remove_forests_and_woods_from_3d_data"
+    id_name = "wm.remove_forests_and_woods_from_3d_data_panel"
+    bl_idname = id_name
+    bl_label = "Remove water, forests and woods from Google Earth tiles"
+    operator_description = """Automatically removes water, forests and woods from the Google Earth tiles, based on the OpenStreetMap data.
+        Optionally, in the OPENSTREETMAP section, set the city of the airport, in case you want to remove an airport
+        Notice: the method can produce some visual artifacts when removing the forests, woods or parks, because of the Google Earth trees        
+        which exceeds the open street map corresponding area. Those trees will be partially cut. It is the same for building that touch trees"""
+    starting_section = OSM_INI_SECTION
+    displayed_sections = [
+        PROJECT_INI_SECTION,
+        OSM_INI_SECTION,
+        BUILD_INI_SECTION,
+        BACKUP_INI_SECTION,
+    ]
+
+
+class OT_RemoveForestsWoodsAndParksFrom3dDataPanel(SettingsOperator):
+    operator_name = "wm.remove_forests_woods_and_parks_from_3d_data"
+    id_name = "wm.remove_forests_woods_and_parks_from_3d_data_panel"
+    bl_idname = id_name
+    bl_label = "Remove water, forests, woods and parks from Google Earth tiles"
+    operator_description = """Automatically removes water, forests, woods and parks from the Google Earth tiles, based on the OpenStreetMap data.
+        Optionally, in the OPENSTREETMAP section, set the city of the airport, in case you want to remove an airport
         Notice: the method can produce some visual artifacts when removing the forests, woods or parks, because of the Google Earth trees        
         which exceeds the open street map corresponding area. Those trees will be partially cut. It is the same for building that touch trees"""
     starting_section = OSM_INI_SECTION

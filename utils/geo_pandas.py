@@ -211,32 +211,38 @@ def load_gdf_from_geocode(geocode, geocode_margin=5.0, preserve_roads=True, pres
             pass
 
     load_gdf_list = [None] * 5
-    pbar = ProgressBar(load_gdf_list, title="RETRIEVE GEODATAFRAMES (THE FIRST TIME, MAY TAKE SOME TIME TO COMPLETE, BE PATIENT...)")
-    pbar.update("retrieving buildings geodataframe...", stall=True)
+    if display_warnings:
+        pbar = ProgressBar(load_gdf_list, title="RETRIEVE GEODATAFRAMES (THE FIRST TIME, MAY TAKE SOME TIME TO COMPLETE, BE PATIENT...)")
+        pbar.update("retrieving buildings geodataframe...", stall=True)
     # load gdf twice to ensure to retrieve if from cache (to have osmid in a key, not in an index)
     load_gdf(coords, BUILDING_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, BUILDING_OSM_KEY + SHP_FILE_EXT))
     orig_building = load_gdf(coords, BUILDING_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, BUILDING_OSM_KEY + SHP_FILE_EXT), keep_geocode_data=True)
-    pbar.update("buildings geodataframe retrieved")
-    pbar.update("retrieving leisures geodataframe...", stall=True)
+    if display_warnings:
+        pbar.update("buildings geodataframe retrieved")
+        pbar.update("retrieving leisures geodataframe...", stall=True)
     # load gdf twice to ensure to retrieve if from cache (to have osmid in a key, not in an index)
     load_gdf(coords, LEISURE_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, LEISURE_OSM_KEY + SHP_FILE_EXT))
     orig_leisure = load_gdf(coords, LEISURE_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, LEISURE_OSM_KEY + SHP_FILE_EXT), keep_geocode_data=True)
-    pbar.update("leisures geodataframe retrieved")
-    pbar.update("retrieving constructions geodataframe...", stall=True)
+    if display_warnings:
+        pbar.update("leisures geodataframe retrieved")
+        pbar.update("retrieving constructions geodataframe...", stall=True)
     # load gdf twice to ensure to retrieve if from cache (to have osmid in a key, not in an index)
     load_gdf(coords, LANDUSE_OSM_KEY, OSM_TAGS[CONSTRUCTION_OSM_KEY], shp_file_path=os.path.join(shpfiles_folder, CONSTRUCTION_OSM_KEY + SHP_FILE_EXT))
     orig_construction = load_gdf(coords, LANDUSE_OSM_KEY, OSM_TAGS[CONSTRUCTION_OSM_KEY], shp_file_path=os.path.join(shpfiles_folder, CONSTRUCTION_OSM_KEY + SHP_FILE_EXT), keep_geocode_data=True)
-    pbar.update("constructions geodataframe retrieved")
-    pbar.update("retrieving roads geodataframe...", stall=True)
+    if display_warnings:
+        pbar.update("constructions geodataframe retrieved")
+        pbar.update("retrieving roads geodataframe...", stall=True)
     # load gdf twice to ensure to retrieve if from cache (to have osmid in a key, not in an index)
     load_gdf(coords, ROAD_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, ROAD_OSM_KEY + SHP_FILE_EXT), is_roads=True)
     orig_road = load_gdf(coords, ROAD_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, ROAD_OSM_KEY + SHP_FILE_EXT), is_roads=True, keep_geocode_data=True)
-    pbar.update("roads geodataframe retrieved")
-    pbar.update("retrieving railways geodataframe...", stall=True)
+    if display_warnings:
+        pbar.update("roads geodataframe retrieved")
+        pbar.update("retrieving railways geodataframe...", stall=True)
     # load gdf twice to ensure to retrieve if from cache (to have osmid in a key, not in an index)
     load_gdf(coords, RAILWAY_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, RAILWAY_OSM_KEY + SHP_FILE_EXT), is_roads=True)
     orig_railway = load_gdf(coords, RAILWAY_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, RAILWAY_OSM_KEY + SHP_FILE_EXT), is_roads=True, keep_geocode_data=True)
-    pbar.update("railways geodataframe retrieved")
+    if display_warnings:
+        pbar.update("railways geodataframe retrieved")
     road = prepare_roads_gdf(orig_road, orig_railway, automatic_road_width_calculation=False)
 
     if result.empty:
@@ -315,6 +321,11 @@ def load_gdf(coords, key, tags, shp_file_path="", keep_geocode_data=False, is_ro
         else:
             warnings.simplefilter("ignore", DeprecationWarning, append=True)
             result = ox.geometries_from_bbox(coords[0], coords[1], coords[2], coords[3], tags={key: tags})
+
+            # truncate index fields to avoid ogr2ogr warning logs
+            if not result.empty:
+                result.index.names = list(map(lambda x: x[:10], result.index.names))
+
             # remove points to fix shapefile saving issues
             result = result[~(result.geom_type == SHAPELY_TYPE.point)]
 

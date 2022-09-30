@@ -32,7 +32,8 @@ from .operator import PanelPropertyGroup, OT_ProjectPathOperator, OT_ProjectsPat
     OT_OptimizeSceneryPanel, OT_UpdateTilesPositionPanel, OT_UpdateMinSizeValuesPanel, OT_CompressBuiltPackagePanel, OT_ProjectPathToMergeOperator, \
     OT_MergeSceneriesPanel, OT_MergeSceneriesOperator, OT_CleanPackageFilesOperator, OT_CleanPackageFilesPanel, OT_FixTilesLightningIssuesPanel, \
     OT_FixTilesLightningIssuesOperator, OT_addLodOperator, OT_removeLowerLodOperator, OT_openSettingsFileOperator, OT_CreateTerraformAndExclusionPolygonsPanel, \
-    OT_CreateTerraformAndExclusionPolygonsOperator, OT_GenerateHeightDataPanel, OT_GenerateHeightDataOperator, OT_Clean3dDataPanel, OT_Clean3dDataOperator, \
+    OT_CreateTerraformAndExclusionPolygonsOperator, OT_GenerateHeightDataPanel, OT_GenerateHeightDataOperator, OT_RemoveWaterFrom3dDataPanel, OT_RemoveWaterFrom3dDataOperator, \
+    OT_RemoveForestsAndWoodsFrom3dDataPanel, OT_RemoveForestsAndWoodsFrom3dDataOperator, OT_RemoveForestsWoodsAndParksFrom3dDataPanel, OT_RemoveForestsWoodsAndParksFrom3dDataOperator, \
     OT_CreateLandmarkFromGeocodeOperator, OT_CreateLandmarkFromGeocodePanel, OT_Exclude3dDataFromGeocodeOperator, OT_Exclude3dDataFromGeocodePanel, \
     OT_AddTileCollidersPanel, OT_RemoveTileCollidersPanel, OT_AddTileCollidersOperator, OT_RemoveTileCollidersOperator
 
@@ -53,41 +54,35 @@ class TOPBAR_MT_google_earth_optimization_menu(Menu):
 
     def draw(self, _context):
         layout = self.layout
-        layout.menu(TOPBAR_MT_optimization_menu.bl_idname)
+        layout.operator(OT_InitMsfsSceneryPanel.bl_idname)
         layout.separator()
-        layout.menu(TOPBAR_MT_openstreetmap_menu.bl_idname)
+        layout.operator(OT_OptimizeSceneryPanel.bl_idname)
+        layout.separator()
+        layout.menu(TOPBAR_MT_edit_tiles_menu.bl_idname)
+        layout.separator()
+        layout.menu(TOPBAR_MT_finalization_menu.bl_idname)
+        layout.separator()
+        layout.menu(TOPBAR_MT_other_tools_menu.bl_idname)
 
 
 class TOPBAR_MT_optimization_menu(Menu):
     bl_idname = "TOPBAR_MT_optimization_menu"
-    bl_label = "Optimization Tools"
+    bl_label = "Optimize a MSFS scenery"
 
     def draw(self, context):
         layout = self.layout
-        layout.operator(OT_InitMsfsSceneryPanel.bl_idname)
-        layout.separator()
         layout.operator(OT_OptimizeSceneryPanel.bl_idname)
         layout.separator()
         layout.operator(OT_CleanPackageFilesPanel.bl_idname)
         layout.separator()
         layout.operator(OT_MergeSceneriesPanel.bl_idname)
         layout.separator()
-        layout.operator(OT_UpdateTilesPositionPanel.bl_idname)
-        layout.separator()
         layout.operator(OT_UpdateMinSizeValuesPanel.bl_idname)
-        layout.separator()
-        layout.operator(OT_FixTilesLightningIssuesPanel.bl_idname)
-        layout.separator()
-        layout.operator(OT_AddTileCollidersPanel.bl_idname)
-        layout.separator()
-        layout.operator(OT_RemoveTileCollidersPanel.bl_idname)
-        layout.separator()
-        layout.operator(OT_CompressBuiltPackagePanel.bl_idname)
 
 
-class TOPBAR_MT_openstreetmap_menu(Menu):
-    bl_idname = "TOPBAR_MT_openstreetmap_menu"
-    bl_label = "OSM Tools"
+class TOPBAR_MT_edit_tiles_menu(Menu):
+    bl_idname = "TOPBAR_MT_edit_tiles_menu"
+    bl_label = "3. Edit the tiles of a MSFS scenery"
 
     def draw(self, context):
         layout = self.layout
@@ -95,11 +90,45 @@ class TOPBAR_MT_openstreetmap_menu(Menu):
         layout.separator()
         layout.operator(OT_GenerateHeightDataPanel.bl_idname)
         layout.separator()
-        layout.operator(OT_Clean3dDataPanel.bl_idname)
+        layout.operator(OT_RemoveWaterFrom3dDataPanel.bl_idname)
+        layout.separator()
+        layout.operator(OT_RemoveForestsAndWoodsFrom3dDataPanel.bl_idname)
+        layout.separator()
+        layout.operator(OT_RemoveForestsWoodsAndParksFrom3dDataPanel.bl_idname)
         layout.separator()
         layout.operator(OT_CreateLandmarkFromGeocodePanel.bl_idname)
         layout.separator()
         layout.operator(OT_Exclude3dDataFromGeocodePanel.bl_idname)
+        layout.separator()
+        layout.operator(OT_UpdateTilesPositionPanel.bl_idname)
+        layout.separator()
+        layout.operator(OT_FixTilesLightningIssuesPanel.bl_idname)
+
+
+class TOPBAR_MT_finalization_menu(Menu):
+    bl_idname = "TOPBAR_MT_finalization_menu"
+    bl_label = "4. Finalize a MSFS scenery"
+
+    def draw(self, context):
+        layout = self.layout
+        layout.operator(OT_AddTileCollidersPanel.bl_idname)
+        layout.separator()
+        layout.operator(OT_RemoveTileCollidersPanel.bl_idname)
+        layout.separator()
+        layout.operator(OT_CompressBuiltPackagePanel.bl_idname)
+
+
+class TOPBAR_MT_other_tools_menu(Menu):
+    bl_idname = "TOPBAR_MT_other_tools_menu"
+    bl_label = "Other tools"
+
+    def draw(self, context):
+        layout = self.layout
+        layout.operator(OT_CleanPackageFilesPanel.bl_idname)
+        layout.separator()
+        layout.operator(OT_MergeSceneriesPanel.bl_idname)
+        layout.separator()
+        layout.operator(OT_UpdateMinSizeValuesPanel.bl_idname)
 
 
 bl_info = {
@@ -111,7 +140,9 @@ classes = (
     TOPBAR_MT_google_earth_optimization_menus,
     TOPBAR_MT_google_earth_optimization_menu,
     TOPBAR_MT_optimization_menu,
-    TOPBAR_MT_openstreetmap_menu,
+    TOPBAR_MT_edit_tiles_menu,
+    TOPBAR_MT_finalization_menu,
+    TOPBAR_MT_other_tools_menu,
     PanelPropertyGroup,
     updatedSettingsPropertyGroup,
     OT_ProjectPathOperator,
@@ -128,7 +159,9 @@ classes = (
     OT_FixTilesLightningIssuesOperator,
     OT_CreateTerraformAndExclusionPolygonsOperator,
     OT_GenerateHeightDataOperator,
-    OT_Clean3dDataOperator,
+    OT_RemoveWaterFrom3dDataOperator,
+    OT_RemoveForestsAndWoodsFrom3dDataOperator,
+    OT_RemoveForestsWoodsAndParksFrom3dDataOperator,
     OT_CreateLandmarkFromGeocodeOperator,
     OT_Exclude3dDataFromGeocodeOperator,
     OT_AddTileCollidersOperator,
@@ -148,7 +181,9 @@ classes = (
     OT_FixTilesLightningIssuesPanel,
     OT_CreateTerraformAndExclusionPolygonsPanel,
     OT_GenerateHeightDataPanel,
-    OT_Clean3dDataPanel,
+    OT_RemoveWaterFrom3dDataPanel,
+    OT_RemoveForestsAndWoodsFrom3dDataPanel,
+    OT_RemoveForestsWoodsAndParksFrom3dDataPanel,
     OT_CreateLandmarkFromGeocodePanel,
     OT_Exclude3dDataFromGeocodePanel,
     OT_AddTileCollidersPanel,
