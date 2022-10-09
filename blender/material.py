@@ -22,6 +22,7 @@
 import bpy
 
 OUTPUT_MATERIAL_NODE_TYPE = "OUTPUT_MATERIAL"
+PRINCIPLED_BSDF_SHADER = "Principled BSDF"
 
 
 def get_material_output(material):
@@ -34,4 +35,27 @@ def set_msfs_material():
     for obj in bpy.data.objects:
         material = obj.data.materials[0]
         nodes = material.node_tree.nodes
-        principled = next(n for n in nodes if n.type == 'BSDF_PRINCIPLED')
+        principled = next(n for n in nodes if n.type == PRINCIPLED_BSDF_SHADER)
+
+
+def set_new_msfs_material(material_name):
+    mat = bpy.data.materials.new(name=material_name)
+
+    for obj in bpy.data.objects:
+        # Assign it to object
+        if obj.data.materials:
+            # assign to 1st material slot
+            obj.data.materials[0] = mat
+        else:
+            # no slots
+            obj.data.materials.append(mat)
+
+        material = obj.data.materials[0]
+        material.name = material_name
+        nodes = material.node_tree.nodes
+        bsdf = nodes.get(PRINCIPLED_BSDF_SHADER)
+
+        assert (bsdf)  # make sure it exists to continue
+
+        nodes[PRINCIPLED_BSDF_SHADER] = bsdf
+        material.use_nodes = True

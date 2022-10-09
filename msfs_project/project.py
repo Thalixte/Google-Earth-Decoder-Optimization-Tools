@@ -670,7 +670,13 @@ class MsfsProject:
             # when the original tiles are available in the backup, use them, otherwise use the current modified tiles (which give less accurate results than the original ones)
             backup_subfolder = os.path.join(self.PACKAGE_SOURCES_FOLDER, os.path.basename(self.model_lib_folder))
             backup_path = os.path.join(os.path.join(self.backup_folder, "prepare_3d_data"), backup_subfolder)
-            if os.path.isdir(os.path.join(os.path.join(self.backup_folder, "clean_3d_data"), backup_subfolder)):
+            if os.path.isdir(os.path.join(os.path.join(self.backup_folder, "remove_water_from_3d_data"), backup_subfolder)):
+                backup_path = os.path.join(os.path.join(self.backup_folder, "remove_water_from_3d_data"), backup_subfolder)
+            elif os.path.isdir(os.path.join(os.path.join(self.backup_folder, "remove_forests_and_woods_from_3d_data"), backup_subfolder)):
+                backup_path = os.path.join(os.path.join(self.backup_folder, "remove_forests_and_woods_from_3d_data"), backup_subfolder)
+            elif os.path.isdir(os.path.join(os.path.join(self.backup_folder, "remove_forests_woods_and_parks_from_3d_data"), backup_subfolder)):
+                backup_path = os.path.join(os.path.join(self.backup_folder, "remove_forests_woods_and_parks_from_3d_data"), backup_subfolder)
+            elif os.path.isdir(os.path.join(os.path.join(self.backup_folder, "clean_3d_data"), backup_subfolder)):
                 backup_path = os.path.join(os.path.join(self.backup_folder, "clean_3d_data"), backup_subfolder)
             tile_folder = backup_path if os.path.isdir(backup_path) else tile.folder
 
@@ -1274,7 +1280,7 @@ class MsfsProject:
         golf = prepare_golf_gdf(orig_grass)
 
         if settings.exclude_parks:
-            park = clip_gdf(prepare_park_gdf(orig_park, orig_road), bbox)
+            park = clip_gdf(prepare_park_gdf(orig_park, road), bbox)
         else:
             park = create_empty_gdf()
         if settings.exclude_nature_reserve:

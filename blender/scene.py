@@ -52,7 +52,7 @@ from shapely import geometry
 import bmesh
 import bpy
 import mathutils
-from blender.blender_gis import import_osm_file
+from blender.blender_gis import import_osm_file, OSM_MATERIAL_NAME
 from blender.image import get_image_node, fix_texture_size_for_package_compilation
 from blender.memory import remove_mesh_from_memory
 from blender.material import set_msfs_material
@@ -77,6 +77,8 @@ COPY_COLLECTION_NAME = "CopyCollection"
 SUB_TILES_RANGE = "[0-7]"
 TILE_LOD_SUFFIX = "_LOD0"
 GEOID_HEIGHT_ORIGIN_MARGIN = 5.0
+FACES_ONLY_DELETE_CONTEXT = "FACES_ONLY"
+FACES_DELETE_CONTEXT = "FACES"
 
 
 class BOOLEAN_MODIFIER_OPERATION:
@@ -532,6 +534,33 @@ def process_3d_data(model_file_path, intersect=False):
     bpy.ops.object.delete()
     bpy.ops.object.select_all(action=SELECT_ACTION)
 
+    mat_osm = bpy.data.materials[OSM_MATERIAL_NAME]
+
+    # cleanup the cutted faces
+    for obj in bpy.context.scene.objects:
+        if obj.type == MESH_OBJECT_TYPE:
+            me = obj.data
+            # get all the slot indexes to which mat_c1 is assigned
+            osm_slots = [id for id, mat in enumerate(me.materials) if mat == mat_osm]
+
+            faces_mat_osm = []
+            bm = bmesh.new()
+            bm.from_mesh(me)
+
+            for face in bm.faces:
+                if face.material_index in osm_slots:
+                    faces_mat_osm.append(face)
+
+            # delete faces with mat_osm
+            bmesh.ops.delete(bm, geom=faces_mat_osm, context=FACES_DELETE_CONTEXT)
+            bm.to_mesh(me)
+            me.update()
+            bm.free()
+        else:
+            obj.select_set(False)
+
+    bpy.ops.object.select_all(action=SELECT_ACTION)
+
 
 def generate_model_height_data(model_file_path, lat, lon, altitude, height_adjustment, inverted=False, positioning_file_path="", water_mask_file_path="", ground_mask_file_path=""):
     if not bpy.context.scene:
@@ -650,7 +679,7 @@ def prepare_ray_cast(grid_factor=5.0):
     max_grid_dimension = max(grid_dimensions.x, grid_dimensions.y)
     grid_dimension = round(max_grid_dimension / grid_factor)
     bmesh.ops.create_grid(bm, x_segments=grid_dimension, y_segments=grid_dimension, size=round(max_grid_dimension / 2))
-    bmesh.ops.delete(bm, geom=bm.faces, context="FACES_ONLY")
+    bmesh.ops.delete(bm, geom=bm.faces, context=FACES_ONLY_DELETE_CONTEXT)
     bm.to_mesh(me)
     ob = bpy.data.objects.new("grid", me)
     bpy.context.collection.objects.link(ob)

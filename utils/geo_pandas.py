@@ -310,11 +310,15 @@ def load_gdf_from_geocode(geocode, geocode_margin=5.0, preserve_roads=True, pres
 
 def load_gdf(coords, key, tags, shp_file_path="", keep_geocode_data=False, is_roads=False, is_sea=False, is_grass=False, land_mass=None, bbox=None):
     has_cache = os.path.isfile(shp_file_path)
+    filesize = os.path.getsize(shp_file_path)
     keys = [key]
 
     if has_cache:
-        result = gpd.read_file(shp_file_path)
-        result = result[~result[GEOMETRY_OSM_COLUMN].isna()]
+        if filesize > 0:
+            result = gpd.read_file(shp_file_path)
+            result = result[~result[GEOMETRY_OSM_COLUMN].isna()]
+        else:
+            return create_empty_gdf()
     else:
         if is_sea and land_mass is not None and bbox is not None:
             result = symmetric_difference_gdf(land_mass, bbox).assign(boundary=BOUNDING_BOX_OSM_KEY)
@@ -373,6 +377,8 @@ def load_gdf(coords, key, tags, shp_file_path="", keep_geocode_data=False, is_ro
     else:
         for key in keys:
             result[key] = None
+        # create empty shp file as cache
+        open(shp_file_path, 'a').close()
 
     return result
 
@@ -495,11 +501,9 @@ def prepare_park_gdf(gdf, road):
     result = gdf.copy()
 
     if not result.empty:
-        result = resize_gdf(result, 20)
-
         if not road.empty:
-            road = road[road[ROAD_OSM_KEY] == "primary"]
-            road = resize_gdf(road, 28, single_sided=False)
+            # road = road[road[ROAD_OSM_KEY] == "primary"]
+            # road = resize_gdf(road, 28, single_sided=False)
             result = difference_gdf(result, road)
         result = result[(result.geom_type == SHAPELY_TYPE.polygon) | (result.geom_type == SHAPELY_TYPE.multiPolygon)]
 
@@ -540,23 +544,6 @@ def create_buildings_and_water_gdf(buildings, water):
     return result.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)
 
 
-def create_exclusion_gdf(landuse, leisure, natural, natural_water, water, sea, aeroway, roads):
-    result = create_empty_gdf()
-    result = union_gdf(result, landuse)
-    result = union_gdf(result, resize_gdf(leisure, 20))
-    result = union_gdf(result, natural)
-    result = union_gdf(result, aeroway)
-    result = union_gdf(result, difference_gdf(water, roads))
-    result = union_gdf(result, difference_gdf(natural_water, roads))
-    result = union_gdf(result, difference_gdf(sea, roads))
-
-    if not roads.empty and BRIDGE_OSM_TAG in roads:
-        bridges = roads[roads[BRIDGE_OSM_TAG] == "yes"]
-        result = difference_gdf(result, bridges)
-
-    return result.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)
-
-
 def create_water_bridge_exclusion_gdf(natural_water, water, sea, roads):
     result = create_empty_gdf()
     result = union_gdf(result, intersect_gdf(water, roads))
@@ -592,6 +579,7 @@ def create_ground_exclusion_gdf(landuse, nature_reserve, natural, aeroway, road,
     result = union_gdf(result, aeroway)
     result = union_gdf(result, airport)
     result = union_gdf(result, park)
+    result = resize_gdf(result, 10)
 
     if not road.empty and BRIDGE_OSM_TAG in road:
         bridges = road[~(road[BRIDGE_OSM_TAG].isna())]
