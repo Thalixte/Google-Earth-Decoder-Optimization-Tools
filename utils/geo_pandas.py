@@ -251,7 +251,7 @@ def load_gdf_from_geocode(geocode, geocode_margin=5.0, preserve_roads=True, pres
                 osmid = geocode
                 if ELEMENT_TY_OSM_KEY in orig_building and OSMID_OSM_KEY in orig_building:
                     result = orig_building[((orig_building[ELEMENT_TY_OSM_KEY] == OSMID_TYPE.way) | (orig_building[ELEMENT_TY_OSM_KEY] == OSMID_TYPE.relation)) & (orig_building[OSMID_OSM_KEY] == int(osmid))]
-                if ELEMENT_TY_OSM_KEY in orig_leisure and OSMID_OSM_KEY in orig_leisure:
+                if result.empty and ELEMENT_TY_OSM_KEY in orig_leisure and OSMID_OSM_KEY in orig_leisure:
                     result = orig_leisure[((orig_leisure[ELEMENT_TY_OSM_KEY] == OSMID_TYPE.way) | (orig_leisure[ELEMENT_TY_OSM_KEY] == OSMID_TYPE.relation)) & (orig_leisure[OSMID_OSM_KEY] == int(osmid))]
                 if result.empty and ELEMENT_TY_OSM_KEY in orig_construction and OSMID_OSM_KEY in orig_construction:
                     result = orig_construction[((orig_construction[ELEMENT_TY_OSM_KEY] == OSMID_TYPE.way) | (orig_construction[ELEMENT_TY_OSM_KEY] == OSMID_TYPE.relation)) & (orig_construction[OSMID_OSM_KEY] == int(osmid))]
@@ -520,7 +520,7 @@ def prepare_building_gdf(gdf):
     result = gdf.copy()
 
     if not result.empty:
-        result = resize_gdf(result, 5)
+        result = resize_gdf(result, 10)
         result = result[(result.geom_type == SHAPELY_TYPE.polygon) | (result.geom_type == SHAPELY_TYPE.multiPolygon)]
 
     return result.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY).assign(boundary=BOUNDING_BOX_OSM_KEY)

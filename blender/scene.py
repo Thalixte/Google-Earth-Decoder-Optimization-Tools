@@ -577,13 +577,6 @@ def generate_model_height_data(model_file_path, lat, lon, altitude, height_adjus
     depsgraph.update()
     hmatrix = calculate_height_map_from_coords_from_bottom(tile, grid_dimension, coords, depsgraph, lat, lon, altitude, height_adjustment)
 
-    # fix wrong height data for bridges on water
-    if os.path.exists(positioning_file_path) and os.path.exists(water_mask_file_path):
-        align_model_with_mask(model_file_path, positioning_file_path, water_mask_file_path, objects_to_keep=[grid])
-        process_3d_data(model_file_path, intersect=True)
-        tile = get_tile_for_ray_cast(model_file_path, imported=False, objects_to_keep=[grid])
-        hmatrix = fix_bridge_height_data_on_water(tile, depsgraph, lat, lon, altitude, hmatrix_base=hmatrix)
-
     # fix wrong height data for tiles that has bare rocks or cliff inside them
     if os.path.exists(positioning_file_path) and os.path.exists(ground_mask_file_path):
         align_model_with_mask(model_file_path, positioning_file_path, ground_mask_file_path, objects_to_keep=[grid])
@@ -592,7 +585,14 @@ def generate_model_height_data(model_file_path, lat, lon, altitude, height_adjus
         if inverted:
             hmatrix = calculate_height_map_from_coords_from_top(tile, grid_dimension, coords, depsgraph, lat, lon, altitude, hmatrix_base=hmatrix)
         else:
-            adjust_height_data_on_ground_exclusion(tile, depsgraph, lat, lon, altitude, hmatrix_base=hmatrix)
+            hmatrix = adjust_height_data_on_ground_exclusion(tile, depsgraph, lat, lon, altitude, hmatrix_base=hmatrix)
+
+    # fix wrong height data for bridges on water
+    if os.path.exists(positioning_file_path) and os.path.exists(water_mask_file_path):
+        align_model_with_mask(model_file_path, positioning_file_path, water_mask_file_path, objects_to_keep=[grid])
+        process_3d_data(model_file_path, intersect=True)
+        tile = get_tile_for_ray_cast(model_file_path, imported=False, objects_to_keep=[grid])
+        hmatrix = fix_bridge_height_data_on_water(tile, depsgraph, lat, lon, altitude, hmatrix_base=hmatrix)
 
     new_collection = bpy.data.collections.new(name="coords")
     assert (new_collection is not bpy.context.scene.collection)
@@ -868,8 +868,12 @@ def adjust_height_data_on_exclusion_area(tile, depsgraph, lat, lon, altitude, ex
                 p1 = mathutils.Vector((x, y, 0))
                 p2 = mathutils.Vector((x, y, 500))
 
-                ray_direction = (p2 - p1).normalized()
-                result = tile.ray_cast(p1, ray_direction, distance=1000, depsgraph=depsgraph)
+                if exclusion_type == EXCLUSION_TYPE.WATER:
+                    ray_direction = (p2 - p1).normalized()
+                    result = tile.ray_cast(p1, ray_direction, distance=1000, depsgraph=depsgraph)
+                else:
+                    ray_direction = (p1 - p2).normalized()
+                    result = tile.ray_cast(p2, ray_direction, distance=1000, depsgraph=depsgraph)
 
                 if result[0]:
                     new_coords.append(result[1])
@@ -878,20 +882,24 @@ def adjust_height_data_on_exclusion_area(tile, depsgraph, lat, lon, altitude, ex
         if exclusion_type == EXCLUSION_TYPE.WATER:
             # fix noise in the height map data
             new_coords = spatial_median_kdtree(np.array(new_coords), 100)
-            # new_coords = spatial_median(np.array(new_coords), 20)
+        else:
+            new_coords = spatial_median(np.array(new_coords), 20)
 
-        for i, co in enumerate(new_coords):
-            p1 = co
-            x = p1[0]
-            y = p1[1]
-            h = p1[2]
-            h = h + altitude + geoid_height
+    for i, co in enumerate(new_coords):
+        p1 = co
+        x = p1[0]
+        y = p1[1]
+        h = p1[2]
+        h = h + altitude + geoid_height
+        if exclusion_type == EXCLUSION_TYPE.WATER:
             h = h if h >= geoid_height else geoid_height
+        else:
+            h = h + 1.0 if h >= geoid_height else geoid_height
 
-            if hmatrix_base is not None:
-                if y in hmatrix_base:
-                    if x in hmatrix_base[y]:
-                        results[y][x] = h
+        if hmatrix_base is not None:
+            if y in hmatrix_base:
+                if x in hmatrix_base[y]:
+                    results[y][x] = h
 
     return results
 

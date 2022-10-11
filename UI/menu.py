@@ -96,8 +96,6 @@ class TOPBAR_MT_edit_tiles_menu(Menu):
         layout.separator()
         layout.operator(OT_RemoveForestsWoodsAndParksFrom3dDataPanel.bl_idname)
         layout.separator()
-        layout.operator(OT_CreateLandmarkFromGeocodePanel.bl_idname)
-        layout.separator()
         layout.operator(OT_Exclude3dDataFromGeocodePanel.bl_idname)
         layout.separator()
         layout.operator(OT_UpdateTilesPositionPanel.bl_idname)
@@ -113,7 +111,7 @@ class TOPBAR_MT_finalization_menu(Menu):
         layout = self.layout
         layout.operator(OT_AddTileCollidersPanel.bl_idname)
         layout.separator()
-        layout.operator(OT_RemoveTileCollidersPanel.bl_idname)
+        layout.operator(OT_CreateLandmarkFromGeocodePanel.bl_idname)
         layout.separator()
         layout.operator(OT_CompressBuiltPackagePanel.bl_idname)
 
@@ -125,6 +123,8 @@ class TOPBAR_MT_other_tools_menu(Menu):
     def draw(self, context):
         layout = self.layout
         layout.operator(OT_CleanPackageFilesPanel.bl_idname)
+        layout.separator()
+        layout.operator(OT_RemoveTileCollidersPanel.bl_idname)
         layout.separator()
         layout.operator(OT_MergeSceneriesPanel.bl_idname)
         layout.separator()

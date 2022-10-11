@@ -54,6 +54,7 @@ def remove_water_from_3d_data(script_settings):
         script_settings.exclude_ground = False
         script_settings.exclude_nature_reserve = False
         script_settings.exclude_parks = False
+        script_settings.save()
         msfs_project.prepare_3d_data(script_settings, generate_height_data=False, clean_3d_data=True, create_polygons=True, clean_all=True)
 
         if script_settings.build_package_enabled:
