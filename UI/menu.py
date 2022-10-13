@@ -124,11 +124,11 @@ class TOPBAR_MT_other_tools_menu(Menu):
         layout = self.layout
         layout.operator(OT_CleanPackageFilesPanel.bl_idname)
         layout.separator()
-        layout.operator(OT_RemoveTileCollidersPanel.bl_idname)
-        layout.separator()
         layout.operator(OT_MergeSceneriesPanel.bl_idname)
         layout.separator()
         layout.operator(OT_UpdateMinSizeValuesPanel.bl_idname)
+        layout.separator()
+        layout.operator(OT_RemoveTileCollidersPanel.bl_idname)
 
 
 bl_info = {

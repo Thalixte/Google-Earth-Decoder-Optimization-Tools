@@ -17,9 +17,11 @@
 #  <pep8 compliant>
 
 import os
+
+from mathutils.bvhtree import BVHTree
 from collections import defaultdict
 from pathlib import Path
-from utils import pr_bg_orange, install_python_lib
+from utils import install_python_lib
 
 try:
     import numpy as np
@@ -499,35 +501,56 @@ def reduce_number_of_vertices(model_file_path):
 
 def process_3d_data(model_file_path, intersect=False):
     import_model_files([model_file_path], clean=False)
+
     objects = bpy.context.scene.objects
 
     mask = bpy.context.scene.objects.get("Areas")
     grid = bpy.context.scene.objects.get("grid")
 
+    # create the mask's BVH trees for collision detection
+    m_1 = mask.matrix_world.copy()
+    mesh_1_verts = [m_1 @ vertex.co for vertex in mask.data.vertices]
+    mesh_1_polys = [polygon.vertices for polygon in mask.data.polygons]
+
     if mask:
         for obj in objects:
             if obj != mask and obj != grid:
-                bpy.context.view_layer.objects.active = obj
-                booly = obj.modifiers.new(name="booly", type="BOOLEAN")
+                m_2 = obj.matrix_world.copy()
+                mesh_2_verts = [m_2 @ vertex.co for vertex in obj.data.vertices]
+                mesh_2_polys = [polygon.vertices for polygon in obj.data.polygons]
+                p1 = mesh_2_verts[0]
+                p2 = mathutils.Vector((mesh_2_verts[0][0], mesh_2_verts[0][1], 100))
 
-                if not booly:
-                    continue
+                # create the object's BVH trees for collision detection
+                mesh_1_bvh_tree = BVHTree.FromPolygons(mesh_1_verts, mesh_1_polys)
+                mesh_2_bvh_tree = BVHTree.FromPolygons(mesh_2_verts, mesh_2_polys)
 
-                booly.object = mask
-                booly.operation = BOOLEAN_MODIFIER_OPERATION.INTERSECT if intersect else BOOLEAN_MODIFIER_OPERATION.DIFFERENCE
-                booly.solver = "EXACT"
-                booly.use_hole_tolerant = True
-                weighted_normal = obj.modifiers.new(name="weighty", type="WEIGHTED_NORMAL")
+                inclusion = mesh_1_bvh_tree.ray_cast(p1, p2, 1000.0)
+                intersections = mesh_1_bvh_tree.overlap(mesh_2_bvh_tree)
 
-                if not weighted_normal:
-                    continue
+                # only cleanup objects contained in the mask, or touched by the mask
+                if inclusion[0] is not None or intersections :
+                    bpy.context.view_layer.objects.active = obj
+                    booly = obj.modifiers.new(name="booly", type="BOOLEAN")
 
-                weighted_normal.weight = 100
-                weighted_normal.thresh = 10.0
-                weighted_normal.keep_sharp = True
-                weighted_normal.use_face_influence = True
-                for modifier in obj.modifiers:
-                    bpy.ops.object.modifier_apply(modifier=modifier.name)
+                    if not booly:
+                        continue
+
+                    booly.object = mask
+                    booly.operation = BOOLEAN_MODIFIER_OPERATION.INTERSECT if intersect else BOOLEAN_MODIFIER_OPERATION.DIFFERENCE
+                    booly.solver = "EXACT"
+                    booly.use_hole_tolerant = True
+                    weighted_normal = obj.modifiers.new(name="weighty", type="WEIGHTED_NORMAL")
+
+                    if not weighted_normal:
+                        continue
+
+                    weighted_normal.weight = 100
+                    weighted_normal.thresh = 5.0
+                    weighted_normal.keep_sharp = True
+                    weighted_normal.use_face_influence = True
+                    for modifier in obj.modifiers:
+                        bpy.ops.object.modifier_apply(modifier=modifier.name)
 
     bpy.ops.object.select_all(action=DESELECT_ACTION)
     mask.select_set(True)
