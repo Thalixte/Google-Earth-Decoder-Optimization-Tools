@@ -58,7 +58,7 @@ from blender.blender_gis import import_osm_file, OSM_MATERIAL_NAME
 from blender.image import get_image_node, fix_texture_size_for_package_compilation
 from blender.memory import remove_mesh_from_memory
 from blender.material import set_msfs_material
-from constants import EOL, GEOIDS_DATASET_FOLDER, EGM2008_5_DATASET, OBJ_FILE_EXT
+from constants import EOL, GEOIDS_DATASET_FOLDER, EGM2008_5_DATASET, OBJ_FILE_EXT, GEOCODE_OSM_FILE_PREFIX, BOUNDING_BOX_OSM_KEY
 from msfs_project.gltf import MsfsGltf
 from utils import ScriptError, isolated_print
 from utils.progress_bar import ProgressBar
@@ -499,7 +499,7 @@ def reduce_number_of_vertices(model_file_path):
     bpy.ops.object.select_all(action=SELECT_ACTION)
 
 
-def process_3d_data(model_file_path, intersect=False):
+def process_3d_data(model_file_path, clean_all_objects=False, intersect=False):
     import_model_files([model_file_path], clean=False)
 
     objects = bpy.context.scene.objects
@@ -507,29 +507,34 @@ def process_3d_data(model_file_path, intersect=False):
     mask = bpy.context.scene.objects.get("Areas")
     grid = bpy.context.scene.objects.get("grid")
 
-    # create the mask's BVH trees for collision detection
-    m_1 = mask.matrix_world.copy()
-    mesh_1_verts = [m_1 @ vertex.co for vertex in mask.data.vertices]
-    mesh_1_polys = [polygon.vertices for polygon in mask.data.polygons]
+    new_collection = bpy.data.collections.new(name="inclusion_points")
+    assert (new_collection is not bpy.context.scene.collection)
+    bpy.context.scene.collection.children.link(new_collection)
+
+    bpy.ops.object.select_all(action=DESELECT_ACTION)
 
     if mask:
         for obj in objects:
-            if obj != mask and obj != grid:
-                m_2 = obj.matrix_world.copy()
-                mesh_2_verts = [m_2 @ vertex.co for vertex in obj.data.vertices]
-                mesh_2_polys = [polygon.vertices for polygon in obj.data.polygons]
-                p1 = mesh_2_verts[0]
-                p2 = mathutils.Vector((mesh_2_verts[0][0], mesh_2_verts[0][1], 100))
+            if obj != mask and obj != grid and BOUNDING_BOX_OSM_KEY not in obj.name:
+                bounding_box_obj = create_bounding_box(obj, BOUNDING_BOX_OSM_KEY)
+                booly = bounding_box_obj.modifiers.new(name="booly", type="BOOLEAN")
 
-                # create the object's BVH trees for collision detection
-                mesh_1_bvh_tree = BVHTree.FromPolygons(mesh_1_verts, mesh_1_polys)
-                mesh_2_bvh_tree = BVHTree.FromPolygons(mesh_2_verts, mesh_2_polys)
+                if not booly:
+                    continue
 
-                inclusion = mesh_1_bvh_tree.ray_cast(p1, p2, 1000.0)
-                intersections = mesh_1_bvh_tree.overlap(mesh_2_bvh_tree)
+                booly.object = mask
+                booly.operation = BOOLEAN_MODIFIER_OPERATION.INTERSECT
+                booly.solver = "EXACT"
+                booly.use_hole_tolerant = True
+                for modifier in bounding_box_obj.modifiers:
+                    bpy.ops.object.modifier_apply(modifier=modifier.name)
+
+                intersections = [vertex.co for vertex in bounding_box_obj.data.vertices]
+                bounding_box_obj.select_set(True)
+                bpy.ops.object.delete()
 
                 # only cleanup objects contained in the mask, or touched by the mask
-                if inclusion[0] is not None or intersections :
+                if intersections:
                     bpy.context.view_layer.objects.active = obj
                     booly = obj.modifiers.new(name="booly", type="BOOLEAN")
 
@@ -603,7 +608,7 @@ def generate_model_height_data(model_file_path, lat, lon, altitude, height_adjus
     # fix wrong height data for tiles that has bare rocks or cliff inside them
     if os.path.exists(positioning_file_path) and os.path.exists(ground_mask_file_path):
         align_model_with_mask(model_file_path, positioning_file_path, ground_mask_file_path, objects_to_keep=[grid])
-        process_3d_data(model_file_path, intersect=True)
+        process_3d_data(model_file_path, clean_all_objects=True, intersect=True)
         tile = get_tile_for_ray_cast(model_file_path, imported=False, objects_to_keep=[grid])
         if inverted:
             hmatrix = calculate_height_map_from_coords_from_top(tile, grid_dimension, coords, depsgraph, lat, lon, altitude, hmatrix_base=hmatrix)
@@ -613,7 +618,7 @@ def generate_model_height_data(model_file_path, lat, lon, altitude, height_adjus
     # fix wrong height data for bridges on water
     if os.path.exists(positioning_file_path) and os.path.exists(water_mask_file_path):
         align_model_with_mask(model_file_path, positioning_file_path, water_mask_file_path, objects_to_keep=[grid])
-        process_3d_data(model_file_path, intersect=True)
+        process_3d_data(model_file_path, clean_all_objects=True, intersect=True)
         tile = get_tile_for_ray_cast(model_file_path, imported=False, objects_to_keep=[grid])
         hmatrix = fix_bridge_height_data_on_water(tile, depsgraph, lat, lon, altitude, hmatrix_base=hmatrix)
 
@@ -812,11 +817,9 @@ def calculate_height_map_from_coords_from_bottom(tile, grid_dimension, coords, d
     coords = [co for i, co in enumerate(coords) if i % 2 == 1]
 
     for co in coords:
-        p1 = co
-        p2 = mathutils.Vector((co[0], co[1], 500))
-
-        ray_direction = (p2 - p1).normalized()
-        result = tile.ray_cast(p1, ray_direction, distance=1000, depsgraph=depsgraph)
+        p = co
+        ray_direction = [0, 0, 1]
+        result = tile.evaluated_get(depsgraph).ray_cast(p, ray_direction, distance=1000)
         if result[0]:
             x = result[1][0]
             y = result[1][1]
@@ -835,15 +838,13 @@ def calculate_height_map_from_coords_from_top(tile, grid_dimension, coords, deps
     new_coords = []
 
     for co in coords:
-        p1 = co
-        p2 = mathutils.Vector((co[0], co[1], 500))
-
-        ray_direction_inverted = (p1 - p2).normalized()
-        result = tile.ray_cast(p2, ray_direction_inverted, distance=1000, depsgraph=depsgraph)
+        p = mathutils.Vector((co[0], co[1], 500))
+        ray_direction_inverted = [0, 0, -1]
+        result = tile.evaluated_get(depsgraph).ray_cast(p, ray_direction_inverted, distance=1000)
         if result[0]:
             new_coords.append(result[1])
         else:
-            new_coords.append(mathutils.Vector((p2[0], p2[1], result[1][2])))
+            new_coords.append(mathutils.Vector((p[0], p[1], result[1][2])))
 
     if new_coords:
         # fix noise in the height map data
@@ -892,11 +893,11 @@ def adjust_height_data_on_exclusion_area(tile, depsgraph, lat, lon, altitude, ex
                 p2 = mathutils.Vector((x, y, 500))
 
                 if exclusion_type == EXCLUSION_TYPE.WATER:
-                    ray_direction = (p2 - p1).normalized()
-                    result = tile.ray_cast(p1, ray_direction, distance=1000, depsgraph=depsgraph)
+                    ray_direction = (0, 0, 1)
+                    result = tile.evaluated_get(depsgraph).ray_cast(p1, ray_direction, distance=1000)
                 else:
-                    ray_direction = (p1 - p2).normalized()
-                    result = tile.ray_cast(p2, ray_direction, distance=1000, depsgraph=depsgraph)
+                    ray_direction = (0, 0, -1)
+                    result = tile.evaluated_get(depsgraph).ray_cast(p2, ray_direction, distance=1000)
 
                 if result[0]:
                     new_coords.append(result[1])
@@ -1026,3 +1027,31 @@ def display_heights(coords, grid_dimension, hmatrix, new_collection):
 
     bm.to_mesh(ob.data)
     ob.data.update(calc_edges=True)
+
+
+def create_bounding_box(obj, prefix):
+    scale = obj.scale
+
+    minx = obj.bound_box[0][0] * scale.x
+    maxx = obj.bound_box[4][0] * scale.x
+    miny = obj.bound_box[0][1] * scale.y
+    maxy = obj.bound_box[2][1] * scale.y
+    minz = obj.bound_box[0][2] * scale.z
+    maxz = obj.bound_box[1][2] * scale.z
+    dx = maxx - minx
+    dy = maxy - miny
+    dz = maxz - minz
+
+    new_name = '{0}{1}'.format(prefix, obj.name)
+
+    loc = mathutils.Vector(((minx + 0.5 * dx), (miny + 0.5 * dy), (minz + 0.5 * dz)))
+    loc.rotate(obj.rotation_euler)
+    loc = loc + obj.location
+
+    bpy.ops.mesh.primitive_cube_add(location=loc, rotation=obj.rotation_euler)
+    new_obj = bpy.context.object
+
+    new_obj.name = new_name
+    new_obj.dimensions = mathutils.Vector((dx, dy, dz))
+
+    return new_obj

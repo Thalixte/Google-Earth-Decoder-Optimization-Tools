@@ -22,7 +22,7 @@ import shutil
 from pathlib import Path
 
 from blender import import_model_files, bake_texture_files, fix_object_bounding_box, export_to_optimized_gltf_files, clean_scene, extract_splitted_tile, align_model_with_mask, process_3d_data, generate_model_height_data, reduce_number_of_vertices
-from constants import PNG_TEXTURE_FORMAT, JPG_TEXTURE_FORMAT, GLTF_FILE_PATTERN, GLTF_FILE_EXT, XML_FILE_EXT, TEXTURE_FOLDER
+from constants import PNG_TEXTURE_FORMAT, JPG_TEXTURE_FORMAT, GLTF_FILE_PATTERN, GLTF_FILE_EXT, XML_FILE_EXT, TEXTURE_FOLDER, GEOCODE_OSM_FILE_PREFIX
 from msfs_project.binary import MsfsBinary
 from msfs_project.texture import MsfsTexture
 from msfs_project.gltf import MsfsGltf
@@ -237,9 +237,9 @@ class MsfsLod:
         model_file.dump()
         align_model_with_mask(os.path.join(self.folder, self.model_file), positioning_file_path, mask_file_path)
         if process_type == PROCESS_TYPE.cleanup_3d_data:
-            process_3d_data(os.path.join(self.folder, self.model_file), intersect=False)
+            process_3d_data(os.path.join(self.folder, self.model_file), clean_all_objects=(GEOCODE_OSM_FILE_PREFIX in mask_file_path), intersect=False)
         if process_type == PROCESS_TYPE.isolate_3d_data:
-            process_3d_data(os.path.join(self.folder, self.model_file), intersect=True)
+            process_3d_data(os.path.join(self.folder, self.model_file), clean_all_objects=(GEOCODE_OSM_FILE_PREFIX in mask_file_path), intersect=True)
         export_to_optimized_gltf_files(os.path.join(self.folder, self.model_file), TEXTURE_FOLDER, use_selection=True, export_extras=False)
         model_file = MsfsGltf(os.path.join(self.folder, self.model_file))
         model_file.remove_texture_path(self.name)
