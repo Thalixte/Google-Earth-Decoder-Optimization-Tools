@@ -499,7 +499,7 @@ def reduce_number_of_vertices(model_file_path):
     bpy.ops.object.select_all(action=SELECT_ACTION)
 
 
-def process_3d_data(model_file_path, clean_all_objects=False, intersect=False):
+def process_3d_data(model_file_path, intersect=False):
     import_model_files([model_file_path], clean=False)
 
     objects = bpy.context.scene.objects
