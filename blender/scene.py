@@ -608,7 +608,7 @@ def generate_model_height_data(model_file_path, lat, lon, altitude, height_adjus
     # fix wrong height data for tiles that has bare rocks or cliff inside them
     if os.path.exists(positioning_file_path) and os.path.exists(ground_mask_file_path):
         align_model_with_mask(model_file_path, positioning_file_path, ground_mask_file_path, objects_to_keep=[grid])
-        process_3d_data(model_file_path, clean_all_objects=True, intersect=True)
+        process_3d_data(model_file_path, intersect=True)
         tile = get_tile_for_ray_cast(model_file_path, imported=False, objects_to_keep=[grid])
         if inverted:
             hmatrix = calculate_height_map_from_coords_from_top(tile, grid_dimension, coords, depsgraph, lat, lon, altitude, hmatrix_base=hmatrix)
@@ -618,7 +618,7 @@ def generate_model_height_data(model_file_path, lat, lon, altitude, height_adjus
     # fix wrong height data for bridges on water
     if os.path.exists(positioning_file_path) and os.path.exists(water_mask_file_path):
         align_model_with_mask(model_file_path, positioning_file_path, water_mask_file_path, objects_to_keep=[grid])
-        process_3d_data(model_file_path, clean_all_objects=True, intersect=True)
+        process_3d_data(model_file_path, intersect=True)
         tile = get_tile_for_ray_cast(model_file_path, imported=False, objects_to_keep=[grid])
         hmatrix = fix_bridge_height_data_on_water(tile, depsgraph, lat, lon, altitude, hmatrix_base=hmatrix)
 

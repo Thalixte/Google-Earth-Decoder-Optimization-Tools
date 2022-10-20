@@ -965,7 +965,7 @@ class MsfsProject:
         osm_xml.create_from_geodataframes([preserve_holes(exclusion.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore'))], b, True, [(HEIGHT_OSM_TAG, 1000)])
 
         create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, water_exclusion, keep_building_mask=building, airport_mask=airport, ground_exclusion_mask=ground_exclusion if settings.exclude_ground else create_empty_gdf(), rocks=rocks, title="CREATE EXCLUSION MASKS OSM FILES")
-        create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, ground_exclusion, file_prefix=GROUND_OSM_KEY + "_", title="CREATE GROUND EXCLUSION MASKS OSM FILES")
+        create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, ground_exclusion, keep_building_mask=building, airport_mask=airport, file_prefix=GROUND_OSM_KEY + "_", title="CREATE GROUND EXCLUSION MASKS OSM FILES")
         create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, whole_water, keep_holes=False, file_prefix=WATER_OSM_KEY + "_", title="CREATE WATER EXCLUSION MASKS OSM FILES")
 
         if create_polygons:

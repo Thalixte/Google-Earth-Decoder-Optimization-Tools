@@ -310,10 +310,10 @@ def load_gdf_from_geocode(geocode, geocode_margin=5.0, preserve_roads=True, pres
 
 def load_gdf(coords, key, tags, shp_file_path="", keep_geocode_data=False, is_roads=False, is_sea=False, is_grass=False, land_mass=None, bbox=None):
     has_cache = os.path.isfile(shp_file_path)
-    filesize = os.path.getsize(shp_file_path)
     keys = [key]
 
     if has_cache:
+        filesize = os.path.getsize(shp_file_path)
         if filesize > 0:
             result = gpd.read_file(shp_file_path)
             result = result[~result[GEOMETRY_OSM_COLUMN].isna()]
