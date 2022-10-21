@@ -15,7 +15,7 @@
 #  #
 #
 #  <pep8 compliant>
-
+import logging
 import os
 import warnings
 
@@ -310,6 +310,7 @@ def load_gdf_from_geocode(geocode, geocode_margin=5.0, preserve_roads=True, pres
 
 def load_gdf(coords, key, tags, shp_file_path="", keep_geocode_data=False, is_roads=False, is_sea=False, is_grass=False, land_mass=None, bbox=None):
     has_cache = os.path.isfile(shp_file_path)
+    logging.getLogger('shapely.geos').setLevel(logging.CRITICAL)
     keys = [key]
 
     if has_cache:

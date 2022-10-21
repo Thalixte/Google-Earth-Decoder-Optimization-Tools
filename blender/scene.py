@@ -605,7 +605,7 @@ def generate_model_height_data(model_file_path, lat, lon, altitude, height_adjus
     depsgraph.update()
     hmatrix = calculate_height_map_from_coords_from_bottom(tile, grid_dimension, coords, depsgraph, lat, lon, altitude, height_adjustment)
 
-    # fix wrong height data for tiles that has bare rocks or cliff inside them
+    # fix wrong height data for ground tiles
     if os.path.exists(positioning_file_path) and os.path.exists(ground_mask_file_path):
         align_model_with_mask(model_file_path, positioning_file_path, ground_mask_file_path, objects_to_keep=[grid])
         process_3d_data(model_file_path, intersect=True)
