@@ -29,6 +29,7 @@ class Settings:
     projects_path: str
     project_name: str
     definition_file: str
+    nb_parallel_blender_tasks: float
     project_path_to_merge: str
     definition_file_to_merge: str
     author_name: str
@@ -47,6 +48,7 @@ class Settings:
     airport_city: str
     geocode: str
     geocode_margin: float
+    ground_exclusion_margin: float
     landmark_type: str
     height_adjustment: float
     landmark_offset: float
@@ -72,6 +74,7 @@ class Settings:
         self.projects_path = str()
         self.project_name = str()
         self.definition_file = str()
+        self.nb_parallel_blender_tasks = 4.0
         self.project_path_to_merge = str()
         self.definition_file_to_merge = str()
         self.author_name = str()
@@ -90,6 +93,7 @@ class Settings:
         self.airport_city = str()
         self.geocode = str()
         self.geocode_margin = 5.0
+        self.ground_exclusion_margin = 10.0
         self.preserve_roads = "True"
         self.preserve_buildings = "True"
         self.landmark_type = str()
@@ -144,6 +148,8 @@ class Settings:
         self.target_min_size_values = str().join(self.target_min_size_values.split()).split(",")
 
         # ensure to convert float settings values
+        self.nb_parallel_blender_tasks = int(self.nb_parallel_blender_tasks)
+
         self.lat_correction = "{:.9f}".format(float(str(self.lat_correction))).rstrip("0").rstrip(".")
         self.lon_correction = "{:.9f}".format(float(str(self.lon_correction))).rstrip("0").rstrip(".")
 
@@ -152,6 +158,8 @@ class Settings:
         self.landmark_offset = "{:.9f}".format(float(str(self.landmark_offset))).rstrip("0").rstrip(".")
 
         self.geocode_margin = "{:.2f}".format(float(str(self.geocode_margin))).rstrip("0").rstrip(".")
+
+        self.ground_exclusion_margin = "{:.2f}".format(float(str(self.ground_exclusion_margin))).rstrip("0").rstrip(".")
 
         self.red_level = "{:.2f}".format(float(str(self.red_level))).rstrip("0").rstrip(".")
         self.green_level = "{:.2f}".format(float(str(self.green_level))).rstrip("0").rstrip(".")

@@ -19,10 +19,8 @@ import logging
 import os
 import warnings
 
-from shapely.errors import ShapelyDeprecationWarning
-
 from constants import GEOMETRY_OSM_COLUMN, BOUNDING_BOX_OSM_KEY, SHAPE_TEMPLATES_FOLDER, OSM_LAND_SHAPEFILE, ROAD_OSM_KEY, BRIDGE_OSM_TAG, SERVICE_OSM_KEY, NOT_SHORE_WATER_OSM_KEY, WATER_OSM_KEY, NATURAL_OSM_KEY, OSM_TAGS, FOOTWAY_OSM_TAG, PATH_OSM_TAG, MAN_MADE_OSM_KEY, PIER_OSM_TAG, GOLF_OSM_KEY, FAIRWAY_OSM_TAG, EOL, CEND, TUNNEL_OSM_TAG, SEAMARK_TYPE_OSM_TAG, BUILDING_OSM_KEY, SHP_FILE_EXT, ELEMENT_TY_OSM_KEY, OSMID_OSM_KEY, RAILWAY_OSM_KEY, LANES_OSM_KEY, ONEWAY_OSM_KEY, ROAD_WITH_BORDERS, \
-    ROAD_LANE_WIDTH, GEOCODE_OSM_FILE_PREFIX, PEDESTRIAN_ROAD_TYPE, FOOTWAY_ROAD_TYPE, SERVICE_ROAD_TYPE, LANDUSE_OSM_KEY, CONSTRUCTION_OSM_KEY, GDAL_LIB_PREFIX, FIONA_LIB_PREFIX, LAND_MASS_REPO, LAND_MASS_ARCHIVE, LEISURE_OSM_KEY
+    ROAD_LANE_WIDTH, GEOCODE_OSM_FILE_PREFIX, PEDESTRIAN_ROAD_TYPE, FOOTWAY_ROAD_TYPE, SERVICE_ROAD_TYPE, LANDUSE_OSM_KEY, CONSTRUCTION_OSM_KEY, GDAL_LIB_PREFIX, FIONA_LIB_PREFIX, LAND_MASS_REPO, LAND_MASS_ARCHIVE, LEISURE_OSM_KEY, NETWORKX_LIB, RTREE_LIB, MATPLOTLIB_LIB, PANDAS_LIB, GEOPANDAS_LIB, OSMNX_LIB, SHAPELY_LIB
 from utils import pr_bg_orange, install_python_lib, install_alternate_python_lib, install_shapefile_resource
 
 try:
@@ -33,17 +31,17 @@ except ModuleNotFoundError:
 try:
     import networkx
 except ModuleNotFoundError:
-    install_python_lib('networkx')
+    install_python_lib(NETWORKX_LIB)
 
 try:
     import rtree
 except ModuleNotFoundError:
-    install_python_lib('rtree')
+    install_python_lib(RTREE_LIB)
 
 try:
     import matplotlib
 except ModuleNotFoundError:
-    install_python_lib('matplotLib')
+    install_python_lib(MATPLOTLIB_LIB)
 
 try:
     import fiona
@@ -51,28 +49,30 @@ except ModuleNotFoundError:
     install_alternate_python_lib(FIONA_LIB_PREFIX)
 
 try:
+    import shapely
+except ModuleNotFoundError:
+    install_python_lib(SHAPELY_LIB)
+    import shapely
+
+try:
     import pandas as pd
 except ModuleNotFoundError:
-    install_python_lib('pandas')
+    install_python_lib(PANDAS_LIB)
     import pandas as pd
 
 try:
     import geopandas as gpd
 except ModuleNotFoundError:
-    install_python_lib('geoPandas')
+    install_python_lib(GEOPANDAS_LIB)
     import geopandas as gpd
 
 try:
     import osmnx as ox
 except ModuleNotFoundError:
-    install_python_lib('osmnx')
+    install_python_lib(OSMNX_LIB)
     import osmnx as ox
 
-try:
-    import shapely
-except ModuleNotFoundError:
-    install_python_lib('shapely')
-    import shapely
+from shapely.errors import ShapelyDeprecationWarning
 
 from osmnx.utils_geo import bbox_to_poly
 
@@ -309,6 +309,7 @@ def load_gdf_from_geocode(geocode, geocode_margin=5.0, preserve_roads=True, pres
 
 
 def load_gdf(coords, key, tags, shp_file_path="", keep_geocode_data=False, is_roads=False, is_sea=False, is_grass=False, land_mass=None, bbox=None):
+    result = create_empty_gdf()
     has_cache = os.path.isfile(shp_file_path)
     logging.getLogger('shapely.geos').setLevel(logging.CRITICAL)
     keys = [key]
@@ -319,11 +320,11 @@ def load_gdf(coords, key, tags, shp_file_path="", keep_geocode_data=False, is_ro
             result = gpd.read_file(shp_file_path)
             result = result[~result[GEOMETRY_OSM_COLUMN].isna()]
         else:
-            return create_empty_gdf()
+            return result
     else:
         if is_sea and land_mass is not None and bbox is not None:
             result = symmetric_difference_gdf(land_mass, bbox).assign(boundary=BOUNDING_BOX_OSM_KEY)
-        else:
+        elif coords is not None:
             warnings.simplefilter("ignore", DeprecationWarning, append=True)
             result = ox.geometries_from_bbox(coords[0], coords[1], coords[2], coords[3], tags={key: tags})
 
@@ -572,7 +573,7 @@ def create_water_exclusion_gdf(natural_water, water, sea, roads):
     return result.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)
 
 
-def create_ground_exclusion_gdf(landuse, nature_reserve, natural, aeroway, road, park, airport):
+def create_ground_exclusion_gdf(landuse, nature_reserve, natural, aeroway, road, park, airport, settings):
     result = create_empty_gdf()
     result = union_gdf(result, landuse)
     result = union_gdf(result, nature_reserve)
@@ -580,7 +581,7 @@ def create_ground_exclusion_gdf(landuse, nature_reserve, natural, aeroway, road,
     result = union_gdf(result, aeroway)
     result = union_gdf(result, airport)
     result = union_gdf(result, park)
-    result = resize_gdf(result, 10)
+    result = resize_gdf(result, settings.ground_exclusion_margin)
 
     if not road.empty and BRIDGE_OSM_TAG in road:
         bridges = road[~(road[BRIDGE_OSM_TAG].isna())]

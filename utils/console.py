@@ -71,7 +71,7 @@ def open_console():
         show_window(hwnd, SW_SHOW)
         switch_to_this_window(hwnd, True)  # display on Top
 
-    maximize_console()
+    maximize_console(MAX_LINES)
 
 
 def maximize_console(lines=None):

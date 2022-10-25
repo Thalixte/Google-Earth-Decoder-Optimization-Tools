@@ -44,7 +44,7 @@ WILDCARD = "*"
 CHUNK_SIZE = 1048576
 
 
-def install_python_lib(lib, install_pip=False):
+def install_python_lib(lib, install_pip=False, force=False):
     # path to other python folders
     python_missing_msg = "python interpreter not found on your system"
     error_msg = "pip and " + lib + " installation failed in blender lib folder. Please consider running this script as an administrator"
@@ -60,7 +60,7 @@ def install_python_lib(lib, install_pip=False):
     if python_lib_path is None:
         raise ScriptError(python_missing_msg)
 
-    if is_installed(python_lib_path, PIP_LIB) and is_installed(python_lib_path, lib):
+    if not force and is_installed(python_lib_path, PIP_LIB) and is_installed(python_lib_path, lib):
         print(PIP_LIB, "and", lib, "correctly installed in blender lib folder")
         return True
 

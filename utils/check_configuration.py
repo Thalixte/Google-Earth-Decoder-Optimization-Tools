@@ -21,7 +21,7 @@ import os
 import bpy
 from constants import *
 from utils import pr_ko_red, pr_ok_green, pr_ko_orange, isolated_print
-from utils.install_lib import install_python_lib
+from utils.install_lib import install_python_lib, install_alternate_python_lib
 from utils.console import print_title
 from utils.script_errors import ScriptError
 
@@ -101,28 +101,70 @@ def check_configuration(settings, msfs_project, check_optimisation=False, check_
     pr_ok_green(str("textures_folder value").ljust(RESULT_MSG_LENGTH))
 
     if check_optimisation:
-        if not install_python_lib("Pillow"):
+        if not install_python_lib(PILLOW_LIB):
             pr_ko_red(str("Pillow lib installation").ljust(RESULT_MSG_LENGTH))
             raise ScriptError(error_msg + "Pillow python lib is not correctly installed. Please check what can prevent this library to be installed correctly")
     pr_ok_green(str("Pillow lib installation").ljust(RESULT_MSG_LENGTH))
 
-    # if check_optimisation:
-    #     if not install_python_lib("gdal"):
-    #         pr_ko_red(str("Gdal lib installation").ljust(RESULT_MSG_LENGTH))
-    #         raise ScriptError(error_msg + "Gdal python lib is not correctly installed. Please check what can prevent this library to be installed correctly")
-    # pr_ok_green(str("Gdal lib installation").ljust(RESULT_MSG_LENGTH))
-    #
-    # if check_optimisation:
-    #     if not install_python_lib("fiona"):
-    #         pr_ko_red(str("fiona lib installation").ljust(RESULT_MSG_LENGTH))
-    #         raise ScriptError(error_msg + "Gdal python lib is not correctly installed. Please check what can prevent this library to be installed correctly")
-    # pr_ok_green(str("fiona lib installation").ljust(RESULT_MSG_LENGTH))
-    #
-    # if check_optimisation:
-    #     if not install_python_lib("osmnx"):
-    #         pr_ko_red(str("Osmnx lib installation").ljust(RESULT_MSG_LENGTH))
-    #         raise ScriptError(error_msg + "Osmnx python lib is not correctly installed. Please check what can prevent this library to be installed correctly")
-    # pr_ok_green(str("Osmnx lib installation").ljust(RESULT_MSG_LENGTH))
+    if check_optimisation:
+        if not install_alternate_python_lib(GDAL_LIB_PREFIX):
+            pr_ko_red(str("Gdal lib installation").ljust(RESULT_MSG_LENGTH))
+            raise ScriptError(error_msg + "Gdal python lib is not correctly installed. Please check what can prevent this library to be installed correctly")
+    pr_ok_green(str("Gdal lib installation").ljust(RESULT_MSG_LENGTH))
+
+    if check_optimisation:
+        if not install_python_lib(NETWORKX_LIB):
+            pr_ko_red(str("Networkx lib installation").ljust(RESULT_MSG_LENGTH))
+            raise ScriptError(error_msg + "Networkx python lib is not correctly installed. Please check what can prevent this library to be installed correctly")
+    pr_ok_green(str("Networkx lib installation").ljust(RESULT_MSG_LENGTH))
+
+    if check_optimisation:
+        if not install_python_lib(RTREE_LIB):
+            pr_ko_red(str("Rtree lib installation").ljust(RESULT_MSG_LENGTH))
+            raise ScriptError(error_msg + "Rtree python lib is not correctly installed. Please check what can prevent this library to be installed correctly")
+    pr_ok_green(str("Rtree lib installation").ljust(RESULT_MSG_LENGTH))
+
+    if check_optimisation:
+        if not install_python_lib(MATPLOTLIB_LIB):
+            pr_ko_red(str("MatplotLib lib installation").ljust(RESULT_MSG_LENGTH))
+            raise ScriptError(error_msg + "MatplotLib python lib is not correctly installed. Please check what can prevent this library to be installed correctly")
+    pr_ok_green(str("MatplotLib lib installation").ljust(RESULT_MSG_LENGTH))
+
+    if check_optimisation:
+        if not install_alternate_python_lib(FIONA_LIB_PREFIX):
+            pr_ko_red(str("Fiona lib installation").ljust(RESULT_MSG_LENGTH))
+            raise ScriptError(error_msg + "Fiona python lib is not correctly installed. Please check what can prevent this library to be installed correctly")
+    pr_ok_green(str("Fiona lib installation").ljust(RESULT_MSG_LENGTH))
+
+    if check_optimisation:
+        if not install_python_lib(SHAPELY_LIB):
+            pr_ko_red(str("Shapely lib installation").ljust(RESULT_MSG_LENGTH))
+            raise ScriptError(error_msg + "Shapely python lib is not correctly installed. Please check what can prevent this library to be installed correctly")
+    pr_ok_green(str("Shapely lib installation").ljust(RESULT_MSG_LENGTH))
+
+    if check_optimisation:
+        if not install_python_lib(PANDAS_LIB):
+            pr_ko_red(str("Pandas lib installation").ljust(RESULT_MSG_LENGTH))
+            raise ScriptError(error_msg + "Pandas python lib is not correctly installed. Please check what can prevent this library to be installed correctly")
+    pr_ok_green(str("Pandas lib installation").ljust(RESULT_MSG_LENGTH))
+
+    if check_optimisation:
+        if not install_python_lib(GEOPANDAS_LIB):
+            pr_ko_red(str("GeoPandas lib installation").ljust(RESULT_MSG_LENGTH))
+            raise ScriptError(error_msg + "GeoPandas python lib is not correctly installed. Please check what can prevent this library to be installed correctly")
+    pr_ok_green(str("GeoPandas lib installation").ljust(RESULT_MSG_LENGTH))
+
+    if check_optimisation:
+        if not install_python_lib(OSMNX_LIB):
+            pr_ko_red(str("Osmnx lib installation").ljust(RESULT_MSG_LENGTH))
+            raise ScriptError(error_msg + "Osmnx python lib is not correctly installed. Please check what can prevent this library to be installed correctly")
+    pr_ok_green(str("Osmnx lib installation").ljust(RESULT_MSG_LENGTH))
+
+    if check_optimisation:
+        if not install_python_lib(PYGEODESY_LIB):
+            pr_ko_red(str("Pygeodesy lib installation").ljust(RESULT_MSG_LENGTH))
+            raise ScriptError(error_msg + "Pygeodesy python lib is not correctly installed. Please check what can prevent this library to be installed correctly")
+    pr_ok_green(str("Pygeodesy lib installation").ljust(RESULT_MSG_LENGTH))
 
     # check if Lily texture packer is installed
     if check_lily_texture_packer and settings.bake_textures_enabled:

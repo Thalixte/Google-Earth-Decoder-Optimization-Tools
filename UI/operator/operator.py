@@ -37,6 +37,7 @@ from scripts.generate_height_data_script import generate_height_data
 from scripts.remove_water_from_3d_data_script import remove_water_from_3d_data
 from scripts.remove_forests_and_woods_from_3d_data_script import remove_forests_and_woods_from_3d_data
 from scripts.remove_forests_woods_and_parks_from_3d_data_script import remove_forests_woods_and_parks_from_3d_data
+from scripts.keep_only_buildings_3d_data_script import keep_only_buildings_3d_data
 from scripts.create_landmark_from_geocode_script import create_landmark_from_geocode
 from scripts.exclude_3d_data_from_geocode_script import exclude_3d_data_from_geocode
 from utils import open_console
@@ -406,6 +407,21 @@ class OT_RemoveForestsWoodsAndParksFrom3dDataOperator(ActionOperator):
     def execute(self, context):
         super().execute(context)
         remove_forests_woods_and_parks_from_3d_data(context.scene.settings)
+        return {'FINISHED'}
+
+
+class OT_KeepOnlyBuildings3dDataOperator(ActionOperator):
+    bl_idname = "wm.keep_only_buildings_3d_data"
+    bl_label = "Remove everything except buildings from Google Earth tiles"
+
+    @classmethod
+    def poll(cls, context):
+        msfs_project = super().poll(context)
+        return os.path.isdir(msfs_project.scene_folder)
+
+    def execute(self, context):
+        super().execute(context)
+        keep_only_buildings_3d_data(context.scene.settings)
         return {'FINISHED'}
 
 

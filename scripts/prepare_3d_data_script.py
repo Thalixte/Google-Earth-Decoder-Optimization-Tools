@@ -45,11 +45,13 @@ def prepare_3d_data(script_settings):
 
         check_configuration(script_settings, msfs_project)
 
-        if script_settings.backup_enabled:
-            msfs_project.backup(Path(os.path.abspath(__file__)).stem.replace(SCRIPT_PREFIX, str()))
+        msfs_project.backup(Path(os.path.abspath(__file__)).stem.replace(SCRIPT_PREFIX, str()))
 
         isolated_print(EOL)
         print_title("PREPARE 3D DATA")
+
+        script_settings.ground_exclusion_margin = 10.0
+        script_settings.save()
 
         msfs_project.prepare_3d_data(script_settings, generate_height_data=True, clean_3d_data=True, create_polygons=True)
 

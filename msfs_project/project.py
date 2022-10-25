@@ -25,11 +25,12 @@ import shutil
 import os
 import subprocess
 from utils import install_python_lib
+from constants import *
 
 try:
     import osmnx as ox
 except ModuleNotFoundError:
-    install_python_lib('osmnx')
+    install_python_lib(OSMNX_LIB)
     import osmnx as ox
 
 import logging as lg
@@ -37,7 +38,6 @@ from osmnx.utils_geo import bbox_to_poly
 
 import bpy
 from blender import convert_obj_file_to_gltf_file
-from constants import *
 from msfs_project.landmark import MsfsLandmarks
 from msfs_project.geoid import get_geoid_height
 from msfs_project.height_map_xml import HeightMapXml
@@ -96,6 +96,7 @@ class MsfsProject:
     colliders: dict
     objects_xml: ObjectsXml | None
     coords: tuple
+    nb_parallel_blender_tasks: float
 
     DUMMY_STRING = "dummy"
     AUTHOR_STRING = "author"
@@ -105,12 +106,12 @@ class MsfsProject:
     BUILT_PACKAGES_FOLDER = "Packages"
     MODEL_LIB_FOLDER = "modelLib"
     SCENE_FOLDER = "scene"
+    CACHE_FOLDER = "cache"
     OSMFILES_FOLDER = "osm"
     SHPFILES_FOLDER = "shp"
     XMLFILES_FOLDER = "xml"
     CONTENT_INFO_FOLDER = "ContentInfo"
     SCENE_OBJECTS_FILE = "objects" + XML_FILE_EXT
-    NB_PARALLEL_TASKS = 4
 
     def __init__(self, projects_path, project_name, definition_file, author_name, sources_path, init_structure=False, fast_init=False):
         self.parent_path = projects_path
@@ -126,6 +127,12 @@ class MsfsProject:
         self.package_sources_folder = os.path.join(self.project_folder, self.PACKAGE_SOURCES_FOLDER)
         self.sources_folder = sources_path
         self.objects_xml = None
+
+        # Ensure to remove remaining cache folder
+        try:
+            shutil.rmtree(os.path.join(self.project_folder, self.CACHE_FOLDER))
+        except:
+            pass
 
         if init_structure:
             self.model_lib_folder = os.path.join(self.package_sources_folder, self.MODEL_LIB_FOLDER)
@@ -187,7 +194,7 @@ class MsfsProject:
         # some tile lods are not optimized
         if self.__optimization_needed():
             self.__create_optimization_folders()
-            self.__optimize_tile_lods(self.__retrieve_lods_to_optimize())
+            self.__optimize_tile_lods(self.__retrieve_lods_to_optimize(settings.nb_parallel_blender_tasks))
 
         pbar = ProgressBar(list(lods), title="PREPARE THE TILES FOR MSFS")
         for lod in lods:
@@ -273,8 +280,8 @@ class MsfsProject:
                 self.__add_object_in_objects_xml(tile_guid, new_collider)
             pbar.update("collider added for %s tile" % tile.name)
 
-    def split_tiles(self):
-        self.__split_tiles(self.__retrieve_tiles_to_process())
+    def split_tiles(self, settings):
+        self.__split_tiles(self.__retrieve_tiles_to_process(settings.nb_parallel_blender_tasks))
         previous_tiles = {guid: tile for guid, tile in self.tiles.items()}
         new_tiles = {}
 
@@ -308,8 +315,8 @@ class MsfsProject:
             self.__generate_height_map_data(settings)
 
         if clean_3d_data:
-            # self.__reduce_number_of_vertices()
-            self.__cleanup_lods_3d_data(clean_all=clean_all)
+            # self.__reduce_number_of_vertices(settings.nb_parallel_blender_tasks)
+            self.__cleanup_lods_3d_data(settings.nb_parallel_blender_tasks, clean_all=clean_all)
 
         lods = [lod for tile in self.tiles.values() for lod in tile.lods]
         pbar = ProgressBar(list(lods), title="PREPARE THE TILES FOR MSFS")
@@ -596,7 +603,8 @@ class MsfsProject:
     def __optimization_needed(self):
         for tile in self.tiles.values():
             for lod in tile.lods:
-                if not lod.optimized: return True
+                if not lod.optimized:
+                    return True
 
         return False
 
@@ -638,7 +646,7 @@ class MsfsProject:
         xml = MsfsPackageDefinitionsXml(self.package_definitions_folder, self.package_definitions_xml)
         return os.path.join(self.built_project_package_folder, xml.find_model_lib_asset_group(self.project_name.lower() + "-" + self.MODEL_LIB_FOLDER))
 
-    def __retrieve_lods_to_optimize(self):
+    def __retrieve_lods_to_optimize(self, nb_parallel_blender_tasks):
         data = []
         for tile in self.tiles.values():
             for lod in tile.lods:
@@ -651,9 +659,9 @@ class MsfsProject:
                 if lod.folder != self.model_lib_folder:
                     data.append({"name": lod.name, "params": ["--folder", str(lod.folder), "--model_file", str(lod.model_file)]})
 
-        return chunks(data, self.NB_PARALLEL_TASKS)
+        return chunks(data, nb_parallel_blender_tasks)
 
-    def __retrieve_tiles_to_calculate_height_map(self, new_group_id=-1, parallel=True, height_adjustment=0.5, high_precision=False):
+    def __retrieve_tiles_to_calculate_height_map(self, nb_parallel_blender_tasks, new_group_id=-1, parallel=True, height_adjustment=0.5, high_precision=False):
         data = []
 
         for guid, tile in self.tiles.items():
@@ -697,9 +705,9 @@ class MsfsProject:
             params.extend(["--high_precision", str(high_precision)])
             data.append({"name": tile.name, "params": params})
 
-        return chunks(data, self.NB_PARALLEL_TASKS if parallel else 1)
+        return chunks(data, nb_parallel_blender_tasks if parallel else 1)
 
-    def __retrieve_lods_to_decimate(self):
+    def __retrieve_lods_to_decimate(self, nb_parallel_blender_tasks):
         data = []
         for tile in self.tiles.values():
             for lod in tile.lods:
@@ -711,9 +719,9 @@ class MsfsProject:
 
                 data.append({"name": lod.name, "params": ["--folder", str(lod.folder), "--model_file", str(lod.model_file)]})
 
-        return chunks(data, self.NB_PARALLEL_TASKS)
+        return chunks(data, nb_parallel_blender_tasks)
 
-    def __retrieve_lods_to_cleanup(self, force_cleanup=False):
+    def __retrieve_lods_to_cleanup(self, nb_parallel_blender_tasks, force_cleanup=False):
         data = []
         tiles = []
         for tile in self.tiles.values():
@@ -749,7 +757,7 @@ class MsfsProject:
                                                           "--positioning_file_path", str(os.path.join(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)),
                                                           "--mask_file_path", str(mask_file_path)]})
 
-        return tiles, chunks(data, self.NB_PARALLEL_TASKS)
+        return tiles, chunks(data, nb_parallel_blender_tasks)
 
     def __retrieve_lods_to_exclude_or_isolate_3d_data_from_geocode(self, geocode, geocode_gdf, backup_subfolder, settings):
         data = []
@@ -800,7 +808,7 @@ class MsfsProject:
         if not data:
             pr_bg_orange("Geocode (" + geocode + ") found in OSM data, but not in the scenery" + EOL + CEND)
 
-        return modified_tiles, tiles_with_collider, chunks(data, self.NB_PARALLEL_TASKS)
+        return modified_tiles, tiles_with_collider, chunks(data, settings.nb_parallel_blender_tasks)
 
     def __optimize_tile_lods(self, lods_data):
         self.__multithread_process_data(lods_data, "optimize_tile_lod.py", "OPTIMIZE THE TILES", "optimized")
@@ -845,14 +853,14 @@ class MsfsProject:
             objects[guid] = object
             pbar.update("%s merged" % object.name)
 
-    def __retrieve_tiles_to_process(self, new_group_id=-1, parallel=True):
+    def __retrieve_tiles_to_process(self, nb_parallel_blender_tasks, new_group_id=-1, parallel=True):
         data = []
 
         for tile in self.tiles.values():
             if os.path.isdir(tile.folder):
                 data.append({"name": tile.name, "params": ["--folder", str(tile.folder), "--name", str(tile.name), "--definition_file", str(tile.definition_file), "--objects_xml_folder", str(self.scene_folder), "--objects_xml_file", str(self.SCENE_OBJECTS_FILE)]})
 
-        return chunks(data, self.NB_PARALLEL_TASKS)
+        return chunks(data, nb_parallel_blender_tasks)
 
     def __split_tiles(self, tiles_data):
         self.__multithread_process_data(tiles_data, "split_tile.py", "SPLIT THE TILES", "splitted")
@@ -889,7 +897,7 @@ class MsfsProject:
         self.objects_xml.remove_height_maps(HEIGHT_MAPS_DISPLAY_NAME, True)
         new_group_id = self.objects_xml.get_new_group_id()
 
-        tiles_data = self.__retrieve_tiles_to_calculate_height_map(new_group_id=new_group_id, parallel=True, height_adjustment=float(settings.height_adjustment), high_precision=settings.high_precision)
+        tiles_data = self.__retrieve_tiles_to_calculate_height_map(settings.nb_parallel_blender_tasks, new_group_id=new_group_id, parallel=True, height_adjustment=float(settings.height_adjustment), high_precision=settings.high_precision)
         self.__multithread_process_data(tiles_data, "calculate_tile_height_data.py", "CALCULATE HEIGHT MAPS FOR EACH TILE", "height map calculated")
         self.__add_height_maps_to_objects_xml()
 
@@ -1076,7 +1084,7 @@ class MsfsProject:
         orig_rocks = load_gdf(self.coords, NATURAL_OSM_KEY, OSM_TAGS[ROCKS_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, ROCKS_OSM_KEY + SHP_FILE_EXT))
         pbar.update("rocks geodataframe retrieved")
         pbar.update("retrieving airports geodataframe...", stall=True)
-        orig_airport = load_gdf_from_geocode(AIRPORT_GEOCODE + ", " + settings.airport_city.lower(), shpfiles_folder=self.shpfiles_folder, keep_data=True, display_warnings=False)
+        orig_airport = load_gdf_from_geocode(AIRPORT_GEOCODE + ", " + settings.airport_city.lower(), shpfiles_folder=self.shpfiles_folder, coords=self.coords, keep_data=True, display_warnings=False)
         pbar.update("airports geodataframe retrieved")
 
         return orig_land_mass, orig_boundary, orig_road, orig_railway, orig_sea, orig_landuse, orig_grass, orig_nature_reserve, \
@@ -1110,12 +1118,12 @@ class MsfsProject:
             tile.remove_files()
             pbar.update("%s removed" % tile.name)
 
-    def __reduce_number_of_vertices(self):
-        lods_data = self.__retrieve_lods_to_decimate()
+    def __reduce_number_of_vertices(self, nb_parallel_blender_tasks):
+        lods_data = self.__retrieve_lods_to_decimate(nb_parallel_blender_tasks)
         self.__multithread_process_data(lods_data, "reduce_lod_number_of_vertices.py", "REDUCE THE NUMBER OF VERTICES FOR ALL TILE LODS", "number of vertices reduced")
 
-    def __cleanup_lods_3d_data(self, clean_all=False):
-        tiles_with_collider, lods_data = self.__retrieve_lods_to_cleanup(force_cleanup=clean_all)
+    def __cleanup_lods_3d_data(self, nb_parallel_blender_tasks, clean_all=False):
+        tiles_with_collider, lods_data = self.__retrieve_lods_to_cleanup(nb_parallel_blender_tasks, force_cleanup=clean_all)
         self.__multithread_process_data(lods_data, "cleanup_lod_3d_data.py", "CLEANUP LODS 3D DATA TILES", "cleaned")
         for tile in tiles_with_collider:
             for lod in tile.lods:
@@ -1292,7 +1300,7 @@ class MsfsProject:
         # create water exclusion masks to cleanup 3d data tiles
         water_exclusion = difference_gdf(resize_gdf(whole_water, -5), road)
         # create ground exclusion masks to cleanup 3d data tiles
-        ground_exclusion = create_ground_exclusion_gdf(landuse, nature_reserve, natural, aeroway, road, park, airport)
+        ground_exclusion = create_ground_exclusion_gdf(landuse, nature_reserve, natural, aeroway, road, park, airport, settings)
 
         exclusion = union_gdf(water_exclusion, ground_exclusion if settings.exclude_ground else create_empty_gdf())
 

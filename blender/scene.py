@@ -58,7 +58,7 @@ from blender.blender_gis import import_osm_file, OSM_MATERIAL_NAME
 from blender.image import get_image_node, fix_texture_size_for_package_compilation
 from blender.memory import remove_mesh_from_memory
 from blender.material import set_msfs_material
-from constants import EOL, GEOIDS_DATASET_FOLDER, EGM2008_5_DATASET, OBJ_FILE_EXT, GEOCODE_OSM_FILE_PREFIX, BOUNDING_BOX_OSM_KEY
+from constants import EOL, GEOIDS_DATASET_FOLDER, EGM2008_5_DATASET, OBJ_FILE_EXT, GEOCODE_OSM_FILE_PREFIX, BOUNDING_BOX_OSM_KEY, LESS_DETAILED_LODS_LIMIT
 from msfs_project.gltf import MsfsGltf
 from utils import ScriptError, isolated_print
 from utils.progress_bar import ProgressBar
@@ -78,6 +78,7 @@ GLTF_SEPARATE_EXPORT_FORMAT = "GLTF_SEPARATE"
 COPY_COLLECTION_NAME = "CopyCollection"
 SUB_TILES_RANGE = "[0-7]"
 TILE_LOD_SUFFIX = "_LOD0"
+OBJECT_NAME_SEP = "_"
 GEOID_HEIGHT_ORIGIN_MARGIN = 5.0
 FACES_ONLY_DELETE_CONTEXT = "FACES_ONLY"
 FACES_DELETE_CONTEXT = "FACES"
@@ -516,44 +517,18 @@ def process_3d_data(model_file_path, intersect=False):
     if mask:
         for obj in objects:
             if obj != mask and obj != grid and BOUNDING_BOX_OSM_KEY not in obj.name:
-                bounding_box_obj = create_bounding_box(obj, BOUNDING_BOX_OSM_KEY)
-                booly = bounding_box_obj.modifiers.new(name="booly", type="BOOLEAN")
-
-                if not booly:
-                    continue
-
-                booly.object = mask
-                booly.operation = BOOLEAN_MODIFIER_OPERATION.INTERSECT
-                booly.solver = "EXACT"
-                booly.use_hole_tolerant = True
-                for modifier in bounding_box_obj.modifiers:
-                    bpy.ops.object.modifier_apply(modifier=modifier.name)
-
-                intersections = [vertex.co for vertex in bounding_box_obj.data.vertices]
-                bounding_box_obj.select_set(True)
-                bpy.ops.object.delete()
-
                 # only cleanup objects contained in the mask, or touched by the mask
-                if intersections:
+                if object_touches_mask(obj, mask) or intersect:
                     bpy.context.view_layer.objects.active = obj
-                    booly = obj.modifiers.new(name="booly", type="BOOLEAN")
 
-                    if not booly:
+                    # add a subdivision modifier to prevent wrong cleaning on less detailed object lods
+                    if retrieve_tile_object_lod(obj) <= LESS_DETAILED_LODS_LIMIT:
+                        if not add_subsurface_modifier(obj):
+                            continue
+
+                    if not add_boolean_modifier(obj, mask, BOOLEAN_MODIFIER_OPERATION.INTERSECT if intersect else BOOLEAN_MODIFIER_OPERATION.DIFFERENCE):
                         continue
 
-                    booly.object = mask
-                    booly.operation = BOOLEAN_MODIFIER_OPERATION.INTERSECT if intersect else BOOLEAN_MODIFIER_OPERATION.DIFFERENCE
-                    booly.solver = "EXACT"
-                    booly.use_hole_tolerant = True
-                    weighted_normal = obj.modifiers.new(name="weighty", type="WEIGHTED_NORMAL")
-
-                    if not weighted_normal:
-                        continue
-
-                    weighted_normal.weight = 100
-                    weighted_normal.thresh = 5.0
-                    weighted_normal.keep_sharp = True
-                    weighted_normal.use_face_influence = True
                     for modifier in obj.modifiers:
                         bpy.ops.object.modifier_apply(modifier=modifier.name)
 
@@ -562,30 +537,21 @@ def process_3d_data(model_file_path, intersect=False):
     bpy.ops.object.delete()
     bpy.ops.object.select_all(action=SELECT_ACTION)
 
-    mat_osm = bpy.data.materials[OSM_MATERIAL_NAME]
-
     # cleanup the cutted faces
-    for obj in bpy.context.scene.objects:
-        if obj.type == MESH_OBJECT_TYPE:
-            me = obj.data
-            # get all the slot indexes to which mat_c1 is assigned
-            osm_slots = [id for id, mat in enumerate(me.materials) if mat == mat_osm]
+    cleanup_cutted_faces()
 
-            faces_mat_osm = []
-            bm = bmesh.new()
-            bm.from_mesh(me)
+    bpy.ops.object.select_all(action=SELECT_ACTION)
 
-            for face in bm.faces:
-                if face.material_index in osm_slots:
-                    faces_mat_osm.append(face)
+    objects = bpy.context.scene.objects
 
-            # delete faces with mat_osm
-            bmesh.ops.delete(bm, geom=faces_mat_osm, context=FACES_DELETE_CONTEXT)
-            bm.to_mesh(me)
-            me.update()
-            bm.free()
-        else:
-            obj.select_set(False)
+    # Fix 3d normals
+    for obj in objects:
+        if obj != grid and BOUNDING_BOX_OSM_KEY not in obj.name and obj.type == MESH_OBJECT_TYPE:
+            if not add_weighted_normal_modifier(obj):
+                continue
+
+            for modifier in obj.modifiers:
+                bpy.ops.object.modifier_apply(modifier=modifier.name)
 
     bpy.ops.object.select_all(action=SELECT_ACTION)
 
@@ -1055,3 +1021,96 @@ def create_bounding_box(obj, prefix):
     new_obj.dimensions = mathutils.Vector((dx, dy, dz))
 
     return new_obj
+
+
+def retrieve_tile_object_lod(obj):
+    res =99
+
+    if OBJECT_NAME_SEP in obj.name:
+        res = len(obj.name.split(OBJECT_NAME_SEP, 1)[0])
+
+    return res
+
+
+def object_touches_mask(obj, mask):
+    bounding_box_obj = create_bounding_box(obj, BOUNDING_BOX_OSM_KEY)
+
+    if not add_boolean_modifier(bounding_box_obj, mask, BOOLEAN_MODIFIER_OPERATION.INTERSECT):
+        return False
+
+    for modifier in bounding_box_obj.modifiers:
+        bpy.ops.object.modifier_apply(modifier=modifier.name)
+
+    intersections = [vertex.co for vertex in bounding_box_obj.data.vertices]
+    bounding_box_obj.select_set(True)
+    bpy.ops.object.delete()
+
+    return intersections
+
+
+def add_subsurface_modifier(obj):
+    subsurfacy = obj.modifiers.new(name="subsurfacy", type="SUBSURF")
+
+    if not subsurfacy:
+        return False
+
+    subsurfacy.subdivision_type = "SIMPLE"
+    subsurfacy.levels = 2
+    subsurfacy.render_levels = 2
+    subsurfacy.use_limit_surface = True
+
+    return True
+
+
+def add_boolean_modifier(obj, mask, operation):
+    booly = obj.modifiers.new(name="booly", type="BOOLEAN")
+
+    if not booly:
+        return False
+
+    booly.object = mask
+    booly.operation = operation
+    booly.solver = "EXACT"
+    booly.use_hole_tolerant = True
+
+    return True
+
+
+def add_weighted_normal_modifier(obj):
+    weighty = obj.modifiers.new(name="weighty", type="WEIGHTED_NORMAL")
+
+    if not weighty:
+        return False
+
+    weighty.weight = 100
+    weighty.thresh = 5.0
+    weighty.keep_sharp = True
+    weighty.use_face_influence = True
+
+    return True
+
+
+def cleanup_cutted_faces():
+    mat_osm = bpy.data.materials[OSM_MATERIAL_NAME]
+
+    for obj in bpy.context.scene.objects:
+        if obj.type == MESH_OBJECT_TYPE:
+            me = obj.data
+            # get all the slot indexes to which mat_c1 is assigned
+            osm_slots = [id for id, mat in enumerate(me.materials) if mat == mat_osm]
+
+            faces_mat_osm = []
+            bm = bmesh.new()
+            bm.from_mesh(me)
+
+            for face in bm.faces:
+                if face.material_index in osm_slots:
+                    faces_mat_osm.append(face)
+
+            # delete faces with mat_osm
+            bmesh.ops.delete(bm, geom=faces_mat_osm, context=FACES_DELETE_CONTEXT)
+            bm.to_mesh(me)
+            me.update()
+            bm.free()
+        else:
+            obj.select_set(False)

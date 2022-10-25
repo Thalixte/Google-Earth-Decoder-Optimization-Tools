@@ -19,7 +19,7 @@
 import os
 
 import bpy
-from bpy.props import StringProperty, BoolProperty, EnumProperty, FloatProperty
+from bpy.props import StringProperty, BoolProperty, EnumProperty, FloatProperty, IntProperty
 from constants import TARGET_MIN_SIZE_VALUE_PROPERTY_PREFIX, PNG_TEXTURE_FORMAT, JPG_TEXTURE_FORMAT, MAX_PHOTOGRAMMETRY_LOD, POI_LANDMARK_FORMAT_TYPE, CITY_LANDMARK_FORMAT_TYPE
 
 
@@ -45,6 +45,9 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
 
     def author_name_updated(self, context):
         context.scene.settings.author_name = self.author_name
+
+    def nb_parallel_blender_tasks_updated(self, context):
+        context.scene.settings.nb_parallel_blender_tasks = int(self.nb_parallel_blender_tasks)
 
     def bake_textures_enabled_updated(self, context):
         context.scene.settings.bake_textures_enabled_updated = self.bake_textures_enabled
@@ -163,6 +166,15 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         default=bpy.types.Scene.settings.definition_file,
         maxlen=256
     )
+    nb_parallel_blender_tasks: IntProperty(
+        name="Number of parallel Blender tasks",
+        description="Set the number of parallel Blender tasks to run concurrently",
+        soft_min=1,
+        soft_max=10,
+        step=1,
+        default=int(bpy.types.Scene.settings.nb_parallel_blender_tasks),
+        update=nb_parallel_blender_tasks_updated
+    )
     project_path_to_merge: StringProperty(
         subtype="FILE_PATH",
         name="Path of the xml definition_file of the project you want to merge into the final one",
@@ -193,7 +205,7 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         name="Bake textures enabled",
         description="Reduce the number of texture files (Lily Texture Packer addon is necessary https://gumroad.com/l/DFExj)",
         default=bpy.types.Scene.settings.bake_textures_enabled,
-        update=bake_textures_enabled_updated,
+        update=bake_textures_enabled_updated
     )
     output_texture_format: EnumProperty(
         name="Output texture format",
@@ -203,14 +215,13 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
             (JPG_TEXTURE_FORMAT, JPG_TEXTURE_FORMAT, str()),
         ],
         default=bpy.types.Scene.settings.output_texture_format,
-        update=output_texture_format_updated,
-
+        update=output_texture_format_updated
     )
     backup_enabled: BoolProperty(
         name="Backup enabled",
         description="Enable the backup of the project files before processing",
         default=bpy.types.Scene.settings.backup_enabled,
-        update=backup_enabled_updated,
+        update=backup_enabled_updated
     )
     lat_correction: FloatProperty(
         name="Latitude correction",
@@ -220,7 +231,7 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         step=1,
         precision=6,
         default=float(bpy.types.Scene.settings.lat_correction),
-        update=lat_correction_updated,
+        update=lat_correction_updated
     )
     lon_correction: FloatProperty(
         name="Longitude correction",
@@ -230,7 +241,7 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         step=1,
         precision=6,
         default=float(bpy.types.Scene.settings.lon_correction),
-        update=lon_correction_updated,
+        update=lon_correction_updated
     )
     airport_city: StringProperty(
         name="City",
@@ -243,25 +254,25 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         name="Exclude ground 3d data",
         description="Exclude ground 3d data (forests, woods)",
         default=bpy.types.Scene.settings.exclude_ground,
-        update=exclude_ground_updated,
+        update=exclude_ground_updated
     )
     exclude_nature_reserve: BoolProperty(
         name="Exclude nature reserves 3d data",
         description="Exclude nature reserves 3d data",
         default=bpy.types.Scene.settings.exclude_nature_reserve,
-        update=exclude_nature_reserve_updated,
+        update=exclude_nature_reserve_updated
     )
     exclude_parks: BoolProperty(
         name="Exclude parks 3d data",
         description="Exclude parks 3d data",
         default=bpy.types.Scene.settings.exclude_parks,
-        update=exclude_parks_updated,
+        update=exclude_parks_updated
     )
     high_precision: BoolProperty(
         name="High precision height data generation",
         description="Generate the height data, using the most detailed tile lods",
         default=bpy.types.Scene.settings.high_precision,
-        update=high_precision_updated,
+        update=high_precision_updated
     )
     height_adjustment: FloatProperty(
         name="Height adjustment",
@@ -294,13 +305,13 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         name="Preserve roads",
         description="Preserve neighborhood roads when excluding 3d data from geocode",
         default=bpy.types.Scene.settings.preserve_roads,
-        update=preserve_roads_updated,
+        update=preserve_roads_updated
     )
     preserve_buildings: BoolProperty(
         name="Preserve buildings",
         description="Preserve neighborhood buildings when excluding 3d data from geocode",
         default=bpy.types.Scene.settings.preserve_buildings,
-        update=preserve_buildings_updated,
+        update=preserve_buildings_updated
     )
     landmark_type: EnumProperty(
         name="Landmark type",
@@ -310,7 +321,7 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
             (CITY_LANDMARK_FORMAT_TYPE, CITY_LANDMARK_FORMAT_TYPE, str()),
         ],
         default=bpy.types.Scene.settings.landmark_type,
-        update=landmark_type_updated,
+        update=landmark_type_updated
 
     )
     landmark_offset: FloatProperty(
@@ -327,7 +338,7 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         name="Build package enabled",
         description="Enable the package compilation when the script has finished",
         default=bpy.types.Scene.settings.build_package_enabled,
-        update=build_package_enabled_updated,
+        update=build_package_enabled_updated
     )
     msfs_build_exe_path: StringProperty(
         subtype="FILE_PATH",
@@ -346,7 +357,7 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         name="Msfs Steam version",
         description="Set this to true if you have the MSFS 2020 Steam version",
         default=bpy.types.Scene.settings.msfs_steam_version,
-        update=msfs_steam_version_updated,
+        update=msfs_steam_version_updated
     )
     compressonator_exe_path: StringProperty(
         subtype="FILE_PATH",
@@ -365,5 +376,5 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         name="Reload python modules (for dev purpose)",
         description="Set this to true if you want to reload python modules (mainly for dev purpose)",
         default=bpy.types.Scene.settings.reload_modules,
-        update=python_reload_modules_updated,
+        update=python_reload_modules_updated
     )

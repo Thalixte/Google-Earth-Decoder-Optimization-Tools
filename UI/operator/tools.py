@@ -82,6 +82,10 @@ def reload_backup_enabled(context):
     context.scene.setting_props.backup_enabled = context.scene.settings.backup_enabled
 
 
+def reload_nb_parallel_blender_tasks(context):
+    context.scene.setting_props.nb_parallel_blender_tasks = int(context.scene.settings.nb_parallel_blender_tasks)
+
+
 def reload_lat_correction(context):
     context.scene.setting_props.lat_correction = float(context.scene.settings.lat_correction)
 
@@ -207,6 +211,7 @@ def reload_setting_props(context, reload_settings_file=True):
     reload_project_path(context)
     reload_project_name(context)
     reload_definition_file_to_merge(context)
+    reload_nb_parallel_blender_tasks(context)
     reload_project_path_to_merge(context)
     reload_author_name(context)
     reload_bake_textures_enabled(context)

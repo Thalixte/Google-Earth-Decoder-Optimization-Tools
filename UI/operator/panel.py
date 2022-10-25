@@ -89,6 +89,8 @@ class SettingsOperator(PanelOperator):
         col.separator()
         self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "output_texture_format", "Output texture format")
         col.separator()
+        self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "nb_parallel_blender_tasks", "Number of parallel Blender tasks")
+        col.separator()
         self.draw_footer(context, self.layout, self.operator_name)
 
     def draw_merge_panel(self, context):
@@ -330,7 +332,7 @@ class OT_CleanPackageFilesPanel(SettingsOperator):
     operator_name = "wm.clean_package_files"
     id_name = "wm.clean_package_files_panel"
     bl_idname = id_name
-    bl_label = "Clean the unused files of the msfs project"
+    bl_label = "6. Clean the unused files of the msfs project"
     operator_description = """This script clean the unused files of the MSFS scenery project.
         Once you removed some tiles of a project, use this script to clean the gltf, bin and texture files associated to those tiles."""
     starting_section = PROJECT_INI_SECTION
@@ -411,7 +413,7 @@ class OT_CreateTerraformAndExclusionPolygonsPanel(SettingsOperator):
     operator_name = "wm.create_terraform_and_exclusion_polygons"
     id_name = "wm.create_terraform_and_exclusion_polygons_panel"
     bl_idname = id_name
-    bl_label = "Create the terraform and exclusion polygons for the scenery"
+    bl_label = "3. Create the terraform and exclusion polygons for the scenery"
     operator_description = """Create the terraform and exclusion polygons for the scenery.
         In the OPENSTREETMAP section, set the city to exclude the airport, if it exists.
         In the OPENSTREETMAP section, indicate if you want to exclude the ground 3d data (forests, woods), 
@@ -429,7 +431,7 @@ class OT_GenerateHeightDataPanel(SettingsOperator):
     operator_name = "wm.generate_height_data"
     id_name = "wm.generate_height_data_panel"
     bl_idname = id_name
-    bl_label = "Generate height data based on Google Earth tiles"
+    bl_label = "4. Generate height data based on Google Earth tiles"
     operator_description = """Generate height data based on the profile of the Google Earth tiles.
         In the OPENSTREETMAP section, you can enable high precision, by ticking the "high precision" checkbox if you want to generate 
         height data based on the highest google Earth tile lods. This can help calculating the data 
@@ -449,13 +451,12 @@ class OT_RemoveWaterFrom3dDataPanel(SettingsOperator):
     bl_idname = id_name
     bl_label = "Remove water from Google Earth tiles"
     operator_description = """Automatically removes water from the Google Earth tiles, based on the OpenStreetMap data.
-        Optionally, in the OPENSTREETMAP section, set the city of the airport, in case you want to remove an airport"""
+        Optionally, in the OPENSTREETMAP section, set the city of the airport, in case you want to remove an airport."""
     starting_section = OSM_INI_SECTION
     displayed_sections = [
         PROJECT_INI_SECTION,
         OSM_INI_SECTION,
         BUILD_INI_SECTION,
-        BACKUP_INI_SECTION,
     ]
 
 
@@ -465,15 +466,14 @@ class OT_RemoveForestsAndWoodsFrom3dDataPanel(SettingsOperator):
     bl_idname = id_name
     bl_label = "Remove water, forests and woods from Google Earth tiles"
     operator_description = """Automatically removes water, forests and woods from the Google Earth tiles, based on the OpenStreetMap data.
-        Optionally, in the OPENSTREETMAP section, set the city of the airport, in case you want to remove an airport
-        Notice: the method can produce some visual artifacts when removing the forests, woods or parks, because of the Google Earth trees        
+        Optionally, in the OPENSTREETMAP section, set the city of the airport, in case you want to remove an airport.
+        Notice: this method can produce some visual artifacts when removing the forests, woods or parks, because of the Google Earth trees        
         which exceeds the open street map corresponding area. Those trees will be partially cut. It is the same for building that touch trees"""
     starting_section = OSM_INI_SECTION
     displayed_sections = [
         PROJECT_INI_SECTION,
         OSM_INI_SECTION,
         BUILD_INI_SECTION,
-        BACKUP_INI_SECTION,
     ]
 
 
@@ -481,17 +481,32 @@ class OT_RemoveForestsWoodsAndParksFrom3dDataPanel(SettingsOperator):
     operator_name = "wm.remove_forests_woods_and_parks_from_3d_data"
     id_name = "wm.remove_forests_woods_and_parks_from_3d_data_panel"
     bl_idname = id_name
-    bl_label = "Remove water, forests, woods and parks from Google Earth tiles"
+    bl_label = "5. Remove water, forests, woods and parks from GE tiles"
     operator_description = """Automatically removes water, forests, woods and parks from the Google Earth tiles, based on the OpenStreetMap data.
-        Optionally, in the OPENSTREETMAP section, set the city of the airport, in case you want to remove an airport
-        Notice: the method can produce some visual artifacts when removing the forests, woods or parks, because of the Google Earth trees        
+        Optionally, in the OPENSTREETMAP section, set the city of the airport, in case you want to remove an airport.
+        Notice: this method can produce some visual artifacts when removing the forests, woods or parks, because of the Google Earth trees        
         which exceeds the open street map corresponding area. Those trees will be partially cut. It is the same for building that touch trees"""
     starting_section = OSM_INI_SECTION
     displayed_sections = [
         PROJECT_INI_SECTION,
         OSM_INI_SECTION,
         BUILD_INI_SECTION,
-        BACKUP_INI_SECTION,
+    ]
+
+
+class OT_KeepOnlyBuildings3dDataPanel(SettingsOperator):
+    operator_name = "wm.keep_only_buildings_3d_data"
+    id_name = "wm.keep_only_buildings_3d_data_panel"
+    bl_idname = id_name
+    bl_label = "Remove everything except buildings from Google Earth tiles"
+    operator_description = """Automatically removes everything, except buildings from the Google Earth tiles, based on the OpenStreetMap data.
+        Optionally, in the OPENSTREETMAP section, set the city of the airport, in case you want to remove an airport.
+        Notice: this method can produce some visual artifacts, and buildings that are not included in OpenStreetMap data can be removed"""
+    starting_section = OSM_INI_SECTION
+    displayed_sections = [
+        PROJECT_INI_SECTION,
+        OSM_INI_SECTION,
+        BUILD_INI_SECTION,
     ]
 
 
@@ -542,7 +557,7 @@ class OT_AddTileCollidersPanel(SettingsOperator):
     operator_name = "wm.add_tile_colliders"
     id_name = "wm.add_tile_colliders_panel"
     bl_idname = id_name
-    bl_label = "Add a collider for each tile of the project"
+    bl_label = "7. Add a collider for each tile of the project"
     operator_description = """This script adds a collider for each tile of the project. """
     starting_section = PROJECT_INI_SECTION
     displayed_sections = [
@@ -570,7 +585,7 @@ class OT_CompressBuiltPackagePanel(SettingsOperator):
     operator_name = "wm.compress_built_package"
     id_name = "wm.compress_built_package_panel"
     bl_idname = id_name
-    bl_label = "Optimize the built package by compressing the texture files"
+    bl_label = "8. Optimize the built package by compressing the texture files"
     operator_description = """This script optimizes the built package of a MSFS scenery project by compressing the DDS texture files.
         For the script to process correctly, the package must have been successfully built prior to executing the script."""
     starting_section = COMPRESSONATOR_INI_SECTION

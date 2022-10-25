@@ -71,6 +71,15 @@ CLEAR_CONSOLE_CMD = "cls"
 
 PYTHON_COMPIL_OPTION = "exec"
 
+PILLOW_LIB = "Pillow"
+OSMNX_LIB = "osmnx"
+NETWORKX_LIB = "networkx"
+RTREE_LIB = "rtree"
+MATPLOTLIB_LIB = "matplotLib"
+PANDAS_LIB = "pandas"
+GEOPANDAS_LIB = "geopandas"
+SHAPELY_LIB = "shapely"
+PYGEODESY_LIB = "pygeodesy"
 ALTERNATE_PYTHON_LIB_REPO = "https://download.lfd.uci.edu/pythonlibs/archived/"
 GDAL_LIB_PREFIX = "GDAL-3.4.3"
 FIONA_LIB_PREFIX = "Fiona-1.8.21"
@@ -111,6 +120,7 @@ THUMBNAIL_PICTURE_TEMPLATE_PATH = THUMBNAIL_FOLDER + "\\" + THUMBNAIL_PICTURE_TE
 LILY_TEXTURE_PACKER_ADDON = "LilyTexturePacker"
 
 MAX_PHOTOGRAMMETRY_LOD = 23
+LESS_DETAILED_LODS_LIMIT = 18
 
 TARGET_MIN_SIZE_VALUE_PROPERTY_PREFIX = "target_min_size_value_"
 
