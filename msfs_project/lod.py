@@ -240,7 +240,7 @@ class MsfsLod:
             process_3d_data(os.path.join(self.folder, self.model_file), intersect=False)
         if process_type == PROCESS_TYPE.isolate_3d_data:
             process_3d_data(os.path.join(self.folder, self.model_file), intersect=True)
-        export_to_optimized_gltf_files(os.path.join(self.folder, self.model_file), TEXTURE_FOLDER, use_selection=True, export_extras=False)
+        export_to_optimized_gltf_files(os.path.join(self.folder, self.model_file), TEXTURE_FOLDER, use_selection=True, export_extras=False, apply_modifiers=True)
         model_file = MsfsGltf(os.path.join(self.folder, self.model_file))
         model_file.remove_texture_path(self.name)
         model_file.add_cleaned_tag()

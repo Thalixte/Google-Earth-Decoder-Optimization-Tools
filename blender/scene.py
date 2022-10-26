@@ -100,7 +100,7 @@ def keep_objects(objects_to_keep):
             obj_to_keep.select_set(False)
 
 
-def clean_scene(objects_to_keep=[]):
+def clean_scene(objects_to_keep=[], keep_materials=False):
     if not bpy.data:
         return
 
@@ -112,9 +112,10 @@ def clean_scene(objects_to_keep=[]):
         if block.users == 0:
             bpy.data.meshes.remove(block)
 
-    for block in bpy.data.materials:
-        if block.users == 0:
-            bpy.data.materials.remove(block)
+    if not keep_materials:
+        for block in bpy.data.materials:
+            if block.users == 0:
+                bpy.data.materials.remove(block)
 
     for block in bpy.data.textures:
         if block.users == 0:
@@ -129,7 +130,7 @@ def clean_scene(objects_to_keep=[]):
     # Now cycles through the dangling datablocks and remove them.
     for me in bpy.data.meshes:
         if not remove_mesh_from_memory(me.name):
-            isolated_print("Unable to remove [%s]." % me.name)
+            print("Unable to remove [%s]." % me.name)
 
     print(EOL)
     print("3d scene cleaned", EOL)
@@ -165,11 +166,12 @@ def import_model_files(model_files, clean=True, objects_to_keep=[]):
 ##############################################################################
 # Export and optimize the tile in a new gltf file, with bin file and textures
 ##############################################################################
-def export_to_optimized_gltf_files(file, texture_folder, use_selection=False, export_extras=True):
+def export_to_optimized_gltf_files(file, texture_folder, use_selection=False, export_extras=True, apply_modifiers=False):
     isolated_print("export to", file, "with associated textures", EOL)
 
-    bpy.ops.export_scene.gltf(export_format=GLTF_SEPARATE_EXPORT_FORMAT, export_extras=export_extras, export_keep_originals=True, filepath=file, export_texture_dir=texture_folder, use_selection=use_selection)
+    bpy.ops.export_scene.gltf(export_format=GLTF_SEPARATE_EXPORT_FORMAT, export_extras=export_extras, export_keep_originals=True, filepath=file, export_texture_dir=texture_folder, use_selection=use_selection, use_mesh_edges=False, export_apply=apply_modifiers)
     model_file = MsfsGltf(file)
+    model_file.clean_empty_meshes()
     model_file.add_optimization_tag()
     model_file.dump()
 
@@ -514,6 +516,8 @@ def process_3d_data(model_file_path, intersect=False):
 
     bpy.ops.object.select_all(action=DESELECT_ACTION)
 
+    updated_objects = []
+
     if mask:
         for obj in objects:
             if obj != mask and obj != grid and BOUNDING_BOX_OSM_KEY not in obj.name:
@@ -532,26 +536,29 @@ def process_3d_data(model_file_path, intersect=False):
                     for modifier in obj.modifiers:
                         bpy.ops.object.modifier_apply(modifier=modifier.name)
 
+                    updated_objects.append(obj)
+
     bpy.ops.object.select_all(action=DESELECT_ACTION)
     mask.select_set(True)
     bpy.ops.object.delete()
     bpy.ops.object.select_all(action=SELECT_ACTION)
 
+    clean_scene(objects_to_keep=bpy.context.scene.objects, keep_materials=True)
+    bpy.ops.object.select_all(action=SELECT_ACTION)
+
     # cleanup the cutted faces
     cleanup_cutted_faces()
 
+    clean_scene(objects_to_keep=bpy.context.scene.objects)
     bpy.ops.object.select_all(action=SELECT_ACTION)
 
-    objects = bpy.context.scene.objects
-
     # Fix 3d normals
-    for obj in objects:
-        if obj != grid and BOUNDING_BOX_OSM_KEY not in obj.name and obj.type == MESH_OBJECT_TYPE:
+    for obj in updated_objects:
+        if BOUNDING_BOX_OSM_KEY not in obj.name and obj.type == MESH_OBJECT_TYPE:
+            bpy.context.view_layer.objects.active = obj
+
             if not add_weighted_normal_modifier(obj):
                 continue
-
-            for modifier in obj.modifiers:
-                bpy.ops.object.modifier_apply(modifier=modifier.name)
 
     bpy.ops.object.select_all(action=SELECT_ACTION)
 
@@ -1024,7 +1031,7 @@ def create_bounding_box(obj, prefix):
 
 
 def retrieve_tile_object_lod(obj):
-    res =99
+    res = 99
 
     if OBJECT_NAME_SEP in obj.name:
         res = len(obj.name.split(OBJECT_NAME_SEP, 1)[0])

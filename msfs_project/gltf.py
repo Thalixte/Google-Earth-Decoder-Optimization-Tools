@@ -39,6 +39,7 @@ class MsfsGltf:
     EXTENSIONS_USED_TAG = "extensionsUsed"
     ASOBO_TAGS_TAG = "ASOBO_tags"
     MESHES_TAG = "meshes"
+    MESH_TAG = "mesh"
     NAME_TAG = "name"
     ROAD_TAG = "Road"
     COLLISION_TAG = "Collision"
@@ -58,7 +59,6 @@ class MsfsGltf:
 
     def update_image(self, idx, uri, mime_type):
         if not self.data: return
-
         if not self.data[self.IMAGES_TAG][idx]: return
 
         image = self.data[self.IMAGES_TAG][idx]
@@ -79,7 +79,7 @@ class MsfsGltf:
 
     def remove_texture_path(self, lod_name):
         if not self.data: return
-        if not self.IMAGES_TAG in self.data.keys(): return
+        if self.IMAGES_TAG not in self.data.keys(): return
 
         for image in self.data[self.IMAGES_TAG]:
             image[self.URI_TAG] = image[self.URI_TAG].replace(lod_name + "/", str())
@@ -88,7 +88,7 @@ class MsfsGltf:
 
     def rename_texture(self, texture_name, new_texture_name):
         if not self.data: return
-        if not self.IMAGES_TAG in self.data.keys(): return
+        if self.IMAGES_TAG not in self.data.keys(): return
 
         for image in self.data[self.IMAGES_TAG]:
             texture_name = texture_name.split(".")[0]
@@ -100,7 +100,7 @@ class MsfsGltf:
 
     def add_texture_path(self):
         if not self.data: return
-        if not self.IMAGES_TAG in self.data.keys(): return
+        if self.IMAGES_TAG not in self.data.keys(): return
 
         for image in self.data[self.IMAGES_TAG]:
             image[self.URI_TAG] = TEXTURE_FOLDER + "/" + image[self.URI_TAG]
@@ -108,10 +108,23 @@ class MsfsGltf:
 
     def fix_doublesided(self):
         if not self.data: return
-        if not self.MATERIALS_TAG in self.data.keys(): return
+        if self.MATERIALS_TAG not in self.data.keys(): return
 
         for material in self.data[self.MATERIALS_TAG]:
             material[self.DOUBLESIDED_TAG] = False
+
+    def clean_empty_meshes(self):
+        if not self.data: return
+        if self.NODES_TAG not in self.data.keys(): return
+
+        empty_meshes_nodes = []
+
+        for node in self.data[self.NODES_TAG]:
+            if self.MESH_TAG not in node:
+                empty_meshes_nodes.append(node)
+
+        for node in empty_meshes_nodes:
+            self.data[self.NODES_TAG].remove(node)
 
     def add_asobo_extensions(self):
         if not self.data: return
@@ -146,7 +159,7 @@ class MsfsGltf:
             }
         }
 
-        if not self.MATERIALS_TAG in self.data.keys(): return
+        if self.MATERIALS_TAG not in self.data.keys(): return
 
         try:
             for material in self.data[self.MATERIALS_TAG]:
@@ -159,7 +172,7 @@ class MsfsGltf:
 
         self.data[self.EXTENSIONS_USED_TAG].append(extension_tag)
 
-        if not self.MATERIALS_TAG in self.data.keys(): return
+        if self.MATERIALS_TAG not in self.data.keys(): return
 
         try:
             for material in self.data[self.MATERIALS_TAG]:
@@ -171,8 +184,7 @@ class MsfsGltf:
 
     def remove_asobo_tag(self, asobo_tag_name):
         if not self.data: return
-
-        if not self.MATERIALS_TAG in self.data.keys(): return
+        if self.MATERIALS_TAG not in self.data.keys(): return
 
         other_tag_exists = False
 
@@ -196,11 +208,10 @@ class MsfsGltf:
 
     def remove_asobo_extension(self, extension_name):
         if not self.data: return
-
-        if not self.MATERIALS_TAG in self.data.keys(): return
+        if self.MATERIALS_TAG not in self.data.keys(): return
 
         for material in self.data[self.MATERIALS_TAG]:
-            if not self.EXTENSIONS_TAG in material.keys(): continue
+            if self.EXTENSIONS_TAG not in material.keys(): continue
 
             if extension_name in material[self.EXTENSIONS_TAG]:
                 material[self.EXTENSIONS_TAG].pop(extension_name)

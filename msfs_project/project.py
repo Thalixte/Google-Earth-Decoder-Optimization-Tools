@@ -676,16 +676,7 @@ class MsfsProject:
             water_mask_file_path = os.path.join(self.osmfiles_folder, WATER_OSM_KEY + "_" + EXCLUSION_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)
 
             # when the original tiles are available in the backup, use them, otherwise use the current modified tiles (which give less accurate results than the original ones)
-            backup_subfolder = os.path.join(self.PACKAGE_SOURCES_FOLDER, os.path.basename(self.model_lib_folder))
-            backup_path = os.path.join(os.path.join(self.backup_folder, "prepare_3d_data"), backup_subfolder)
-            if os.path.isdir(os.path.join(os.path.join(self.backup_folder, "remove_water_from_3d_data"), backup_subfolder)):
-                backup_path = os.path.join(os.path.join(self.backup_folder, "remove_water_from_3d_data"), backup_subfolder)
-            elif os.path.isdir(os.path.join(os.path.join(self.backup_folder, "remove_forests_and_woods_from_3d_data"), backup_subfolder)):
-                backup_path = os.path.join(os.path.join(self.backup_folder, "remove_forests_and_woods_from_3d_data"), backup_subfolder)
-            elif os.path.isdir(os.path.join(os.path.join(self.backup_folder, "remove_forests_woods_and_parks_from_3d_data"), backup_subfolder)):
-                backup_path = os.path.join(os.path.join(self.backup_folder, "remove_forests_woods_and_parks_from_3d_data"), backup_subfolder)
-            elif os.path.isdir(os.path.join(os.path.join(self.backup_folder, "clean_3d_data"), backup_subfolder)):
-                backup_path = os.path.join(os.path.join(self.backup_folder, "clean_3d_data"), backup_subfolder)
+            backup_path = self.__find_backup_path()
             tile_folder = backup_path if os.path.isdir(backup_path) else tile.folder
 
             params = ["--folder", str(tile_folder), "--name", str(tile.name), "--definition_file", str(tile.definition_file),
@@ -744,7 +735,10 @@ class MsfsProject:
                 tiles.append(tile)
 
             for lod in tile.lods:
-                if not os.path.isdir(lod.folder):
+                # when the original tiles are available in the backup, use them, otherwise use the current modified tiles (which give less accurate results than the original ones)
+                backup_path = self.__find_backup_path()
+                lod_folder = backup_path if os.path.isdir(backup_path) else lod.folder
+                if not os.path.isdir(lod_folder):
                     continue
 
                 if not lod.valid:
@@ -753,7 +747,7 @@ class MsfsProject:
                 if lod.cleaned and not force_cleanup:
                     continue
 
-                data.append({"name": lod.name, "params": ["--folder", str(lod.folder), "--model_file", str(lod.model_file),
+                data.append({"name": lod.name, "params": ["--folder", str(lod_folder), "--model_file", str(lod.model_file),
                                                           "--positioning_file_path", str(os.path.join(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)),
                                                           "--mask_file_path", str(mask_file_path)]})
 
@@ -1267,6 +1261,22 @@ class MsfsProject:
                 return collider
 
         return None
+
+    def __find_backup_path(self):
+        backup_subfolder = os.path.join(self.PACKAGE_SOURCES_FOLDER, os.path.basename(self.model_lib_folder))
+        res = os.path.join(os.path.join(self.backup_folder, "prepare_3d_data"), backup_subfolder)
+        if os.path.isdir(os.path.join(os.path.join(self.backup_folder, "remove_water_from_3d_data"), backup_subfolder)):
+            res = os.path.join(os.path.join(self.backup_folder, "remove_water_from_3d_data"), backup_subfolder)
+        elif os.path.isdir(os.path.join(os.path.join(self.backup_folder, "remove_forests_and_woods_from_3d_data"), backup_subfolder)):
+            res = os.path.join(os.path.join(self.backup_folder, "remove_forests_and_woods_from_3d_data"), backup_subfolder)
+        elif os.path.isdir(os.path.join(os.path.join(self.backup_folder, "remove_forests_woods_and_parks_from_3d_data"), backup_subfolder)):
+            res = os.path.join(os.path.join(self.backup_folder, "remove_forests_woods_and_parks_from_3d_data"), backup_subfolder)
+        elif os.path.isdir(os.path.join(os.path.join(self.backup_folder, "keep_only_buildings_3d_data"), backup_subfolder)):
+            res = os.path.join(os.path.join(self.backup_folder, "keep_only_buildings_3d_data"), backup_subfolder)
+        elif os.path.isdir(os.path.join(os.path.join(self.backup_folder, "clean_3d_data"), backup_subfolder)):
+            res = os.path.join(os.path.join(self.backup_folder, "clean_3d_data"), backup_subfolder)
+
+        return res
 
     @staticmethod
     def __prepare_geodataframes(orig_road, orig_railway, orig_sea, orig_bbox, orig_land_mass, orig_boundary, orig_landuse, orig_natural, orig_natural_water,
