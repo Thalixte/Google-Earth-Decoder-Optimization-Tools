@@ -735,10 +735,10 @@ class MsfsProject:
                 tiles.append(tile)
 
             for lod in tile.lods:
-                # when the original tiles are available in the backup, use them, otherwise use the current modified tiles (which give less accurate results than the original ones)
-                backup_path = self.__find_backup_path()
-                lod_folder = backup_path if os.path.isdir(backup_path) else lod.folder
-                if not os.path.isdir(lod_folder):
+                # # when the original tiles are available in the backup, use them, otherwise use the current modified tiles (which give less accurate results than the original ones)
+                # backup_path = self.__find_backup_path()
+                # lod_folder = backup_path if os.path.isdir(backup_path) else lod.folder
+                if not os.path.isdir(lod.folder):
                     continue
 
                 if not lod.valid:
@@ -747,7 +747,7 @@ class MsfsProject:
                 if lod.cleaned and not force_cleanup:
                     continue
 
-                data.append({"name": lod.name, "params": ["--folder", str(lod_folder), "--model_file", str(lod.model_file),
+                data.append({"name": lod.name, "params": ["--folder", str(lod.folder), "--model_file", str(lod.model_file),
                                                           "--positioning_file_path", str(os.path.join(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)),
                                                           "--mask_file_path", str(mask_file_path)]})
 
