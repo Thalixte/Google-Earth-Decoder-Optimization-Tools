@@ -85,7 +85,12 @@ try:
 
     parser.add_argument(
         "-f", "--folder", dest="folder", type=str, required=True,
-        help="folder of the MsfsLod model file",
+        help="folder of the original MsfsLod model file",
+    )
+
+    parser.add_argument(
+        "-of", "--output_folder", dest="output_folder", type=str, required=True,
+        help="folder of the modified MsfsLod model file",
     )
 
     parser.add_argument(
@@ -111,6 +116,9 @@ try:
     if not args.folder:
         raise ScriptError("Error: --folder=\"some string\" argument not given, aborting.")
 
+    if not args.output_folder:
+        raise ScriptError("Error: --output_folder=\"some string\" argument not given, aborting.")
+
     if not args.model_file:
         raise ScriptError("Error: --model_file=\"some string\" argument not given, aborting.")
 
@@ -125,6 +133,6 @@ try:
     settings = Settings(get_sources_path())
 
     lod = MsfsLod(os.path.splitext(args.model_file)[0][-2:], 0, args.folder, args.model_file)
-    lod.process_3d_data(args.positioning_file_path, args.mask_file_path, process_type=PROCESS_TYPE.cleanup_3d_data)
+    lod.process_3d_data(args.positioning_file_path, args.mask_file_path, args.output_folder, process_type=PROCESS_TYPE.cleanup_3d_data)
 except:
     pass

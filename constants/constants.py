@@ -94,6 +94,7 @@ UTILS_FOLDER = "utils"
 SCRIPT_FOLDER = "scripts"
 UI_FOLDER = "UI"
 TEXTURE_FOLDER = "texture"
+CLEANUP_3D_DATA_BACKUP_FOLDER = "cleanup_3d_data"
 
 SCRIPT_PREFIX = "_script"
 COLLIDER_SUFFIX = "_collider"

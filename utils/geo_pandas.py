@@ -581,7 +581,7 @@ def create_ground_exclusion_gdf(landuse, nature_reserve, natural, aeroway, road,
     result = union_gdf(result, aeroway)
     result = union_gdf(result, airport)
     result = union_gdf(result, park)
-    result = resize_gdf(result, settings.ground_exclusion_margin)
+    result = resize_gdf(result, float(settings.ground_exclusion_margin))
 
     if not road.empty and BRIDGE_OSM_TAG in road:
         bridges = road[~(road[BRIDGE_OSM_TAG].isna())]

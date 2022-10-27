@@ -83,7 +83,7 @@ class MsfsGltf:
 
         for image in self.data[self.IMAGES_TAG]:
             image[self.URI_TAG] = image[self.URI_TAG].replace(lod_name + "/", str())
-            image[self.URI_TAG] = image[self.URI_TAG].replace(TEXTURE_FOLDER + "/", str())
+            image[self.URI_TAG] = image[self.URI_TAG].rsplit("/", 1)[-1]
             image[self.EXTRAS_TAG] = self.ASOBO_IMAGE_CONVERTED_TAG
 
     def rename_texture(self, texture_name, new_texture_name):

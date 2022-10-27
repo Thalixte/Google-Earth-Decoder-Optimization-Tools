@@ -45,7 +45,7 @@ def prepare_3d_data(script_settings):
 
         check_configuration(script_settings, msfs_project)
 
-        msfs_project.backup(Path(os.path.abspath(__file__)).stem.replace(SCRIPT_PREFIX, str()))
+        msfs_project.backup(os.path.join(msfs_project.backup_folder, CLEANUP_3D_DATA_BACKUP_FOLDER))
 
         isolated_print(EOL)
         print_title("PREPARE 3D DATA")
@@ -54,6 +54,12 @@ def prepare_3d_data(script_settings):
         script_settings.save()
 
         msfs_project.prepare_3d_data(script_settings, generate_height_data=True, clean_3d_data=True, create_polygons=True)
+
+        isolated_print(EOL)
+        print_title("CLEAN PACKAGE FILES")
+
+        msfs_project = MsfsProject(script_settings.projects_path, script_settings.project_name, script_settings.definition_file, script_settings.author_name, script_settings.sources_path)
+        msfs_project.clean()
 
         if script_settings.build_package_enabled:
             build_package(msfs_project, script_settings)

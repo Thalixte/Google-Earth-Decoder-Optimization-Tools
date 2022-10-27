@@ -318,13 +318,6 @@ class MsfsProject:
             # self.__reduce_number_of_vertices(settings.nb_parallel_blender_tasks)
             self.__cleanup_lods_3d_data(settings.nb_parallel_blender_tasks, clean_all=clean_all)
 
-        lods = [lod for tile in self.tiles.values() for lod in tile.lods]
-        pbar = ProgressBar(list(lods), title="PREPARE THE TILES FOR MSFS")
-        for lod in lods:
-            lod.optimization_in_progress = False
-            lod.prepare_for_msfs()
-            pbar.update("%s prepared for msfs" % lod.name)
-
     def adjust_height_data(self, settings):
         height_adjustment = float(settings.height_adjustment)
         self.__adjust_height_data(height_adjustment)
@@ -679,6 +672,9 @@ class MsfsProject:
             backup_path = self.__find_backup_path()
             tile_folder = backup_path if os.path.isdir(backup_path) else tile.folder
 
+            if not os.path.isdir(tile_folder):
+                continue
+
             params = ["--folder", str(tile_folder), "--name", str(tile.name), "--definition_file", str(tile.definition_file),
                       "--height_map_xml_folder", str(self.xmlfiles_folder), "--group_id", str(new_group_id), "--altitude", str(tile.pos.alt), "--height_adjustment", str(height_adjustment)]
 
@@ -735,10 +731,17 @@ class MsfsProject:
                 tiles.append(tile)
 
             for lod in tile.lods:
-                # # when the original tiles are available in the backup, use them, otherwise use the current modified tiles (which give less accurate results than the original ones)
-                # backup_path = self.__find_backup_path()
-                # lod_folder = backup_path if os.path.isdir(backup_path) else lod.folder
                 if not os.path.isdir(lod.folder):
+                    continue
+
+                if not lod.valid:
+                    continue
+
+                # when the original tiles are available in the backup, use them, otherwise use the current modified tiles (which give less accurate results than the original ones)
+                backup_path = self.__find_backup_path()
+                lod_folder = backup_path if os.path.isdir(backup_path) else lod.folder
+
+                if not os.path.isdir(lod_folder):
                     continue
 
                 if not lod.valid:
@@ -747,7 +750,7 @@ class MsfsProject:
                 if lod.cleaned and not force_cleanup:
                     continue
 
-                data.append({"name": lod.name, "params": ["--folder", str(lod.folder), "--model_file", str(lod.model_file),
+                data.append({"name": lod.name, "params": ["--folder", str(lod_folder), "--output_folder", str(lod.folder), "--model_file", str(lod.model_file),
                                                           "--positioning_file_path", str(os.path.join(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)),
                                                           "--mask_file_path", str(mask_file_path)]})
 
@@ -758,7 +761,6 @@ class MsfsProject:
         modified_tiles = []
         tiles_with_collider = []
         for tile in self.tiles.values():
-
             if not os.path.isdir(tile.folder):
                 continue
 
@@ -794,7 +796,14 @@ class MsfsProject:
                 if not lod.valid:
                     continue
 
-                data.append({"name": lod.name, "params": ["--folder", str(lod.folder), "--model_file", str(lod.model_file),
+                # when the original tiles are available in the backup, use them, otherwise use the current modified tiles (which give less accurate results than the original ones)
+                backup_path = self.__find_backup_path()
+                lod_folder = backup_path if os.path.isdir(backup_path) else lod.folder
+
+                if not os.path.isdir(lod_folder):
+                    continue
+
+                data.append({"name": lod.name, "params": ["--folder", str(lod_folder), "--output_folder", str(lod.folder), "--model_file", str(lod.model_file),
                                                           "--positioning_file_path", str(os.path.join(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)),
                                                           "--mask_file_path", str(mask_file_path)]})
                 modified_tiles.append(tile)
@@ -1264,19 +1273,7 @@ class MsfsProject:
 
     def __find_backup_path(self):
         backup_subfolder = os.path.join(self.PACKAGE_SOURCES_FOLDER, os.path.basename(self.model_lib_folder))
-        res = os.path.join(os.path.join(self.backup_folder, "prepare_3d_data"), backup_subfolder)
-        if os.path.isdir(os.path.join(os.path.join(self.backup_folder, "remove_water_from_3d_data"), backup_subfolder)):
-            res = os.path.join(os.path.join(self.backup_folder, "remove_water_from_3d_data"), backup_subfolder)
-        elif os.path.isdir(os.path.join(os.path.join(self.backup_folder, "remove_forests_and_woods_from_3d_data"), backup_subfolder)):
-            res = os.path.join(os.path.join(self.backup_folder, "remove_forests_and_woods_from_3d_data"), backup_subfolder)
-        elif os.path.isdir(os.path.join(os.path.join(self.backup_folder, "remove_forests_woods_and_parks_from_3d_data"), backup_subfolder)):
-            res = os.path.join(os.path.join(self.backup_folder, "remove_forests_woods_and_parks_from_3d_data"), backup_subfolder)
-        elif os.path.isdir(os.path.join(os.path.join(self.backup_folder, "keep_only_buildings_3d_data"), backup_subfolder)):
-            res = os.path.join(os.path.join(self.backup_folder, "keep_only_buildings_3d_data"), backup_subfolder)
-        elif os.path.isdir(os.path.join(os.path.join(self.backup_folder, "clean_3d_data"), backup_subfolder)):
-            res = os.path.join(os.path.join(self.backup_folder, "clean_3d_data"), backup_subfolder)
-
-        return res
+        return os.path.join(os.path.join(self.backup_folder, CLEANUP_3D_DATA_BACKUP_FOLDER), backup_subfolder)
 
     @staticmethod
     def __prepare_geodataframes(orig_road, orig_railway, orig_sea, orig_bbox, orig_land_mass, orig_boundary, orig_landuse, orig_natural, orig_natural_water,
