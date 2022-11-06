@@ -24,6 +24,7 @@ class MsfsGltf:
     file_path: str
     data: str
 
+    SCENES_TAG = "scenes"
     NODES_TAG = "nodes"
     BUFFERS_TAG = "buffers"
     IMAGES_TAG = "images"
@@ -125,6 +126,17 @@ class MsfsGltf:
 
         for node in empty_meshes_nodes:
             self.data[self.NODES_TAG].remove(node)
+
+    def fix_gltf_nodes(self):
+        if not self.data: return
+        if self.NODES_TAG not in self.data.keys(): return
+        if self.SCENES_TAG not in self.data.keys(): return
+        if self.NODES_TAG not in self.data[self.SCENES_TAG][0].keys(): return
+
+        self.data[self.SCENES_TAG][0][self.NODES_TAG] = []
+
+        for i, path in enumerate(self.data[self.NODES_TAG]):
+            self.data[self.SCENES_TAG][0][self.NODES_TAG].append(i)
 
     def add_asobo_extensions(self):
         if not self.data: return

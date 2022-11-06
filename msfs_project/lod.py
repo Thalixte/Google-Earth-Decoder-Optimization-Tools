@@ -181,6 +181,7 @@ class MsfsLod:
         model_file.fix_doublesided()
         model_file.add_asobo_extensions()
         model_file.remove_texture_path(self.name)
+        model_file.fix_gltf_nodes()
         model_file.dump()
 
     def remove_road_and_collision_tags(self):

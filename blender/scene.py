@@ -172,6 +172,7 @@ def export_to_optimized_gltf_files(file, texture_folder, use_selection=False, ex
     bpy.ops.export_scene.gltf(export_format=GLTF_SEPARATE_EXPORT_FORMAT, export_extras=export_extras, export_keep_originals=True, filepath=file, export_texture_dir=texture_folder, use_selection=use_selection, use_mesh_edges=False, export_apply=apply_modifiers)
     model_file = MsfsGltf(file)
     model_file.clean_empty_meshes()
+    model_file.fix_gltf_nodes()
     model_file.add_optimization_tag()
     model_file.dump()
 
