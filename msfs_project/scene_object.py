@@ -62,7 +62,9 @@ class MsfsSceneObject(MsfsObject):
                 if not self.xml.find_scenery_lods():
                     self.remove_file()
                 pop_lods.append(i)
-        self.lods.pop(i)
+
+        for i in pop_lods:
+            self.lods.pop(i)
 
     def update_min_size_values(self, min_size_values, pbar=None):
         lods_definition = self.xml.find_scenery_lods()
