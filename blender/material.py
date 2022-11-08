@@ -61,8 +61,19 @@ def set_new_msfs_material(material_name):
         material.use_nodes = True
 
 
-def add_new_material(obj, material_name):
+def add_new_obj_material(obj, material_name):
     mat = bpy.data.materials[material_name]
 
     # Assign it to object
     obj.data.materials.append(mat)
+
+
+def remove_obj_material(obj, material_name):
+    mat = bpy.data.materials[material_name]
+
+    obj.data.materials.pop(material_name)
+
+
+def remove_material(material_name):
+    mat = bpy.data.materials[material_name]
+    bpy.data.materials.remove(mat, do_unlink=True)

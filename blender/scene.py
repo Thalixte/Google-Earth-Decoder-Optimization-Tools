@@ -57,7 +57,7 @@ import mathutils
 from blender.blender_gis import import_osm_file, OSM_MATERIAL_NAME
 from blender.image import get_image_node, fix_texture_size_for_package_compilation
 from blender.memory import remove_mesh_from_memory
-from blender.material import set_msfs_material, add_new_material
+from blender.material import set_msfs_material, remove_material, add_new_obj_material, remove_obj_material
 from constants import EOL, GEOIDS_DATASET_FOLDER, EGM2008_5_DATASET, OBJ_FILE_EXT, BOUNDING_BOX_OSM_KEY, LESS_DETAILED_LODS_LIMIT
 from msfs_project.gltf import MsfsGltf
 from utils import ScriptError, isolated_print
@@ -521,24 +521,32 @@ def process_3d_data(model_file_path, intersect=False):
 
     if mask:
         for obj in objects:
-            if obj != mask and obj != grid and BOUNDING_BOX_OSM_KEY not in obj.name:
-                # only cleanup objects contained in the mask, or touched by the mask
-                if object_touches_mask(obj, mask) or intersect:
-                    bpy.context.view_layer.objects.active = obj
-                    add_new_material(obj, OSM_MATERIAL_NAME)
+            if obj == mask or obj == grid or BOUNDING_BOX_OSM_KEY in obj.name:
+                continue
 
-                    # add a subdivision modifier to prevent wrong cleaning on less detailed object lods
-                    if retrieve_tile_object_lod(obj) <= LESS_DETAILED_LODS_LIMIT:
-                        if not add_subsurface_modifier(obj):
-                            continue
+            # only cleanup objects contained in the mask, or touched by the mask
+            if object_touches_mask(obj, mask) or intersect:
+                bpy.context.view_layer.objects.active = obj
+                add_new_obj_material(obj, OSM_MATERIAL_NAME)
 
-                    if not add_boolean_modifier(obj, mask, BOOLEAN_MODIFIER_OPERATION.INTERSECT if intersect else BOOLEAN_MODIFIER_OPERATION.DIFFERENCE):
-                        continue
+                if not add_boolean_modifier(obj, mask, BOOLEAN_MODIFIER_OPERATION.INTERSECT if intersect else BOOLEAN_MODIFIER_OPERATION.DIFFERENCE):
+                    continue
 
-                    for modifier in obj.modifiers:
-                        bpy.ops.object.modifier_apply(modifier=modifier.name)
+                for modifier in obj.modifiers:
+                    bpy.ops.object.modifier_apply(modifier=modifier.name)
 
-                    updated_objects.append(obj)
+                updated_objects.append(obj)
+
+    for obj in updated_objects:
+        if obj == mask or obj == grid or BOUNDING_BOX_OSM_KEY in obj.name:
+            continue
+
+        if obj.type != MESH_OBJECT_TYPE:
+            continue
+
+        # flat faces to prevent wrong cleaning on less detailed object lods
+        if retrieve_tile_object_lod(obj) <= LESS_DETAILED_LODS_LIMIT:
+            flat_cutted_faces(obj)
 
     bpy.ops.object.select_all(action=DESELECT_ACTION)
     mask.select_set(True)
@@ -546,7 +554,7 @@ def process_3d_data(model_file_path, intersect=False):
     bpy.ops.object.select_all(action=SELECT_ACTION)
 
     # cleanup the cutted faces
-    cleanup_cutted_faces()
+    cleanup_cutted_faces(updated_objects)
 
     clean_scene(objects_to_keep=bpy.context.scene.objects)
     bpy.ops.object.select_all(action=SELECT_ACTION)
@@ -559,6 +567,9 @@ def process_3d_data(model_file_path, intersect=False):
             if not add_weighted_normal_modifier(obj):
                 continue
 
+            # remove_obj_material(obj, OSM_MATERIAL_NAME)
+
+    remove_material(OSM_MATERIAL_NAME)
     bpy.ops.object.select_all(action=SELECT_ACTION)
 
 
@@ -1096,13 +1107,23 @@ def add_weighted_normal_modifier(obj):
     return True
 
 
-def cleanup_cutted_faces():
+def flat_cutted_faces(obj):
+    me = obj.data
+
+    polygons = me.polygons
+    for polygon in polygons:
+        polygon.use_smooth = False
+
+    me.update()
+
+
+def cleanup_cutted_faces(updated_objects):
     mat_osm = bpy.data.materials[OSM_MATERIAL_NAME]
 
-    for obj in bpy.context.scene.objects:
+    for obj in updated_objects:
         if obj.type == MESH_OBJECT_TYPE:
             me = obj.data
-            # get all the slot indexes to which mat_c1 is assigned
+
             osm_slots = [id for id, mat in enumerate(me.materials) if mat == mat_osm]
 
             faces_mat_osm = []
@@ -1118,5 +1139,39 @@ def cleanup_cutted_faces():
             bm.to_mesh(me)
             me.update()
             bm.free()
+            del bm
         else:
             obj.select_set(False)
+
+
+def find_center(obj):
+    x, y, z = [sum([v.co[i] for v in obj.data.vertices]) for i in range(3)]
+    count = float(len(obj.data.vertices))
+    return obj.matrix_world @ (mathutils.Vector((x, y, z)) / count)
+
+
+def split_obj(obj):
+    obj.select_set(True)
+    bpy.context.view_layer.objects.active = obj
+    center = find_center(obj)
+
+    bpy.ops.object.duplicate(linked=False)
+    right = bpy.context.active_object
+
+    obj.select_set(False)
+    right.select_set(True)
+    bpy.context.view_layer.objects.active = right
+
+    bpy.ops.object.editmode_toggle()
+    bpy.ops.mesh.select_all(action='SELECT')
+    bpy.ops.mesh.bisect(plane_co=center, plane_no=(1, 0, 0), use_fill=True, clear_inner=True)
+    bpy.ops.object.editmode_toggle()
+
+    right.select_set(False)
+    obj.select_set(True)
+    bpy.context.view_layer.objects.active = obj # set obj as active
+
+    bpy.ops.object.editmode_toggle()
+    bpy.ops.mesh.select_all(action='SELECT')
+    bpy.ops.mesh.bisect(plane_co=center, plane_no=(1, 0, 0), use_fill=True, clear_outer=True)
+    bpy.ops.object.editmode_toggle()
