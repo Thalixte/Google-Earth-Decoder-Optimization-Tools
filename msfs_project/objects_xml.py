@@ -157,7 +157,7 @@ class ObjectsXml(Xml):
     def add_scenery_object(self, scenery_object, guid):
         self.__add_scenery_object(scenery_object, guid)
 
-    def add_shapes(self, shape):
+    def add_shapes(self, shape, disable_terraform=False):
         for polygon in shape.polygons:
             if not polygon.vertices:
                 continue

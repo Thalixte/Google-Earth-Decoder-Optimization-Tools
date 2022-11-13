@@ -57,7 +57,7 @@ import mathutils
 from blender.blender_gis import import_osm_file, OSM_MATERIAL_NAME
 from blender.image import get_image_node, fix_texture_size_for_package_compilation
 from blender.memory import remove_mesh_from_memory
-from blender.material import set_msfs_material, remove_material, add_new_obj_material, remove_obj_material
+from blender.material import set_msfs_material, add_new_obj_material
 from constants import EOL, GEOIDS_DATASET_FOLDER, EGM2008_5_DATASET, OBJ_FILE_EXT, BOUNDING_BOX_OSM_KEY, LESS_DETAILED_LODS_LIMIT
 from msfs_project.gltf import MsfsGltf
 from utils import ScriptError, isolated_print
@@ -567,9 +567,6 @@ def process_3d_data(model_file_path, intersect=False):
             if not add_weighted_normal_modifier(obj):
                 continue
 
-            # remove_obj_material(obj, OSM_MATERIAL_NAME)
-
-    remove_material(OSM_MATERIAL_NAME)
     bpy.ops.object.select_all(action=SELECT_ACTION)
 
 

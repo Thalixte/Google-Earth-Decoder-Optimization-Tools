@@ -20,7 +20,7 @@ import os
 import warnings
 
 from constants import GEOMETRY_OSM_COLUMN, BOUNDING_BOX_OSM_KEY, SHAPE_TEMPLATES_FOLDER, OSM_LAND_SHAPEFILE, ROAD_OSM_KEY, BRIDGE_OSM_TAG, SERVICE_OSM_KEY, NOT_SHORE_WATER_OSM_KEY, WATER_OSM_KEY, NATURAL_OSM_KEY, OSM_TAGS, FOOTWAY_OSM_TAG, PATH_OSM_TAG, MAN_MADE_OSM_KEY, PIER_OSM_TAG, GOLF_OSM_KEY, FAIRWAY_OSM_TAG, EOL, CEND, TUNNEL_OSM_TAG, SEAMARK_TYPE_OSM_TAG, BUILDING_OSM_KEY, SHP_FILE_EXT, ELEMENT_TY_OSM_KEY, OSMID_OSM_KEY, RAILWAY_OSM_KEY, LANES_OSM_KEY, ONEWAY_OSM_KEY, ROAD_WITH_BORDERS, \
-    ROAD_LANE_WIDTH, GEOCODE_OSM_FILE_PREFIX, PEDESTRIAN_ROAD_TYPE, FOOTWAY_ROAD_TYPE, SERVICE_ROAD_TYPE, LANDUSE_OSM_KEY, CONSTRUCTION_OSM_KEY, GDAL_LIB_PREFIX, FIONA_LIB_PREFIX, LAND_MASS_REPO, LAND_MASS_ARCHIVE, LEISURE_OSM_KEY, NETWORKX_LIB, RTREE_LIB, MATPLOTLIB_LIB, PANDAS_LIB, GEOPANDAS_LIB, OSMNX_LIB, SHAPELY_LIB
+    ROAD_LANE_WIDTH, GEOCODE_OSM_FILE_PREFIX, PEDESTRIAN_ROAD_TYPE, FOOTWAY_ROAD_TYPE, SERVICE_ROAD_TYPE, LANDUSE_OSM_KEY, CONSTRUCTION_OSM_KEY, GDAL_LIB_PREFIX, FIONA_LIB_PREFIX, LAND_MASS_REPO, LAND_MASS_ARCHIVE, LEISURE_OSM_KEY, NETWORKX_LIB, RTREE_LIB, MATPLOTLIB_LIB, PANDAS_LIB, GEOPANDAS_LIB, OSMNX_LIB, SHAPELY_LIB, PATH_ROAD_TYPE, TRACK_ROAD_TYPE
 from utils import pr_bg_orange, install_python_lib, install_alternate_python_lib, install_shapefile_resource
 
 try:
@@ -171,13 +171,13 @@ def create_bounding_box(coords):
     return gpd.GeoDataFrame(pd.DataFrame([], index=[0]), crs=EPSG.key + str(EPSG.WGS84_degree_unit), geometry=[b]), b
 
 
-def create_exclusion_masks_from_tiles(tiles, dest_folder, b, exclusion_mask, keep_building_mask=None, airport_mask=None, ground_exclusion_mask=None, rocks=None, keep_holes=True, file_prefix="", title="CREATE EXCLUSION MASKS OSM FILES"):
+def create_exclusion_masks_from_tiles(tiles, dest_folder, b, exclusion_mask, keep_building_mask=None, keep_road_mask=None, airport_mask=None, ground_exclusion_mask=None, rocks=None, keep_holes=True, file_prefix="", title="CREATE EXCLUSION MASKS OSM FILES"):
     valid_tiles = [tile for tile in list(tiles.values()) if tile.valid]
     pbar = ProgressBar(valid_tiles, title=title)
     exclusion = exclusion_mask.copy()
 
     for i, tile in enumerate(valid_tiles):
-        tile.create_exclusion_mask_osm_file(dest_folder, b, exclusion, keep_building_mask=keep_building_mask, airport_mask=airport_mask, ground_exclusion_mask=ground_exclusion_mask, rocks=rocks, keep_holes=keep_holes, file_prefix=file_prefix)
+        tile.create_exclusion_mask_osm_file(dest_folder, b, exclusion, keep_building_mask=keep_building_mask, keep_road_mask=keep_road_mask, airport_mask=airport_mask, ground_exclusion_mask=ground_exclusion_mask, rocks=rocks, keep_holes=keep_holes, file_prefix=file_prefix)
         pbar.update("exclusion mask created for %s tile" % tile.name)
 
 
@@ -243,7 +243,7 @@ def load_gdf_from_geocode(geocode, geocode_margin=5.0, preserve_roads=True, pres
     orig_railway = load_gdf(coords, RAILWAY_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, RAILWAY_OSM_KEY + SHP_FILE_EXT), is_roads=True, keep_geocode_data=True)
     if display_warnings:
         pbar.update("railways geodataframe retrieved")
-    road = prepare_roads_gdf(orig_road, orig_railway, automatic_road_width_calculation=False)
+    road = prepare_roads_gdf(orig_road, orig_railway)
 
     if result.empty:
         try:
@@ -290,7 +290,7 @@ def load_gdf_from_geocode(geocode, geocode_margin=5.0, preserve_roads=True, pres
     if preserve_roads:
         orig_road = load_gdf(coords, ROAD_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, ROAD_OSM_KEY + SHP_FILE_EXT), is_roads=True)
         orig_railway = load_gdf(coords, RAILWAY_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, RAILWAY_OSM_KEY + SHP_FILE_EXT), is_roads=True)
-        road = prepare_roads_gdf(orig_road, orig_railway)
+        road = prepare_roads_gdf(orig_road, orig_railway, bridge_only=False)
         road = road.clip(result_bbox, keep_geom_type=True)
         # for debugging purpose, generate the shp file
         if not road.empty:
@@ -457,7 +457,7 @@ def prepare_roads_gdf(gdf, railway_gdf, bridge_only=True, automatic_road_width_c
                 roads = roads[roads[TUNNEL_OSM_TAG].isna()]
 
             result = roads.copy()
-            result = result[~(result[ROAD_OSM_KEY] == PEDESTRIAN_ROAD_TYPE) & ~(result[ROAD_OSM_KEY] == FOOTWAY_ROAD_TYPE) & ~(result[ROAD_OSM_KEY] == SERVICE_ROAD_TYPE)]
+            result = result[~(result[ROAD_OSM_KEY] == PEDESTRIAN_ROAD_TYPE) & ~(result[ROAD_OSM_KEY] == FOOTWAY_ROAD_TYPE) & ~(result[ROAD_OSM_KEY] == SERVICE_ROAD_TYPE) & ~(result[ROAD_OSM_KEY] == PATH_ROAD_TYPE) & ~(result[ROAD_OSM_KEY] == TRACK_ROAD_TYPE)]
 
         result = result.reset_index(drop=True)
         result = result.to_crs(EPSG.key + str(EPSG.WGS84_meter_unit))
@@ -469,6 +469,22 @@ def prepare_roads_gdf(gdf, railway_gdf, bridge_only=True, automatic_road_width_c
         if has_pier:
             result = result.append(pier)
 
+        result = result[(result.geom_type == SHAPELY_TYPE.polygon) | (result.geom_type == SHAPELY_TYPE.multiPolygon)]
+        result[GEOMETRY_OSM_COLUMN] = result[GEOMETRY_OSM_COLUMN].buffer(0)
+
+    return result
+
+
+def prepare_wall_gdf(gdf):
+    result = gpd.GeoDataFrame(columns=[GEOMETRY_OSM_COLUMN], geometry=GEOMETRY_OSM_COLUMN, crs=EPSG.key + str(EPSG.WGS84_degree_unit))
+    warnings.simplefilter("ignore", FutureWarning, append=True)
+
+    if not gdf.empty:
+        result = gdf.copy()
+        result = result[~result[GEOMETRY_OSM_COLUMN].isna()]
+        result = resize_gdf(result, 5, single_sided=False)
+
+        result = result.reset_index(drop=True)
         result = result[(result.geom_type == SHAPELY_TYPE.polygon) | (result.geom_type == SHAPELY_TYPE.multiPolygon)]
         result[GEOMETRY_OSM_COLUMN] = result[GEOMETRY_OSM_COLUMN].buffer(0)
 
@@ -496,17 +512,15 @@ def prepare_golf_gdf(gdf):
     return result[[GEOMETRY_OSM_COLUMN]].dissolve()
 
 
-def prepare_park_gdf(gdf, road):
+def prepare_park_gdf(gdf, bridges):
     if gdf is None:
         return create_empty_gdf()
 
     result = gdf.copy()
 
     if not result.empty:
-        if not road.empty:
-            # road = road[road[ROAD_OSM_KEY] == "primary"]
-            # road = resize_gdf(road, 28, single_sided=False)
-            result = difference_gdf(result, road)
+        if not bridges.empty:
+            result = difference_gdf(result, bridges)
         result = result[(result.geom_type == SHAPELY_TYPE.polygon) | (result.geom_type == SHAPELY_TYPE.multiPolygon)]
 
     return result
@@ -518,12 +532,15 @@ def prepare_bbox_gdf(bbox, land_mass, boundary):
     return resize_gdf(result, 20)
 
 
-def prepare_building_gdf(gdf):
+def prepare_building_gdf(gdf, wall):
     result = gdf.copy()
 
     if not result.empty:
         result = resize_gdf(result, 10)
         result = result[(result.geom_type == SHAPELY_TYPE.polygon) | (result.geom_type == SHAPELY_TYPE.multiPolygon)]
+
+    if not wall.empty:
+        result = result.append(wall)
 
     return result.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY).assign(boundary=BOUNDING_BOX_OSM_KEY)
 
@@ -573,7 +590,7 @@ def create_water_exclusion_gdf(natural_water, water, sea, roads):
     return result.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)
 
 
-def create_ground_exclusion_gdf(landuse, nature_reserve, natural, aeroway, road, park, airport, settings):
+def create_ground_exclusion_gdf(landuse, nature_reserve, natural, aeroway, bridges, park, airport, settings):
     result = create_empty_gdf()
     result = union_gdf(result, landuse)
     result = union_gdf(result, nature_reserve)
@@ -583,8 +600,8 @@ def create_ground_exclusion_gdf(landuse, nature_reserve, natural, aeroway, road,
     result = union_gdf(result, park)
     result = resize_gdf(result, float(settings.ground_exclusion_margin))
 
-    if not road.empty and BRIDGE_OSM_TAG in road:
-        bridges = road[~(road[BRIDGE_OSM_TAG].isna())]
+    if not bridges.empty and BRIDGE_OSM_TAG in bridges:
+        bridges = bridges[~(bridges[BRIDGE_OSM_TAG].isna())]
         result = difference_gdf(result, bridges)
 
     return result.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)

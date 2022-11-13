@@ -25,7 +25,7 @@ except ModuleNotFoundError:
     install_python_lib('geopandas')
     import geopandas as gpd
 
-from constants import GLTF_FILE_EXT, COLLIDER_SUFFIX, XML_FILE_EXT, BOUNDARY_OSM_KEY, OSM_FILE_EXT, BOUNDING_BOX_OSM_FILE_PREFIX, EXCLUSION_OSM_FILE_PREFIX, HEIGHT_OSM_TAG
+from constants import GLTF_FILE_EXT, COLLIDER_SUFFIX, XML_FILE_EXT, BOUNDARY_OSM_KEY, OSM_FILE_EXT, BOUNDING_BOX_OSM_FILE_PREFIX, EXCLUSION_OSM_FILE_PREFIX, HEIGHT_OSM_TAG, ROAD_OSM_KEY
 from msfs_project.height_map import MsfsHeightMap
 from msfs_project.collider import MsfsCollider
 from msfs_project.scene_object import MsfsSceneObject
@@ -112,7 +112,7 @@ class MsfsTile(MsfsSceneObject):
         osm_xml = OsmXml(dest_folder, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + self.name + OSM_FILE_EXT)
         osm_xml.create_from_geodataframes([self.bbox_gdf.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')], b)
 
-    def create_exclusion_mask_osm_file(self, dest_folder, b, exclusion_mask, keep_building_mask=None, airport_mask=None, ground_exclusion_mask=None, rocks=None, keep_holes=True, file_prefix=""):
+    def create_exclusion_mask_osm_file(self, dest_folder, b, exclusion_mask, keep_building_mask=None, keep_road_mask=None, airport_mask=None, ground_exclusion_mask=None, rocks=None, keep_holes=True, file_prefix=""):
         bbox_gdf = resize_gdf(self.bbox_gdf, 10 if keep_holes else 200)
         exclusion_mask_gdf = exclusion_mask.clip(bbox_gdf)
 
@@ -135,6 +135,20 @@ class MsfsTile(MsfsSceneObject):
                 exclusion_mask_gdf = union_gdf(exclusion_mask_gdf, airport_mask)
 
         if not exclusion_mask_gdf.empty:
+            if keep_road_mask is not None:
+                if not keep_road_mask.empty:
+                    keep_road_mask = clip_gdf(keep_road_mask, bbox_gdf)
+                    exclusion_mask_gdf = difference_gdf(exclusion_mask_gdf, keep_road_mask)
+
+                    # for debugging purpose
+                    # file_name = ROAD_OSM_KEY + "_" + EXCLUSION_OSM_FILE_PREFIX + "_" + self.name + OSM_FILE_EXT
+                    # keep_road_mask = keep_road_mask.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')
+                    # if keep_holes:
+                    #     keep_road_mask = preserve_holes(keep_road_mask, split_method=PRESERVE_HOLES_METHOD.derivation_split)
+                    #
+                    # osm_xml = OsmXml(dest_folder, file_name)
+                    # osm_xml.create_from_geodataframes([keep_road_mask], b)
+
             file_name = file_prefix + EXCLUSION_OSM_FILE_PREFIX + "_" + self.name + OSM_FILE_EXT
             exclusion_mask = exclusion_mask_gdf.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')
             if keep_holes:

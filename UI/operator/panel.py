@@ -510,6 +510,22 @@ class OT_KeepOnlyBuildings3dDataPanel(SettingsOperator):
     ]
 
 
+class OT_KeepOnlyBuildingsAndRoads3dDataPanel(SettingsOperator):
+    operator_name = "wm.keep_only_buildings_and_roads_3d_data"
+    id_name = "wm.keep_only_buildings_and_roads_3d_data_panel"
+    bl_idname = id_name
+    bl_label = "Remove everything except buildings and roads from Google Earth tiles"
+    operator_description = """Automatically removes everything, except buildings and roads from the Google Earth tiles, based on the OpenStreetMap data.
+        Optionally, in the OPENSTREETMAP section, set the city of the airport, in case you want to remove an airport.
+        Notice: this method can produce some visual artifacts, and buildings that are not included in OpenStreetMap data can be removed"""
+    starting_section = OSM_INI_SECTION
+    displayed_sections = [
+        PROJECT_INI_SECTION,
+        OSM_INI_SECTION,
+        BUILD_INI_SECTION,
+    ]
+
+
 class OT_CreateLandmarkFromGeocodePanel(SettingsOperator):
     operator_name = "wm.create_landmark_from_geocode"
     id_name = "wm.create_landmark_from_geocode_panel"

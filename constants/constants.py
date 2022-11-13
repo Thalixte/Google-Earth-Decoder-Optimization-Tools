@@ -182,6 +182,7 @@ ELEMENT_TY_OSM_KEY = "element_ty"
 OSMID_OSM_KEY = "osmid"
 LANES_OSM_KEY = "lanes"
 ONEWAY_OSM_KEY = "oneway"
+BARRIER_OSM_KEY = "barrier"
 
 FOREST_OSM_TAG = "forest"
 NATURE_RESERVE_OSM_TAG = "nature_reserve"
@@ -235,6 +236,7 @@ FAIRWAY_OSM_TAG = "fairway"
 CONSTRUCTION_OSM_TAG = "construction"
 DISPLAY_NAME_OSM_TAG = "display_name"
 NAME_OSM_TAG = "name"
+WALL_OSM_TAG = "wall"
 
 AIRPORT_GEOCODE = "airport"
 
@@ -253,14 +255,18 @@ MOTORWAY_LINK_ROAD_TYPE = "motorway_link"
 PRIMARY_ROAD_TYPE = "primary"
 SECONDARY_ROAD_TYPE = "secondary"
 TERTIARY_ROAD_TYPE = "tertiary"
-RESIDENTIAL_ROAD_TYPE =  "residential"
+RESIDENTIAL_ROAD_TYPE = "residential"
 PEDESTRIAN_ROAD_TYPE = "pedestrian"
 FOOTWAY_ROAD_TYPE = "footway"
 SERVICE_ROAD_TYPE = "service"
 RAILWAY_ROAD_TYPE = "railway"
+PATH_ROAD_TYPE = "path"
+TRACK_ROAD_TYPE = "track"
 
 POI_LANDMARK_FORMAT_TYPE = "POI"
 CITY_LANDMARK_FORMAT_TYPE = "City"
+
+KEEP_ONLY_BUILDINGS_EXCLUSION_MARGIN = 1000000.0
 
 ROAD_WITH_BORDERS = [
     MOTORWAY_ROAD_TYPE,
@@ -346,6 +352,9 @@ OSM_TAGS = {
         BASIN_OSM_TAG,
         RESERVOIR_OSM_TAG,
         WETLAND_OSM_TAG
+    ],
+    BARRIER_OSM_KEY: [
+        WALL_OSM_TAG
     ]
 }
 

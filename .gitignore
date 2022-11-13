@@ -1,4 +1,7 @@
 .git/
 .idea/
 **/__pycache__/
+*.lnk
 frontend.py
+keep_common_tiles.py
+TODO_LIST.txt

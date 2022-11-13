@@ -38,7 +38,7 @@ from utils import check_configuration, ScriptError, build_package, pr_bg_green, 
 from msfs_project import MsfsProject
 
 
-def keep_only_buildings_3d_data(script_settings):
+def keep_only_buildings_and_roads_3d_data(script_settings):
     try:
         # instantiate the msfsProject and create the necessary resources if it does not exist
         msfs_project = MsfsProject(script_settings.projects_path, script_settings.project_name, script_settings.definition_file, script_settings.author_name, script_settings.sources_path)
@@ -55,8 +55,8 @@ def keep_only_buildings_3d_data(script_settings):
         script_settings.exclude_parks = True
         script_settings.save()
         script_settings.ground_exclusion_margin = KEEP_ONLY_BUILDINGS_EXCLUSION_MARGIN
-        script_settings.height_adjustment = 0.0
-        msfs_project.prepare_3d_data(script_settings, generate_height_data=True, clean_3d_data=True, create_polygons=False, clean_all=True, disable_terraform=True)
+        script_settings.height_adjustment = -1.0
+        msfs_project.prepare_3d_data(script_settings, generate_height_data=True, clean_3d_data=True, create_polygons=False, clean_all=True, disable_terraform=True, keep_roads=True)
 
         isolated_print(EOL)
         print_title("CLEAN PACKAGE FILES")
@@ -84,4 +84,4 @@ def keep_only_buildings_3d_data(script_settings):
 
 
 if __name__ == "__main__":
-    keep_only_buildings_3d_data(settings)
+    keep_only_buildings_and_roads_3d_data(settings)
