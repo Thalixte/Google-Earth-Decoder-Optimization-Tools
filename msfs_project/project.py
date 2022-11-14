@@ -24,7 +24,8 @@ import io
 import shutil
 import os
 import subprocess
-from utils import install_python_lib, prepare_wall_gdf
+from utils import install_python_lib
+from utils.geo_pandas import prepare_wall_gdf
 from constants import *
 
 try:
@@ -951,13 +952,17 @@ class MsfsProject:
 
         orig_land_mass, orig_boundary, orig_road, orig_railway, orig_sea, orig_landuse, orig_grass, orig_nature_reserve, \
         orig_natural, orig_natural_water, orig_water, orig_aeroway, orig_pitch, orig_construction, orig_park, orig_building, \
-        orig_wall, orig_rocks, orig_airport = self.__load_geodataframes(orig_bbox, b, settings)
+        orig_wall, orig_rocks, orig_amenity, orig_airport = self.__load_geodataframes(orig_bbox, b, settings)
 
-        bbox, bridges, road, sea, landuse, natural, natural_water, water, aeroway, pitch, construction, airport, building, wall, golf, park, \
-        nature_reserve, whole_water, water_exclusion, ground_exclusion, exclusion, rocks = self.__prepare_geodataframes(orig_road, orig_railway, orig_sea, orig_bbox, orig_land_mass, orig_boundary,
+        bbox, bridges, road, places, sea, landuse, natural, natural_water, water, aeroway, pitch, construction, airport, building, wall, golf, park, \
+        nature_reserve, whole_water, water_exclusion, ground_exclusion, exclusion, rocks, amenity = self.__prepare_geodataframes(orig_road, orig_railway, orig_sea, orig_bbox, orig_land_mass, orig_boundary,
                                                                                                                         orig_landuse, orig_natural, orig_natural_water, orig_water, orig_aeroway,
                                                                                                                         orig_pitch, orig_construction, orig_airport, orig_building, orig_wall, orig_grass,
-                                                                                                                        orig_park, orig_nature_reserve, orig_rocks, settings)
+                                                                                                                        orig_park, orig_nature_reserve, orig_rocks, orig_amenity, settings)
+
+        # for debugging purpose, generate the whole water exclusion osm file
+        osm_xml = OsmXml(self.osmfiles_folder, "places" + OSM_FILE_EXT)
+        osm_xml.create_from_geodataframes([preserve_holes(places.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore'))], b, True, [(HEIGHT_OSM_TAG, 1000)])
 
         # for debugging purpose, generate the whole water exclusion osm file
         osm_xml = OsmXml(self.osmfiles_folder, WHOLE_WATER_OSM_FILE_PREFIX + OSM_FILE_EXT)
@@ -1039,7 +1044,7 @@ class MsfsProject:
 
     def __load_geodataframes(self, orig_bbox, b, settings):
         # load all necessary GeoPandas Dataframes
-        load_gdf_list = [None] * 19
+        load_gdf_list = [None] * 20
         pbar = ProgressBar(load_gdf_list, title="RETRIEVE GEODATAFRAMES (THE FIRST TIME, MAY TAKE SOME TIME TO COMPLETE, BE PATIENT...)", sleep=0.5)
         pbar.update("retrieving land mass geodataframe...", stall=True)
         orig_land_mass = create_land_mass_gdf(self.sources_folder, orig_bbox, b)
@@ -1095,12 +1100,15 @@ class MsfsProject:
         pbar.update("retrieving rocks geodataframe...", stall=True)
         orig_rocks = load_gdf(self.coords, NATURAL_OSM_KEY, OSM_TAGS[ROCKS_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, ROCKS_OSM_KEY + SHP_FILE_EXT))
         pbar.update("rocks geodataframe retrieved")
+        pbar.update("retrieving amenity geodataframe...", stall=True)
+        orig_amenity = load_gdf(self.coords, AMENITY_OSM_KEY, True, shp_file_path=os.path.join(self.shpfiles_folder, AMENITY_OSM_KEY + SHP_FILE_EXT))
+        pbar.update("amenity geodataframe retrieved")
         pbar.update("retrieving airports geodataframe...", stall=True)
         orig_airport = load_gdf_from_geocode(AIRPORT_GEOCODE + ", " + settings.airport_city.lower(), shpfiles_folder=self.shpfiles_folder, coords=self.coords, keep_data=True, display_warnings=False)
         pbar.update("airports geodataframe retrieved")
 
         return orig_land_mass, orig_boundary, orig_road, orig_railway, orig_sea, orig_landuse, orig_grass, orig_nature_reserve, \
-               orig_natural, orig_natural_water, orig_water, orig_aeroway, orig_pitch, orig_construction, orig_park, orig_building, orig_wall, orig_rocks, orig_airport
+               orig_natural, orig_natural_water, orig_water, orig_aeroway, orig_pitch, orig_construction, orig_park, orig_building, orig_wall, orig_rocks, orig_amenity, orig_airport
 
     def __create_geocode_osm_exclusion_files(self, geocode, b, geocode_margin, preserve_roads, preserve_buildings, coords, shpfiles_folder):
         print_title("RETRIEVE GEOCODE OSM FILES")
@@ -1287,9 +1295,9 @@ class MsfsProject:
     @staticmethod
     def __prepare_geodataframes(orig_road, orig_railway, orig_sea, orig_bbox, orig_land_mass, orig_boundary, orig_landuse, orig_natural, orig_natural_water,
                                 orig_water, orig_aeroway, orig_pitch, orig_construction, orig_airport, orig_building, orig_wall, orig_grass, orig_park, orig_nature_reserve,
-                                orig_rocks, settings):
-        bridges = prepare_roads_gdf(orig_road, orig_railway, bridge_only=True, automatic_road_width_calculation=False)
-        road = prepare_roads_gdf(orig_road, orig_railway, bridge_only=False, automatic_road_width_calculation=False)
+                                orig_rocks, orig_amenity, settings):
+        bridges, places = prepare_roads_gdf(orig_road, orig_railway, bridge_only=True, automatic_road_width_calculation=False)
+        road, places = prepare_roads_gdf(orig_road, orig_railway, bridge_only=False, automatic_road_width_calculation=False)
 
         sea = prepare_sea_gdf(orig_sea)
         bbox = prepare_bbox_gdf(orig_bbox, orig_land_mass, orig_boundary)
@@ -1301,6 +1309,7 @@ class MsfsProject:
         aeroway = clip_gdf(prepare_gdf(orig_aeroway), bbox)
         pitch = clip_gdf(prepare_gdf(orig_pitch), bbox)
         construction = clip_gdf(prepare_gdf(orig_construction), bbox)
+        amenity = clip_gdf(prepare_gdf(orig_amenity), bbox)
         airport = prepare_gdf(orig_airport)
         wall = clip_gdf(prepare_wall_gdf(orig_wall), bbox)
         building = clip_gdf(prepare_building_gdf(orig_building, wall), bbox)
@@ -1325,8 +1334,8 @@ class MsfsProject:
 
         rocks = prepare_gdf(orig_rocks)
 
-        return bbox, bridges, road, sea, landuse, natural, natural_water, water, aeroway, pitch, construction, airport, building, wall, golf, park, \
-               nature_reserve, whole_water, water_exclusion, ground_exclusion, exclusion, rocks
+        return bbox, bridges, road, places, sea, landuse, natural, natural_water, water, aeroway, pitch, construction, airport, building, wall, golf, park, \
+               nature_reserve, whole_water, water_exclusion, ground_exclusion, exclusion, rocks, amenity
 
     @staticmethod
     def __backup_objects(objects: dict, backup_path, pbar_title="backup files"):

@@ -20,7 +20,7 @@ import os
 import warnings
 
 from constants import GEOMETRY_OSM_COLUMN, BOUNDING_BOX_OSM_KEY, SHAPE_TEMPLATES_FOLDER, OSM_LAND_SHAPEFILE, ROAD_OSM_KEY, BRIDGE_OSM_TAG, SERVICE_OSM_KEY, NOT_SHORE_WATER_OSM_KEY, WATER_OSM_KEY, NATURAL_OSM_KEY, OSM_TAGS, FOOTWAY_OSM_TAG, PATH_OSM_TAG, MAN_MADE_OSM_KEY, PIER_OSM_TAG, GOLF_OSM_KEY, FAIRWAY_OSM_TAG, EOL, CEND, TUNNEL_OSM_TAG, SEAMARK_TYPE_OSM_TAG, BUILDING_OSM_KEY, SHP_FILE_EXT, ELEMENT_TY_OSM_KEY, OSMID_OSM_KEY, RAILWAY_OSM_KEY, LANES_OSM_KEY, ONEWAY_OSM_KEY, ROAD_WITH_BORDERS, \
-    ROAD_LANE_WIDTH, GEOCODE_OSM_FILE_PREFIX, PEDESTRIAN_ROAD_TYPE, FOOTWAY_ROAD_TYPE, SERVICE_ROAD_TYPE, LANDUSE_OSM_KEY, CONSTRUCTION_OSM_KEY, GDAL_LIB_PREFIX, FIONA_LIB_PREFIX, LAND_MASS_REPO, LAND_MASS_ARCHIVE, LEISURE_OSM_KEY, NETWORKX_LIB, RTREE_LIB, MATPLOTLIB_LIB, PANDAS_LIB, GEOPANDAS_LIB, OSMNX_LIB, SHAPELY_LIB, PATH_ROAD_TYPE, TRACK_ROAD_TYPE
+    ROAD_LANE_WIDTH, GEOCODE_OSM_FILE_PREFIX, PEDESTRIAN_ROAD_TYPE, FOOTWAY_ROAD_TYPE, SERVICE_ROAD_TYPE, LANDUSE_OSM_KEY, CONSTRUCTION_OSM_KEY, GDAL_LIB_PREFIX, FIONA_LIB_PREFIX, LAND_MASS_REPO, LAND_MASS_ARCHIVE, LEISURE_OSM_KEY, NETWORKX_LIB, RTREE_LIB, MATPLOTLIB_LIB, PANDAS_LIB, GEOPANDAS_LIB, OSMNX_LIB, SHAPELY_LIB, PATH_ROAD_TYPE, TRACK_ROAD_TYPE, AREA_OSM_TAG
 from utils import pr_bg_orange, install_python_lib, install_alternate_python_lib, install_shapefile_resource
 
 try:
@@ -357,6 +357,8 @@ def load_gdf(coords, key, tags, shp_file_path="", keep_geocode_data=False, is_ro
                 keys.append(LANES_OSM_KEY)
             if ONEWAY_OSM_KEY in result:
                 keys.append(ONEWAY_OSM_KEY)
+            if AREA_OSM_TAG in result:
+                keys.append(AREA_OSM_TAG)
 
         if keep_geocode_data and has_cache:
             keys.append(ELEMENT_TY_OSM_KEY)
@@ -410,10 +412,12 @@ def prepare_roads_gdf(gdf, railway_gdf, bridge_only=True, automatic_road_width_c
     has_bridge_path = False
     has_seamark_bridge = False
     has_pier = False
+    has_places = True
     bridge = None
     bridge_path = None
     seamark_bridge = None
     pier = None
+    places = None
 
     if not roads.empty:
         roads = roads[~roads[GEOMETRY_OSM_COLUMN].isna()]
@@ -459,6 +463,12 @@ def prepare_roads_gdf(gdf, railway_gdf, bridge_only=True, automatic_road_width_c
             result = roads.copy()
             result = result[~(result[ROAD_OSM_KEY] == PEDESTRIAN_ROAD_TYPE) & ~(result[ROAD_OSM_KEY] == FOOTWAY_ROAD_TYPE) & ~(result[ROAD_OSM_KEY] == SERVICE_ROAD_TYPE) & ~(result[ROAD_OSM_KEY] == PATH_ROAD_TYPE) & ~(result[ROAD_OSM_KEY] == TRACK_ROAD_TYPE)]
 
+            if AREA_OSM_TAG in roads:
+                places = roads[(roads[AREA_OSM_TAG] == "yes") & ~(roads[AREA_OSM_TAG].isna())]
+                places = resize_gdf(places, 0.00001)
+                places[GEOMETRY_OSM_COLUMN] = places[GEOMETRY_OSM_COLUMN].apply(lambda p: close_holes(p))
+                has_places = not places.empty
+
         result = result.reset_index(drop=True)
         result = result.to_crs(EPSG.key + str(EPSG.WGS84_meter_unit))
         for index, row in result.iterrows():
@@ -469,10 +479,13 @@ def prepare_roads_gdf(gdf, railway_gdf, bridge_only=True, automatic_road_width_c
         if has_pier:
             result = result.append(pier)
 
+        if not has_places:
+            result = result.append(places)
+
         result = result[(result.geom_type == SHAPELY_TYPE.polygon) | (result.geom_type == SHAPELY_TYPE.multiPolygon)]
         result[GEOMETRY_OSM_COLUMN] = result[GEOMETRY_OSM_COLUMN].buffer(0)
 
-    return result
+    return result, places
 
 
 def prepare_wall_gdf(gdf):
