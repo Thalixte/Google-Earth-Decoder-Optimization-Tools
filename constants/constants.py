@@ -177,7 +177,9 @@ CONSTRUCTION_OSM_KEY = "construction"
 GRASS_OSM_KEY = "grass"
 GOLF_OSM_KEY = "golf"
 PARK_OSM_KEY = "park"
-NOT_SHORE_WATER_OSM_KEY = "not_shore"
+WALL_OSM_KEY = "wall"
+NOT_SHORE_WATER_OSM_KEY = "not_shore",
+NOT_EXCLUSION_BUILDING_OSM_KEY = "not_exclusion_building",
 ELEMENT_TY_OSM_KEY = "element_ty"
 OSMID_OSM_KEY = "osmid"
 LANES_OSM_KEY = "lanes"
@@ -238,6 +240,7 @@ CONSTRUCTION_OSM_TAG = "construction"
 DISPLAY_NAME_OSM_TAG = "display_name"
 NAME_OSM_TAG = "name"
 WALL_OSM_TAG = "wall"
+CASTLE_WALL_OSM_TAG = "castle_wall"
 
 AIRPORT_GEOCODE = "airport"
 
@@ -259,6 +262,7 @@ TERTIARY_ROAD_TYPE = "tertiary"
 RESIDENTIAL_ROAD_TYPE = "residential"
 PEDESTRIAN_ROAD_TYPE = "pedestrian"
 FOOTWAY_ROAD_TYPE = "footway"
+CYCLEWAY_ROAD_TYPE = "cycleway"
 SERVICE_ROAD_TYPE = "service"
 RAILWAY_ROAD_TYPE = "railway"
 PATH_ROAD_TYPE = "path"
@@ -346,6 +350,18 @@ OSM_TAGS = {
         PARK_OSM_TAG
     ],
     NOT_SHORE_WATER_OSM_KEY: [
+        WATER_OSM_KEY,
+        POND_OSM_TAG,
+        WASTEWATER_OSM_TAG,
+        CANAL_OSM_TAG,
+        BASIN_OSM_TAG,
+        RESERVOIR_OSM_TAG,
+        WETLAND_OSM_TAG,
+        RIVER_OSM_TAG,
+        LAKE_OSM_TAG,
+        STREAM_OSM_TAG
+    ],
+    NOT_EXCLUSION_BUILDING_OSM_KEY: [
         WATER_OSM_KEY,
         POND_OSM_TAG,
         WASTEWATER_OSM_TAG,

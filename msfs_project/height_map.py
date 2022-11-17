@@ -67,11 +67,11 @@ class MsfsHeightMap:
     altitude: str
     group: MsfsHeightMapGroup
 
-    def __init__(self, tile=None, elem=None, height_data=None, xml=None, width=None, altitude=None, grid_limit=None, group_id=None):
+    def __init__(self, tile=None, elem=None, height_data=None, xml=None, width=None, altitude=None, group_id=None):
         self.display_name = HEIGHT_MAP_DISPLAY_NAME
 
         if tile is not None and height_data is not None:
-            self.__init_from_height_data(tile, height_data, width, altitude, grid_limit, group_id)
+            self.__init_from_height_data(tile, height_data, width, altitude, group_id)
 
         if xml is not None and elem is not None:
             self.__init_from_xml(xml, elem)
@@ -79,7 +79,7 @@ class MsfsHeightMap:
     def to_xml(self, xml):
         xml.add_height_map(self)
 
-    def __init_from_height_data(self, tile, height_data, width, altitude, grid_limit, group_id):
+    def __init_from_height_data(self, tile, height_data, width, altitude, group_id):
         lod = len(tile.name)
         lod_limit = lod - 1 if lod >= 19 else lod
         self.falloff = 100

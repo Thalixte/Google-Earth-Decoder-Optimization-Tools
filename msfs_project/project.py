@@ -25,7 +25,7 @@ import shutil
 import os
 import subprocess
 from utils import install_python_lib
-from utils.geo_pandas import prepare_wall_gdf
+from utils.geo_pandas import prepare_wall_gdf, create_exclusion_building_gdf
 from constants import *
 
 try:
@@ -655,7 +655,7 @@ class MsfsProject:
 
         return chunks(data, nb_parallel_blender_tasks)
 
-    def __retrieve_tiles_to_calculate_height_map(self, nb_parallel_blender_tasks, new_group_id=-1, parallel=True, height_adjustment=0.5, high_precision=False):
+    def __retrieve_tiles_to_calculate_height_map(self, nb_parallel_blender_tasks, new_group_id=-1, parallel=True, height_adjustment=0.0, high_precision=False):
         data = []
 
         for guid, tile in self.tiles.items():
@@ -665,9 +665,13 @@ class MsfsProject:
             if not tile.valid:
                 continue
 
+            # if tile.name != "30604160614140752" and tile.name != "30604160614140773":
+            #     continue
+
             has_rocks = tile.has_rocks and not high_precision
             ground_mask_file_path = os.path.join(self.osmfiles_folder, GROUND_OSM_KEY + "_" + EXCLUSION_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)
             water_mask_file_path = os.path.join(self.osmfiles_folder, WATER_OSM_KEY + "_" + EXCLUSION_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)
+            has_mask_file = os.path.isfile(ground_mask_file_path) or os.path.isfile(water_mask_file_path)
 
             # when the original tiles are available in the backup, use them, otherwise use the current modified tiles (which give less accurate results than the original ones)
             backup_path = self.__find_backup_path()
@@ -679,15 +683,16 @@ class MsfsProject:
             params = ["--folder", str(tile_folder), "--name", str(tile.name), "--definition_file", str(tile.definition_file),
                       "--height_map_xml_folder", str(self.xmlfiles_folder), "--group_id", str(new_group_id), "--altitude", str(tile.pos.alt), "--height_adjustment", str(height_adjustment)]
 
+            if has_mask_file:
+                params.extend(["--positioning_file_path", str(os.path.join(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT))])
+
             if os.path.isfile(ground_mask_file_path):
-                params.extend(["--positioning_file_path", str(os.path.join(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)),
-                               "--ground_mask_file_path", str(ground_mask_file_path)])
+                params.extend(["--ground_mask_file_path", str(ground_mask_file_path)])
             else:
                 has_rocks = False
 
             if os.path.isfile(water_mask_file_path):
-                params.extend(["--positioning_file_path", str(os.path.join(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)),
-                               "--water_mask_file_path", str(water_mask_file_path)])
+                params.extend(["--water_mask_file_path", str(water_mask_file_path)])
 
             params.extend(["--has_rocks", str(has_rocks)])
             params.extend(["--high_precision", str(high_precision)])
@@ -980,7 +985,7 @@ class MsfsProject:
         osm_xml = OsmXml(self.osmfiles_folder, EXCLUSION_OSM_FILE_PREFIX + OSM_FILE_EXT)
         osm_xml.create_from_geodataframes([preserve_holes(exclusion.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore'))], b, True, [(HEIGHT_OSM_TAG, 1000)])
 
-        create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, water_exclusion, keep_building_mask=building, keep_road_mask=road if keep_roads else None, airport_mask=airport, ground_exclusion_mask=ground_exclusion if settings.exclude_ground else create_empty_gdf(), rocks=rocks, title="CREATE EXCLUSION MASKS OSM FILES")
+        create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, water_exclusion, keep_building_mask=resize_gdf(building, 8), keep_road_mask=road if keep_roads else None, keep_amenity_mask=amenity if keep_roads else None, airport_mask=airport, ground_exclusion_mask=ground_exclusion if settings.exclude_ground else create_empty_gdf(), rocks=rocks, title="CREATE EXCLUSION MASKS OSM FILES")
         create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, ground_exclusion, keep_building_mask=building, airport_mask=airport, file_prefix=GROUND_OSM_KEY + "_", title="CREATE GROUND EXCLUSION MASKS OSM FILES")
         create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, whole_water, keep_holes=False, file_prefix=WATER_OSM_KEY + "_", title="CREATE WATER EXCLUSION MASKS OSM FILES")
 
@@ -1004,13 +1009,14 @@ class MsfsProject:
             # osm_xml.create_from_geodataframes([golf_terraform_polygons.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')], b)
 
             print_title("CREATE EXCLUSION BUILDINGS POLYGONS GEO DATAFRAMES...)")
-            shore_water = create_shore_water_gdf(orig_water, orig_natural_water, sea, bbox)
-            exclusion_building_polygons = create_exclusion_building_polygons_gdf(orig_bbox, shore_water, airport)
+            exclusion_building = create_exclusion_building_gdf(orig_water, orig_natural_water, sea, bbox)
+            exclusion_building_polygons = create_exclusion_building_polygons_gdf(orig_bbox, exclusion_building, airport)
             # for debugging purpose
             osm_xml = OsmXml(self.osmfiles_folder, "exclusion_building_polygons" + OSM_FILE_EXT)
             osm_xml.create_from_geodataframes([exclusion_building_polygons.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')], b)
 
             print_title("CREATE EXCLUSION VEGETATION POLYGONS GEO DATAFRAMES...)")
+            shore_water = create_shore_water_gdf(orig_water, orig_natural_water, sea, bbox)
             exclusion_vegetation_polygons = create_exclusion_vegetation_polygons_gdf(shore_water)
             # for debugging purpose
             osm_xml = OsmXml(self.osmfiles_folder, "exclusion_vegetation_polygons" + OSM_FILE_EXT)
@@ -1095,7 +1101,7 @@ class MsfsProject:
         orig_building = load_gdf(self.coords, BUILDING_OSM_KEY, True, shp_file_path=os.path.join(self.shpfiles_folder, BUILDING_OSM_KEY + SHP_FILE_EXT))
         pbar.update("buildings geodataframe retrieved")
         pbar.update("retrieving walls geodataframe...", stall=True)
-        orig_wall = load_gdf(self.coords, BARRIER_OSM_KEY, OSM_TAGS[BARRIER_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, WALL_OSM_TAG + SHP_FILE_EXT))
+        orig_wall = load_gdf(self.coords, BARRIER_OSM_KEY, OSM_TAGS[BARRIER_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, WALL_OSM_TAG + SHP_FILE_EXT), is_wall=True)
         pbar.update("buildings geodataframe retrieved")
         pbar.update("retrieving rocks geodataframe...", stall=True)
         orig_rocks = load_gdf(self.coords, NATURAL_OSM_KEY, OSM_TAGS[ROCKS_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, ROCKS_OSM_KEY + SHP_FILE_EXT))
@@ -1296,43 +1302,98 @@ class MsfsProject:
     def __prepare_geodataframes(orig_road, orig_railway, orig_sea, orig_bbox, orig_land_mass, orig_boundary, orig_landuse, orig_natural, orig_natural_water,
                                 orig_water, orig_aeroway, orig_pitch, orig_construction, orig_airport, orig_building, orig_wall, orig_grass, orig_park, orig_nature_reserve,
                                 orig_rocks, orig_amenity, settings):
-        bridges, places = prepare_roads_gdf(orig_road, orig_railway, bridge_only=True, automatic_road_width_calculation=False)
-        road, places = prepare_roads_gdf(orig_road, orig_railway, bridge_only=False, automatic_road_width_calculation=False)
-
-        sea = prepare_sea_gdf(orig_sea)
-        bbox = prepare_bbox_gdf(orig_bbox, orig_land_mass, orig_boundary)
-
-        landuse = clip_gdf(prepare_gdf(orig_landuse), bbox)
-        natural = clip_gdf(prepare_gdf(orig_natural), bbox)
-        natural_water = clip_gdf(prepare_gdf(orig_natural_water), bbox)
-        water = clip_gdf(prepare_gdf(orig_water), bbox)
-        aeroway = clip_gdf(prepare_gdf(orig_aeroway), bbox)
-        pitch = clip_gdf(prepare_gdf(orig_pitch), bbox)
-        construction = clip_gdf(prepare_gdf(orig_construction), bbox)
-        amenity = clip_gdf(prepare_gdf(orig_amenity), bbox)
-        airport = prepare_gdf(orig_airport)
-        wall = clip_gdf(prepare_wall_gdf(orig_wall), bbox)
-        building = clip_gdf(prepare_building_gdf(orig_building, wall), bbox)
-        golf = prepare_golf_gdf(orig_grass)
+        # prepare all the necessary GeoPandas Dataframes
+        itasks = 21
 
         if settings.exclude_parks:
+            itasks = itasks+1
+
+        if settings.exclude_nature_reserve:
+            itasks = itasks+1
+
+        prepare_gdf_list = [None] * itasks
+        pbar = ProgressBar(prepare_gdf_list, title="PREPARE GEODATAFRAMES")
+
+        pbar.update("preparing bridges geodataframe...", stall=True)
+        bridges, places = prepare_roads_gdf(orig_road, orig_railway, bridge_only=True, automatic_road_width_calculation=False)
+        pbar.update("bridges geodataframe prepared")
+        pbar.update("preparing roads and places geodataframes...", stall=True)
+        road, places = prepare_roads_gdf(orig_road, orig_railway, bridge_only=False, automatic_road_width_calculation=False)
+        pbar.update("roads and places geodataframes prepared")
+        pbar.update("preparing sea geodataframe...", stall=True)
+        sea = prepare_sea_gdf(orig_sea)
+        pbar.update("sea geodataframe prepared")
+        pbar.update("preparing bounding box geodataframe...", stall=True)
+        bbox = prepare_bbox_gdf(orig_bbox, orig_land_mass, orig_boundary)
+        pbar.update("bounding box geodataframe prepared")
+        pbar.update("preparing landuse geodataframe...", stall=True)
+        landuse = clip_gdf(prepare_gdf(orig_landuse), bbox)
+        pbar.update("landuse geodataframe prepared")
+        pbar.update("preparing natural geodataframe...", stall=True)
+        natural = clip_gdf(prepare_gdf(orig_natural), bbox)
+        pbar.update("natural geodataframe prepared")
+        pbar.update("preparing natural water geodataframe...", stall=True)
+        natural_water = clip_gdf(prepare_gdf(orig_natural_water), bbox)
+        pbar.update("natural water geodataframe prepared")
+        pbar.update("preparing water geodataframe...", stall=True)
+        water = clip_gdf(prepare_gdf(orig_water), bbox)
+        pbar.update("water geodataframe prepared")
+        pbar.update("preparing aeroway geodataframe...", stall=True)
+        aeroway = clip_gdf(prepare_gdf(orig_aeroway), bbox)
+        pbar.update("aeroway geodataframe prepared")
+        pbar.update("preparing pitch geodataframe...", stall=True)
+        pitch = clip_gdf(prepare_gdf(orig_pitch), bbox)
+        pbar.update("pitch geodataframe prepared")
+        pbar.update("preparing construction geodataframe...", stall=True)
+        construction = clip_gdf(prepare_gdf(orig_construction), bbox)
+        pbar.update("construction geodataframe prepared")
+        pbar.update("preparing amenity geodataframe...", stall=True)
+        amenity = clip_gdf(prepare_gdf(orig_amenity), bbox)
+        pbar.update("amenity geodataframe prepared")
+        pbar.update("preparing airport geodataframe...", stall=True)
+        airport = prepare_gdf(orig_airport)
+        pbar.update("airport geodataframe prepared")
+        pbar.update("preparing wall geodataframe...", stall=True)
+        wall = clip_gdf(prepare_wall_gdf(orig_wall), bbox)
+        pbar.update("wall geodataframe prepared")
+        pbar.update("preparing building geodataframe...", stall=True)
+        building = clip_gdf(prepare_building_gdf(orig_building, wall), bbox)
+        pbar.update("building geodataframe prepared")
+        pbar.update("preparing golf geodataframe...", stall=True)
+        golf = prepare_golf_gdf(orig_grass)
+        pbar.update("golf geodataframe prepared")
+        pbar.update("preparing rocks geodataframe...", stall=True)
+        rocks = prepare_gdf(orig_rocks)
+        pbar.update("rock geodataframe prepared")
+
+        if settings.exclude_parks:
+            pbar.update("preparing park geodataframe...", stall=True)
             park = clip_gdf(prepare_park_gdf(orig_park, bridges), bbox)
+            pbar.update("park geodataframe prepared")
         else:
             park = create_empty_gdf()
+
         if settings.exclude_nature_reserve:
+            pbar.update("preparing nature_reserve geodataframe...", stall=True)
             nature_reserve = clip_gdf(prepare_gdf(orig_nature_reserve), bbox)
+            pbar.update("nature reserve geodataframe prepared")
         else:
             nature_reserve = create_empty_gdf()
 
+        pbar.update("creating whole water geodataframe...", stall=True)
         whole_water = create_whole_water_gdf(natural_water, water, sea)
+        pbar.update("whole water geodataframe created")
         # create water exclusion masks to cleanup 3d data tiles
+        pbar.update("creating water exclusion geodataframe...", stall=True)
         water_exclusion = difference_gdf(resize_gdf(whole_water, -5), bridges)
+        pbar.update("water exclusion geodataframe created")
         # create ground exclusion masks to cleanup 3d data tiles
+        pbar.update("creating ground exclusion geodataframe...", stall=True)
         ground_exclusion = create_ground_exclusion_gdf(landuse, nature_reserve, natural, aeroway, bridges, park, airport, settings)
-
+        pbar.update("ground exclusion geodataframe created")
+        pbar.update("creating exclusion geodataframe...", stall=True)
         exclusion = union_gdf(water_exclusion, ground_exclusion if settings.exclude_ground else create_empty_gdf())
-
-        rocks = prepare_gdf(orig_rocks)
+        pbar.update("exclusion geodataframe created")
 
         return bbox, bridges, road, places, sea, landuse, natural, natural_water, water, aeroway, pitch, construction, airport, building, wall, golf, park, \
                nature_reserve, whole_water, water_exclusion, ground_exclusion, exclusion, rocks, amenity

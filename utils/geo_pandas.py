@@ -20,7 +20,7 @@ import os
 import warnings
 
 from constants import GEOMETRY_OSM_COLUMN, BOUNDING_BOX_OSM_KEY, SHAPE_TEMPLATES_FOLDER, OSM_LAND_SHAPEFILE, ROAD_OSM_KEY, BRIDGE_OSM_TAG, SERVICE_OSM_KEY, NOT_SHORE_WATER_OSM_KEY, WATER_OSM_KEY, NATURAL_OSM_KEY, OSM_TAGS, FOOTWAY_OSM_TAG, PATH_OSM_TAG, MAN_MADE_OSM_KEY, PIER_OSM_TAG, GOLF_OSM_KEY, FAIRWAY_OSM_TAG, EOL, CEND, TUNNEL_OSM_TAG, SEAMARK_TYPE_OSM_TAG, BUILDING_OSM_KEY, SHP_FILE_EXT, ELEMENT_TY_OSM_KEY, OSMID_OSM_KEY, RAILWAY_OSM_KEY, LANES_OSM_KEY, ONEWAY_OSM_KEY, ROAD_WITH_BORDERS, \
-    ROAD_LANE_WIDTH, GEOCODE_OSM_FILE_PREFIX, PEDESTRIAN_ROAD_TYPE, FOOTWAY_ROAD_TYPE, SERVICE_ROAD_TYPE, LANDUSE_OSM_KEY, CONSTRUCTION_OSM_KEY, GDAL_LIB_PREFIX, FIONA_LIB_PREFIX, LAND_MASS_REPO, LAND_MASS_ARCHIVE, LEISURE_OSM_KEY, NETWORKX_LIB, RTREE_LIB, MATPLOTLIB_LIB, PANDAS_LIB, GEOPANDAS_LIB, OSMNX_LIB, SHAPELY_LIB, PATH_ROAD_TYPE, TRACK_ROAD_TYPE, AREA_OSM_TAG
+    ROAD_LANE_WIDTH, GEOCODE_OSM_FILE_PREFIX, PEDESTRIAN_ROAD_TYPE, FOOTWAY_ROAD_TYPE, SERVICE_ROAD_TYPE, LANDUSE_OSM_KEY, CONSTRUCTION_OSM_KEY, GDAL_LIB_PREFIX, FIONA_LIB_PREFIX, LAND_MASS_REPO, LAND_MASS_ARCHIVE, LEISURE_OSM_KEY, NETWORKX_LIB, RTREE_LIB, MATPLOTLIB_LIB, PANDAS_LIB, GEOPANDAS_LIB, OSMNX_LIB, SHAPELY_LIB, PATH_ROAD_TYPE, TRACK_ROAD_TYPE, AREA_OSM_TAG, NOT_EXCLUSION_BUILDING_OSM_KEY, WALL_OSM_KEY, WALL_OSM_TAG, CASTLE_WALL_OSM_TAG, CYCLEWAY_ROAD_TYPE
 from utils import pr_bg_orange, install_python_lib, install_alternate_python_lib, install_shapefile_resource
 
 try:
@@ -171,13 +171,13 @@ def create_bounding_box(coords):
     return gpd.GeoDataFrame(pd.DataFrame([], index=[0]), crs=EPSG.key + str(EPSG.WGS84_degree_unit), geometry=[b]), b
 
 
-def create_exclusion_masks_from_tiles(tiles, dest_folder, b, exclusion_mask, keep_building_mask=None, keep_road_mask=None, airport_mask=None, ground_exclusion_mask=None, rocks=None, keep_holes=True, file_prefix="", title="CREATE EXCLUSION MASKS OSM FILES"):
+def create_exclusion_masks_from_tiles(tiles, dest_folder, b, exclusion_mask, keep_building_mask=None, keep_road_mask=None, keep_amenity_mask=None, airport_mask=None, ground_exclusion_mask=None, rocks=None, keep_holes=True, file_prefix="", title="CREATE EXCLUSION MASKS OSM FILES"):
     valid_tiles = [tile for tile in list(tiles.values()) if tile.valid]
     pbar = ProgressBar(valid_tiles, title=title)
     exclusion = exclusion_mask.copy()
 
     for i, tile in enumerate(valid_tiles):
-        tile.create_exclusion_mask_osm_file(dest_folder, b, exclusion, keep_building_mask=keep_building_mask, keep_road_mask=keep_road_mask, airport_mask=airport_mask, ground_exclusion_mask=ground_exclusion_mask, rocks=rocks, keep_holes=keep_holes, file_prefix=file_prefix)
+        tile.create_exclusion_mask_osm_file(dest_folder, b, exclusion, keep_building_mask=keep_building_mask, keep_road_mask=keep_road_mask, keep_amenity_mask=keep_amenity_mask, airport_mask=airport_mask, ground_exclusion_mask=ground_exclusion_mask, rocks=rocks, keep_holes=keep_holes, file_prefix=file_prefix)
         pbar.update("exclusion mask created for %s tile" % tile.name)
 
 
@@ -308,7 +308,7 @@ def load_gdf_from_geocode(geocode, geocode_margin=5.0, preserve_roads=True, pres
     return result.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)
 
 
-def load_gdf(coords, key, tags, shp_file_path="", keep_geocode_data=False, is_roads=False, is_sea=False, is_grass=False, land_mass=None, bbox=None):
+def load_gdf(coords, key, tags, shp_file_path="", keep_geocode_data=False, is_roads=False, is_sea=False, is_grass=False, is_wall=False, land_mass=None, bbox=None):
     result = create_empty_gdf()
     has_cache = os.path.isfile(shp_file_path)
     logging.getLogger('shapely.geos').setLevel(logging.CRITICAL)
@@ -337,6 +337,10 @@ def load_gdf(coords, key, tags, shp_file_path="", keep_geocode_data=False, is_ro
 
     if not result.empty:
         keys.insert(0, GEOMETRY_OSM_COLUMN)
+
+        if is_wall:
+            if WALL_OSM_KEY in result:
+                keys.append(WALL_OSM_KEY)
 
         if is_grass:
             if GOLF_OSM_KEY in result:
@@ -461,7 +465,7 @@ def prepare_roads_gdf(gdf, railway_gdf, bridge_only=True, automatic_road_width_c
                 roads = roads[roads[TUNNEL_OSM_TAG].isna()]
 
             result = roads.copy()
-            result = result[~(result[ROAD_OSM_KEY] == PEDESTRIAN_ROAD_TYPE) & ~(result[ROAD_OSM_KEY] == FOOTWAY_ROAD_TYPE) & ~(result[ROAD_OSM_KEY] == SERVICE_ROAD_TYPE) & ~(result[ROAD_OSM_KEY] == PATH_ROAD_TYPE) & ~(result[ROAD_OSM_KEY] == TRACK_ROAD_TYPE)]
+            result = result[~(result[ROAD_OSM_KEY] == PEDESTRIAN_ROAD_TYPE) & ~(result[ROAD_OSM_KEY] == FOOTWAY_ROAD_TYPE) & ~(result[ROAD_OSM_KEY] == CYCLEWAY_ROAD_TYPE) & ~(result[ROAD_OSM_KEY] == SERVICE_ROAD_TYPE) & ~(result[ROAD_OSM_KEY] == PATH_ROAD_TYPE) & ~(result[ROAD_OSM_KEY] == TRACK_ROAD_TYPE)]
 
             if AREA_OSM_TAG in roads:
                 places = roads[(roads[AREA_OSM_TAG] == "yes") & ~(roads[AREA_OSM_TAG].isna())]
@@ -495,6 +499,7 @@ def prepare_wall_gdf(gdf):
     if not gdf.empty:
         result = gdf.copy()
         result = result[~result[GEOMETRY_OSM_COLUMN].isna()]
+        result = result[(result[WALL_OSM_TAG] == CASTLE_WALL_OSM_TAG)]
         result = resize_gdf(result, 5, single_sided=False)
 
         result = result.reset_index(drop=True)
@@ -620,6 +625,22 @@ def create_ground_exclusion_gdf(landuse, nature_reserve, natural, aeroway, bridg
     return result.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)
 
 
+def create_exclusion_building_gdf(orig_water, orig_natural_water, sea, bbox):
+    water = orig_water.copy()
+    for tag in OSM_TAGS[NOT_EXCLUSION_BUILDING_OSM_KEY]:
+        water = water[~(water[WATER_OSM_KEY] == tag)]
+    water = clip_gdf(prepare_gdf(water), bbox)
+
+    natural_water = orig_natural_water.copy()
+    for tag in OSM_TAGS[NOT_EXCLUSION_BUILDING_OSM_KEY]:
+        natural_water = natural_water[~(natural_water[NATURAL_OSM_KEY] == tag)]
+    natural_water = clip_gdf(prepare_gdf(natural_water), bbox)
+
+    result = create_whole_water_gdf(natural_water, water, sea)
+    result = resize_gdf(result, 20)
+    return result.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)
+
+
 def create_shore_water_gdf(orig_water, orig_natural_water, sea, bbox):
     water = orig_water.copy()
     for tag in OSM_TAGS[NOT_SHORE_WATER_OSM_KEY]:
@@ -647,8 +668,8 @@ def create_terraform_polygons_gdf(gdf, ground_exclusion):
 def create_exclusion_building_polygons_gdf(bbox, exclusion, airport):
     adjusted_exclusion = resize_gdf(exclusion, 20)
     adjusted_exclusion = union_gdf(bbox, adjusted_exclusion)
+    airport = resize_gdf(airport, -50)
     adjusted_exclusion = difference_gdf(adjusted_exclusion, airport)
-    adjusted_exclusion = resize_gdf(adjusted_exclusion, -50)
     adjusted_exclusion = adjusted_exclusion.dissolve()
     result = preserve_holes(adjusted_exclusion, split_method=PRESERVE_HOLES_METHOD.derivation_split)
     return result

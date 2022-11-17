@@ -611,13 +611,13 @@ def generate_model_height_data(model_file_path, lat, lon, altitude, height_adjus
     n = 0
 
     for y, heights in hmatrix.items():
-        if n % 2 == 0:
-            results[y] = list(heights.values())
-            for x, h in heights.items():
-                # debug display of the cloud of points
-                p = point_cloud("p" + str(i), [(x, y, h)])
-                new_collection.objects.link(p)
-                i = i + 1
+        # if n % 2 == 0:
+        results[y] = list(heights.values())
+        for x, h in heights.items():
+            # debug display of the cloud of points
+            p = point_cloud("p" + str(i), [(x, y, h)])
+            new_collection.objects.link(p)
+            i = i + 1
 
         n = n + 1
 
@@ -631,7 +631,7 @@ def generate_model_height_data(model_file_path, lat, lon, altitude, height_adjus
     bpy.ops.object.select_all(action=SELECT_ACTION)
     clean_scene()
 
-    return results, width, altitude, (int(grid_dimension/2)-1)
+    return results, width, altitude
 
 
 def get_tile_for_ray_cast(model_file_path, imported=True, objects_to_keep=[]):
