@@ -900,7 +900,7 @@ def adjust_height_data_on_exclusion_area(tile, depsgraph, lat, lon, altitude, ex
         if exclusion_type == EXCLUSION_TYPE.WATER:
             h = h if h >= geoid_height else geoid_height
         else:
-            h = h + 2.0 if h >= geoid_height else geoid_height
+            h = h + 1.0 if h >= geoid_height else geoid_height
 
         if hmatrix_base is not None:
             if y in hmatrix_base:
