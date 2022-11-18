@@ -499,8 +499,9 @@ def prepare_wall_gdf(gdf):
     if not gdf.empty:
         result = gdf.copy()
         result = result[~result[GEOMETRY_OSM_COLUMN].isna()]
-        result = result[(result[WALL_OSM_TAG] == CASTLE_WALL_OSM_TAG)]
-        result = resize_gdf(result, 5, single_sided=False)
+        if WALL_OSM_TAG in result:
+            result = result[(result[WALL_OSM_TAG] == CASTLE_WALL_OSM_TAG)]
+            result = resize_gdf(result, 5, single_sided=False)
 
         result = result.reset_index(drop=True)
         result = result[(result.geom_type == SHAPELY_TYPE.polygon) | (result.geom_type == SHAPELY_TYPE.multiPolygon)]
