@@ -301,7 +301,7 @@ class MsfsProject:
 
     def prepare_3d_data(self, settings, generate_height_data=False, clean_3d_data=False, create_polygons=True, clean_all=False, disable_terraform=False, keep_roads=False):
         self.__create_tiles_bounding_boxes(init_osm_folder=True)
-        self.__create_osm_files(settings, create_polygons=create_polygons, disable_terraform=disable_terraform, keep_roads=keep_roads)
+        self.__create_osm_files(settings, generate_height_data=generate_height_data, clean_3d_data=clean_3d_data, create_polygons=create_polygons, disable_terraform=disable_terraform, keep_roads=keep_roads)
 
         if generate_height_data:
             # ensure to clean the xml folder containing the heightmaps data by removing it
@@ -940,15 +940,15 @@ class MsfsProject:
             tile.create_bbox_osm_file(self.osmfiles_folder, self.min_lod_level)
             pbar.update("osm files created for %s tile" % tile.name)
 
-    def __create_osm_files(self, settings, create_polygons=True, disable_terraform=False, keep_roads=False):
+    def __create_osm_files(self, settings, generate_height_data=False, clean_3d_data=False, create_polygons=True, disable_terraform=False, keep_roads=False):
         ox.config(use_cache=False, log_level=lg.DEBUG)
-        self.__create_osm_exclusion_files(bbox_to_poly(self.coords[1], self.coords[0], self.coords[2], self.coords[3]), create_bounding_box_from_tiles(self.tiles), settings, create_polygons=create_polygons, disable_terraform=disable_terraform, keep_roads=keep_roads)
+        self.__create_osm_exclusion_files(bbox_to_poly(self.coords[1], self.coords[0], self.coords[2], self.coords[3]), create_bounding_box_from_tiles(self.tiles), settings, generate_height_data=generate_height_data, clean_3d_data=clean_3d_data, create_polygons=create_polygons, disable_terraform=disable_terraform, keep_roads=keep_roads)
 
     def __create_geocode_osm_files(self, geocode, settings, preserve_roads, preserve_buildings, coords, shpfiles_folder):
         ox.config(use_cache=False, log_level=lg.DEBUG)
         return self.__create_geocode_osm_exclusion_files(geocode, bbox_to_poly(self.coords[1], self.coords[0], self.coords[2], self.coords[3]), float(settings.geocode_margin), preserve_roads, preserve_buildings, coords, shpfiles_folder)
 
-    def __create_osm_exclusion_files(self, b, orig_bbox, settings, create_polygons=True, disable_terraform=False, keep_roads=False):
+    def __create_osm_exclusion_files(self, b, orig_bbox, settings, generate_height_data=False, clean_3d_data=False, create_polygons=True, disable_terraform=False, keep_roads=False):
         print_title("RETRIEVE OSM DATA")
 
         # for debugging purpose, generate the boundary osm file
@@ -985,8 +985,10 @@ class MsfsProject:
         osm_xml = OsmXml(self.osmfiles_folder, EXCLUSION_OSM_FILE_PREFIX + OSM_FILE_EXT)
         osm_xml.create_from_geodataframes([preserve_holes(exclusion.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore'))], b, True, [(HEIGHT_OSM_TAG, 1000)])
 
-        create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, water_exclusion, keep_building_mask=resize_gdf(building, 8), keep_road_mask=road if keep_roads else None, keep_amenity_mask=amenity if keep_roads else None, airport_mask=airport, ground_exclusion_mask=ground_exclusion if settings.exclude_ground else create_empty_gdf(), rocks=rocks, title="CREATE EXCLUSION MASKS OSM FILES")
-        create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, ground_exclusion, keep_building_mask=building, airport_mask=airport, file_prefix=GROUND_OSM_KEY + "_", title="CREATE GROUND EXCLUSION MASKS OSM FILES")
+        if clean_3d_data:
+            create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, water_exclusion, keep_building_mask=resize_gdf(building, 8), keep_road_mask=road if keep_roads else None, keep_amenity_mask=amenity if keep_roads else None, airport_mask=airport, ground_exclusion_mask=ground_exclusion if settings.exclude_ground else create_empty_gdf(), rocks=rocks, title="CREATE EXCLUSION MASKS OSM FILES")
+        if generate_height_data:
+            create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, ground_exclusion, keep_building_mask=building, keep_road_mask=resize_gdf(road, -4) if keep_roads else None, keep_amenity_mask=resize_gdf(amenity, -4) if keep_roads else None, airport_mask=airport, file_prefix=GROUND_OSM_KEY + "_", title="CREATE GROUND EXCLUSION MASKS OSM FILES")
         create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, whole_water, keep_holes=False, file_prefix=WATER_OSM_KEY + "_", title="CREATE WATER EXCLUSION MASKS OSM FILES")
 
         if create_polygons:
@@ -1051,7 +1053,7 @@ class MsfsProject:
     def __load_geodataframes(self, orig_bbox, b, settings):
         # load all necessary GeoPandas Dataframes
         load_gdf_list = [None] * 20
-        pbar = ProgressBar(load_gdf_list, title="RETRIEVE GEODATAFRAMES (THE FIRST TIME, MAY TAKE SOME TIME TO COMPLETE, BE PATIENT...)", sleep=0.5)
+        pbar = ProgressBar(load_gdf_list, title="RETRIEVE GEODATAFRAMES (THE FIRST TIME, MAY TAKE SOME TIME TO COMPLETE, BE PATIENT...)")
         pbar.update("retrieving land mass geodataframe...", stall=True)
         orig_land_mass = create_land_mass_gdf(self.sources_folder, orig_bbox, b)
         pbar.update("land mass geodataframe retrieved")
@@ -1440,8 +1442,8 @@ class MsfsProject:
                 params = [str(bpy.app.binary_path), "--background", "--python", os.path.join(os.path.dirname(os.path.dirname(__file__)), script_name), "--"]
 
                 for obj in chunck:
-                    isolated_print("-------------------------------------------------------------------------------")
-                    isolated_print("prepare command line: ", "\"" + str(bpy.app.binary_path) + "\" --background --python \"" + os.path.join(os.path.dirname(os.path.dirname(__file__)), script_name) + "\" -- " + str(" ").join(obj["params"]))
+                    print("-------------------------------------------------------------------------------")
+                    print("prepare command line: ", "\"" + str(bpy.app.binary_path) + "\" --background --python \"" + os.path.join(os.path.dirname(os.path.dirname(__file__)), script_name) + "\" -- " + str(" ").join(obj["params"]))
 
                 si = subprocess.STARTUPINFO()
                 si.dwFlags = subprocess.STARTF_USESTDHANDLES | subprocess.HIGH_PRIORITY_CLASS

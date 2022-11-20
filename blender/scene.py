@@ -577,7 +577,7 @@ def generate_model_height_data(model_file_path, lat, lon, altitude, height_adjus
         return False
 
     tile = get_tile_for_ray_cast(model_file_path)
-    coords, width, grid, grid_dimension, height_grid_coords, height_grid = prepare_ray_cast()
+    coords, width, grid, grid_dimension, height_grid_coords, height_grid = prepare_ray_cast(tile)
 
     bpy.ops.object.select_all(action=DESELECT_ACTION)
     # ensure to select the tile
@@ -585,7 +585,7 @@ def generate_model_height_data(model_file_path, lat, lon, altitude, height_adjus
 
     depsgraph = bpy.context.evaluated_depsgraph_get()
     depsgraph.update()
-    hmatrix = calculate_height_map_from_coords_from_bottom(tile, grid_dimension, coords, depsgraph, lat, lon, altitude, height_adjustment, height_grid_coords)
+    hmatrix = calculate_height_map_from_coords_from_bottom(tile, grid_dimension, coords, depsgraph, lat, lon, altitude, height_adjustment)
 
     # fix wrong height data for ground tiles
     if os.path.exists(positioning_file_path) and os.path.exists(ground_mask_file_path):
@@ -610,12 +610,12 @@ def generate_model_height_data(model_file_path, lat, lon, altitude, height_adjus
 
     results = {}
     i = 0
-    n = 0
 
     for y, heights in hmatrix.items():
-        if n % 2 == 0:
-            results[y] = list(heights.values())
-            for x, h in heights.items():
+        n = 0
+        results[y] = [h for i, h in enumerate(list(heights.values())) if i % 2 == 1]
+        for x, h in heights.items():
+            if n % 2 == 1:
                 # debug display of the cloud of points
                 p = point_cloud("p" + str(i), [(x, y, h)])
                 new_collection.objects.link(p)
@@ -625,7 +625,7 @@ def generate_model_height_data(model_file_path, lat, lon, altitude, height_adjus
                     if p[0] == x and p[1] == y and p[2] == coords[0][2]:
                         p[2] = h
 
-        n = n + 1
+            n = n + 1
 
     for p in height_grid_coords:
         if p[2] == coords[0][2]:
@@ -634,7 +634,6 @@ def generate_model_height_data(model_file_path, lat, lon, altitude, height_adjus
             p[2] = 0
 
     delete_origin_points(height_grid)
-
     bpy.ops.object.select_all(action=DESELECT_ACTION)
     grid.select_set(True)
     bpy.ops.object.delete()
@@ -678,8 +677,7 @@ def get_tile_for_ray_cast(model_file_path, imported=True, objects_to_keep=[]):
     return tile
 
 
-def prepare_ray_cast(grid_factor=5.0):
-    grid_dimensions = []
+def prepare_ray_cast(tile, grid_dimension=80.0):
     width = 0.0
 
     bpy.ops.object.select_all(action=SELECT_ACTION)
@@ -693,20 +691,19 @@ def prepare_ray_cast(grid_factor=5.0):
             bpy.ops.object.delete()
         else:
             width = obj.dimensions.x
-            grid_dimensions = obj.dimensions
 
     # create the grid
     new_collection = bpy.data.collections.new(name="grids")
     assert (new_collection is not bpy.context.scene.collection)
     bpy.context.scene.collection.children.link(new_collection)
 
-    grid_dimension, grid = create_and_align_grid("grid", new_collection, grid_factor, grid_dimensions)
+    grid = create_grid(tile, "grid", grid_dimension)
     coords = [v.co for v in grid.data.vertices]
 
-    height_grid_dimension, dh = create_and_align_grid("height_grid", new_collection, grid_factor*2, grid_dimensions)
-    heigth_grid_coords = [v.co for v in dh.data.vertices]
+    height_grid = create_grid(tile, "height_grid", grid_dimension/2)
+    heigth_grid_coords = [v.co for v in height_grid.data.vertices]
 
-    return coords, width, grid, grid_dimension, heigth_grid_coords, dh
+    return coords, width, grid, grid_dimension, heigth_grid_coords, height_grid
 
 
 def extract_splitted_tile(model_file_path, node, texture_folder):
@@ -791,12 +788,13 @@ def apply_transform(ob, use_location=False, use_rotation=False, use_scale=False)
     ob.matrix_basis = basis[0] @ basis[1] @ basis[2]
 
 
-def calculate_height_map_from_coords_from_bottom(tile, grid_dimension, coords, depsgraph, lat, lon, altitude, height_adjustment, height_grid_coords):
+def calculate_height_map_from_coords_from_bottom(tile, grid_dimension, coords, depsgraph, lat, lon, altitude, height_adjustment):
     results = defaultdict(dict)
     geoid_height = get_geoid_height(lat, lon)
 
     # downsample the grid for bottom ray casting
     coords = [co for i, co in enumerate(coords)]
+    isolated_print(coords)
 
     for co in coords:
         p = co
@@ -809,7 +807,7 @@ def calculate_height_map_from_coords_from_bottom(tile, grid_dimension, coords, d
             if len(results[y]) <= (grid_dimension-1):
                 h = h + altitude + geoid_height
                 # h = h if h >= geoid_height - GEOID_HEIGHT_ORIGIN_MARGIN else geoid_height - height_adjustment
-                results[y][x] = h + height_adjustment
+                results[y][x] = h + 1.0 + height_adjustment
 
     return results
 
@@ -972,38 +970,6 @@ def spatial_median_kdtree(pointcloud, radius):
     return new_p
 
 
-def face(rows, column, row):
-    return column * rows + row, column * rows + row + 1, (column + 1) * rows + row + 1, (column + 1) * rows + row
-
-
-def create_bounding_box(obj, prefix):
-    scale = obj.scale
-
-    minx = obj.bound_box[0][0] * scale.x
-    maxx = obj.bound_box[4][0] * scale.x
-    miny = obj.bound_box[0][1] * scale.y
-    maxy = obj.bound_box[2][1] * scale.y
-    minz = obj.bound_box[0][2] * scale.z
-    maxz = obj.bound_box[1][2] * scale.z
-    dx = maxx - minx
-    dy = maxy - miny
-    dz = maxz - minz
-
-    new_name = '{0}{1}'.format(prefix, obj.name)
-
-    loc = mathutils.Vector(((minx + 0.5 * dx), (miny + 0.5 * dy), (minz + 0.5 * dz)))
-    loc.rotate(obj.rotation_euler)
-    loc = loc + obj.location
-
-    bpy.ops.mesh.primitive_cube_add(location=loc, rotation=obj.rotation_euler)
-    new_obj = bpy.context.object
-
-    new_obj.name = new_name
-    new_obj.dimensions = mathutils.Vector((dx, dy, dz))
-
-    return new_obj
-
-
 def retrieve_tile_object_lod(obj):
     res = 99
 
@@ -1141,30 +1107,81 @@ def split_obj(obj):
     bpy.ops.object.editmode_toggle()
 
 
-def create_and_align_grid(grid_name, grid_collection, grid_factor, grid_dimensions):
-    me = bpy.data.meshes.new(grid_name)
+def face(rows, column, row):
+    return column * rows + row, column * rows + row + 1, (column + 1) * rows + row + 1, (column + 1) * rows + row
+
+
+def create_bounding_box(obj, prefix):
+    scale = obj.scale
+
+    minx = obj.bound_box[0][0] * scale.x
+    maxx = obj.bound_box[4][0] * scale.x
+    miny = obj.bound_box[0][1] * scale.y
+    maxy = obj.bound_box[2][1] * scale.y
+    minz = obj.bound_box[0][2] * scale.z
+    maxz = obj.bound_box[1][2] * scale.z
+    dx = maxx - minx
+    dy = maxy - miny
+    dz = maxz - minz
+
+    new_name = '{0}{1}'.format(prefix, obj.name)
+
+    loc = mathutils.Vector(((minx + 0.5 * dx), (miny + 0.5 * dy), (minz + 0.5 * dz)))
+    loc.rotate(obj.rotation_euler)
+    loc = loc + obj.location
+
+    bpy.ops.mesh.primitive_cube_add(location=loc, rotation=obj.rotation_euler)
+    new_obj = bpy.context.object
+
+    new_obj.name = new_name
+    new_obj.dimensions = mathutils.Vector((dx, dy, dz))
+
+    return new_obj
+
+
+def create_grid(obj, name, grid_dimension):
+    scale = obj.scale
+
+    minx = obj.bound_box[0][0] * scale.x
+    maxx = obj.bound_box[4][0] * scale.x
+    miny = obj.bound_box[0][1] * scale.y
+    maxy = obj.bound_box[2][1] * scale.y
+    z = obj.bound_box[0][2] * scale.z
+    dx = maxx - minx
+    dy = maxy - miny
+
+    loc = mathutils.Vector(((minx + 0.5 * dx), (miny + 0.5 * dy), z))
+    loc.rotate(obj.rotation_euler)
+    loc = loc + obj.location
+
+    bpy.ops.mesh.primitive_plane_add(location=loc, rotation=obj.rotation_euler)
+    new_obj = bpy.context.object
+
+    new_obj.name = name
+    new_obj.dimensions = mathutils.Vector((dx, dy, 0))
+
+    me = new_obj.data
     bm = bmesh.new()
-    max_grid_dimension = max(grid_dimensions.x, grid_dimensions.y)
-    grid_dimension = round(max_grid_dimension / grid_factor)
-    bmesh.ops.create_grid(bm, x_segments=grid_dimension, y_segments=grid_dimension, size=round(max_grid_dimension / 2))
+    bm.from_mesh(me)
+    bmesh.ops.subdivide_edges(bm, edges=bm.edges, use_grid_fill=True, cuts=int(grid_dimension))
     bmesh.ops.delete(bm, geom=bm.faces, context=FACES_ONLY_DELETE_CONTEXT)
     bm.to_mesh(me)
-    ob = bpy.data.objects.new(grid_name, me)
-    grid_collection.objects.link(ob)
+    me.update()
+    bm.free()
 
     bpy.ops.object.select_all(action=DESELECT_ACTION)
 
-    grid = bpy.context.scene.objects.get(grid_name)
+    grid = bpy.context.scene.objects.get(name)
     grid.select_set(True)
 
     bpy.ops.object.select_all(action=SELECT_ACTION)
 
     bpy.ops.object.align(bb_quality=True, align_mode='OPT_3', relative_to='OPT_4', align_axis={'X', 'Y'})
     apply_transform(grid, use_location=True, use_rotation=False, use_scale=False)
-    bpy.ops.object.align(bb_quality=True, align_mode='OPT_1', relative_to='OPT_4', align_axis={'Z'})
-    apply_transform(grid, use_location=True, use_rotation=False, use_scale=False)
+    # bpy.ops.object.align(bb_quality=True, align_mode='OPT_1', relative_to='OPT_4', align_axis={'Z'})
+    # apply_transform(grid, use_location=True, use_rotation=False, use_scale=False)
 
-    return grid_dimension, grid
+    return new_obj
 
 
 def delete_origin_points(obj):
