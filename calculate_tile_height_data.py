@@ -141,6 +141,11 @@ parser.add_argument(
     help="indicates if the the most detailed tile is used for height calculation",
 )
 
+parser.add_argument(
+    "-dng", "--debug", dest="debug", type=str, required=False,
+    help="Debug the height data in blender",
+)
+
 
 args = parser.parse_args(argv)
 
@@ -174,17 +179,25 @@ if not args.has_rocks:
 if not args.high_precision:
     raise ScriptError("Error: --high_precision=\"true/false\" argument not given, aborting.")
 
+if not args.high_precision:
+    raise ScriptError("Error: --debug=\"true/false\" argument not given, aborting.")
+
 clean_scene()
 
 settings = Settings(get_sources_path())
 has_rocks = json.loads(args.has_rocks.lower())
 high_precision = json.loads(args.high_precision.lower())
 
+if args.debug:
+    debug = json.loads(args.debug.lower())
+else:
+    debug = False
+
 ground_mask_file_path = args.ground_mask_file_path if args.ground_mask_file_path else str()
 positioning_file_path = args.positioning_file_path if args.positioning_file_path else str()
 water_mask_file_path = args.water_mask_file_path if args.water_mask_file_path else str()
 
 tile = MsfsTile(args.folder, args.name, args.definition_file)
-tile.generate_height_data(HeightMapXml(args.height_map_xml_folder, HEIGHT_MAP_SUFFIX + args.name + XML_FILE_EXT), args.group_id, float(args.altitude), float(args.height_adjustment), high_precision=high_precision, inverted=has_rocks, positioning_file_path=positioning_file_path, water_mask_file_path=water_mask_file_path, ground_mask_file_path=ground_mask_file_path)
+tile.generate_height_data(HeightMapXml(args.height_map_xml_folder, HEIGHT_MAP_SUFFIX + args.name + XML_FILE_EXT), args.group_id, float(args.altitude), float(args.height_adjustment), high_precision=high_precision, inverted=has_rocks, positioning_file_path=positioning_file_path, water_mask_file_path=water_mask_file_path, ground_mask_file_path=ground_mask_file_path, debug=debug)
 # except:
 #     pass

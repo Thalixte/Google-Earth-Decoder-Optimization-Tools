@@ -257,12 +257,12 @@ class MsfsLod:
 
         return result
 
-    def calculate_height_data(self, lat, lon, altitude, height_adjustment, inverted=False, positioning_file_path="", water_mask_file_path="", ground_mask_file_path=""):
+    def calculate_height_data(self, lat, lon, altitude, height_adjustment, inverted=False, positioning_file_path="", water_mask_file_path="", ground_mask_file_path="", debug=False):
         model_file = MsfsGltf(os.path.join(self.folder, self.model_file))
         model_file.remove_texture_path(self.name)
         model_file.add_texture_path()
         model_file.dump()
-        result = generate_model_height_data(os.path.join(self.folder, self.model_file), lat, lon, altitude, height_adjustment, inverted=inverted, positioning_file_path=positioning_file_path, water_mask_file_path=water_mask_file_path, ground_mask_file_path=ground_mask_file_path)
+        result = generate_model_height_data(os.path.join(self.folder, self.model_file), lat, lon, altitude, height_adjustment, inverted=inverted, positioning_file_path=positioning_file_path, water_mask_file_path=water_mask_file_path, ground_mask_file_path=ground_mask_file_path, debug=debug)
         model_file = MsfsGltf(os.path.join(self.folder, self.model_file))
         model_file.remove_texture_path(self.name)
         model_file.dump()

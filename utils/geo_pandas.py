@@ -177,8 +177,8 @@ def create_exclusion_masks_from_tiles(tiles, dest_folder, b, exclusion_mask, kee
     exclusion = exclusion_mask.copy()
 
     for i, tile in enumerate(valid_tiles):
-        if tile.name != "30604160614140752" and tile.name != "30604160614140773":
-            continue
+        # if tile.name != "30604160614140752" and tile.name != "30604160614140773":
+        #     continue
 
         tile.create_exclusion_mask_osm_file(dest_folder, b, exclusion, keep_building_mask=keep_building_mask, keep_road_mask=keep_road_mask, keep_amenity_mask=keep_amenity_mask, airport_mask=airport_mask, ground_exclusion_mask=ground_exclusion_mask, rocks=rocks, keep_holes=keep_holes, file_prefix=file_prefix)
         pbar.update("exclusion mask created for %s tile" % tile.name)
