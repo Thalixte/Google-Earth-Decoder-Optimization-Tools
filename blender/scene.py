@@ -605,9 +605,13 @@ def generate_model_height_data(model_file_path, lat, lon, altitude, height_adjus
         hmatrix = fix_bridge_height_data_on_water(tile, depsgraph, lat, lon, altitude, hmatrix_base=hmatrix)
 
     results = {}
+    j = 0
 
     for y, heights in hmatrix.items():
-        results[y] = [h for i, h in enumerate(list(heights.values())) if i % 2 == 1]
+        if j % 2 == 0:
+            results[y] = [h for i, h in enumerate(list(heights.values())) if i % 2 == 1]
+
+        j = j + 1
 
     if debug:
         new_collection = bpy.data.collections.new(name="coords")
@@ -630,19 +634,28 @@ def generate_model_height_data(model_file_path, lat, lon, altitude, height_adjus
 
 def debug_height_data(new_collection, hmatrix, height_grid, height_grid_coords):
     i = 0
+    bpy.app.debug = True
     not_updated_coords = height_grid_coords.copy()
 
+    j = 0
     for y, heights in hmatrix.items():
         n = 0
 
+        if j % 2 == 1:
+            # debug height data
+            for x, h in heights.items():
+                if n % 2 == 1:
+                    # debug display of the cloud of points
+                    p = point_cloud("p" + str(i), [(x, y, h)])
+                    new_collection.objects.link(p)
+                    i = i + 1
+                n = n + 1
+
+        j = j + 1
+
+    for y, heights in hmatrix.items():
         # debug height data
         for x, h in heights.items():
-            if n % 2 == 1:
-                # debug display of the cloud of points
-                p = point_cloud("p" + str(i), [(x, y, h)])
-                new_collection.objects.link(p)
-                i = i + 1
-
             for p in height_grid_coords:
                 if p[0] == x and p[1] == y:
                     for nup in not_updated_coords:
@@ -650,8 +663,6 @@ def debug_height_data(new_collection, hmatrix, height_grid, height_grid_coords):
                             not_updated_coords.remove(nup)
 
                     p[2] = h
-
-            n = n + 1
 
     for p in not_updated_coords:
         p[0] = 0
@@ -1207,3 +1218,18 @@ def delete_origin_points(obj):
     bm.to_mesh(me)
     me.update()
     bm.free()
+
+
+def create_vert(grid_dimension, column, row, h):
+    """ Create a single vert """
+
+    return column * grid_dimension, row * grid_dimension, h
+
+
+def create_face(grid_dimension, column, row):
+    """ Create a single face """
+
+    return (column * grid_dimension + row,
+            (column + 1) * grid_dimension + row,
+            (column + 1) * grid_dimension + 1 + row,
+            column * grid_dimension + 1 + row)
