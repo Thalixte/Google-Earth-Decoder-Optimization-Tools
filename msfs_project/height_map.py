@@ -18,6 +18,7 @@
 
 from constants import HEIGHT_MAPS_DISPLAY_NAME, HEIGHT_MAP_DISPLAY_NAME
 from msfs_project.position import MsfsPosition
+from utils import isolated_print
 from utils.octant import get_latlonbox_from_file_name
 
 
@@ -114,11 +115,11 @@ class MsfsHeightMap:
     def __serialize_height_data(self, height_data):
         result = ""
         for i, x_data in enumerate(height_data.values()):
-            if len(x_data) != self.size:
+            if len(x_data) < self.size:
                 continue
 
             x_data.reverse()
-            result = (" ".join([str(h) for h in x_data])) + " " + result
+            result = (" ".join([str(h) for i, h in enumerate(x_data) if i < self.size])) + " " + result
 
         return result.strip()
 
