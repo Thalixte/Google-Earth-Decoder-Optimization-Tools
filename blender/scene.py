@@ -613,14 +613,6 @@ def generate_model_height_data(model_file_path, lat, lon, altitude, height_adjus
 
         j = j + 1
 
-    if debug:
-        new_collection = bpy.data.collections.new(name="coords")
-        assert (new_collection is not bpy.context.scene.collection)
-        bpy.context.scene.collection.children.link(new_collection)
-
-        debug_height_data(new_collection, hmatrix, height_grid, height_grid_coords)
-        isolated_print(results)
-
     bpy.ops.object.select_all(action=DESELECT_ACTION)
     grid.select_set(True)
     bpy.ops.object.delete()
@@ -629,11 +621,25 @@ def generate_model_height_data(model_file_path, lat, lon, altitude, height_adjus
 
     if not debug:
         clean_scene()
+    else:
+        bpy.ops.object.select_all(action=DESELECT_ACTION)
+        tile.select_set(True)
+        bpy.ops.object.delete()
+
+        new_collection = bpy.data.collections.new(name="coords")
+        assert (new_collection is not bpy.context.scene.collection)
+        bpy.context.scene.collection.children.link(new_collection)
+
+        debug_height_data(new_collection, hmatrix, height_grid, height_grid_coords, model_file_path)
+
+        bpy.ops.object.select_all(action=SELECT_ACTION)
+
+        isolated_print(results)
 
     return results, width, altitude
 
 
-def debug_height_data(new_collection, hmatrix, height_grid, height_grid_coords):
+def debug_height_data(new_collection, hmatrix, height_grid, height_grid_coords, model_file_path):
     n = 0
 
     bpy.app.debug = True
@@ -673,12 +679,24 @@ def debug_height_data(new_collection, hmatrix, height_grid, height_grid_coords):
 
     delete_origin_points(height_grid)
 
+    debug_objects = [obj for obj in new_collection.objects]
+    debug_objects.append(height_grid)
+
+    bpy.ops.object.select_all(action=DESELECT_ACTION)
+    import_model_files([model_file_path], clean=False, objects_to_keep=debug_objects)
+    bpy.ops.object.join()
+    height_grid.select_set(True)
+    bpy.context.view_layer.objects.active = height_grid
+
+    bpy.ops.object.align(bb_quality=True, align_mode='OPT_2', relative_to='OPT_4', align_axis={'X', 'Y'})
+    bpy.ops.object.align(bb_quality=True, align_mode='OPT_2', relative_to='OPT_4', align_axis={'Z'})
+
 
 def get_tile_for_ray_cast(model_file_path, imported=True, objects_to_keep=[]):
     tile = None
 
     if imported:
-        import_model_files([model_file_path])
+        import_model_files([model_file_path], objects_to_keep=objects_to_keep)
     bpy.ops.object.select_all(action=SELECT_ACTION)
     keep_objects(objects_to_keep)
     objs = bpy.context.selected_objects
