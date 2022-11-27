@@ -84,6 +84,22 @@ def install_python_lib(lib, install_pip=False, force=False):
 
 
 def install_alternate_python_lib(lib_prefix):
+    python_missing_msg = "python interpreter not found on your system"
+
+    # python lib path fallback
+    if not hasattr(bpy.app, "binary_path_python") or bpy.app.binary_path_python is None:
+        python_lib_path = normpath(join(dirname(sys.executable), '..', '..', 'python\\lib'))
+    else:
+        # path to blender python lib folders
+        python_lib_path = normpath(join(dirname(bpy.app.binary_path_python), '..', '..', 'python\\lib'))
+
+    if python_lib_path is None:
+        raise ScriptError(python_missing_msg)
+
+    if is_installed(python_lib_path, PIP_LIB) and is_installed(python_lib_path, lib_prefix):
+        print(PIP_LIB, "and", lib_prefix, "correctly installed in blender lib folder")
+        return True
+
     is_64bits = sys.maxsize > 2 ** 32
     whl_file_name = lib_prefix + "-cp" + sys.winver.replace(".", str()) + "-cp" + sys.winver.replace(".", str()) + "-" + (WIN64_SUFFIX if is_64bits else WIN32_SUFFIX) + WHL_FILE_EXT
     whl_file = os.path.join(tempfile.gettempdir(), whl_file_name)
