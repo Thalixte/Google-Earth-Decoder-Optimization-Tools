@@ -965,25 +965,30 @@ class MsfsProject:
                                                                                                                         orig_pitch, orig_construction, orig_airport, orig_building, orig_wall, orig_grass,
                                                                                                                         orig_park, orig_nature_reserve, orig_rocks, orig_amenity, settings)
 
-        # for debugging purpose, generate the whole water exclusion osm file
-        osm_xml = OsmXml(self.osmfiles_folder, "places" + OSM_FILE_EXT)
-        osm_xml.create_from_geodataframes([preserve_holes(places.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore'))], b, True, [(HEIGHT_OSM_TAG, 1000)])
+        if not places.empty:
+            # for debugging purpose, generate the whole water exclusion osm file
+            osm_xml = OsmXml(self.osmfiles_folder, "places" + OSM_FILE_EXT)
+            osm_xml.create_from_geodataframes([preserve_holes(places.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore'))], b, True, [(HEIGHT_OSM_TAG, 1000)])
 
-        # for debugging purpose, generate the whole water exclusion osm file
-        osm_xml = OsmXml(self.osmfiles_folder, WHOLE_WATER_OSM_FILE_PREFIX + OSM_FILE_EXT)
-        osm_xml.create_from_geodataframes([preserve_holes(whole_water.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore'))], b, True, [(HEIGHT_OSM_TAG, 1000)])
+        if not whole_water.empty:
+            # for debugging purpose, generate the whole water exclusion osm file
+            osm_xml = OsmXml(self.osmfiles_folder, WHOLE_WATER_OSM_FILE_PREFIX + OSM_FILE_EXT)
+            osm_xml.create_from_geodataframes([preserve_holes(whole_water.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore'))], b, True, [(HEIGHT_OSM_TAG, 1000)])
 
-        # for debugging purpose, generate the water exclusion osm file
-        osm_xml = OsmXml(self.osmfiles_folder, WATER_OSM_KEY + "_" + EXCLUSION_OSM_FILE_PREFIX + OSM_FILE_EXT)
-        osm_xml.create_from_geodataframes([preserve_holes(water_exclusion.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore'))], b, True, [(HEIGHT_OSM_TAG, 1000)])
+        if not water_exclusion.empty:
+            # for debugging purpose, generate the water exclusion osm file
+            osm_xml = OsmXml(self.osmfiles_folder, WATER_OSM_KEY + "_" + EXCLUSION_OSM_FILE_PREFIX + OSM_FILE_EXT)
+            osm_xml.create_from_geodataframes([preserve_holes(water_exclusion.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore'))], b, True, [(HEIGHT_OSM_TAG, 1000)])
 
-        # for debugging purpose, generate the ground exclusion osm file
-        osm_xml = OsmXml(self.osmfiles_folder, GROUND_OSM_KEY + "_" + EXCLUSION_OSM_FILE_PREFIX + OSM_FILE_EXT)
-        osm_xml.create_from_geodataframes([preserve_holes(ground_exclusion.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore'))], b, True, [(HEIGHT_OSM_TAG, 1000)])
+        if not ground_exclusion.empty:
+            # for debugging purpose, generate the ground exclusion osm file
+            osm_xml = OsmXml(self.osmfiles_folder, GROUND_OSM_KEY + "_" + EXCLUSION_OSM_FILE_PREFIX + OSM_FILE_EXT)
+            osm_xml.create_from_geodataframes([preserve_holes(ground_exclusion.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore'))], b, True, [(HEIGHT_OSM_TAG, 1000)])
 
-        # for debugging purpose, generate the water exclusion osm file
-        osm_xml = OsmXml(self.osmfiles_folder, EXCLUSION_OSM_FILE_PREFIX + OSM_FILE_EXT)
-        osm_xml.create_from_geodataframes([preserve_holes(exclusion.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore'))], b, True, [(HEIGHT_OSM_TAG, 1000)])
+        if not exclusion.empty:
+            # for debugging purpose, generate the water exclusion osm file
+            osm_xml = OsmXml(self.osmfiles_folder, EXCLUSION_OSM_FILE_PREFIX + OSM_FILE_EXT)
+            osm_xml.create_from_geodataframes([preserve_holes(exclusion.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore'))], b, True, [(HEIGHT_OSM_TAG, 1000)])
 
         if clean_3d_data:
             create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, water_exclusion, keep_building_mask=resize_gdf(building, 8), keep_road_mask=road if keep_roads else None, keep_amenity_mask=amenity if keep_roads else None, airport_mask=airport, ground_exclusion_mask=ground_exclusion if settings.exclude_ground else create_empty_gdf(), rocks=rocks, title="CREATE EXCLUSION MASKS OSM FILES")
@@ -1443,7 +1448,7 @@ class MsfsProject:
 
                 for obj in chunck:
                     print("-------------------------------------------------------------------------------")
-                    print("prepare command line: ", "\"" + str(bpy.app.binary_path) + "\" --background --python \"" + os.path.join(os.path.dirname(os.path.dirname(__file__)), script_name) + "\" -- " + str(" ").join(obj["params"]))
+                    print("\"" + str(bpy.app.binary_path) + "\" --background --python \"" + os.path.join(os.path.dirname(os.path.dirname(__file__)), script_name) + "\" -- " + str(" ").join(obj["params"]))
 
                 si = subprocess.STARTUPINFO()
                 si.dwFlags = subprocess.STARTF_USESTDHANDLES | subprocess.HIGH_PRIORITY_CLASS

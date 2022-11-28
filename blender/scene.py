@@ -773,8 +773,6 @@ def copy_objects(from_col, to_col, linked):
             dupe.data = dupe.data.copy()
         to_col.objects.link(dupe)
 
-        return dupe
-
 
 def get_geoid_height(lat, lon):
     interpolator = pygeodesy.GeoidKarney(os.path.join(GEOIDS_DATASET_FOLDER, EGM2008_5_DATASET))
