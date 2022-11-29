@@ -84,6 +84,7 @@ GEOID_HEIGHT_ORIGIN_MARGIN = 5.0
 FACES_ONLY_DELETE_CONTEXT = "FACES_ONLY"
 FACES_DELETE_CONTEXT = "FACES"
 VERTICES_DELETE_CONTEXT = "VERTS"
+GRIDS_COLLECTION_NAME = "grids"
 
 
 class BOOLEAN_MODIFIER_OPERATION:
@@ -679,6 +680,7 @@ def debug_height_data(new_collection, hmatrix, height_grid, height_grid_coords, 
         p[2] = 0
 
     delete_origin_points(height_grid)
+    display_final_height_grid(height_grid)
 
     debug_objects = [obj for obj in new_collection.objects]
     debug_objects.append(height_grid)
@@ -686,11 +688,54 @@ def debug_height_data(new_collection, hmatrix, height_grid, height_grid_coords, 
     bpy.ops.object.select_all(action=DESELECT_ACTION)
     import_model_files([model_file_path], clean=False, objects_to_keep=debug_objects)
     bpy.ops.object.join()
+    obs = bpy.context.selected_objects
+
     height_grid.select_set(True)
     bpy.context.view_layer.objects.active = height_grid
 
     bpy.ops.object.align(bb_quality=True, align_mode='OPT_2', relative_to='OPT_4', align_axis={'X', 'Y'})
     bpy.ops.object.align(bb_quality=True, align_mode='OPT_2', relative_to='OPT_4', align_axis={'Z'})
+
+    bpy.ops.object.select_all(action=DESELECT_ACTION)
+    for obj in new_collection.objects:
+        obj.select_set(True)
+        bpy.context.view_layer.objects.active = obj
+
+    bpy.ops.object.join()
+
+    bpy.ops.object.select_all(action=DESELECT_ACTION)
+
+    # for obj in new_collection.objects:
+    #     obj.hide_set(True)
+
+    for obj in obs:
+        obj.location[2] = obj.location[2] - 100.0
+        apply_transform(obj, use_location=True)
+        obj.hide_set(True)
+
+
+def display_final_height_grid(height_grid):
+    mat = height_grid.active_material
+    mat.use_nodes = False
+    mat.diffuse_color = (1.0, 0.5, 0.0, 0.5)
+    mat.metallic = 0.5
+    mat.specular_intensity = 0.5
+    mat.roughness = 1.0
+    height_grid.show_transparent = True
+    grid_collection = bpy.data.collections[GRIDS_COLLECTION_NAME]
+
+    wireframe_height_grid = copy_objects(grid_collection, grid_collection, False)
+    remove_obj_faces(wireframe_height_grid)
+
+    wireframe_height_grid.location[2] = wireframe_height_grid.location[2] + 0.5
+    apply_transform(wireframe_height_grid, use_location=True)
+
+    bpy.ops.object.select_all(action=DESELECT_ACTION)
+    for obj in grid_collection.objects:
+        obj.select_set(True)
+        bpy.context.view_layer.objects.active = height_grid
+
+    bpy.ops.object.join()
 
 
 def get_tile_for_ray_cast(model_file_path, imported=True, objects_to_keep=[]):
@@ -741,14 +786,14 @@ def prepare_ray_cast(obj, grid_factor=5.0):
             grid_dimensions = obj.dimensions
 
     # create the grid
-    new_collection = bpy.data.collections.new(name="grids")
+    new_collection = bpy.data.collections.new(name=GRIDS_COLLECTION_NAME)
     assert (new_collection is not bpy.context.scene.collection)
     bpy.context.scene.collection.children.link(new_collection)
 
     grid_dimension, grid = create_and_align_grid(obj, "grid", new_collection, grid_factor, grid_dimensions)
     coords = [v.co for v in grid.data.vertices]
 
-    height_grid_dimension, height_grid = create_and_align_grid(obj, "height_grid", new_collection, grid_factor*2, grid_dimensions)
+    height_grid_dimension, height_grid = create_and_align_grid(obj, "height_grid", new_collection, grid_factor, grid_dimensions, keep_faces=True)
     heigth_grid_coords = [v.co for v in height_grid.data.vertices]
 
     return coords, width, grid, grid_dimension, heigth_grid_coords, height_grid
@@ -772,6 +817,8 @@ def copy_objects(from_col, to_col, linked):
         if not linked and o.data:
             dupe.data = dupe.data.copy()
         to_col.objects.link(dupe)
+
+    return dupe
 
 
 def get_geoid_height(lat, lon):
@@ -1211,10 +1258,11 @@ def create_grid(obj, name, grid_dimension):
     bm = bmesh.new()
     bm.from_mesh(me)
     bmesh.ops.subdivide_edges(bm, edges=bm.edges, use_grid_fill=True, cuts=int(grid_dimension)-1)
-    bmesh.ops.delete(bm, geom=bm.faces, context=FACES_ONLY_DELETE_CONTEXT)
     bm.to_mesh(me)
     me.update()
     bm.free()
+
+    remove_obj_faces(new_obj)
 
     bpy.ops.object.align(bb_quality=True, align_mode='OPT_2', relative_to='OPT_4', align_axis={'X', 'Y'})
     apply_transform(grid, use_location=True, use_rotation=True, use_scale=True)
@@ -1224,7 +1272,7 @@ def create_grid(obj, name, grid_dimension):
     return new_obj
 
 
-def create_and_align_grid(obj, grid_name, grid_collection, grid_factor, grid_dimensions):
+def create_and_align_grid(obj, grid_name, grid_collection, grid_factor, grid_dimensions, keep_faces=False):
     reduction_factor = 0.97
 
     minx = obj.bound_box[0][0] * reduction_factor
@@ -1241,9 +1289,12 @@ def create_and_align_grid(obj, grid_name, grid_collection, grid_factor, grid_dim
     grid_dimension_x = floor(grid_dimensions.x / grid_factor)
     grid_dimension_y = floor(grid_dimensions.y / grid_factor)
     bmesh.ops.create_grid(bm, x_segments=grid_dimension_x, y_segments=grid_dimension_y, size=round(max_grid_dimension / 2))
-    bmesh.ops.delete(bm, geom=bm.faces, context=FACES_ONLY_DELETE_CONTEXT)
     bm.to_mesh(me)
     ob = bpy.data.objects.new(grid_name, me)
+
+    if not keep_faces:
+        remove_obj_faces(ob)
+
     grid_collection.objects.link(ob)
 
     bpy.ops.object.select_all(action=DESELECT_ACTION)
@@ -1310,3 +1361,13 @@ def round_decimals_down(number: float, decimals: int=2):
 
     factor = 10 ** decimals
     return floor(number * factor) / factor
+
+
+def remove_obj_faces(obj):
+    me = obj.data
+    bm = bmesh.new()
+    bm.from_mesh(me)
+    bmesh.ops.delete(bm, geom=bm.faces, context=FACES_ONLY_DELETE_CONTEXT)
+    bm.to_mesh(me)
+    me.update()
+    bm.free()

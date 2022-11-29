@@ -41,6 +41,9 @@ def set_msfs_material():
 def set_new_msfs_material(material_name):
     mat = bpy.data.materials.new(name=material_name)
 
+    if mat.node_tree is None:
+        mat.use_nodes = True
+
     for obj in bpy.data.objects:
         # Assign it to object
         if obj.data.materials:
@@ -55,9 +58,10 @@ def set_new_msfs_material(material_name):
         nodes = material.node_tree.nodes
         bsdf = nodes.get(PRINCIPLED_BSDF_SHADER)
 
-        assert bsdf  # make sure it exists to continue
+        if not bsdf:  # make sure it exists to continue
+            bsdf = nodes.new(type=PRINCIPLED_BSDF_SHADER)
+            bsdf.location = 0, 0
 
-        nodes[PRINCIPLED_BSDF_SHADER] = bsdf
         material.use_nodes = True
 
 
