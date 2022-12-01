@@ -246,7 +246,7 @@ def load_gdf_from_geocode(geocode, geocode_margin=5.0, preserve_roads=True, pres
     orig_railway = load_gdf(coords, RAILWAY_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, RAILWAY_OSM_KEY + SHP_FILE_EXT), is_roads=True, keep_geocode_data=True)
     if display_warnings:
         pbar.update("railways geodataframe retrieved")
-    road = prepare_roads_gdf(orig_road, orig_railway)
+    road, places = prepare_roads_gdf(orig_road, orig_railway)
 
     if result.empty:
         try:
@@ -293,7 +293,7 @@ def load_gdf_from_geocode(geocode, geocode_margin=5.0, preserve_roads=True, pres
     if preserve_roads:
         orig_road = load_gdf(coords, ROAD_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, ROAD_OSM_KEY + SHP_FILE_EXT), is_roads=True)
         orig_railway = load_gdf(coords, RAILWAY_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, RAILWAY_OSM_KEY + SHP_FILE_EXT), is_roads=True)
-        road = prepare_roads_gdf(orig_road, orig_railway, bridge_only=False)
+        road, places = prepare_roads_gdf(orig_road, orig_railway, bridge_only=False)
         road = road.clip(result_bbox, keep_geom_type=True)
         # for debugging purpose, generate the shp file
         if not road.empty:
@@ -311,7 +311,7 @@ def load_gdf_from_geocode(geocode, geocode_margin=5.0, preserve_roads=True, pres
     return result.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)
 
 
-def load_gdf(coords, key, tags, shp_file_path="", keep_geocode_data=False, is_roads=False, is_sea=False, is_grass=False, is_wall=False, land_mass=None, bbox=None):
+def load_gdf(coords, key, tags, shp_file_path="", keep_geocode_data=False, is_roads=False, is_sea=False, is_waterway=False, is_grass=False, is_wall=False, land_mass=None, bbox=None):
     result = create_empty_gdf()
     has_cache = os.path.isfile(shp_file_path)
     logging.getLogger('shapely.geos').setLevel(logging.CRITICAL)
@@ -374,7 +374,7 @@ def load_gdf(coords, key, tags, shp_file_path="", keep_geocode_data=False, is_ro
         result = result[keys]
 
         if not has_cache and shp_file_path != "":
-            if not is_roads and not keep_geocode_data:
+            if not is_roads and not is_waterway and not keep_geocode_data:
                 result = resize_gdf(result, 0.00001)
 
             try:
@@ -563,6 +563,18 @@ def prepare_building_gdf(gdf, wall):
 
     if not wall.empty:
         result = result.append(wall)
+
+    return result.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY).assign(boundary=BOUNDING_BOX_OSM_KEY)
+
+
+def prepare_water_gdf(gdf, waterway):
+    result = gdf.copy()
+
+    if not result.empty:
+        result = result[(result.geom_type == SHAPELY_TYPE.polygon) | (result.geom_type == SHAPELY_TYPE.multiPolygon)]
+
+    if not waterway.empty:
+        result = result.append(resize_gdf(waterway, 30))
 
     return result.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY).assign(boundary=BOUNDING_BOX_OSM_KEY)
 

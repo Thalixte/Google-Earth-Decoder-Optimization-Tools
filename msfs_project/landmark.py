@@ -35,14 +35,14 @@ class MsfsLandmarkLocation:
     offset: str
     has_alt: bool
 
-    def __init__(self, geocode_gdf=None, tiles=None, owner=None, type=None, offset=None, xml=None, elem=None):
+    def __init__(self, geocode_gdf=None, tiles=None, owner=None, type=None, alt=None, offset=None, xml=None, elem=None):
         # default landmark location type is POI
         self.type = self.LANDMARK_LOCATION_TYPE.poi
         self.name = str()
         self.has_alt = False
 
         if geocode_gdf is not None:
-            self.__init_from_gdf(geocode_gdf, tiles=tiles, owner=owner, type=type, offset=offset)
+            self.__init_from_gdf(geocode_gdf, tiles=tiles, owner=owner, type=type, alt=alt, offset=offset)
 
         if xml is not None:
             self.__init_from_xml(xml, elem)
@@ -51,13 +51,13 @@ class MsfsLandmarkLocation:
         xml.add_landmark_location(self)
         xml.save()
 
-    def __init_from_gdf(self, geocode_gdf, tiles=None, owner=None, type=None, offset=None):
+    def __init_from_gdf(self, geocode_gdf, tiles=None, owner=None, type=None, alt=None, offset=None):
         if geocode_gdf.empty:
             return
 
         self.instance_id = "{" + str(uuid4()).upper() + "}"
         self.owner = owner or str()
-        self.pos = MsfsPosition(geocode_gdf.lat, geocode_gdf.lon, "{:.6f}".format(0.0))
+        self.pos = MsfsPosition(geocode_gdf.lat, geocode_gdf.lon, "{:.6f}".format(float(alt) or 0.0))
         self.offset = "{:.6f}".format(float(offset) or 0.0)
 
         if type in self.LANDMARK_LOCATION_TYPE.__dict__.values():
@@ -92,18 +92,18 @@ class MsfsLandmarkLocation:
 class MsfsLandmarks:
     landmark_locations: list
 
-    def __init__(self, geocode_gdf=None, tiles=None, owner=None, type=None, offset=None, xml=None):
+    def __init__(self, geocode_gdf=None, tiles=None, owner=None, type=None, alt=None, offset=None, xml=None):
         self.landmark_locations = []
 
         if geocode_gdf is not None:
-            self.__init_from_gdf(geocode_gdf, tiles=tiles, owner=owner, type=type, offset=offset)
+            self.__init_from_gdf(geocode_gdf, tiles=tiles, owner=owner, type=type, alt=alt, offset=offset)
 
         if xml is not None:
             self.__init_from_xml(xml)
 
-    def __init_from_gdf(self, geocode_gdf, tiles=None, owner=None, type=None, offset=None):
+    def __init_from_gdf(self, geocode_gdf, tiles=None, owner=None, type=None, alt=None, offset=None):
         for index, row in geocode_gdf.iterrows():
-            self.landmark_locations.append(MsfsLandmarkLocation(geocode_gdf=row, tiles=tiles, owner=owner, type=type, offset=offset))
+            self.landmark_locations.append(MsfsLandmarkLocation(geocode_gdf=row, tiles=tiles, owner=owner, type=type, alt=alt, offset=offset))
 
     def __init_from_xml(self, xml):
         landmarks = xml.find_landmarks()

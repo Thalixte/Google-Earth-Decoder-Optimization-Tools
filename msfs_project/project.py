@@ -25,7 +25,7 @@ import shutil
 import os
 import subprocess
 from utils import install_python_lib
-from utils.geo_pandas import prepare_wall_gdf, create_exclusion_building_gdf
+from utils.geo_pandas import prepare_wall_gdf, create_exclusion_building_gdf, prepare_water_gdf
 from constants import *
 
 try:
@@ -318,10 +318,6 @@ class MsfsProject:
         if clean_3d_data:
             # self.__reduce_number_of_vertices(settings.nb_parallel_blender_tasks)
             self.__cleanup_lods_3d_data(settings.nb_parallel_blender_tasks, clean_all=clean_all)
-
-    def adjust_height_data(self, settings):
-        height_adjustment = float(settings.height_adjustment)
-        self.__adjust_height_data(height_adjustment)
 
     def exclude_3d_data_from_geocode(self, settings):
         geocode = settings.geocode
@@ -956,24 +952,19 @@ class MsfsProject:
         osm_xml.create_from_geodataframes([preserve_holes(orig_bbox.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore'))], b)
 
         orig_land_mass, orig_boundary, orig_road, orig_railway, orig_sea, orig_landuse, orig_grass, orig_nature_reserve, \
-        orig_natural, orig_natural_water, orig_water, orig_aeroway, orig_pitch, orig_construction, orig_park, orig_building, \
+        orig_natural, orig_natural_water, orig_water, orig_waterway, orig_aeroway, orig_pitch, orig_construction, orig_park, orig_building, \
         orig_wall, orig_rocks, orig_amenity, orig_airport = self.__load_geodataframes(orig_bbox, b, settings)
 
         bbox, bridges, road, places, sea, landuse, natural, natural_water, water, aeroway, pitch, construction, airport, building, wall, golf, park, \
         nature_reserve, whole_water, water_exclusion, ground_exclusion, exclusion, rocks, amenity = self.__prepare_geodataframes(orig_road, orig_railway, orig_sea, orig_bbox, orig_land_mass, orig_boundary,
-                                                                                                                        orig_landuse, orig_natural, orig_natural_water, orig_water, orig_aeroway,
+                                                                                                                        orig_landuse, orig_natural, orig_natural_water, orig_water, orig_waterway, orig_aeroway,
                                                                                                                         orig_pitch, orig_construction, orig_airport, orig_building, orig_wall, orig_grass,
                                                                                                                         orig_park, orig_nature_reserve, orig_rocks, orig_amenity, settings)
-
-        if not places.empty:
-            # for debugging purpose, generate the whole water exclusion osm file
-            osm_xml = OsmXml(self.osmfiles_folder, "places" + OSM_FILE_EXT)
-            osm_xml.create_from_geodataframes([preserve_holes(places.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore'))], b, True, [(HEIGHT_OSM_TAG, 1000)])
 
         if not whole_water.empty:
             # for debugging purpose, generate the whole water exclusion osm file
             osm_xml = OsmXml(self.osmfiles_folder, WHOLE_WATER_OSM_FILE_PREFIX + OSM_FILE_EXT)
-            osm_xml.create_from_geodataframes([preserve_holes(whole_water.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore'))], b, True, [(HEIGHT_OSM_TAG, 1000)])
+            osm_xml.create_from_geodataframes([preserve_holes(resize_gdf(whole_water, 10).drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore'))], b, True, [(HEIGHT_OSM_TAG, 1000)])
 
         if not water_exclusion.empty:
             # for debugging purpose, generate the water exclusion osm file
@@ -993,8 +984,8 @@ class MsfsProject:
         if clean_3d_data:
             create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, water_exclusion, keep_building_mask=resize_gdf(building, 8), keep_road_mask=road if keep_roads else None, keep_amenity_mask=amenity if keep_roads else None, airport_mask=airport, ground_exclusion_mask=ground_exclusion if settings.exclude_ground else create_empty_gdf(), rocks=rocks, title="CREATE EXCLUSION MASKS OSM FILES")
         if generate_height_data:
-            create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, ground_exclusion, keep_building_mask=building, keep_road_mask=resize_gdf(road, -4) if keep_roads else None, keep_amenity_mask=resize_gdf(amenity, -4) if keep_roads else None, airport_mask=airport, file_prefix=GROUND_OSM_KEY + "_", title="CREATE GROUND EXCLUSION MASKS OSM FILES")
-        create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, whole_water, keep_holes=False, file_prefix=WATER_OSM_KEY + "_", title="CREATE WATER EXCLUSION MASKS OSM FILES")
+            create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, ground_exclusion, keep_building_mask=building, keep_road_mask=road if keep_roads else None, keep_amenity_mask=resize_gdf(amenity, -4) if keep_roads else None, airport_mask=airport, file_prefix=GROUND_OSM_KEY + "_", title="CREATE GROUND EXCLUSION MASKS OSM FILES")
+            create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, resize_gdf(whole_water, 10), keep_holes=False, file_prefix=WATER_OSM_KEY + "_", title="CREATE WATER EXCLUSION MASKS OSM FILES")
 
         if create_polygons:
             print_title("CREATE PITCH TERRAFORM POLYGONS GEO DATAFRAMES...)")
@@ -1035,7 +1026,7 @@ class MsfsProject:
             if not exclusion_vegetation_polygons.empty:
                 self.shapes[EXCLUSION_VEGETATION_POLYGONS_DISPLAY_NAME] = MsfsShapes(shape_gdf=exclusion_vegetation_polygons, group_display_name=EXCLUSION_VEGETATION_POLYGONS_DISPLAY_NAME, group_id=new_group_id + 1, exclude_vegetation=True, exclude_buildings=True)
             if not pitch_terraform_polygons.empty:
-                self.shapes[PITCH_TERRAFORM_POLYGONS_DISPLAY_NAME] = MsfsShapes(shape_gdf=pitch_terraform_polygons, group_display_name=PITCH_TERRAFORM_POLYGONS_DISPLAY_NAME, group_id=new_group_id + 2, tiles=self.tiles, flatten=True)
+                self.shapes[PITCH_TERRAFORM_POLYGONS_DISPLAY_NAME] = MsfsShapes(shape_gdf=pitch_terraform_polygons, group_display_name=PITCH_TERRAFORM_POLYGONS_DISPLAY_NAME, group_id=new_group_id + 2, tiles=self.tiles, flatten=not disable_terraform)
             if not construction_terraform_polygons.empty:
                 self.shapes[CONSTRUCTION_TERRAFORM_POLYGONS_DISPLAY_NAME] = MsfsShapes(shape_gdf=construction_terraform_polygons, group_display_name=CONSTRUCTION_TERRAFORM_POLYGONS_DISPLAY_NAME, group_id=new_group_id + 3, tiles=self.tiles, flatten=False)
             # if not golf_terraform_polygons.empty:
@@ -1047,17 +1038,11 @@ class MsfsProject:
                 shape.remove_from_xml(self.objects_xml, group_name)
                 shape.to_xml(self.objects_xml)
 
-        elif disable_terraform:
-            for group_name, shape in self.shapes.items():
-                if group_name != PITCH_TERRAFORM_POLYGONS_DISPLAY_NAME and group_name != CONSTRUCTION_TERRAFORM_POLYGONS_DISPLAY_NAME:
-                    continue
-                shape.remove_from_xml(self.objects_xml, group_name)
-
         self.__remove_full_water_tiles(water_exclusion)
 
     def __load_geodataframes(self, orig_bbox, b, settings):
         # load all necessary GeoPandas Dataframes
-        load_gdf_list = [None] * 20
+        load_gdf_list = [None] * 21
         pbar = ProgressBar(load_gdf_list, title="RETRIEVE GEODATAFRAMES (THE FIRST TIME, MAY TAKE SOME TIME TO COMPLETE, BE PATIENT...)")
         pbar.update("retrieving land mass geodataframe...", stall=True)
         orig_land_mass = create_land_mass_gdf(self.sources_folder, orig_bbox, b)
@@ -1092,6 +1077,9 @@ class MsfsProject:
         pbar.update("retrieving other waters geodataframe...", stall=True)
         orig_water = load_gdf(self.coords, WATER_OSM_KEY, OSM_TAGS[WATER_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, WATER_OSM_KEY + SHP_FILE_EXT))
         pbar.update("other waters geodataframe retrieved")
+        pbar.update("retrieving waterways geodataframe...", stall=True)
+        orig_waterway = load_gdf(self.coords, WATERWAY_OSM_KEY, OSM_TAGS[WATERWAY_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, WATERWAY_OSM_KEY + SHP_FILE_EXT), is_waterway=True)
+        pbar.update("waterways geodataframe retrieved")
         pbar.update("retrieving aeroways geodataframe...", stall=True)
         orig_aeroway = load_gdf(self.coords, AEROWAY_OSM_KEY, True, shp_file_path=os.path.join(self.shpfiles_folder, AEROWAY_OSM_KEY + SHP_FILE_EXT))
         pbar.update("aeroways geodataframe retrieved")
@@ -1121,7 +1109,7 @@ class MsfsProject:
         pbar.update("airports geodataframe retrieved")
 
         return orig_land_mass, orig_boundary, orig_road, orig_railway, orig_sea, orig_landuse, orig_grass, orig_nature_reserve, \
-               orig_natural, orig_natural_water, orig_water, orig_aeroway, orig_pitch, orig_construction, orig_park, orig_building, orig_wall, orig_rocks, orig_amenity, orig_airport
+               orig_natural, orig_natural_water, orig_water, orig_waterway, orig_aeroway, orig_pitch, orig_construction, orig_park, orig_building, orig_wall, orig_rocks, orig_amenity, orig_airport
 
     def __create_geocode_osm_exclusion_files(self, geocode, b, geocode_margin, preserve_roads, preserve_buildings, coords, shpfiles_folder):
         print_title("RETRIEVE GEOCODE OSM FILES")
@@ -1163,29 +1151,6 @@ class MsfsProject:
                 lod.remove_road_and_collision_tags()
             tile.add_collider()
 
-    def __adjust_height_data(self, height_adjustment):
-        if HEIGHT_MAPS_DISPLAY_NAME not in self.height_maps: return
-
-        height_map = self.height_maps[HEIGHT_MAPS_DISPLAY_NAME]
-        self.objects_xml.remove_height_maps(HEIGHT_MAPS_DISPLAY_NAME, False)
-
-        pbar = ProgressBar(height_map.rectangles, title="ADJUST HEIGHT MAPS DATA")
-        for rectangle in pbar.iterable:
-            updated_height_data = str()
-            geoid_height = get_geoid_height(rectangle.pos.lat, rectangle.pos.lon)
-            height_data = rectangle.height_data.split(" ")
-            for height in height_data:
-                height = float(height)
-                if height <= geoid_height:
-                    continue
-                h = height + height_adjustment
-                updated_height_data += (str(h if h >= geoid_height else geoid_height) + " ")
-            rectangle.height_data = updated_height_data.rstrip()
-            self.objects_xml.add_height_map(rectangle)
-            pbar.update("height_maps adjusted")
-
-        self.objects_xml.save()
-
     def __exclude_lods_3d_data_from_geocode(self, geocode, geocode_gdf, settings):
         modified_tiles, tiles_with_collider, lods_data = self.__retrieve_lods_to_exclude_or_isolate_3d_data_from_geocode(geocode, geocode_gdf, "exclude_3d_data_from_geocode", settings)
         self.__multithread_process_data(lods_data, "cleanup_lod_3d_data.py", "EXCLUDE LODS 3D DATA TILES FROM GEOCODE", "excluded")
@@ -1220,7 +1185,7 @@ class MsfsProject:
         geocode_gdf = load_gdf_from_geocode(geocode, keep_data=True, shpfiles_folder=self.shpfiles_folder)
 
         print_title("WRITE LANDMARK TO SCENERY XML FILE")
-        landmarks = MsfsLandmarks(geocode_gdf=geocode_gdf, tiles=self.tiles, owner=settings.author_name, type=settings.landmark_type, offset=settings.landmark_offset)
+        landmarks = MsfsLandmarks(geocode_gdf=geocode_gdf, tiles=self.tiles, owner=settings.author_name, type=settings.landmark_type, alt=get_geoid_height(self.sources_folder, geocode_gdf.lat, geocode_gdf.lon), offset=settings.landmark_offset)
 
         for landmark_location in landmarks.landmark_locations:
             # if a landmark has a correct altitude, it is valid
@@ -1307,7 +1272,7 @@ class MsfsProject:
 
     @staticmethod
     def __prepare_geodataframes(orig_road, orig_railway, orig_sea, orig_bbox, orig_land_mass, orig_boundary, orig_landuse, orig_natural, orig_natural_water,
-                                orig_water, orig_aeroway, orig_pitch, orig_construction, orig_airport, orig_building, orig_wall, orig_grass, orig_park, orig_nature_reserve,
+                                orig_water, orig_waterway, orig_aeroway, orig_pitch, orig_construction, orig_airport, orig_building, orig_wall, orig_grass, orig_park, orig_nature_reserve,
                                 orig_rocks, orig_amenity, settings):
         # prepare all the necessary GeoPandas Dataframes
         itasks = 21
@@ -1343,7 +1308,7 @@ class MsfsProject:
         natural_water = clip_gdf(prepare_gdf(orig_natural_water), bbox)
         pbar.update("natural water geodataframe prepared")
         pbar.update("preparing water geodataframe...", stall=True)
-        water = clip_gdf(prepare_gdf(orig_water), bbox)
+        water = clip_gdf(prepare_water_gdf(orig_water, orig_waterway), bbox)
         pbar.update("water geodataframe prepared")
         pbar.update("preparing aeroway geodataframe...", stall=True)
         aeroway = clip_gdf(prepare_gdf(orig_aeroway), bbox)

@@ -29,8 +29,8 @@ except ModuleNotFoundError:
 from pygeodesy.ellipsoidalKarney import LatLon
 
 
-def get_geoid_height(lat, lon):
-    interpolator = pygeodesy.GeoidKarney(os.path.join(GEOIDS_DATASET_FOLDER, EGM2008_5_DATASET))
+def get_geoid_height(sources_folder, lat, lon):
+    interpolator = pygeodesy.GeoidKarney(os.path.join(sources_folder, os.path.join(GEOIDS_DATASET_FOLDER, EGM2008_5_DATASET)))
     single_position = LatLon(lat, lon)
     h = interpolator(single_position)
     return h
