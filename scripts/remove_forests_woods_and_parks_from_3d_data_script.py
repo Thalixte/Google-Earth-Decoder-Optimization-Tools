@@ -55,7 +55,7 @@ def remove_forests_woods_and_parks_from_3d_data(script_settings):
         script_settings.exclude_parks = True
         script_settings.ground_exclusion_margin = 10.0
         script_settings.save()
-        msfs_project.prepare_3d_data(script_settings, generate_height_data=False, clean_3d_data=True, create_polygons=False, clean_all=True)
+        msfs_project.prepare_3d_data(script_settings, generate_height_data=False, clean_3d_data=True, create_polygons=False, clean_all=False)
 
         isolated_print(EOL)
         print_title("CLEAN PACKAGE FILES")
