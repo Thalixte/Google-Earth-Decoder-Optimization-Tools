@@ -58,11 +58,13 @@ class TOPBAR_MT_google_earth_optimization_menu(Menu):
         layout.separator()
         layout.operator(OT_OptimizeSceneryPanel.bl_idname)
         layout.separator()
+        layout.operator(OT_MergeSceneriesPanel.bl_idname)
+        layout.separator()
         layout.operator(OT_CreateTerraformAndExclusionPolygonsPanel.bl_idname)
         layout.separator()
         layout.operator(OT_GenerateHeightDataPanel.bl_idname)
         layout.separator()
-        layout.operator(OT_RemoveForestsWoodsAndParksFrom3dDataPanel.bl_idname)
+        layout.operator(OT_KeepOnlyBuildingsAndRoads3dDataPanel.bl_idname)
         layout.separator()
         layout.operator(OT_CleanPackageFilesPanel.bl_idname)
         layout.separator()
@@ -87,9 +89,9 @@ class TOPBAR_MT_edit_tiles_menu(Menu):
         layout.separator()
         layout.operator(OT_RemoveForestsAndWoodsFrom3dDataPanel.bl_idname)
         layout.separator()
-        layout.operator(OT_KeepOnlyBuildings3dDataPanel.bl_idname)
+        layout.operator(OT_RemoveForestsWoodsAndParksFrom3dDataPanel.bl_idname)
         layout.separator()
-        layout.operator(OT_KeepOnlyBuildingsAndRoads3dDataPanel.bl_idname)
+        layout.operator(OT_KeepOnlyBuildings3dDataPanel.bl_idname)
 
 
 class TOPBAR_MT_finalization_menu(Menu):
@@ -111,8 +113,6 @@ class TOPBAR_MT_other_tools_menu(Menu):
 
     def draw(self, context):
         layout = self.layout
-        layout.operator(OT_MergeSceneriesPanel.bl_idname)
-        layout.separator()
         layout.operator(OT_CreateLandmarkFromGeocodePanel.bl_idname)
         layout.separator()
         layout.operator(OT_UpdateMinSizeValuesPanel.bl_idname)

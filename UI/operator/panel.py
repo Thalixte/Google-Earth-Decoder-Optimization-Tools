@@ -347,7 +347,7 @@ class OT_MergeSceneriesPanel(SettingsOperator):
     operator_name = "wm.merge_sceneries"
     id_name = "wm.merge_sceneries_panel"
     bl_idname = id_name
-    bl_label = "Merge an existing MSFS scenery project into another one"
+    bl_label = "(Optional) Merge an existing MSFS scenery project into another one"
     operator_description = """Merge the tiles of a MSFS scenery project into another MSFS scenery project.
         In the MERGE section, select the project that you want to merge into the project indicated in the PROJECT section."""
     starting_section = MERGE_INI_SECTION
@@ -481,7 +481,7 @@ class OT_RemoveForestsWoodsAndParksFrom3dDataPanel(SettingsOperator):
     operator_name = "wm.remove_forests_woods_and_parks_from_3d_data"
     id_name = "wm.remove_forests_woods_and_parks_from_3d_data_panel"
     bl_idname = id_name
-    bl_label = "5. Remove water, forests, woods and parks from GE tiles"
+    bl_label = "Remove water, forests, woods and parks from GE tiles"
     operator_description = """Automatically removes water, forests, woods and parks from the Google Earth tiles, based on the OpenStreetMap data.
         Optionally, in the OPENSTREETMAP section, set the city of the airport, in case you want to remove an airport.
         Notice: this method can produce some visual artifacts when removing the forests, woods or parks, because of the Google Earth trees        
@@ -498,7 +498,7 @@ class OT_KeepOnlyBuildings3dDataPanel(SettingsOperator):
     operator_name = "wm.keep_only_buildings_3d_data"
     id_name = "wm.keep_only_buildings_3d_data_panel"
     bl_idname = id_name
-    bl_label = "Remove everything except buildings from Google Earth tiles"
+    bl_label = "Keep only buildings from Google Earth tiles"
     operator_description = """Automatically removes everything, except buildings from the Google Earth tiles, based on the OpenStreetMap data.
         Optionally, in the OPENSTREETMAP section, set the city of the airport, in case you want to remove an airport.
         Notice: this method can produce some visual artifacts, and buildings that are not included in OpenStreetMap data can be removed"""
@@ -514,7 +514,7 @@ class OT_KeepOnlyBuildingsAndRoads3dDataPanel(SettingsOperator):
     operator_name = "wm.keep_only_buildings_and_roads_3d_data"
     id_name = "wm.keep_only_buildings_and_roads_3d_data_panel"
     bl_idname = id_name
-    bl_label = "Remove everything except buildings and roads from Google Earth tiles"
+    bl_label = "5. Keep only buildings and roads from Google Earth tiles"
     operator_description = """Automatically removes everything, except buildings and roads from the Google Earth tiles, based on the OpenStreetMap data.
         Optionally, in the OPENSTREETMAP section, set the city of the airport, in case you want to remove an airport.
         Notice: this method can produce some visual artifacts, and buildings that are not included in OpenStreetMap data can be removed"""
