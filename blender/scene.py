@@ -706,13 +706,12 @@ def debug_height_data(new_collection, hmatrix, height_grid, height_grid_coords, 
 
     bpy.ops.object.select_all(action=DESELECT_ACTION)
 
-    # for obj in new_collection.objects:
-    #     obj.hide_set(True)
+    for obj in new_collection.objects:
+        obj.hide_set(True)
 
     for obj in obs:
         obj.location[2] = obj.location[2] - 100.0
         apply_transform(obj, use_location=True)
-        # obj.hide_set(True)
 
 
 def display_final_height_grid(height_grid):
@@ -721,9 +720,12 @@ def display_final_height_grid(height_grid):
     mat = height_grid.active_material
     mat.use_nodes = False
     mat.diffuse_color = (1.0, 0.5, 0.0, 0.5)
-    mat.metallic = 0.5
-    mat.specular_intensity = 0.5
-    mat.roughness = 1.0
+    mat.metallic = 0.75
+    mat.specular_intensity = 0.75
+    mat.roughness = 0.2
+    mat.use_backface_culling = True
+    mat.blend_method = "BLEND"
+    mat.show_transparent_back = True
     height_grid.show_transparent = True
     grid_collection = bpy.data.collections[GRIDS_COLLECTION_NAME]
 
