@@ -604,7 +604,7 @@ class OT_CompressBuiltPackagePanel(SettingsOperator):
     bl_label = "8. Optimize the built package by compressing the texture files"
     operator_description = """This script optimizes the built package of a MSFS scenery project by compressing the DDS texture files.
         For the script to process correctly, the package must have been successfully built prior to executing the script."""
-    starting_section = COMPRESSONATOR_INI_SECTION
+    starting_section = PROJECT_INI_SECTION
     displayed_sections = [
         PROJECT_INI_SECTION,
         COMPRESSONATOR_INI_SECTION,

@@ -181,6 +181,8 @@ PARK_OSM_KEY = "park"
 WALL_OSM_KEY = "wall"
 NOT_SHORE_WATER_OSM_KEY = "not_shore",
 NOT_EXCLUSION_BUILDING_OSM_KEY = "not_exclusion_building",
+ROAD_REMOVAL_LANDUSE_OSM_KEY = "road_removal_landuse"
+ROAD_REMOVAL_NATURAL_OSM_KEY = "road_removal_natural"
 ELEMENT_TY_OSM_KEY = "element_ty"
 OSMID_OSM_KEY = "osmid"
 LANES_OSM_KEY = "lanes"
@@ -268,6 +270,8 @@ SERVICE_ROAD_TYPE = "service"
 RAILWAY_ROAD_TYPE = "railway"
 PATH_ROAD_TYPE = "path"
 TRACK_ROAD_TYPE = "track"
+
+FULL_PREFIX = "full_"
 
 POI_LANDMARK_FORMAT_TYPE = "POI"
 CITY_LANDMARK_FORMAT_TYPE = "City"
@@ -378,6 +382,14 @@ OSM_TAGS = {
     ],
     BARRIER_OSM_KEY: [
         WALL_OSM_TAG
-    ]
+    ],
+    ROAD_REMOVAL_LANDUSE_OSM_KEY: [
+        FOREST_OSM_TAG,
+        NATURE_RESERVE_OSM_TAG
+    ],
+    ROAD_REMOVAL_NATURAL_OSM_KEY: [
+        FOREST_OSM_TAG,
+        WOOD_OSM_TAG
+    ],
 }
 

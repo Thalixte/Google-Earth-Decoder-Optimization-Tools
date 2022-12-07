@@ -25,7 +25,7 @@ import shutil
 import os
 import subprocess
 from utils import install_python_lib
-from utils.geo_pandas import prepare_wall_gdf, create_exclusion_building_gdf, prepare_water_gdf
+from utils.geo_pandas import prepare_wall_gdf, create_exclusion_building_gdf, prepare_water_gdf, prepare_amenity_gdf, prepare_road_removal_landuse_gdf, prepare_road_removal_natural_gdf
 from constants import *
 
 try:
@@ -955,7 +955,7 @@ class MsfsProject:
         orig_natural, orig_natural_water, orig_water, orig_waterway, orig_aeroway, orig_pitch, orig_construction, orig_park, orig_building, \
         orig_wall, orig_rocks, orig_amenity, orig_airport = self.__load_geodataframes(orig_bbox, b, settings)
 
-        bbox, bridges, road, places, sea, landuse, natural, natural_water, water, aeroway, pitch, construction, airport, building, wall, golf, park, \
+        bbox, bridges, road, places, sea, landuse, road_removal_landuse, natural, road_removal_natural, natural_water, water, aeroway, pitch, construction, airport, building, wall, golf, park, \
         nature_reserve, whole_water, water_exclusion, ground_exclusion, exclusion, rocks, amenity = self.__prepare_geodataframes(orig_road, orig_railway, orig_sea, orig_bbox, orig_land_mass, orig_boundary,
                                                                                                                         orig_landuse, orig_natural, orig_natural_water, orig_water, orig_waterway, orig_aeroway,
                                                                                                                         orig_pitch, orig_construction, orig_airport, orig_building, orig_wall, orig_grass,
@@ -982,9 +982,9 @@ class MsfsProject:
             osm_xml.create_from_geodataframes([preserve_holes(exclusion.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore'))], b, True, [(HEIGHT_OSM_TAG, 1000)])
 
         if clean_3d_data:
-            create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, water_exclusion, keep_building_mask=resize_gdf(building, 8), keep_road_mask=road if keep_roads else None, keep_amenity_mask=amenity if keep_roads else None, airport_mask=airport, ground_exclusion_mask=ground_exclusion if settings.exclude_ground else create_empty_gdf(), rocks=rocks, title="CREATE EXCLUSION MASKS OSM FILES")
+            create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, water_exclusion, keep_building_mask=resize_gdf(building, 8), keep_road_mask=road if keep_roads else None, road_removal_landuse=road_removal_landuse if keep_roads else None, road_removal_natural=road_removal_natural if keep_roads else None, keep_amenity_mask=amenity if keep_roads else None, airport_mask=airport, ground_exclusion_mask=ground_exclusion if settings.exclude_ground else create_empty_gdf(), rocks=rocks, title="CREATE EXCLUSION MASKS OSM FILES")
         if generate_height_data:
-            create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, ground_exclusion, keep_building_mask=building, keep_road_mask=road if keep_roads else None, keep_amenity_mask=resize_gdf(amenity, -4) if keep_roads else None, airport_mask=airport, file_prefix=GROUND_OSM_KEY + "_", title="CREATE GROUND EXCLUSION MASKS OSM FILES")
+            create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, ground_exclusion, keep_building_mask=building, keep_road_mask=road if keep_roads else None, road_removal_landuse=road_removal_landuse if keep_roads else None, road_removal_natural=road_removal_natural if keep_roads else None, keep_amenity_mask=resize_gdf(amenity, -4) if keep_roads else None, airport_mask=airport, file_prefix=GROUND_OSM_KEY + "_", title="CREATE GROUND EXCLUSION MASKS OSM FILES")
             create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, resize_gdf(whole_water, 10), keep_holes=False, file_prefix=WATER_OSM_KEY + "_", title="CREATE WATER EXCLUSION MASKS OSM FILES")
 
         if create_polygons:
@@ -1275,7 +1275,7 @@ class MsfsProject:
                                 orig_water, orig_waterway, orig_aeroway, orig_pitch, orig_construction, orig_airport, orig_building, orig_wall, orig_grass, orig_park, orig_nature_reserve,
                                 orig_rocks, orig_amenity, settings):
         # prepare all the necessary GeoPandas Dataframes
-        itasks = 21
+        itasks = 23
 
         if settings.exclude_parks:
             itasks = itasks+1
@@ -1286,12 +1286,6 @@ class MsfsProject:
         prepare_gdf_list = [None] * itasks
         pbar = ProgressBar(prepare_gdf_list, title="PREPARE GEODATAFRAMES")
 
-        pbar.update("preparing bridges geodataframe...", stall=True)
-        bridges, places = prepare_roads_gdf(orig_road, orig_railway, bridge_only=True, automatic_road_width_calculation=False)
-        pbar.update("bridges geodataframe prepared")
-        pbar.update("preparing roads and places geodataframes...", stall=True)
-        road, places = prepare_roads_gdf(orig_road, orig_railway, bridge_only=False, automatic_road_width_calculation=False)
-        pbar.update("roads and places geodataframes prepared")
         pbar.update("preparing sea geodataframe...", stall=True)
         sea = prepare_sea_gdf(orig_sea)
         pbar.update("sea geodataframe prepared")
@@ -1301,15 +1295,27 @@ class MsfsProject:
         pbar.update("preparing landuse geodataframe...", stall=True)
         landuse = clip_gdf(prepare_gdf(orig_landuse), bbox)
         pbar.update("landuse geodataframe prepared")
+        pbar.update("preparing road_removal landuse geodataframe...", stall=True)
+        road_removal_landuse = clip_gdf(prepare_road_removal_landuse_gdf(orig_landuse), bbox)
+        pbar.update("road_removal landuse geodataframe prepared")
         pbar.update("preparing natural geodataframe...", stall=True)
         natural = clip_gdf(prepare_gdf(orig_natural), bbox)
         pbar.update("natural geodataframe prepared")
+        pbar.update("preparing road_removal natural geodataframe...", stall=True)
+        road_removal_natural = clip_gdf(prepare_road_removal_natural_gdf(orig_natural), bbox)
+        pbar.update("road_removal natural geodataframe prepared")
         pbar.update("preparing natural water geodataframe...", stall=True)
         natural_water = clip_gdf(prepare_gdf(orig_natural_water), bbox)
         pbar.update("natural water geodataframe prepared")
         pbar.update("preparing water geodataframe...", stall=True)
         water = clip_gdf(prepare_water_gdf(orig_water, orig_waterway), bbox)
         pbar.update("water geodataframe prepared")
+        pbar.update("preparing bridges geodataframe...", stall=True)
+        bridges, places = prepare_roads_gdf(orig_road, orig_railway, bridge_only=True, automatic_road_width_calculation=False)
+        pbar.update("bridges geodataframe prepared")
+        pbar.update("preparing roads and places geodataframes...", stall=True)
+        road, places = prepare_roads_gdf(orig_road, orig_railway, bridge_only=False, automatic_road_width_calculation=False)
+        pbar.update("roads and places geodataframes prepared")
         pbar.update("preparing aeroway geodataframe...", stall=True)
         aeroway = clip_gdf(prepare_gdf(orig_aeroway), bbox)
         pbar.update("aeroway geodataframe prepared")
@@ -1320,7 +1326,7 @@ class MsfsProject:
         construction = clip_gdf(prepare_gdf(orig_construction), bbox)
         pbar.update("construction geodataframe prepared")
         pbar.update("preparing amenity geodataframe...", stall=True)
-        amenity = clip_gdf(prepare_gdf(orig_amenity), bbox)
+        amenity = clip_gdf(prepare_amenity_gdf(orig_amenity, water, natural_water, orig_airport), bbox)
         pbar.update("amenity geodataframe prepared")
         pbar.update("preparing airport geodataframe...", stall=True)
         airport = prepare_gdf(orig_airport)
@@ -1367,7 +1373,7 @@ class MsfsProject:
         exclusion = union_gdf(water_exclusion, ground_exclusion if settings.exclude_ground else create_empty_gdf())
         pbar.update("exclusion geodataframe created")
 
-        return bbox, bridges, road, places, sea, landuse, natural, natural_water, water, aeroway, pitch, construction, airport, building, wall, golf, park, \
+        return bbox, bridges, road, places, sea, landuse, road_removal_landuse, natural, road_removal_natural, natural_water, water, aeroway, pitch, construction, airport, building, wall, golf, park, \
                nature_reserve, whole_water, water_exclusion, ground_exclusion, exclusion, rocks, amenity
 
     @staticmethod

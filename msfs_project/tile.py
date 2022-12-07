@@ -112,7 +112,7 @@ class MsfsTile(MsfsSceneObject):
         osm_xml = OsmXml(dest_folder, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + self.name + OSM_FILE_EXT)
         osm_xml.create_from_geodataframes([self.bbox_gdf.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')], b)
 
-    def create_exclusion_mask_osm_file(self, dest_folder, b, exclusion_mask, keep_building_mask=None, keep_road_mask=None, keep_amenity_mask=None, airport_mask=None, ground_exclusion_mask=None, rocks=None, keep_holes=True, file_prefix=""):
+    def create_exclusion_mask_osm_file(self, dest_folder, b, exclusion_mask, keep_building_mask=None, keep_road_mask=None, road_removal_landuse=None, road_removal_natural=None, keep_amenity_mask=None, airport_mask=None, ground_exclusion_mask=None, rocks=None, keep_holes=True, file_prefix=""):
         bbox_gdf = resize_gdf(self.bbox_gdf, 10 if keep_holes else 200)
         exclusion_mask_gdf = exclusion_mask.clip(bbox_gdf)
 
@@ -130,20 +130,31 @@ class MsfsTile(MsfsSceneObject):
                     keep_building_mask = clip_gdf(keep_building_mask, bbox_gdf)
                     exclusion_mask_gdf = difference_gdf(exclusion_mask_gdf, keep_building_mask)
 
-            if airport_mask is not None:
-                if not airport_mask.empty:
-                    airport_mask = clip_gdf(airport_mask, bbox_gdf)
-                    exclusion_mask_gdf = union_gdf(exclusion_mask_gdf, airport_mask)
-
             if keep_road_mask is not None:
                 if not keep_road_mask.empty:
                     keep_road_mask = clip_gdf(keep_road_mask, bbox_gdf)
+
+                    if road_removal_landuse is not None:
+                        if not road_removal_landuse.empty:
+                            road_removal_landuse = clip_gdf(road_removal_landuse, bbox_gdf)
+                            keep_road_mask = difference_gdf(keep_road_mask, road_removal_landuse)
+
+                    if road_removal_natural is not None:
+                        if not road_removal_natural.empty:
+                            road_removal_natural = clip_gdf(road_removal_natural, bbox_gdf)
+                            keep_road_mask = difference_gdf(keep_road_mask, road_removal_natural)
+
                     exclusion_mask_gdf = difference_gdf(exclusion_mask_gdf, keep_road_mask)
 
             if keep_amenity_mask is not None:
                 if not keep_amenity_mask.empty:
                     keep_amenity_mask = clip_gdf(keep_amenity_mask, bbox_gdf)
                     exclusion_mask_gdf = difference_gdf(exclusion_mask_gdf, keep_amenity_mask)
+
+            if airport_mask is not None:
+                if not airport_mask.empty:
+                    airport_mask = clip_gdf(airport_mask, bbox_gdf)
+                    exclusion_mask_gdf = union_gdf(exclusion_mask_gdf, airport_mask)
 
             file_name = file_prefix + EXCLUSION_OSM_FILE_PREFIX + "_" + self.name + OSM_FILE_EXT
             exclusion_mask = exclusion_mask_gdf.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')

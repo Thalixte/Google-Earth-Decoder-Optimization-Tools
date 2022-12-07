@@ -20,7 +20,8 @@ import os
 import warnings
 
 from constants import GEOMETRY_OSM_COLUMN, BOUNDING_BOX_OSM_KEY, SHAPE_TEMPLATES_FOLDER, OSM_LAND_SHAPEFILE, ROAD_OSM_KEY, BRIDGE_OSM_TAG, SERVICE_OSM_KEY, NOT_SHORE_WATER_OSM_KEY, WATER_OSM_KEY, NATURAL_OSM_KEY, OSM_TAGS, FOOTWAY_OSM_TAG, PATH_OSM_TAG, MAN_MADE_OSM_KEY, PIER_OSM_TAG, GOLF_OSM_KEY, FAIRWAY_OSM_TAG, EOL, CEND, TUNNEL_OSM_TAG, SEAMARK_TYPE_OSM_TAG, BUILDING_OSM_KEY, SHP_FILE_EXT, ELEMENT_TY_OSM_KEY, OSMID_OSM_KEY, RAILWAY_OSM_KEY, LANES_OSM_KEY, ONEWAY_OSM_KEY, ROAD_WITH_BORDERS, \
-    ROAD_LANE_WIDTH, GEOCODE_OSM_FILE_PREFIX, PEDESTRIAN_ROAD_TYPE, FOOTWAY_ROAD_TYPE, SERVICE_ROAD_TYPE, LANDUSE_OSM_KEY, CONSTRUCTION_OSM_KEY, GDAL_LIB_PREFIX, FIONA_LIB_PREFIX, LAND_MASS_REPO, LAND_MASS_ARCHIVE, LEISURE_OSM_KEY, NETWORKX_LIB, RTREE_LIB, MATPLOTLIB_LIB, PANDAS_LIB, GEOPANDAS_LIB, OSMNX_LIB, SHAPELY_LIB, PATH_ROAD_TYPE, TRACK_ROAD_TYPE, AREA_OSM_TAG, NOT_EXCLUSION_BUILDING_OSM_KEY, WALL_OSM_KEY, WALL_OSM_TAG, CASTLE_WALL_OSM_TAG, CYCLEWAY_ROAD_TYPE
+    ROAD_LANE_WIDTH, GEOCODE_OSM_FILE_PREFIX, PEDESTRIAN_ROAD_TYPE, FOOTWAY_ROAD_TYPE, SERVICE_ROAD_TYPE, LANDUSE_OSM_KEY, CONSTRUCTION_OSM_KEY, GDAL_LIB_PREFIX, FIONA_LIB_PREFIX, LAND_MASS_REPO, LAND_MASS_ARCHIVE, LEISURE_OSM_KEY, NETWORKX_LIB, RTREE_LIB, MATPLOTLIB_LIB, PANDAS_LIB, GEOPANDAS_LIB, OSMNX_LIB, SHAPELY_LIB, PATH_ROAD_TYPE, TRACK_ROAD_TYPE, AREA_OSM_TAG, NOT_EXCLUSION_BUILDING_OSM_KEY, WALL_OSM_KEY, WALL_OSM_TAG, CASTLE_WALL_OSM_TAG, CYCLEWAY_ROAD_TYPE, FULL_PREFIX, \
+    ROAD_REMOVAL_LANDUSE_OSM_KEY, ROAD_REMOVAL_NATURAL_OSM_KEY
 from utils import pr_bg_orange, install_python_lib, install_alternate_python_lib, install_shapefile_resource
 
 try:
@@ -163,7 +164,7 @@ def create_bounding_box_from_tiles(tiles):
 
 
 def create_empty_gdf():
-    return gpd.GeoDataFrame(columns=[GEOMETRY_OSM_COLUMN], geometry=GEOMETRY_OSM_COLUMN)
+    return gpd.GeoDataFrame(columns=[GEOMETRY_OSM_COLUMN], geometry=GEOMETRY_OSM_COLUMN, crs=EPSG.key + str(EPSG.WGS84_degree_unit))
 
 
 def create_bounding_box(coords):
@@ -171,7 +172,7 @@ def create_bounding_box(coords):
     return gpd.GeoDataFrame(pd.DataFrame([], index=[0]), crs=EPSG.key + str(EPSG.WGS84_degree_unit), geometry=[b]), b
 
 
-def create_exclusion_masks_from_tiles(tiles, dest_folder, b, exclusion_mask, keep_building_mask=None, keep_road_mask=None, keep_amenity_mask=None, airport_mask=None, ground_exclusion_mask=None, rocks=None, keep_holes=True, file_prefix="", title="CREATE EXCLUSION MASKS OSM FILES"):
+def create_exclusion_masks_from_tiles(tiles, dest_folder, b, exclusion_mask, keep_building_mask=None, keep_road_mask=None, road_removal_landuse=None, road_removal_natural=None, keep_amenity_mask=None, airport_mask=None, ground_exclusion_mask=None, rocks=None, keep_holes=True, file_prefix="", title="CREATE EXCLUSION MASKS OSM FILES"):
     valid_tiles = [tile for tile in list(tiles.values()) if tile.valid]
     pbar = ProgressBar(valid_tiles, title=title)
     exclusion = exclusion_mask.copy()
@@ -180,7 +181,7 @@ def create_exclusion_masks_from_tiles(tiles, dest_folder, b, exclusion_mask, kee
         # if tile.name != "30604160614140752" and tile.name != "30604160614140773" and tile.name != "30604160614140770" and tile.name != "30604160614140650" and tile.name != "30604160614140453":
         #     continue
 
-        tile.create_exclusion_mask_osm_file(dest_folder, b, exclusion, keep_building_mask=keep_building_mask, keep_road_mask=keep_road_mask, keep_amenity_mask=keep_amenity_mask, airport_mask=airport_mask, ground_exclusion_mask=ground_exclusion_mask, rocks=rocks, keep_holes=keep_holes, file_prefix=file_prefix)
+        tile.create_exclusion_mask_osm_file(dest_folder, b, exclusion, keep_building_mask=keep_building_mask, keep_road_mask=keep_road_mask, road_removal_landuse=road_removal_landuse, road_removal_natural=road_removal_natural, keep_amenity_mask=keep_amenity_mask, airport_mask=airport_mask, ground_exclusion_mask=ground_exclusion_mask, rocks=rocks, keep_holes=keep_holes, file_prefix=file_prefix)
         pbar.update("exclusion mask created for %s tile" % tile.name)
 
 
@@ -213,7 +214,7 @@ def load_gdf_from_geocode(geocode, geocode_margin=5.0, preserve_roads=True, pres
             result = create_empty_gdf()
             pass
 
-    load_gdf_list = [None] * 5
+    load_gdf_list = [None] * 6
     if display_warnings:
         pbar = ProgressBar(load_gdf_list, title="RETRIEVE GEODATAFRAMES (THE FIRST TIME, MAY TAKE SOME TIME TO COMPLETE, BE PATIENT...)")
         pbar.update("retrieving buildings geodataframe...", stall=True)
@@ -222,7 +223,13 @@ def load_gdf_from_geocode(geocode, geocode_margin=5.0, preserve_roads=True, pres
     orig_building = load_gdf(coords, BUILDING_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, BUILDING_OSM_KEY + SHP_FILE_EXT), keep_geocode_data=True)
     if display_warnings:
         pbar.update("buildings geodataframe retrieved")
-        pbar.update("retrieving leisures geodataframe...", stall=True)
+        pbar.update("retrieving landuse geodataframe...", stall=True)
+    # load gdf twice to ensure to retrieve if from cache (to have osmid in a key, not in an index)
+    load_gdf(coords, LANDUSE_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, FULL_PREFIX + LANDUSE_OSM_KEY + SHP_FILE_EXT))
+    orig_landuse = load_gdf(coords, LANDUSE_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, FULL_PREFIX + LANDUSE_OSM_KEY + SHP_FILE_EXT), keep_geocode_data=True)
+    if display_warnings:
+        pbar.update("landuse geodataframe retrieved")
+        pbar.update("retrieving constructions geodataframe...", stall=True)
     # load gdf twice to ensure to retrieve if from cache (to have osmid in a key, not in an index)
     load_gdf(coords, LEISURE_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, LEISURE_OSM_KEY + SHP_FILE_EXT))
     orig_leisure = load_gdf(coords, LEISURE_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, LEISURE_OSM_KEY + SHP_FILE_EXT), keep_geocode_data=True)
@@ -254,6 +261,8 @@ def load_gdf_from_geocode(geocode, geocode_margin=5.0, preserve_roads=True, pres
                 osmid = geocode
                 if ELEMENT_TY_OSM_KEY in orig_building and OSMID_OSM_KEY in orig_building:
                     result = orig_building[((orig_building[ELEMENT_TY_OSM_KEY] == OSMID_TYPE.way) | (orig_building[ELEMENT_TY_OSM_KEY] == OSMID_TYPE.relation)) & (orig_building[OSMID_OSM_KEY] == int(osmid))]
+                if result.empty and ELEMENT_TY_OSM_KEY in orig_landuse and OSMID_OSM_KEY in orig_landuse:
+                    result = orig_landuse[((orig_landuse[ELEMENT_TY_OSM_KEY] == OSMID_TYPE.way) | (orig_landuse[ELEMENT_TY_OSM_KEY] == OSMID_TYPE.relation)) & (orig_landuse[OSMID_OSM_KEY] == int(osmid))]
                 if result.empty and ELEMENT_TY_OSM_KEY in orig_leisure and OSMID_OSM_KEY in orig_leisure:
                     result = orig_leisure[((orig_leisure[ELEMENT_TY_OSM_KEY] == OSMID_TYPE.way) | (orig_leisure[ELEMENT_TY_OSM_KEY] == OSMID_TYPE.relation)) & (orig_leisure[OSMID_OSM_KEY] == int(osmid))]
                 if result.empty and ELEMENT_TY_OSM_KEY in orig_construction and OSMID_OSM_KEY in orig_construction:
@@ -548,6 +557,24 @@ def prepare_park_gdf(gdf, bridges):
     return result
 
 
+def prepare_amenity_gdf(gdf, water, natural_water, airport):
+    if gdf is None:
+        return create_empty_gdf()
+
+    result = gdf.copy()
+
+    if not result.empty:
+        if not water.empty:
+            result = difference_gdf(result, water)
+        if not natural_water.empty:
+            result = difference_gdf(result, natural_water)
+        if not airport.empty:
+            result = difference_gdf(result, airport)
+        result = result[(result.geom_type == SHAPELY_TYPE.polygon) | (result.geom_type == SHAPELY_TYPE.multiPolygon)]
+
+    return result
+
+
 def prepare_bbox_gdf(bbox, land_mass, boundary):
     result = clip_gdf(bbox, land_mass)
     result = clip_gdf(result, boundary)
@@ -577,6 +604,42 @@ def prepare_water_gdf(gdf, waterway):
         result = result.append(resize_gdf(waterway, 30))
 
     return result.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY).assign(boundary=BOUNDING_BOX_OSM_KEY)
+
+
+def prepare_road_removal_landuse_gdf(gdf):
+    src = gdf.copy()
+    filter = create_empty_gdf()
+    result = create_empty_gdf()
+
+    if not src.empty:
+        for tag in OSM_TAGS[ROAD_REMOVAL_LANDUSE_OSM_KEY]:
+            if LANDUSE_OSM_KEY in src:
+                filter = src[(src[LANDUSE_OSM_KEY] == tag)]
+
+            if not filter.empty:
+                result = result.append(filter)
+
+        result = result[(result.geom_type == SHAPELY_TYPE.polygon) | (result.geom_type == SHAPELY_TYPE.multiPolygon)]
+
+    return result
+
+
+def prepare_road_removal_natural_gdf(gdf):
+    src = gdf.copy()
+    filter = create_empty_gdf()
+    result = create_empty_gdf()
+
+    if not src.empty:
+        for tag in OSM_TAGS[ROAD_REMOVAL_NATURAL_OSM_KEY]:
+            if NATURAL_OSM_KEY in src:
+                filter = src[(src[NATURAL_OSM_KEY] == tag)]
+
+            if not filter.empty:
+                result = result.append(filter)
+
+        result = result[(result.geom_type == SHAPELY_TYPE.polygon) | (result.geom_type == SHAPELY_TYPE.multiPolygon)]
+
+    return result
 
 
 def create_land_mass_gdf(sources_path, bbox, b):
@@ -644,12 +707,14 @@ def create_ground_exclusion_gdf(landuse, nature_reserve, natural, aeroway, bridg
 def create_exclusion_building_gdf(orig_water, orig_natural_water, sea, bbox):
     water = orig_water.copy()
     for tag in OSM_TAGS[NOT_EXCLUSION_BUILDING_OSM_KEY]:
-        water = water[~(water[WATER_OSM_KEY] == tag)]
+        if WATER_OSM_KEY in water:
+            water = water[~(water[WATER_OSM_KEY] == tag)]
     water = clip_gdf(prepare_gdf(water), bbox)
 
     natural_water = orig_natural_water.copy()
     for tag in OSM_TAGS[NOT_EXCLUSION_BUILDING_OSM_KEY]:
-        natural_water = natural_water[~(natural_water[NATURAL_OSM_KEY] == tag)]
+        if NATURAL_OSM_KEY in natural_water:
+            natural_water = natural_water[~(natural_water[NATURAL_OSM_KEY] == tag)]
     natural_water = clip_gdf(prepare_gdf(natural_water), bbox)
 
     result = create_whole_water_gdf(natural_water, water, sea)
@@ -660,12 +725,14 @@ def create_exclusion_building_gdf(orig_water, orig_natural_water, sea, bbox):
 def create_shore_water_gdf(orig_water, orig_natural_water, sea, bbox):
     water = orig_water.copy()
     for tag in OSM_TAGS[NOT_SHORE_WATER_OSM_KEY]:
-        water = water[~(water[WATER_OSM_KEY] == tag)]
+        if WATER_OSM_KEY in water:
+            water = water[~(water[WATER_OSM_KEY] == tag)]
     water = clip_gdf(prepare_gdf(water), bbox)
 
     natural_water = orig_natural_water.copy()
     for tag in OSM_TAGS[NOT_SHORE_WATER_OSM_KEY]:
-        natural_water = natural_water[~(natural_water[NATURAL_OSM_KEY] == tag)]
+        if NATURAL_OSM_KEY in natural_water:
+            natural_water = natural_water[~(natural_water[NATURAL_OSM_KEY] == tag)]
     natural_water = clip_gdf(prepare_gdf(natural_water), bbox)
 
     result = create_whole_water_gdf(natural_water, water, sea)
@@ -889,11 +956,15 @@ def create_grid_from_hmatrix(hmatrix, lat, lon):
 
 
 def calculate_road_width(row):
+    is_railway = False
     road_type = row[ROAD_OSM_KEY]
     lanes = row[LANES_OSM_KEY]
     oneway = row[ONEWAY_OSM_KEY]
     is_oneway = oneway == "yes"
-    is_railway = not pd.isna(row[RAILWAY_OSM_KEY])
+
+    if RAILWAY_OSM_KEY in row:
+        is_railway = not pd.isna(row[RAILWAY_OSM_KEY])
+
     if is_railway or pd.isna(row[LANES_OSM_KEY]) or row[LANES_OSM_KEY] is None:
         lanes = 1 if is_oneway else 2
 
