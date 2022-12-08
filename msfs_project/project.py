@@ -952,9 +952,9 @@ class MsfsProject:
 
         if process_3d_data:
             if settings.isolate_3d_data:
-                self.__isolate_3d_data(b, roads, road_removal_landuse, road_removal_natural, airport, building, exclusion, rocks, amenity, keep_roads=settings.keep_roads)
+                create_isolation_masks_from_tiles(self.tiles, self.osmfiles_folder, b, building_mask=resize_gdf(building, 8), road_mask=roads if settings.keep_roads else None, road_removal_landuse=road_removal_landuse if settings.keep_roads else None, road_removal_natural=road_removal_natural if settings.keep_roads else None, amenity_mask=amenity if keep_roads else None, airport_mask=airport, rocks_mask=rocks, file_prefix=EXCLUSION_OSM_FILE_PREFIX, title="CREATE EXCLUSION MASKS OSM FILES")
             else:
-                self.__clean_3d_data(b, roads, road_removal_landuse, road_removal_natural, airport, building, exclusion, rocks, amenity, keep_roads=settings.keep_roads)
+                create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, exclusion, building_mask=resize_gdf(building, 8), road_mask=roads if settings.keep_roads else None, road_removal_landuse=road_removal_landuse if settings.keep_roads else None, road_removal_natural=road_removal_natural if settings.keep_roads else None, amenity_mask=amenity if keep_roads else None, airport_mask=airport, rocks_mask=rocks, file_prefix=ISOLATION_OSM_FILE_PREFIX, title="CREATE ISOLATION MASKS OSM FILES")
 
         if generate_height_data:
             self.__generate_height_data(b, roads, road_removal_landuse, road_removal_natural, airport, building, water, exclusion, amenity, keep_roads=settings.keep_roads)
@@ -984,8 +984,6 @@ class MsfsProject:
             # for debugging purpose, generate the exclusion osm file
             osm_xml = OsmXml(self.osmfiles_folder, EXCLUSION_OSM_FILE_PREFIX + OSM_FILE_EXT)
             osm_xml.create_from_geodataframes([preserve_holes(exclusion.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore'))], b, True, [(HEIGHT_OSM_TAG, 1000)])
-
-
 
         return orig_water, orig_natural_water, bbox, roads, sea, road_removal_landuse, road_removal_natural, pitch, construction, airport, building, \
                water, water_without_bridges, exclusion, rocks, amenity
@@ -1032,12 +1030,6 @@ class MsfsProject:
         for group_name, shape in self.shapes.items():
             shape.remove_from_xml(self.objects_xml, group_name)
             shape.to_xml(self.objects_xml)
-
-    def __clean_3d_data(self, b, roads, road_removal_landuse, road_removal_natural, airport, building, exclusion, rocks, amenity, keep_roads=False):
-        create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, exclusion, building_mask=resize_gdf(building, 8), road_mask=roads if keep_roads else None, road_removal_landuse=road_removal_landuse if keep_roads else None, road_removal_natural=road_removal_natural if keep_roads else None, amenity_mask=amenity if keep_roads else None, airport_mask=airport, rocks_mask=rocks, file_prefix=EXCLUSION_OSM_FILE_PREFIX, title="CREATE EXCLUSION MASKS OSM FILES")
-
-    def __isolate_3d_data(self, b, roads, road_removal_landuse, road_removal_natural, airport, building, exclusion, rocks, amenity, keep_roads=False):
-        create_isolation_masks_from_tiles(self.tiles, self.osmfiles_folder, b, building_mask=resize_gdf(building, 8), road_mask=roads if keep_roads else None, road_removal_landuse=road_removal_landuse if keep_roads else None, road_removal_natural=road_removal_natural if keep_roads else None, amenity_mask=amenity if keep_roads else None, airport_mask=airport, rocks_mask=rocks, file_prefix=ISOLATION_OSM_FILE_PREFIX, title="CREATE ISOLATION MASKS OSM FILES")
 
     def __generate_height_data(self, b, roads, road_removal_landuse, road_removal_natural, airport, building, water, exclusion, amenity, keep_roads=False):
         create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, exclusion, building_mask=building, road_mask=roads if keep_roads else None, road_removal_landuse=road_removal_landuse if keep_roads else None, road_removal_natural=road_removal_natural if keep_roads else None, amenity_mask=resize_gdf(amenity, -4) if keep_roads else None, airport_mask=airport, file_prefix=GROUND_OSM_KEY + "_" + EXCLUSION_OSM_FILE_PREFIX, title="CREATE GROUND EXCLUSION MASKS OSM FILES")
