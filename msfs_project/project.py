@@ -661,7 +661,7 @@ class MsfsProject:
             if not tile.valid:
                 continue
 
-            # if tile.name != "30604160614140752" and tile.name != "30604160614140773" and tile.name != "30604160614140770" and tile.name != "30604160614140650" and tile.name != "30604160614140453":
+            # if tile.name != "30604050607051455" and tile.name != "30604160614140752" and tile.name != "30604160614140773" and tile.name != "30604160614140770" and tile.name != "30604160614140650" and tile.name != "30604160614140453":
             #     continue
 
             has_rocks = tile.has_rocks and not high_precision

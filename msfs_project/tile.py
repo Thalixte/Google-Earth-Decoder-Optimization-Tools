@@ -120,7 +120,7 @@ class MsfsTile(MsfsSceneObject):
             tile_rocks = clip_gdf(rocks, self.bbox_gdf)
             self.has_rocks = not tile_rocks.empty
 
-        if ground_exclusion_mask is not None and not self.has_rocks:
+        if ground_exclusion_mask is not None:
             tile_ground_exclusion_mask = ground_exclusion_mask.clip(bbox_gdf)
             exclusion_mask_gdf = union_gdf(exclusion_mask_gdf, tile_ground_exclusion_mask)
 
