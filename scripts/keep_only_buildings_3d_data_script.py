@@ -53,9 +53,12 @@ def keep_only_buildings_3d_data(script_settings):
         script_settings.exclude_ground = True
         script_settings.exclude_nature_reserve = True
         script_settings.exclude_parks = True
+        script_settings.isolate_3d_data = True
+        script_settings.keep_roads = False
+        script_settings.disable_terraform = True
+        script_settings.ground_exclusion_margin = STANDARD_EXCLUSION_MARGIN
         script_settings.save()
-        script_settings.ground_exclusion_margin = KEEP_ONLY_BUILDINGS_EXCLUSION_MARGIN
-        msfs_project.prepare_3d_data(script_settings, generate_height_data=False, clean_3d_data=True, create_polygons=False, clean_all=True, disable_terraform=True)
+        msfs_project.prepare_3d_data(script_settings, generate_height_data=False, process_3d_data=True, create_polygons=False, process_all=True)
 
         isolated_print(EOL)
         print_title("CLEAN PACKAGE FILES")

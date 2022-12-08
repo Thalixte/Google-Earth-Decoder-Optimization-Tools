@@ -50,7 +50,7 @@ def clean_3d_data(script_settings):
         isolated_print(EOL)
         print_title("CLEANUP 3D DATA")
 
-        msfs_project.prepare_3d_data(script_settings, generate_height_data=False, clean_3d_data=True, create_polygons=True)
+        msfs_project.prepare_3d_data(script_settings, generate_height_data=False, process_3d_data=True, create_polygons=True)
 
         isolated_print(EOL)
         print_title("CLEAN PACKAGE FILES")

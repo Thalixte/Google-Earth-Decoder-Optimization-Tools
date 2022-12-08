@@ -51,9 +51,15 @@ def create_terraform_and_exclusion_polygons(script_settings):
         isolated_print(EOL)
         print_title("ADJUST HEIGHT DATA")
 
+        script_settings.exclude_ground = True
+        script_settings.exclude_nature_reserve = True
+        script_settings.exclude_parks = True
+        script_settings.isolate_3d_data = False
+        script_settings.keep_roads = False
+        script_settings.disable_terraform = False
         script_settings.ground_exclusion_margin = STANDARD_EXCLUSION_MARGIN
         script_settings.save()
-        msfs_project.prepare_3d_data(script_settings, create_polygons=True, disable_terraform=True)
+        msfs_project.prepare_3d_data(script_settings, create_polygons=True)
 
         if script_settings.build_package_enabled:
             build_package(msfs_project, script_settings)

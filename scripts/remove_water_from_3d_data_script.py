@@ -53,9 +53,12 @@ def remove_water_from_3d_data(script_settings):
         script_settings.exclude_ground = False
         script_settings.exclude_nature_reserve = False
         script_settings.exclude_parks = False
-        script_settings.ground_exclusion_margin = 10.0
+        script_settings.isolate_3d_data = False
+        script_settings.keep_roads = False
+        script_settings.disable_terraform = False
+        script_settings.ground_exclusion_margin = STANDARD_EXCLUSION_MARGIN
         script_settings.save()
-        msfs_project.prepare_3d_data(script_settings, generate_height_data=False, clean_3d_data=True, create_polygons=False, clean_all=True)
+        msfs_project.prepare_3d_data(script_settings, generate_height_data=False, process_3d_data=True, create_polygons=False, process_all=True)
 
         isolated_print(EOL)
         print_title("CLEAN PACKAGE FILES")

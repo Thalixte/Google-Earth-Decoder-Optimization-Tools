@@ -172,7 +172,7 @@ def create_bounding_box(coords):
     return gpd.GeoDataFrame(pd.DataFrame([], index=[0]), crs=EPSG.key + str(EPSG.WGS84_degree_unit), geometry=[b]), b
 
 
-def create_exclusion_masks_from_tiles(tiles, dest_folder, b, exclusion_mask, keep_building_mask=None, keep_road_mask=None, road_removal_landuse=None, road_removal_natural=None, keep_amenity_mask=None, airport_mask=None, ground_exclusion_mask=None, rocks=None, keep_holes=True, file_prefix="", title="CREATE EXCLUSION MASKS OSM FILES"):
+def create_exclusion_masks_from_tiles(tiles, dest_folder, b, exclusion_mask, building_mask=None, road_mask=None, road_removal_landuse=None, road_removal_natural=None, amenity_mask=None, airport_mask=None, rocks_mask=None, keep_holes=True, file_prefix="", title="CREATE EXCLUSION MASKS OSM FILES"):
     valid_tiles = [tile for tile in list(tiles.values()) if tile.valid]
     pbar = ProgressBar(valid_tiles, title=title)
     exclusion = exclusion_mask.copy()
@@ -181,8 +181,20 @@ def create_exclusion_masks_from_tiles(tiles, dest_folder, b, exclusion_mask, kee
         # if tile.name != "30604050607051455" and tile.name != "30604160614140752" and tile.name != "30604160614140773" and tile.name != "30604160614140770" and tile.name != "30604160614140650" and tile.name != "30604160614140453":
         #     continue
 
-        tile.create_exclusion_mask_osm_file(dest_folder, b, exclusion, keep_building_mask=keep_building_mask, keep_road_mask=keep_road_mask, road_removal_landuse=road_removal_landuse, road_removal_natural=road_removal_natural, keep_amenity_mask=keep_amenity_mask, airport_mask=airport_mask, ground_exclusion_mask=ground_exclusion_mask, rocks=rocks, keep_holes=keep_holes, file_prefix=file_prefix)
+        tile.create_exclusion_mask_osm_file(dest_folder, b, exclusion, building_mask=building_mask, road_mask=road_mask, road_removal_landuse=road_removal_landuse, road_removal_natural=road_removal_natural, amenity_mask=amenity_mask, airport_mask=airport_mask, rocks_mask=rocks_mask, keep_holes=keep_holes, file_prefix=file_prefix)
         pbar.update("exclusion mask created for %s tile" % tile.name)
+
+
+def create_isolation_masks_from_tiles(tiles, dest_folder, b, building_mask=None, road_mask=None, road_removal_landuse=None, road_removal_natural=None, amenity_mask=None, airport_mask=None, rocks_mask=None, keep_holes=True, file_prefix="", title="CREATE ISOLATION MASKS OSM FILES"):
+    valid_tiles = [tile for tile in list(tiles.values()) if tile.valid]
+    pbar = ProgressBar(valid_tiles, title=title)
+
+    for i, tile in enumerate(valid_tiles):
+        # if tile.name != "30604050607051455" and tile.name != "30604160614140752" and tile.name != "30604160614140773" and tile.name != "30604160614140770" and tile.name != "30604160614140650" and tile.name != "30604160614140453":
+        #     continue
+
+        tile.create_isolation_mask_osm_file(dest_folder, b, building_mask=building_mask, road_mask=road_mask, road_removal_landuse=road_removal_landuse, road_removal_natural=road_removal_natural, amenity_mask=amenity_mask, rocks_mask=rocks_mask, keep_holes=keep_holes, file_prefix=file_prefix)
+        pbar.update("isolation mask created for %s tile" % tile.name)
 
 
 def resize_gdf(gdf, resize_distance, single_sided=True):
@@ -740,9 +752,9 @@ def create_shore_water_gdf(orig_water, orig_natural_water, sea, bbox):
     return result.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)
 
 
-def create_terraform_polygons_gdf(gdf, ground_exclusion):
+def create_terraform_polygons_gdf(gdf, exclusion):
     terraform_gdf = gdf.copy()
-    terraform_gdf = difference_gdf(terraform_gdf, ground_exclusion)
+    terraform_gdf = difference_gdf(terraform_gdf, exclusion)
     terraform_gdf = terraform_gdf.dissolve()
     result = preserve_holes(resize_gdf(terraform_gdf, -10), split_method=PRESERVE_HOLES_METHOD.derivation_split)
     return result.dissolve()

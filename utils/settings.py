@@ -112,6 +112,9 @@ class Settings:
         self.exclude_ground = "False"
         self.exclude_nature_reserve = "False"
         self.exclude_parks = "False"
+        self.isolate_3d_data = "False"
+        self.keep_roads = "False"
+        self.disable_terraform = "False"
 
         config = cp.ConfigParser()
         if os.path.isfile(INI_FILE):
@@ -173,6 +176,9 @@ class Settings:
         self.exclude_ground = json.loads(self.exclude_ground.lower())
         self.exclude_nature_reserve = json.loads(self.exclude_nature_reserve.lower())
         self.exclude_parks = json.loads(self.exclude_parks.lower())
+        self.isolate_3d_data = json.loads(self.isolate_3d_data.lower())
+        self.keep_roads = json.loads(self.keep_roads.lower())
+        self.disable_terraform = json.loads(self.disable_terraform.lower())
 
         self.preserve_roads = json.loads(self.preserve_roads.lower())
         self.preserve_buildings = json.loads(self.preserve_buildings.lower())

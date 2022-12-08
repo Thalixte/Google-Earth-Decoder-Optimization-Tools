@@ -17,7 +17,7 @@
 #  <pep8 compliant>
 
 import os
-from utils import install_python_lib
+from utils import install_python_lib, create_empty_gdf
 
 try:
     import geopandas as gpd
@@ -42,6 +42,7 @@ class MsfsTile(MsfsSceneObject):
     has_rocks: bool
     bbox_gdf: gpd.GeoDataFrame
     exclusion_mask_gdf: gpd.GeoDataFrame
+    isolation_mask_gdf: gpd.GeoDataFrame
     height_map: MsfsHeightMap | None
 
     GE_TILE_ROOF_LIMIT = 18
@@ -112,51 +113,47 @@ class MsfsTile(MsfsSceneObject):
         osm_xml = OsmXml(dest_folder, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + self.name + OSM_FILE_EXT)
         osm_xml.create_from_geodataframes([self.bbox_gdf.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')], b)
 
-    def create_exclusion_mask_osm_file(self, dest_folder, b, exclusion_mask, keep_building_mask=None, keep_road_mask=None, road_removal_landuse=None, road_removal_natural=None, keep_amenity_mask=None, airport_mask=None, ground_exclusion_mask=None, rocks=None, keep_holes=True, file_prefix=""):
+    def create_exclusion_mask_osm_file(self, dest_folder, b, exclusion_mask, building_mask=None, road_mask=None, road_removal_landuse=None, road_removal_natural=None, amenity_mask=None, airport_mask=None, rocks_mask=None, keep_holes=True, file_prefix=""):
         bbox_gdf = resize_gdf(self.bbox_gdf, 10 if keep_holes else 200)
         exclusion_mask_gdf = exclusion_mask.clip(bbox_gdf)
 
-        if rocks is not None:
-            tile_rocks = clip_gdf(rocks, self.bbox_gdf)
+        if rocks_mask is not None:
+            tile_rocks = clip_gdf(rocks_mask, self.bbox_gdf)
             self.has_rocks = not tile_rocks.empty
 
-        if ground_exclusion_mask is not None:
-            tile_ground_exclusion_mask = ground_exclusion_mask.clip(bbox_gdf)
-            exclusion_mask_gdf = union_gdf(exclusion_mask_gdf, tile_ground_exclusion_mask)
-
         if not exclusion_mask_gdf.empty:
-            if keep_building_mask is not None:
-                if not keep_building_mask.empty:
-                    keep_building_mask = clip_gdf(keep_building_mask, bbox_gdf)
-                    exclusion_mask_gdf = difference_gdf(exclusion_mask_gdf, keep_building_mask)
+            if building_mask is not None:
+                if not building_mask.empty:
+                    building_mask = clip_gdf(building_mask, bbox_gdf)
+                    exclusion_mask_gdf = difference_gdf(exclusion_mask_gdf, building_mask)
 
-            if keep_road_mask is not None:
-                if not keep_road_mask.empty:
-                    keep_road_mask = clip_gdf(keep_road_mask, bbox_gdf)
+            if road_mask is not None:
+                if not road_mask.empty:
+                    road_mask = clip_gdf(road_mask, bbox_gdf)
 
                     if road_removal_landuse is not None:
                         if not road_removal_landuse.empty:
                             road_removal_landuse = clip_gdf(road_removal_landuse, bbox_gdf)
-                            keep_road_mask = difference_gdf(keep_road_mask, road_removal_landuse)
+                            road_mask = difference_gdf(road_mask, road_removal_landuse)
 
                     if road_removal_natural is not None:
                         if not road_removal_natural.empty:
                             road_removal_natural = clip_gdf(road_removal_natural, bbox_gdf)
-                            keep_road_mask = difference_gdf(keep_road_mask, road_removal_natural)
+                            road_mask = difference_gdf(road_mask, road_removal_natural)
 
-                    exclusion_mask_gdf = difference_gdf(exclusion_mask_gdf, keep_road_mask)
+                    exclusion_mask_gdf = difference_gdf(exclusion_mask_gdf, road_mask)
 
-            if keep_amenity_mask is not None:
-                if not keep_amenity_mask.empty:
-                    keep_amenity_mask = clip_gdf(keep_amenity_mask, bbox_gdf)
-                    exclusion_mask_gdf = difference_gdf(exclusion_mask_gdf, keep_amenity_mask)
+            if amenity_mask is not None:
+                if not amenity_mask.empty:
+                    amenity_mask = clip_gdf(amenity_mask, bbox_gdf)
+                    exclusion_mask_gdf = difference_gdf(exclusion_mask_gdf, amenity_mask)
 
             if airport_mask is not None:
                 if not airport_mask.empty:
                     airport_mask = clip_gdf(airport_mask, bbox_gdf)
                     exclusion_mask_gdf = union_gdf(exclusion_mask_gdf, airport_mask)
 
-            file_name = file_prefix + EXCLUSION_OSM_FILE_PREFIX + "_" + self.name + OSM_FILE_EXT
+            file_name = file_prefix + "_" + self.name + OSM_FILE_EXT
             exclusion_mask = exclusion_mask_gdf.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')
             if keep_holes:
                 exclusion_mask = preserve_holes(exclusion_mask, split_method=PRESERVE_HOLES_METHOD.derivation_split)
@@ -166,6 +163,52 @@ class MsfsTile(MsfsSceneObject):
 
         if not file_prefix:
             self.exclusion_mask_gdf = exclusion_mask_gdf
+
+    def create_isolation_mask_osm_file(self, dest_folder, b, building_mask=None, road_mask=None, road_removal_landuse=None, road_removal_natural=None, amenity_mask=None, rocks_mask=None, keep_holes=True, file_prefix=""):
+        bbox_gdf = resize_gdf(self.bbox_gdf, 10 if keep_holes else 200)
+        isolation_mask_gdf = create_empty_gdf()
+
+        if rocks_mask is not None:
+            tile_rocks = clip_gdf(rocks_mask, self.bbox_gdf)
+            self.has_rocks = not tile_rocks.empty
+
+        if building_mask is not None:
+            if not building_mask.empty:
+                building_mask = clip_gdf(building_mask, bbox_gdf)
+                isolation_mask_gdf = union_gdf(isolation_mask_gdf, building_mask)
+
+        if road_mask is not None:
+            if not road_mask.empty:
+                road_mask = clip_gdf(road_mask, bbox_gdf)
+
+                if road_removal_landuse is not None:
+                    if not road_removal_landuse.empty:
+                        road_removal_landuse = clip_gdf(road_removal_landuse, bbox_gdf)
+                        road_mask = difference_gdf(road_mask, road_removal_landuse)
+
+                if road_removal_natural is not None:
+                    if not road_removal_natural.empty:
+                        road_removal_natural = clip_gdf(road_removal_natural, bbox_gdf)
+                        road_mask = difference_gdf(road_mask, road_removal_natural)
+
+                isolation_mask_gdf = union_gdf(isolation_mask_gdf, road_mask)
+
+        if amenity_mask is not None:
+            if not amenity_mask.empty:
+                amenity_mask = clip_gdf(amenity_mask, bbox_gdf)
+                isolation_mask_gdf = union_gdf(isolation_mask_gdf, amenity_mask)
+
+        if not isolation_mask_gdf.empty:
+            file_name = file_prefix + "_" + self.name + OSM_FILE_EXT
+            isolation_mask_gdf = isolation_mask_gdf.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')
+            if keep_holes:
+                isolation_mask_gdf = preserve_holes(isolation_mask_gdf, split_method=PRESERVE_HOLES_METHOD.derivation_split)
+
+            osm_xml = OsmXml(dest_folder, file_name)
+            osm_xml.create_from_geodataframes([isolation_mask_gdf], b, True, [(HEIGHT_OSM_TAG, 1000)])
+
+        if not file_prefix:
+            self.isolation_mask_gdf = isolation_mask_gdf
 
     def generate_height_data(self, height_map_xml, group_id, altitude, height_adjustment, high_precision=False, inverted=False, positioning_file_path="", water_mask_file_path="", ground_mask_file_path="", debug=False):
         if not self.lods:
