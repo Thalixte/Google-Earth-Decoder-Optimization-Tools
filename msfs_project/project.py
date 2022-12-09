@@ -957,7 +957,7 @@ class MsfsProject:
                 create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, exclusion, building_mask=building, airport_mask=airport, rocks_mask=rocks, file_prefix=EXCLUSION_OSM_FILE_PREFIX, title="CREATE EXCLUSION MASKS OSM FILES")
 
         if generate_height_data:
-            self.__generate_height_data(b, roads, road_removal_landuse, road_removal_natural, airport, building, water, exclusion, amenity, keep_roads=settings.keep_roads)
+            self.__generate_height_data(b, roads, road_removal_landuse, road_removal_natural, airport, building, water, orig_bbox.assign(building=BOUNDING_BOX_OSM_KEY) if settings.isolate_3d_data else exclusion, amenity, keep_roads=settings.keep_roads)
 
         # remove tiles that are completely in the water
         self.__remove_full_water_tiles(water_without_bridges)
