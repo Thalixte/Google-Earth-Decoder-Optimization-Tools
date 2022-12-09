@@ -108,6 +108,16 @@ try:
         help="path of the exclusion mask file",
     )
 
+    parser.add_argument(
+        "-al", "--add_lights", dest="add_lights", type=str, required=False,
+        help="add lights around the geocode",
+    )
+
+    parser.add_argument(
+        "-dbg", "--debug", dest="debug", type=str, required=False,
+        help="Debug the height data in blender",
+    )
+
     args = parser.parse_args(argv)
 
     if not argv:
@@ -132,7 +142,17 @@ try:
 
     settings = Settings(get_sources_path())
 
+    if args.add_lights:
+        add_lights = json.loads(args.add_lights.lower())
+    else:
+        add_lights = False
+
+    if args.debug:
+        debug = json.loads(args.debug.lower())
+    else:
+        debug = False
+
     lod = MsfsLod(os.path.splitext(args.model_file)[0][-2:], 0, args.folder, args.model_file)
-    lod.process_3d_data(args.positioning_file_path, args.mask_file_path, args.output_folder, process_type=PROCESS_TYPE.isolate_3d_data)
+    lod.process_3d_data(args.positioning_file_path, args.mask_file_path, args.output_folder, process_type=PROCESS_TYPE.isolate_3d_data, add_lights=add_lights, debug=debug)
 except:
     pass

@@ -186,6 +186,8 @@ class SettingsOperator(PanelOperator):
             col.separator()
             self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "landmark_offset", "Landmark offset")
             col.separator()
+            self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "add_lights", "Add lights around the landmark")
+            col.separator()
         self.draw_footer(context, self.layout, self.operator_name)
 
     def draw_python_panel(self, context):

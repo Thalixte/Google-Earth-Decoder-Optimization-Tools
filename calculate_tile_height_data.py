@@ -142,10 +142,9 @@ try:
     )
 
     parser.add_argument(
-        "-dng", "--debug", dest="debug", type=str, required=False,
+        "-dbg", "--debug", dest="debug", type=str, required=False,
         help="Debug the height data in blender",
     )
-
 
     args = parser.parse_args(argv)
 
@@ -178,9 +177,6 @@ try:
 
     if not args.high_precision:
         raise ScriptError("Error: --high_precision=\"true/false\" argument not given, aborting.")
-
-    if not args.high_precision:
-        raise ScriptError("Error: --debug=\"true/false\" argument not given, aborting.")
 
     clean_scene()
 

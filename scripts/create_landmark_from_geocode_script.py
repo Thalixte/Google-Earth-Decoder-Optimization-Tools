@@ -59,6 +59,10 @@ def create_landmark_from_geocode(script_settings):
             print_title("CREATE LANDMARK FROM GEOCODE")
             msfs_project.create_landmark_from_geocode(script_settings)
 
+            if script_settings.add_lights:
+                print_title("ADD LIGHTS TO GEOCODE")
+                msfs_project.add_lights_to_geocode(script_settings)
+
             if script_settings.build_package_enabled:
                 build_package(msfs_project, script_settings)
         else:

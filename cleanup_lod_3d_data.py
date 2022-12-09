@@ -108,6 +108,11 @@ try:
         help="path of the exclusion mask file",
     )
 
+    parser.add_argument(
+        "-dbg", "--debug", dest="debug", type=str, required=False,
+        help="Debug the height data in blender",
+    )
+
     args = parser.parse_args(argv)
 
     if not argv:
@@ -132,7 +137,12 @@ try:
 
     settings = Settings(get_sources_path())
 
+    if args.debug:
+        debug = json.loads(args.debug.lower())
+    else:
+        debug = False
+
     lod = MsfsLod(os.path.splitext(args.model_file)[0][-2:], 0, args.folder, args.model_file)
-    lod.process_3d_data(args.positioning_file_path, args.mask_file_path, args.output_folder, process_type=PROCESS_TYPE.cleanup_3d_data)
+    lod.process_3d_data(args.positioning_file_path, args.mask_file_path, args.output_folder, process_type=PROCESS_TYPE.cleanup_3d_data, debug=debug)
 except:
     pass

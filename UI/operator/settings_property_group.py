@@ -112,6 +112,9 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
     def landmark_offset_updated(self, context):
         context.scene.settings.landmark_offset = "{:.1f}".format(float(str(self.landmark_offset))).rstrip("0").rstrip(".")
 
+    def add_lights_updated(self, context):
+        context.scene.settings.add_lights = self.add_lights
+
     def build_package_enabled_updated(self, context):
         context.scene.settings.build_package_enabled = self.build_package_enabled
 
@@ -333,6 +336,12 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         precision=1,
         default=float(bpy.types.Scene.settings.landmark_offset),
         update=landmark_offset_updated
+    )
+    add_lights: BoolProperty(
+        name="Add lights around the landmark",
+        description="Add lights around the geocode landmark",
+        default=bpy.types.Scene.settings.add_lights,
+        update=add_lights_updated
     )
     build_package_enabled: BoolProperty(
         name="Build package enabled",

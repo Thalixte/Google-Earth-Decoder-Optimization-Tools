@@ -149,6 +149,10 @@ def reload_landmark_offset(context):
     context.scene.setting_props.landmark_offset = float(context.scene.settings.landmark_offset)
 
 
+def reload_add_lights(context):
+    context.scene.setting_props.add_lights = context.scene.settings.add_lights
+
+
 def reload_build_package_enabled(context):
     context.scene.setting_props.build_package_enabled = context.scene.settings.build_package_enabled
 
@@ -232,6 +236,7 @@ def reload_setting_props(context, reload_settings_file=True):
     reload_preserve_buildings(context)
     reload_landmark_type(context)
     reload_landmark_offset(context)
+    reload_add_lights(context)
     reload_build_package_enabled(context)
     reload_msfs_build_exe_path(context)
     reload_msfs_steam_version(context)

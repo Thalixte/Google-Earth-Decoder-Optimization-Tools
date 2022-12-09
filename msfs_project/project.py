@@ -332,7 +332,7 @@ class MsfsProject:
 
     def isolate_3d_data_from_geocode(self, settings):
         geocode = settings.geocode
-        geocode_gdf = self.__create_geocode_osm_files(geocode, settings, False, False)
+        geocode_gdf = self.__create_geocode_osm_files(geocode, settings, False, False, self.coords, self.shpfiles_folder)
 
         if geocode_gdf is None:
             return geocode_gdf
@@ -340,6 +340,17 @@ class MsfsProject:
         if not geocode_gdf.empty:
             self.__create_tiles_bounding_boxes()
             self.__isolate_lods_3d_data_from_geocode(geocode, geocode_gdf, settings)
+
+    def add_lights_to_geocode(self, settings):
+        geocode = settings.geocode
+        geocode_gdf = self.__create_geocode_osm_files(geocode, settings, False, False, self.coords, self.shpfiles_folder)
+
+        if geocode_gdf is None:
+            return geocode_gdf
+
+        if not geocode_gdf.empty:
+            self.__create_tiles_bounding_boxes()
+            self.__isolate_lods_3d_data_from_geocode(geocode, geocode_gdf, settings, add_lights=True)
 
     def create_landmark_from_geocode(self, settings):
         geocode = settings.geocode
@@ -758,7 +769,7 @@ class MsfsProject:
 
         return tiles, chunks(data, nb_parallel_blender_tasks)
 
-    def __retrieve_lods_to_exclude_or_isolate_3d_data_from_geocode(self, geocode, geocode_gdf, backup_subfolder, settings):
+    def __retrieve_lods_to_exclude_or_isolate_3d_data_from_geocode(self, geocode, geocode_gdf, backup_subfolder, settings, add_lights=False):
         data = []
         modified_tiles = []
         tiles_with_collider = []
@@ -805,9 +816,14 @@ class MsfsProject:
                 if not os.path.isdir(lod_folder):
                     continue
 
-                data.append({"name": lod.name, "params": ["--folder", str(lod_folder), "--output_folder", str(lod.folder), "--model_file", str(lod.model_file),
+                params = ["--folder", str(lod_folder), "--output_folder", str(lod.folder), "--model_file", str(lod.model_file),
                                                           "--positioning_file_path", str(os.path.join(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)),
-                                                          "--mask_file_path", str(mask_file_path)]})
+                                                          "--mask_file_path", str(mask_file_path)]
+
+                if add_lights:
+                    params.extend(["--add_lights", str(add_lights)])
+
+                data.append({"name": lod.name, "params": params})
                 modified_tiles.append(tile)
 
         if not data:
@@ -1164,8 +1180,8 @@ class MsfsProject:
             lod.prepare_for_msfs()
             pbar.update("%s prepared for msfs" % lod.name)
 
-    def __isolate_lods_3d_data_from_geocode(self, geocode, geocode_gdf, settings):
-        modified_tiles, tiles_with_collider, lods_data = self.__retrieve_lods_to_exclude_or_isolate_3d_data_from_geocode(geocode, geocode_gdf, "isolate_3d_data_from_geocode", settings)
+    def __isolate_lods_3d_data_from_geocode(self, geocode, geocode_gdf, settings, add_lights=False):
+        modified_tiles, tiles_with_collider, lods_data = self.__retrieve_lods_to_exclude_or_isolate_3d_data_from_geocode(geocode, geocode_gdf, "isolate_3d_data_from_geocode", settings, add_lights=add_lights)
         self.__multithread_process_data(lods_data, "isolate_lod_3d_data.py", "ISOLATE LODS 3D DATA TILES FROM GEOCODE", "excluded")
         for tile in tiles_with_collider:
             for lod in tile.lods:
@@ -1414,8 +1430,8 @@ class MsfsProject:
                 params = [str(bpy.app.binary_path), "--background", "--python", os.path.join(os.path.dirname(os.path.dirname(__file__)), script_name), "--"]
 
                 for obj in chunck:
-                    print("-------------------------------------------------------------------------------")
-                    print("\"" + str(bpy.app.binary_path) + "\" --background --python \"" + os.path.join(os.path.dirname(os.path.dirname(__file__)), script_name) + "\" -- " + str(" ").join(obj["params"]))
+                    isolated_print("-------------------------------------------------------------------------------")
+                    isolated_print("\"" + str(bpy.app.binary_path) + "\" --background --python \"" + os.path.join(os.path.dirname(os.path.dirname(__file__)), script_name) + "\" -- " + str(" ").join(obj["params"]))
 
                 si = subprocess.STARTUPINFO()
                 si.dwFlags = subprocess.STARTF_USESTDHANDLES | subprocess.HIGH_PRIORITY_CLASS
