@@ -1208,7 +1208,7 @@ def face(rows, column, row):
     return column * rows + row, column * rows + row + 1, (column + 1) * rows + row + 1, (column + 1) * rows + row
 
 
-def create_bounding_box(obj, prefix):
+def create_bounding_box(obj, prefix, spheric=False):
     scale = obj.scale
 
     minx = obj.bound_box[0][0] * scale.x
@@ -1227,7 +1227,14 @@ def create_bounding_box(obj, prefix):
     loc.rotate(obj.rotation_euler)
     loc = loc + obj.location
 
-    bpy.ops.mesh.primitive_cube_add(location=loc, rotation=obj.rotation_euler)
+    if spheric:
+        bpy.ops.mesh.primitive_uv_sphere_add(location=loc, rotation=obj.rotation_euler)
+        dx = dx*2
+        dy = dy * 2
+        dz = dz * 2
+    else:
+        bpy.ops.mesh.primitive_cube_add(location=loc, rotation=obj.rotation_euler)
+
     new_obj = bpy.context.object
 
     new_obj.name = new_name
@@ -1376,3 +1383,14 @@ def remove_obj_faces(obj):
     bm.to_mesh(me)
     me.update()
     bm.free()
+
+
+def create_geocode_bounding_box():
+    bpy.ops.object.select_all(action=SELECT_ACTION)
+    bpy.ops.object.join()
+    obs = bpy.context.selected_objects
+
+    for obj in obs:
+        bbox = create_bounding_box(obj, "geocode", spheric=True)
+
+

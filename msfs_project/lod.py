@@ -21,7 +21,7 @@ import re
 import shutil
 from pathlib import Path
 
-from blender import import_model_files, bake_texture_files, fix_object_bounding_box, export_to_optimized_gltf_files, clean_scene, extract_splitted_tile, align_model_with_mask, process_3d_data, generate_model_height_data, reduce_number_of_vertices
+from blender import import_model_files, bake_texture_files, fix_object_bounding_box, export_to_optimized_gltf_files, clean_scene, extract_splitted_tile, align_model_with_mask, process_3d_data, generate_model_height_data, reduce_number_of_vertices, create_geocode_bounding_box
 from constants import PNG_TEXTURE_FORMAT, JPG_TEXTURE_FORMAT, GLTF_FILE_PATTERN, GLTF_FILE_EXT, XML_FILE_EXT, TEXTURE_FOLDER
 from msfs_project.binary import MsfsBinary
 from msfs_project.texture import MsfsTexture
@@ -250,6 +250,8 @@ class MsfsLod:
             model_file.remove_texture_path(self.name)
             model_file.add_cleaned_tag()
             model_file.dump()
+        else:
+            create_geocode_bounding_box()
 
         if not debug:
             clean_scene()
