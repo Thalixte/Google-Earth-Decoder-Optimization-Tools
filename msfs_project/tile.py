@@ -164,52 +164,6 @@ class MsfsTile(MsfsSceneObject):
         if not file_prefix:
             self.exclusion_mask_gdf = exclusion_mask_gdf
 
-    def create_isolation_mask_osm_file(self, dest_folder, b, building_mask=None, road_mask=None, road_removal_landuse=None, road_removal_natural=None, amenity_mask=None, rocks_mask=None, keep_holes=True, file_prefix=""):
-        bbox_gdf = resize_gdf(self.bbox_gdf, 10 if keep_holes else 200)
-        isolation_mask_gdf = create_empty_gdf()
-
-        if rocks_mask is not None:
-            tile_rocks = clip_gdf(rocks_mask, self.bbox_gdf)
-            self.has_rocks = not tile_rocks.empty
-
-        if building_mask is not None:
-            if not building_mask.empty:
-                building_mask = clip_gdf(building_mask, bbox_gdf)
-                isolation_mask_gdf = union_gdf(isolation_mask_gdf, building_mask)
-
-        if road_mask is not None:
-            if not road_mask.empty:
-                road_mask = clip_gdf(road_mask, bbox_gdf)
-
-                if road_removal_landuse is not None:
-                    if not road_removal_landuse.empty:
-                        road_removal_landuse = clip_gdf(road_removal_landuse, bbox_gdf)
-                        road_mask = difference_gdf(road_mask, road_removal_landuse)
-
-                if road_removal_natural is not None:
-                    if not road_removal_natural.empty:
-                        road_removal_natural = clip_gdf(road_removal_natural, bbox_gdf)
-                        road_mask = difference_gdf(road_mask, road_removal_natural)
-
-                isolation_mask_gdf = union_gdf(isolation_mask_gdf, road_mask)
-
-        if amenity_mask is not None:
-            if not amenity_mask.empty:
-                amenity_mask = clip_gdf(amenity_mask, bbox_gdf)
-                isolation_mask_gdf = union_gdf(isolation_mask_gdf, amenity_mask)
-
-        if not isolation_mask_gdf.empty:
-            file_name = file_prefix + "_" + self.name + OSM_FILE_EXT
-            isolation_mask_gdf = isolation_mask_gdf.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')
-            if keep_holes:
-                isolation_mask_gdf = preserve_holes(isolation_mask_gdf, split_method=PRESERVE_HOLES_METHOD.derivation_split)
-
-            osm_xml = OsmXml(dest_folder, file_name)
-            osm_xml.create_from_geodataframes([isolation_mask_gdf], b, True, [(HEIGHT_OSM_TAG, 1000)])
-
-        if not file_prefix:
-            self.isolation_mask_gdf = isolation_mask_gdf
-
     def generate_height_data(self, height_map_xml, group_id, altitude, height_adjustment, high_precision=False, inverted=False, positioning_file_path="", water_mask_file_path="", ground_mask_file_path="", debug=False):
         if not self.lods:
             return

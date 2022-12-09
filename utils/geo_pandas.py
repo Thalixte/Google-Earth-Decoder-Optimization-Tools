@@ -185,18 +185,6 @@ def create_exclusion_masks_from_tiles(tiles, dest_folder, b, exclusion_mask, bui
         pbar.update("exclusion mask created for %s tile" % tile.name)
 
 
-def create_isolation_masks_from_tiles(tiles, dest_folder, b, building_mask=None, road_mask=None, road_removal_landuse=None, road_removal_natural=None, amenity_mask=None, airport_mask=None, rocks_mask=None, keep_holes=True, file_prefix="", title="CREATE ISOLATION MASKS OSM FILES"):
-    valid_tiles = [tile for tile in list(tiles.values()) if tile.valid]
-    pbar = ProgressBar(valid_tiles, title=title)
-
-    for i, tile in enumerate(valid_tiles):
-        # if tile.name != "30604050607051455" and tile.name != "30604160614140752" and tile.name != "30604160614140773" and tile.name != "30604160614140770" and tile.name != "30604160614140650" and tile.name != "30604160614140453":
-        #     continue
-
-        tile.create_isolation_mask_osm_file(dest_folder, b, building_mask=building_mask, road_mask=road_mask, road_removal_landuse=road_removal_landuse, road_removal_natural=road_removal_natural, amenity_mask=amenity_mask, rocks_mask=rocks_mask, keep_holes=keep_holes, file_prefix=file_prefix)
-        pbar.update("isolation mask created for %s tile" % tile.name)
-
-
 def resize_gdf(gdf, resize_distance, single_sided=True):
     if gdf.empty:
         return gdf
@@ -603,7 +591,7 @@ def prepare_building_gdf(gdf, wall):
     if not wall.empty:
         result = result.append(wall)
 
-    return result.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY).assign(boundary=BOUNDING_BOX_OSM_KEY)
+    return result.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)
 
 
 def prepare_water_gdf(gdf, waterway):
@@ -615,7 +603,7 @@ def prepare_water_gdf(gdf, waterway):
     if not waterway.empty:
         result = result.append(resize_gdf(waterway, 30))
 
-    return result.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY).assign(boundary=BOUNDING_BOX_OSM_KEY)
+    return result.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)
 
 
 def prepare_road_removal_landuse_gdf(gdf):

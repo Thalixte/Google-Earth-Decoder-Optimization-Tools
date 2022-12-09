@@ -51,6 +51,13 @@ def generate_height_data(script_settings):
         isolated_print(EOL)
         print_title("PREPARE 3D DATA")
 
+        script_settings.exclude_ground = True
+        script_settings.exclude_nature_reserve = True
+        script_settings.exclude_parks = True
+        script_settings.isolate_3d_data = True
+        script_settings.keep_roads = True
+        script_settings.disable_terraform = True
+        script_settings.save()
         msfs_project.prepare_3d_data(script_settings, generate_height_data=True, process_3d_data=False, create_polygons=False)
 
         if script_settings.build_package_enabled:

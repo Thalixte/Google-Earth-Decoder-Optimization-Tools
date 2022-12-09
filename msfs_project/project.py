@@ -25,7 +25,7 @@ import shutil
 import os
 import subprocess
 from utils import install_python_lib
-from utils.geo_pandas import prepare_wall_gdf, create_exclusion_building_gdf, prepare_water_gdf, prepare_amenity_gdf, prepare_road_removal_landuse_gdf, prepare_road_removal_natural_gdf, create_isolation_masks_from_tiles
+from utils.geo_pandas import prepare_wall_gdf, create_exclusion_building_gdf, prepare_water_gdf, prepare_amenity_gdf, prepare_road_removal_landuse_gdf, prepare_road_removal_natural_gdf
 from constants import *
 
 try:
@@ -317,7 +317,7 @@ class MsfsProject:
 
         if process_3d_data:
             # self.__reduce_number_of_vertices(settings.nb_parallel_blender_tasks)
-            self.__process_lods_3d_data(settings.nb_parallel_blender_tasks, isolate_3d_data=settings.isolate_3d_data, process_all=process_all)
+            self.__process_lods_3d_data(settings.nb_parallel_blender_tasks, process_all=process_all)
 
     def exclude_3d_data_from_geocode(self, settings):
         geocode = settings.geocode
@@ -710,11 +710,11 @@ class MsfsProject:
 
         return chunks(data, nb_parallel_blender_tasks)
 
-    def __retrieve_lods_to_process(self, nb_parallel_blender_tasks, isolate_3d_data=True, force_cleanup=False):
+    def __retrieve_lods_to_process(self, nb_parallel_blender_tasks, force_cleanup=False):
         data = []
         tiles = []
         for tile in self.tiles.values():
-            mask_file_path = os.path.join(self.osmfiles_folder, (ISOLATION_OSM_FILE_PREFIX if isolate_3d_data else EXCLUSION_OSM_FILE_PREFIX) + "_" + tile.name + OSM_FILE_EXT)
+            mask_file_path = os.path.join(self.osmfiles_folder, EXCLUSION_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)
 
             if not os.path.isfile(mask_file_path):
                 continue
@@ -952,9 +952,9 @@ class MsfsProject:
 
         if process_3d_data:
             if settings.isolate_3d_data:
-                create_isolation_masks_from_tiles(self.tiles, self.osmfiles_folder, b, building_mask=resize_gdf(building, 8), road_mask=roads if settings.keep_roads else None, road_removal_landuse=road_removal_landuse if settings.keep_roads else None, road_removal_natural=road_removal_natural if settings.keep_roads else None, amenity_mask=amenity if keep_roads else None, airport_mask=airport, rocks_mask=rocks, file_prefix=EXCLUSION_OSM_FILE_PREFIX, title="CREATE EXCLUSION MASKS OSM FILES")
+                create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, orig_bbox.assign(building=BOUNDING_BOX_OSM_KEY), building_mask=resize_gdf(building, 8), road_mask=roads if settings.keep_roads else None, road_removal_landuse=road_removal_landuse if settings.keep_roads else None, road_removal_natural=road_removal_natural if settings.keep_roads else None, amenity_mask=amenity if settings.keep_roads else None, airport_mask=airport, rocks_mask=rocks, file_prefix=EXCLUSION_OSM_FILE_PREFIX, title="CREATE EXCLUSION MASKS OSM FILES")
             else:
-                create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, exclusion, building_mask=resize_gdf(building, 8), road_mask=roads if settings.keep_roads else None, road_removal_landuse=road_removal_landuse if settings.keep_roads else None, road_removal_natural=road_removal_natural if settings.keep_roads else None, amenity_mask=amenity if keep_roads else None, airport_mask=airport, rocks_mask=rocks, file_prefix=ISOLATION_OSM_FILE_PREFIX, title="CREATE ISOLATION MASKS OSM FILES")
+                create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, exclusion, building_mask=building, airport_mask=airport, rocks_mask=rocks, file_prefix=EXCLUSION_OSM_FILE_PREFIX, title="CREATE EXCLUSION MASKS OSM FILES")
 
         if generate_height_data:
             self.__generate_height_data(b, roads, road_removal_landuse, road_removal_natural, airport, building, water, exclusion, amenity, keep_roads=settings.keep_roads)
@@ -1142,9 +1142,9 @@ class MsfsProject:
         lods_data = self.__retrieve_lods_to_decimate(nb_parallel_blender_tasks)
         self.__multithread_process_data(lods_data, "reduce_lod_number_of_vertices.py", "REDUCE THE NUMBER OF VERTICES FOR ALL TILE LODS", "number of vertices reduced")
 
-    def __process_lods_3d_data(self, nb_parallel_blender_tasks, isolate_3d_data=True, process_all=False):
-        tiles_with_collider, lods_data = self.__retrieve_lods_to_process(nb_parallel_blender_tasks, isolate_3d_data=isolate_3d_data, force_cleanup=process_all)
-        self.__multithread_process_data(lods_data, "isolate_lod_3d_data.py" if isolate_3d_data else "cleanup_lod_3d_data.py", "ISOLATE LODS 3D DATA TILES", "cleaned")
+    def __process_lods_3d_data(self, nb_parallel_blender_tasks, process_all=False):
+        tiles_with_collider, lods_data = self.__retrieve_lods_to_process(nb_parallel_blender_tasks, force_cleanup=process_all)
+        self.__multithread_process_data(lods_data, "cleanup_lod_3d_data.py", "CLEAN LODS 3D DATA TILES", "cleaned")
         for tile in tiles_with_collider:
             for lod in tile.lods:
                 lod.remove_road_and_collision_tags()
@@ -1274,7 +1274,7 @@ class MsfsProject:
                                 orig_water, orig_waterway, orig_aeroway, orig_pitch, orig_construction, orig_airport, orig_building, orig_wall, orig_grass, orig_park, orig_nature_reserve,
                                 orig_rocks, orig_amenity, settings):
         # prepare all the necessary GeoPandas Dataframes
-        itasks = 23
+        itasks = 22
 
         if settings.exclude_parks:
             itasks = itasks+1
@@ -1313,7 +1313,7 @@ class MsfsProject:
         bridges, places = prepare_roads_gdf(orig_road, orig_railway, bridge_only=True, automatic_road_width_calculation=False)
         pbar.update("bridges geodataframe prepared")
         pbar.update("preparing roads and places geodataframes...", stall=True)
-        roads, places = prepare_roads_gdf(orig_road, orig_railway, bridge_only=False, automatic_road_width_calculation=True)
+        roads, places = prepare_roads_gdf(orig_road, orig_railway, bridge_only=False, automatic_road_width_calculation=False)
         pbar.update("roads and places geodataframes prepared")
         pbar.update("preparing aeroway geodataframe...", stall=True)
         aeroway = clip_gdf(prepare_gdf(orig_aeroway), bbox)
@@ -1336,9 +1336,6 @@ class MsfsProject:
         pbar.update("preparing building geodataframe...", stall=True)
         building = clip_gdf(prepare_building_gdf(orig_building, wall), bbox)
         pbar.update("building geodataframe prepared")
-        pbar.update("preparing golf geodataframe...", stall=True)
-        golf = prepare_golf_gdf(orig_grass)
-        pbar.update("golf geodataframe prepared")
         pbar.update("preparing rocks geodataframe...", stall=True)
         rocks = prepare_gdf(orig_rocks)
         pbar.update("rock geodataframe prepared")
