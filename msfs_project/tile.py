@@ -25,7 +25,7 @@ except ModuleNotFoundError:
     install_python_lib('geopandas')
     import geopandas as gpd
 
-from constants import GLTF_FILE_EXT, COLLIDER_SUFFIX, XML_FILE_EXT, BOUNDARY_OSM_KEY, OSM_FILE_EXT, BOUNDING_BOX_OSM_FILE_PREFIX, EXCLUSION_OSM_FILE_PREFIX, HEIGHT_OSM_TAG, ROAD_OSM_KEY
+from constants import GLTF_FILE_EXT, COLLIDER_SUFFIX, XML_FILE_EXT, BOUNDARY_OSM_KEY, OSM_FILE_EXT, BOUNDING_BOX_OSM_FILE_PREFIX, HEIGHT_OSM_TAG, BOUNDING_BOX_OSM_KEY
 from msfs_project.height_map import MsfsHeightMap
 from msfs_project.collider import MsfsCollider
 from msfs_project.scene_object import MsfsSceneObject
@@ -113,7 +113,7 @@ class MsfsTile(MsfsSceneObject):
         osm_xml = OsmXml(dest_folder, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + self.name + OSM_FILE_EXT)
         osm_xml.create_from_geodataframes([self.bbox_gdf.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')], b)
 
-    def create_exclusion_mask_osm_file(self, dest_folder, b, exclusion_mask, building_mask=None, road_mask=None, road_removal_landuse=None, road_removal_natural=None, amenity_mask=None, airport_mask=None, rocks_mask=None, keep_holes=True, file_prefix=""):
+    def create_exclusion_mask_osm_file(self, dest_folder, b, exclusion_mask, building_mask=None, road_mask=None, bridges_mask=None, hidden_roads=None, amenity_mask=None, airport_mask=None, rocks_mask=None, keep_holes=True, file_prefix=""):
         bbox_gdf = resize_gdf(self.bbox_gdf, 10 if keep_holes else 200)
         exclusion_mask_gdf = exclusion_mask.clip(bbox_gdf)
 
@@ -131,15 +131,15 @@ class MsfsTile(MsfsSceneObject):
                 if not road_mask.empty:
                     road_mask = clip_gdf(road_mask, bbox_gdf)
 
-                    if road_removal_landuse is not None:
-                        if not road_removal_landuse.empty:
-                            road_removal_landuse = clip_gdf(road_removal_landuse, bbox_gdf)
-                            road_mask = difference_gdf(road_mask, road_removal_landuse)
+                    if hidden_roads is not None:
+                        if not hidden_roads.empty:
+                            hidden_roads = clip_gdf(hidden_roads, bbox_gdf)
+                            road_mask = difference_gdf(road_mask, hidden_roads)
 
-                    if road_removal_natural is not None:
-                        if not road_removal_natural.empty:
-                            road_removal_natural = clip_gdf(road_removal_natural, bbox_gdf)
-                            road_mask = difference_gdf(road_mask, road_removal_natural)
+                    if bridges_mask is not None:
+                        if not bridges_mask.empty:
+                            bridges_mask = clip_gdf(bridges_mask.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY), bbox_gdf)
+                            road_mask = union_gdf(road_mask, bridges_mask)
 
                     exclusion_mask_gdf = difference_gdf(exclusion_mask_gdf, road_mask)
 

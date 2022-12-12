@@ -611,10 +611,7 @@ def generate_model_height_data(model_file_path, lat, lon, altitude, height_adjus
     j = 0
 
     for y, heights in hmatrix.items():
-        if j % 2 == 0:
-            results[y] = [h for i, h in enumerate(list(heights.values())) if i % 2 == 0]
-
-        j = j + 1
+        results[y] = [h for i, h in enumerate(list(heights.values()))]
 
     bpy.ops.object.select_all(action=DESELECT_ACTION)
     grid.select_set(True)

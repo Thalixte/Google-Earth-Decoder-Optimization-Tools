@@ -172,7 +172,7 @@ def create_bounding_box(coords):
     return gpd.GeoDataFrame(pd.DataFrame([], index=[0]), crs=EPSG.key + str(EPSG.WGS84_degree_unit), geometry=[b]), b
 
 
-def create_exclusion_masks_from_tiles(tiles, dest_folder, b, exclusion_mask, building_mask=None, road_mask=None, road_removal_landuse=None, road_removal_natural=None, amenity_mask=None, airport_mask=None, rocks_mask=None, keep_holes=True, file_prefix="", title="CREATE EXCLUSION MASKS OSM FILES"):
+def create_exclusion_masks_from_tiles(tiles, dest_folder, b, exclusion_mask, building_mask=None, road_mask=None, bridges_mask=None, hidden_roads=None, amenity_mask=None, airport_mask=None, rocks_mask=None, keep_holes=True, file_prefix="", title="CREATE EXCLUSION MASKS OSM FILES"):
     valid_tiles = [tile for tile in list(tiles.values()) if tile.valid]
     pbar = ProgressBar(valid_tiles, title=title)
     exclusion = exclusion_mask.copy()
@@ -181,7 +181,7 @@ def create_exclusion_masks_from_tiles(tiles, dest_folder, b, exclusion_mask, bui
         # if tile.name != "30604050607051455" and tile.name != "30604160614140752" and tile.name != "30604160614140773" and tile.name != "30604160614140770" and tile.name != "30604160614140650" and tile.name != "30604160614140453":
         #     continue
 
-        tile.create_exclusion_mask_osm_file(dest_folder, b, exclusion, building_mask=building_mask, road_mask=road_mask, road_removal_landuse=road_removal_landuse, road_removal_natural=road_removal_natural, amenity_mask=amenity_mask, airport_mask=airport_mask, rocks_mask=rocks_mask, keep_holes=keep_holes, file_prefix=file_prefix)
+        tile.create_exclusion_mask_osm_file(dest_folder, b, exclusion, building_mask=building_mask, road_mask=road_mask, bridges_mask=bridges_mask, hidden_roads=hidden_roads, amenity_mask=amenity_mask, airport_mask=airport_mask, rocks_mask=rocks_mask, keep_holes=keep_holes, file_prefix=file_prefix)
         pbar.update("exclusion mask created for %s tile" % tile.name)
 
 
@@ -606,40 +606,32 @@ def prepare_water_gdf(gdf, waterway):
     return result.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)
 
 
-def prepare_road_removal_landuse_gdf(gdf):
-    src = gdf.copy()
+def prepare_hidden_roads_gdf(landuse_gdf, natural_gdf):
+    landuse_src = landuse_gdf.copy()
+    natural_src = natural_gdf.copy()
     filter = create_empty_gdf()
     result = create_empty_gdf()
 
-    if not src.empty:
+    if not landuse_src.empty:
         for tag in OSM_TAGS[ROAD_REMOVAL_LANDUSE_OSM_KEY]:
-            if LANDUSE_OSM_KEY in src:
-                filter = src[(src[LANDUSE_OSM_KEY] == tag)]
+            if LANDUSE_OSM_KEY in landuse_src:
+                filter = landuse_src[(landuse_src[LANDUSE_OSM_KEY] == tag)]
 
             if not filter.empty:
                 result = result.append(filter)
 
-        result = result[(result.geom_type == SHAPELY_TYPE.polygon) | (result.geom_type == SHAPELY_TYPE.multiPolygon)]
-
-    return result
-
-
-def prepare_road_removal_natural_gdf(gdf):
-    src = gdf.copy()
-    filter = create_empty_gdf()
-    result = create_empty_gdf()
-
-    if not src.empty:
+    if not natural_src.empty:
         for tag in OSM_TAGS[ROAD_REMOVAL_NATURAL_OSM_KEY]:
-            if NATURAL_OSM_KEY in src:
-                filter = src[(src[NATURAL_OSM_KEY] == tag)]
+            if NATURAL_OSM_KEY in natural_src:
+                filter = natural_src[(natural_src[NATURAL_OSM_KEY] == tag)]
 
             if not filter.empty:
                 result = result.append(filter)
 
+    if not result.empty:
         result = result[(result.geom_type == SHAPELY_TYPE.polygon) | (result.geom_type == SHAPELY_TYPE.multiPolygon)]
 
-    return result
+    return result.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)
 
 
 def create_land_mass_gdf(sources_path, bbox, b):

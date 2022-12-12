@@ -25,7 +25,7 @@ import shutil
 import os
 import subprocess
 from utils import install_python_lib
-from utils.geo_pandas import prepare_wall_gdf, create_exclusion_building_gdf, prepare_water_gdf, prepare_amenity_gdf, prepare_road_removal_landuse_gdf, prepare_road_removal_natural_gdf
+from utils.geo_pandas import prepare_wall_gdf, create_exclusion_building_gdf, prepare_water_gdf, prepare_amenity_gdf, prepare_hidden_roads_gdf
 from constants import *
 
 try:
@@ -960,7 +960,7 @@ class MsfsProject:
         orig_bbox = create_bounding_box_from_tiles(self.tiles)
 
         # retrieve_osm_data
-        orig_water, orig_natural_water, bbox, roads, sea, road_removal_landuse, road_removal_natural, pitch, construction, airport, building, \
+        orig_water, orig_natural_water, bbox, roads, bridges, hidden_roads, sea, pitch, construction, airport, building, \
         water, water_without_bridges, exclusion, rocks, amenity = self.__retrieve_osm_data(b, orig_bbox, settings)
 
         if create_polygons:
@@ -968,12 +968,12 @@ class MsfsProject:
 
         if process_3d_data:
             if settings.isolate_3d_data:
-                create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, orig_bbox.assign(building=BOUNDING_BOX_OSM_KEY), building_mask=resize_gdf(building, 8), road_mask=roads if settings.keep_roads else None, road_removal_landuse=road_removal_landuse if settings.keep_roads else None, road_removal_natural=road_removal_natural if settings.keep_roads else None, amenity_mask=amenity if settings.keep_roads else None, airport_mask=airport, rocks_mask=rocks, file_prefix=EXCLUSION_OSM_FILE_PREFIX, title="CREATE EXCLUSION MASKS OSM FILES")
+                create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, orig_bbox.assign(building=BOUNDING_BOX_OSM_KEY), building_mask=resize_gdf(building, 8), road_mask=roads if settings.keep_roads else None, bridges_mask=bridges if settings.keep_roads else None, hidden_roads=hidden_roads if settings.keep_roads else None, amenity_mask=amenity if settings.keep_roads else None, airport_mask=airport, rocks_mask=rocks, file_prefix=EXCLUSION_OSM_FILE_PREFIX, title="CREATE EXCLUSION MASKS OSM FILES")
             else:
                 create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, exclusion, building_mask=building, airport_mask=airport, rocks_mask=rocks, file_prefix=EXCLUSION_OSM_FILE_PREFIX, title="CREATE EXCLUSION MASKS OSM FILES")
 
         if generate_height_data:
-            self.__generate_height_data(b, roads, road_removal_landuse, road_removal_natural, airport, building, water, orig_bbox.assign(building=BOUNDING_BOX_OSM_KEY) if settings.isolate_3d_data else exclusion, amenity, keep_roads=settings.keep_roads)
+            self.__generate_height_data(b, roads, bridges, hidden_roads, airport, building, water, orig_bbox.assign(building=BOUNDING_BOX_OSM_KEY) if settings.isolate_3d_data else exclusion, amenity, keep_roads=settings.keep_roads)
 
         # remove tiles that are completely in the water
         self.__remove_full_water_tiles(water_without_bridges)
@@ -990,10 +990,10 @@ class MsfsProject:
         orig_natural, orig_natural_water, orig_water, orig_waterway, orig_aeroway, orig_pitch, orig_construction, orig_park, orig_building, \
         orig_wall, orig_rocks, orig_amenity, orig_airport = self.__load_geodataframes(orig_bbox, b, settings)
 
-        bbox, roads, sea, road_removal_landuse, road_removal_natural, pitch, construction, airport, building, \
+        bbox, roads, bridges, hidden_roads, sea, pitch, construction, airport, building, \
         water, water_without_bridges, exclusion, rocks, amenity = self.__prepare_geodataframes(orig_road, orig_railway, orig_sea, orig_bbox, orig_land_mass, orig_boundary,
                                                                                                orig_landuse, orig_natural, orig_natural_water, orig_water, orig_waterway, orig_aeroway,
-                                                                                               orig_pitch, orig_construction, orig_airport, orig_building, orig_wall, orig_grass,
+                                                                                               orig_pitch, orig_construction, orig_airport, orig_building, orig_wall,
                                                                                                orig_park, orig_nature_reserve, orig_rocks, orig_amenity, settings)
 
         if not exclusion.empty:
@@ -1001,7 +1001,7 @@ class MsfsProject:
             osm_xml = OsmXml(self.osmfiles_folder, EXCLUSION_OSM_FILE_PREFIX + OSM_FILE_EXT)
             osm_xml.create_from_geodataframes([preserve_holes(exclusion.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore'))], b, True, [(HEIGHT_OSM_TAG, 1000)])
 
-        return orig_water, orig_natural_water, bbox, roads, sea, road_removal_landuse, road_removal_natural, pitch, construction, airport, building, \
+        return orig_water, orig_natural_water, bbox, roads, bridges, hidden_roads, sea, pitch, construction, airport, building, \
                water, water_without_bridges, exclusion, rocks, amenity
 
     def __create_scenery_polygons(self, b, orig_bbox, orig_water, orig_natural_water, bbox, sea, pitch, construction, airport, exclusion, disable_terraform=False):
@@ -1047,8 +1047,8 @@ class MsfsProject:
             shape.remove_from_xml(self.objects_xml, group_name)
             shape.to_xml(self.objects_xml)
 
-    def __generate_height_data(self, b, roads, road_removal_landuse, road_removal_natural, airport, building, water, exclusion, amenity, keep_roads=False):
-        create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, exclusion, building_mask=building, road_mask=roads if keep_roads else None, road_removal_landuse=road_removal_landuse if keep_roads else None, road_removal_natural=road_removal_natural if keep_roads else None, amenity_mask=resize_gdf(amenity, -4) if keep_roads else None, airport_mask=airport, file_prefix=GROUND_OSM_KEY + "_" + EXCLUSION_OSM_FILE_PREFIX, title="CREATE GROUND EXCLUSION MASKS OSM FILES")
+    def __generate_height_data(self, b, roads, bridges, hidden_roads, airport, building, water, exclusion, amenity, keep_roads=False):
+        create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, exclusion, building_mask=building, road_mask=roads if keep_roads else None, bridges_mask=bridges if keep_roads else None, hidden_roads=hidden_roads if keep_roads else None, amenity_mask=resize_gdf(amenity, -4) if keep_roads else None, airport_mask=airport, file_prefix=GROUND_OSM_KEY + "_" + EXCLUSION_OSM_FILE_PREFIX, title="CREATE GROUND EXCLUSION MASKS OSM FILES")
         create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, resize_gdf(water, 10), keep_holes=False, file_prefix=WATER_OSM_KEY + "_", title="CREATE WATER EXCLUSION MASKS OSM FILES")
 
     def __load_geodataframes(self, orig_bbox, b, settings):
@@ -1287,10 +1287,10 @@ class MsfsProject:
 
     @staticmethod
     def __prepare_geodataframes(orig_road, orig_railway, orig_sea, orig_bbox, orig_land_mass, orig_boundary, orig_landuse, orig_natural, orig_natural_water,
-                                orig_water, orig_waterway, orig_aeroway, orig_pitch, orig_construction, orig_airport, orig_building, orig_wall, orig_grass, orig_park, orig_nature_reserve,
+                                orig_water, orig_waterway, orig_aeroway, orig_pitch, orig_construction, orig_airport, orig_building, orig_wall, orig_park, orig_nature_reserve,
                                 orig_rocks, orig_amenity, settings):
         # prepare all the necessary GeoPandas Dataframes
-        itasks = 22
+        itasks = 21
 
         if settings.exclude_parks:
             itasks = itasks+1
@@ -1310,15 +1310,12 @@ class MsfsProject:
         pbar.update("preparing landuse geodataframe...", stall=True)
         landuse = clip_gdf(prepare_gdf(orig_landuse), bbox)
         pbar.update("landuse geodataframe prepared")
-        pbar.update("preparing road_removal landuse geodataframe...", stall=True)
-        road_removal_landuse = clip_gdf(prepare_road_removal_landuse_gdf(orig_landuse), bbox)
-        pbar.update("road_removal landuse geodataframe prepared")
+        pbar.update("preparing hidden_roads geodataframe...", stall=True)
+        hidden_roads = clip_gdf(prepare_hidden_roads_gdf(orig_landuse, orig_natural), bbox)
+        pbar.update("hidden_roads landuse geodataframe prepared")
         pbar.update("preparing natural geodataframe...", stall=True)
         natural = clip_gdf(prepare_gdf(orig_natural), bbox)
         pbar.update("natural geodataframe prepared")
-        pbar.update("preparing road_removal natural geodataframe...", stall=True)
-        road_removal_natural = clip_gdf(prepare_road_removal_natural_gdf(orig_natural), bbox)
-        pbar.update("road_removal natural geodataframe prepared")
         pbar.update("preparing natural water geodataframe...", stall=True)
         natural_water = clip_gdf(prepare_gdf(orig_natural_water), bbox)
         pbar.update("natural water geodataframe prepared")
@@ -1385,7 +1382,7 @@ class MsfsProject:
         exclusion = union_gdf(water_exclusion, ground_exclusion if settings.exclude_ground else create_empty_gdf())
         pbar.update("exclusion geodataframe created")
 
-        return bbox, roads, sea, road_removal_landuse, road_removal_natural, pitch, construction, airport, building, \
+        return bbox, roads, bridges, hidden_roads, sea, pitch, construction, airport, building, \
                whole_water, water_exclusion, exclusion, rocks, amenity
 
     @staticmethod
@@ -1430,8 +1427,8 @@ class MsfsProject:
                 params = [str(bpy.app.binary_path), "--background", "--python", os.path.join(os.path.dirname(os.path.dirname(__file__)), script_name), "--"]
 
                 for obj in chunck:
-                    isolated_print("-------------------------------------------------------------------------------")
-                    isolated_print("\"" + str(bpy.app.binary_path) + "\" --background --python \"" + os.path.join(os.path.dirname(os.path.dirname(__file__)), script_name) + "\" -- " + str(" ").join(obj["params"]))
+                    print("-------------------------------------------------------------------------------")
+                    print("\"" + str(bpy.app.binary_path) + "\" --background --python \"" + os.path.join(os.path.dirname(os.path.dirname(__file__)), script_name) + "\" -- " + str(" ").join(obj["params"]))
 
                 si = subprocess.STARTUPINFO()
                 si.dwFlags = subprocess.STARTF_USESTDHANDLES | subprocess.HIGH_PRIORITY_CLASS
