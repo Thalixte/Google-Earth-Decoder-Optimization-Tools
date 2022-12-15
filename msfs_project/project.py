@@ -672,7 +672,7 @@ class MsfsProject:
             if not tile.valid:
                 continue
 
-            # if tile.name != "30604050607051455" and tile.name != "30604160614140752" and tile.name != "30604160614140773" and tile.name != "30604160614140770" and tile.name != "30604160614140650" and tile.name != "30604160614140453":
+            # if tile.name != "30604050607051455" and tile.name != "30604160614140752" and tile.name != "30604160614140773" and tile.name != "30604160614140770" and tile.name != "30604160614140650" and tile.name != "30604160614140453" and tile.name != "30604143504360660":
             #     continue
 
             has_rocks = tile.has_rocks and not high_precision
@@ -1049,7 +1049,7 @@ class MsfsProject:
 
     def __generate_height_data(self, b, roads, bridges, hidden_roads, airport, building, water, exclusion, amenity, keep_roads=False):
         create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, exclusion, building_mask=building, road_mask=roads if keep_roads else None, bridges_mask=bridges if keep_roads else None, hidden_roads=hidden_roads if keep_roads else None, amenity_mask=resize_gdf(amenity, -4) if keep_roads else None, airport_mask=airport, file_prefix=GROUND_OSM_KEY + "_" + EXCLUSION_OSM_FILE_PREFIX, title="CREATE GROUND EXCLUSION MASKS OSM FILES")
-        create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, resize_gdf(water, 10), keep_holes=False, file_prefix=WATER_OSM_KEY + "_", title="CREATE WATER EXCLUSION MASKS OSM FILES")
+        create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, resize_gdf(water, 10), keep_holes=False, file_prefix=WATER_OSM_KEY + "_" + EXCLUSION_OSM_FILE_PREFIX, title="CREATE WATER EXCLUSION MASKS OSM FILES")
 
     def __load_geodataframes(self, orig_bbox, b, settings):
         # load all necessary GeoPandas Dataframes
@@ -1323,10 +1323,10 @@ class MsfsProject:
         water = clip_gdf(prepare_water_gdf(orig_water, orig_waterway), bbox)
         pbar.update("water geodataframe prepared")
         pbar.update("preparing bridges geodataframe...", stall=True)
-        bridges, places = prepare_roads_gdf(orig_road, orig_railway, bridge_only=True, automatic_road_width_calculation=False)
+        bridges = prepare_roads_gdf(orig_road, orig_railway, bridge_only=True, automatic_road_width_calculation=False)
         pbar.update("bridges geodataframe prepared")
         pbar.update("preparing roads and places geodataframes...", stall=True)
-        roads, places = prepare_roads_gdf(orig_road, orig_railway, bridge_only=False, automatic_road_width_calculation=False)
+        roads = prepare_roads_gdf(orig_road, orig_railway, bridge_only=False, automatic_road_width_calculation=False)
         pbar.update("roads and places geodataframes prepared")
         pbar.update("preparing aeroway geodataframe...", stall=True)
         aeroway = clip_gdf(prepare_gdf(orig_aeroway), bbox)

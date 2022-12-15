@@ -178,7 +178,7 @@ def create_exclusion_masks_from_tiles(tiles, dest_folder, b, exclusion_mask, bui
     exclusion = exclusion_mask.copy()
 
     for i, tile in enumerate(valid_tiles):
-        # if tile.name != "30604050607051455" and tile.name != "30604160614140752" and tile.name != "30604160614140773" and tile.name != "30604160614140770" and tile.name != "30604160614140650" and tile.name != "30604160614140453":
+        # if tile.name != "30604050607051455" and tile.name != "30604160614140752" and tile.name != "30604160614140773" and tile.name != "30604160614140770" and tile.name != "30604160614140650" and tile.name != "30604160614140453" and tile.name != "30604143504360660":
         #     continue
 
         tile.create_exclusion_mask_osm_file(dest_folder, b, exclusion, building_mask=building_mask, road_mask=road_mask, bridges_mask=bridges_mask, hidden_roads=hidden_roads, amenity_mask=amenity_mask, airport_mask=airport_mask, rocks_mask=rocks_mask, keep_holes=keep_holes, file_prefix=file_prefix)
@@ -214,7 +214,7 @@ def load_gdf_from_geocode(geocode, geocode_margin=5.0, preserve_roads=True, pres
             result = create_empty_gdf()
             pass
 
-    load_gdf_list = [None] * 6
+    load_gdf_list = [None] * 7
     if display_warnings:
         pbar = ProgressBar(load_gdf_list, title="RETRIEVE GEODATAFRAMES (THE FIRST TIME, MAY TAKE SOME TIME TO COMPLETE, BE PATIENT...)")
         pbar.update("retrieving buildings geodataframe...", stall=True)
@@ -223,13 +223,19 @@ def load_gdf_from_geocode(geocode, geocode_margin=5.0, preserve_roads=True, pres
     orig_building = load_gdf(coords, BUILDING_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, BUILDING_OSM_KEY + SHP_FILE_EXT), keep_geocode_data=True)
     if display_warnings:
         pbar.update("buildings geodataframe retrieved")
+        pbar.update("retrieving natural geodataframe...", stall=True)
+    # load gdf twice to ensure to retrieve if from cache (to have osmid in a key, not in an index)
+    load_gdf(coords, NATURAL_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, FULL_PREFIX + NATURAL_OSM_KEY + SHP_FILE_EXT))
+    orig_natural = load_gdf(coords, NATURAL_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, FULL_PREFIX + NATURAL_OSM_KEY + SHP_FILE_EXT), keep_geocode_data=True)
+    if display_warnings:
+        pbar.update("natural geodataframe retrieved")
         pbar.update("retrieving landuse geodataframe...", stall=True)
     # load gdf twice to ensure to retrieve if from cache (to have osmid in a key, not in an index)
     load_gdf(coords, LANDUSE_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, FULL_PREFIX + LANDUSE_OSM_KEY + SHP_FILE_EXT))
     orig_landuse = load_gdf(coords, LANDUSE_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, FULL_PREFIX + LANDUSE_OSM_KEY + SHP_FILE_EXT), keep_geocode_data=True)
     if display_warnings:
         pbar.update("landuse geodataframe retrieved")
-        pbar.update("retrieving constructions geodataframe...", stall=True)
+        pbar.update("retrieving leisures geodataframe...", stall=True)
     # load gdf twice to ensure to retrieve if from cache (to have osmid in a key, not in an index)
     load_gdf(coords, LEISURE_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, LEISURE_OSM_KEY + SHP_FILE_EXT))
     orig_leisure = load_gdf(coords, LEISURE_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, LEISURE_OSM_KEY + SHP_FILE_EXT), keep_geocode_data=True)
@@ -253,7 +259,7 @@ def load_gdf_from_geocode(geocode, geocode_margin=5.0, preserve_roads=True, pres
     orig_railway = load_gdf(coords, RAILWAY_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, RAILWAY_OSM_KEY + SHP_FILE_EXT), is_roads=True, keep_geocode_data=True)
     if display_warnings:
         pbar.update("railways geodataframe retrieved")
-    road, places = prepare_roads_gdf(orig_road, orig_railway)
+    road = prepare_roads_gdf(orig_road, orig_railway)
 
     if result.empty:
         try:
@@ -261,6 +267,8 @@ def load_gdf_from_geocode(geocode, geocode_margin=5.0, preserve_roads=True, pres
                 osmid = geocode
                 if ELEMENT_TY_OSM_KEY in orig_building and OSMID_OSM_KEY in orig_building:
                     result = orig_building[((orig_building[ELEMENT_TY_OSM_KEY] == OSMID_TYPE.way) | (orig_building[ELEMENT_TY_OSM_KEY] == OSMID_TYPE.relation)) & (orig_building[OSMID_OSM_KEY] == int(osmid))]
+                if result.empty and ELEMENT_TY_OSM_KEY in orig_natural and OSMID_OSM_KEY in orig_natural:
+                    result = orig_natural[((orig_natural[ELEMENT_TY_OSM_KEY] == OSMID_TYPE.way) | (orig_natural[ELEMENT_TY_OSM_KEY] == OSMID_TYPE.relation)) & (orig_natural[OSMID_OSM_KEY] == int(osmid))]
                 if result.empty and ELEMENT_TY_OSM_KEY in orig_landuse and OSMID_OSM_KEY in orig_landuse:
                     result = orig_landuse[((orig_landuse[ELEMENT_TY_OSM_KEY] == OSMID_TYPE.way) | (orig_landuse[ELEMENT_TY_OSM_KEY] == OSMID_TYPE.relation)) & (orig_landuse[OSMID_OSM_KEY] == int(osmid))]
                 if result.empty and ELEMENT_TY_OSM_KEY in orig_leisure and OSMID_OSM_KEY in orig_leisure:
@@ -302,7 +310,7 @@ def load_gdf_from_geocode(geocode, geocode_margin=5.0, preserve_roads=True, pres
     if preserve_roads:
         orig_road = load_gdf(coords, ROAD_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, ROAD_OSM_KEY + SHP_FILE_EXT), is_roads=True)
         orig_railway = load_gdf(coords, RAILWAY_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, RAILWAY_OSM_KEY + SHP_FILE_EXT), is_roads=True)
-        road, places = prepare_roads_gdf(orig_road, orig_railway, bridge_only=False)
+        road = prepare_roads_gdf(orig_road, orig_railway, bridge_only=False)
         road = road.clip(result_bbox, keep_geom_type=True)
         # for debugging purpose, generate the shp file
         if not road.empty:
@@ -428,7 +436,7 @@ def prepare_roads_gdf(gdf, railway_gdf, bridge_only=True, automatic_road_width_c
     has_bridge_path = False
     has_seamark_bridge = False
     has_pier = False
-    has_places = True
+    has_places = False
     bridge = None
     bridge_path = None
     seamark_bridge = None
@@ -476,14 +484,14 @@ def prepare_roads_gdf(gdf, railway_gdf, bridge_only=True, automatic_road_width_c
             if TUNNEL_OSM_TAG in roads:
                 roads = roads[roads[TUNNEL_OSM_TAG].isna()]
 
-            result = roads.copy()
-            result = result[~(result[ROAD_OSM_KEY] == PEDESTRIAN_ROAD_TYPE) & ~(result[ROAD_OSM_KEY] == FOOTWAY_ROAD_TYPE) & ~(result[ROAD_OSM_KEY] == CYCLEWAY_ROAD_TYPE) & ~(result[ROAD_OSM_KEY] == SERVICE_ROAD_TYPE) & ~(result[ROAD_OSM_KEY] == PATH_ROAD_TYPE) & ~(result[ROAD_OSM_KEY] == TRACK_ROAD_TYPE)]
-
             if AREA_OSM_TAG in roads:
                 places = roads[(roads[AREA_OSM_TAG] == "yes") & ~(roads[AREA_OSM_TAG].isna())]
                 places = resize_gdf(places, 0.00001)
                 places[GEOMETRY_OSM_COLUMN] = places[GEOMETRY_OSM_COLUMN].apply(lambda p: close_holes(p))
                 has_places = not places.empty
+
+            result = roads.copy()
+            result = result[~(result[ROAD_OSM_KEY] == PEDESTRIAN_ROAD_TYPE) & ~(result[ROAD_OSM_KEY] == FOOTWAY_ROAD_TYPE) & ~(result[ROAD_OSM_KEY] == CYCLEWAY_ROAD_TYPE) & ~(result[ROAD_OSM_KEY] == SERVICE_ROAD_TYPE) & ~(result[ROAD_OSM_KEY] == PATH_ROAD_TYPE) & ~(result[ROAD_OSM_KEY] == TRACK_ROAD_TYPE)]
 
         result = result.reset_index(drop=True)
         result = result.to_crs(EPSG.key + str(EPSG.WGS84_meter_unit))
@@ -495,13 +503,13 @@ def prepare_roads_gdf(gdf, railway_gdf, bridge_only=True, automatic_road_width_c
         if has_pier:
             result = result.append(pier)
 
-        if not has_places:
+        if has_places and not bridge_only:
             result = result.append(places)
 
         result = result[(result.geom_type == SHAPELY_TYPE.polygon) | (result.geom_type == SHAPELY_TYPE.multiPolygon)]
         result[GEOMETRY_OSM_COLUMN] = result[GEOMETRY_OSM_COLUMN].buffer(0)
 
-    return result, places
+    return result
 
 
 def prepare_wall_gdf(gdf):

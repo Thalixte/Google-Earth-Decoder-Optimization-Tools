@@ -449,6 +449,8 @@ def align_model_with_mask(model_file_path, positioning_file_path, mask_file_path
     transform_y = src.matrix_world.translation[1]
     transform_z = src.matrix_world.translation[2]
 
+    objects_to_keep.append(src)
+
     clean_scene(objects_to_keep=objects_to_keep)
 
     bpy.ops.object.select_all(action=DESELECT_ACTION)
@@ -462,6 +464,10 @@ def align_model_with_mask(model_file_path, positioning_file_path, mask_file_path
     bpy.context.view_layer.objects.active = target
     bpy.ops.object.join()
 
+    src.select_set(True)
+    bpy.ops.object.align(bb_quality=True, align_mode='OPT_2', relative_to='OPT_2', align_axis={'Z'})
+    apply_transform(target, use_location=True, use_rotation=False, use_scale=False)
+
     bpy.ops.transform.mirror(constraint_axis=(True, True, False), orient_type='GLOBAL')
     for obj in bpy.context.selected_objects:
         obj_loc_x = obj.location.x
@@ -473,6 +479,8 @@ def align_model_with_mask(model_file_path, positioning_file_path, mask_file_path
     target.location[2] = transform_z
 
     bpy.ops.object.select_all(action=DESELECT_ACTION)
+    src.select_set(True)
+    bpy.ops.object.delete()
 
 
 def reduce_number_of_vertices(model_file_path):
@@ -925,7 +933,6 @@ def calculate_height_map_from_coords_from_top(tile, grid_dimension, coords, deps
         new_coords = spatial_median_kdtree(np.array(new_coords), 35)
         # new_coords = spatial_median(np.array(new_coords), 20)
 
-        # downscale the new cords retrieved from top ray casting
         new_coords = [co for i, co in enumerate(new_coords)]
 
         for i, co in enumerate(new_coords):
@@ -989,10 +996,7 @@ def adjust_height_data_on_exclusion_area(tile, depsgraph, lat, lon, altitude, ex
         y = round(p1[1], 1)
         h = p1[2]
         h = h + altitude + geoid_height
-        if exclusion_type == EXCLUSION_TYPE.WATER:
-            h = h if h >= geoid_height else geoid_height
-        else:
-            h = h + 1.0 if h >= geoid_height else geoid_height
+        h = h + 1.0 if h >= geoid_height else geoid_height
 
         if hmatrix_base is not None:
             if y in hmatrix_base:
