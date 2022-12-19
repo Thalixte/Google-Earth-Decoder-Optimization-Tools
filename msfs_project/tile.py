@@ -25,7 +25,7 @@ except ModuleNotFoundError:
     install_python_lib('geopandas')
     import geopandas as gpd
 
-from constants import GLTF_FILE_EXT, COLLIDER_SUFFIX, XML_FILE_EXT, BOUNDARY_OSM_KEY, OSM_FILE_EXT, BOUNDING_BOX_OSM_FILE_PREFIX, HEIGHT_OSM_TAG, BOUNDING_BOX_OSM_KEY
+from constants import GLTF_FILE_EXT, COLLIDER_SUFFIX, XML_FILE_EXT, BOUNDARY_OSM_KEY, OSM_FILE_EXT, BOUNDING_BOX_OSM_FILE_PREFIX, HEIGHT_OSM_TAG, BOUNDING_BOX_OSM_KEY, GEOCODE_SUFFIX
 from msfs_project.height_map import MsfsHeightMap
 from msfs_project.collider import MsfsCollider
 from msfs_project.scene_object import MsfsSceneObject
@@ -84,6 +84,16 @@ class MsfsTile(MsfsSceneObject):
 
         return new_collider
 
+    def add_geocode(self):
+        new_geocode = None
+        for idx, lod in enumerate(self.lods):
+            if idx < (len(self.lods) - 1): continue
+            if not os.path.isfile(os.path.join(lod.folder, lod.model_file)): continue
+            collider_definition_file_name = self.name + GEOCODE_SUFFIX + XML_FILE_EXT
+            create_new_definition_file(os.path.join(self.folder, collider_definition_file_name), has_lods=False)
+
+        return new_geocode
+
     def define_max_coords(self, other_coords):
         if not self.coords: return tuple([0, 0, 0, 0])
         if not other_coords: return self.coords
@@ -113,7 +123,7 @@ class MsfsTile(MsfsSceneObject):
         osm_xml = OsmXml(dest_folder, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + self.name + OSM_FILE_EXT)
         osm_xml.create_from_geodataframes([self.bbox_gdf.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')], b)
 
-    def create_exclusion_mask_osm_file(self, dest_folder, b, exclusion_mask, building_mask=None, road_mask=None, bridges_mask=None, hidden_roads=None, amenity_mask=None, airport_mask=None, rocks_mask=None, keep_holes=True, file_prefix=""):
+    def create_exclusion_mask_osm_file(self, dest_folder, b, exclusion_mask, building_mask=None, water_mask=None, road_mask=None, bridges_mask=None, hidden_roads=None, amenity_mask=None, airport_mask=None, rocks_mask=None, keep_holes=True, file_prefix=""):
         bbox_gdf = resize_gdf(self.bbox_gdf, 10 if keep_holes else 200)
         exclusion_mask_gdf = exclusion_mask.clip(bbox_gdf)
 
@@ -129,11 +139,11 @@ class MsfsTile(MsfsSceneObject):
 
             if road_mask is not None:
                 if not road_mask.empty:
-                    road_mask = clip_gdf(road_mask, bbox_gdf)
+                    road_mask = clip_gdf(road_mask.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY), bbox_gdf)
 
                     if hidden_roads is not None:
                         if not hidden_roads.empty:
-                            hidden_roads = clip_gdf(hidden_roads, bbox_gdf)
+                            hidden_roads = clip_gdf(hidden_roads.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY), bbox_gdf)
                             road_mask = difference_gdf(road_mask, hidden_roads)
 
                     if bridges_mask is not None:
@@ -152,6 +162,11 @@ class MsfsTile(MsfsSceneObject):
                 if not airport_mask.empty:
                     airport_mask = clip_gdf(airport_mask, bbox_gdf)
                     exclusion_mask_gdf = union_gdf(exclusion_mask_gdf, airport_mask)
+
+            if water_mask is not None:
+                if not water_mask.empty:
+                    water_mask = clip_gdf(water_mask, bbox_gdf)
+                    exclusion_mask_gdf = union_gdf(exclusion_mask_gdf, water_mask)
 
             file_name = file_prefix + "_" + self.name + OSM_FILE_EXT
             exclusion_mask = exclusion_mask_gdf.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')

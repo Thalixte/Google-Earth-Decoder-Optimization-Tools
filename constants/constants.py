@@ -98,6 +98,7 @@ CLEANUP_3D_DATA_BACKUP_FOLDER = "cleanup_3d_data"
 
 SCRIPT_PREFIX = "_script"
 COLLIDER_SUFFIX = "_collider"
+GEOCODE_SUFFIX = "_geocode"
 HEIGHT_MAP_SUFFIX = "height_map_"
 
 RESOURCE_FOLDER = "resource"
