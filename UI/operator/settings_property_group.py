@@ -115,6 +115,9 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
     def add_lights_updated(self, context):
         context.scene.settings.add_lights = self.add_lights
 
+    def altitude_adjustment_updated(self, context):
+        context.scene.settings.altitude_adjustment = "{:.2f}".format(float(str(self.altitude_adjustment))).rstrip("0").rstrip(".")
+
     def build_package_enabled_updated(self, context):
         context.scene.settings.build_package_enabled = self.build_package_enabled
 
@@ -336,6 +339,16 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         precision=1,
         default=float(bpy.types.Scene.settings.landmark_offset),
         update=landmark_offset_updated
+    )
+    altitude_adjustment: FloatProperty(
+        name="Altitude update",
+        description="Adjustment of the altitude of the whole scenery components (tiles, objects, colliders, landmarks, height maps)",
+        soft_min=-10.0,
+        soft_max=20.0,
+        step=0.1,
+        precision=2,
+        default=float(bpy.types.Scene.settings.altitude_adjustment),
+        update=altitude_adjustment_updated
     )
     add_lights: BoolProperty(
         name="Add lights around the landmark",

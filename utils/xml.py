@@ -51,7 +51,7 @@ class Xml:
             self.root = self.tree.getroot()
         else:
             self.root = Et.Element(self.ROOT_TAG)
-            self.tree = tree = Et.ElementTree(self.root)
+            self.tree = Et.ElementTree(self.root)
 
     def save(self):
         try:

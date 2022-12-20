@@ -17,7 +17,7 @@
 #  <pep8 compliant>
 
 from bpy_types import Operator
-from constants import MAX_PHOTOGRAMMETRY_LOD, PROJECT_INI_SECTION, TILE_INI_SECTION, LODS_INI_SECTION, OSM_INI_SECTION, GEOCODE_INI_SECTION, COMPRESSONATOR_INI_SECTION, BUILD_INI_SECTION, MERGE_INI_SECTION, BACKUP_INI_SECTION, NONE_ICON, FILE_FOLDER_ICON, FILE_REFRESH_ICON, FILE_TICK_ICON, INFO_ICON, ADD_ICON, REMOVE_ICON
+from constants import MAX_PHOTOGRAMMETRY_LOD, PROJECT_INI_SECTION, TILE_INI_SECTION, LODS_INI_SECTION, OSM_INI_SECTION, GEOCODE_INI_SECTION, ALTITUDE_ADJUSTMENT_INI_SECTION, COMPRESSONATOR_INI_SECTION, BUILD_INI_SECTION, MERGE_INI_SECTION, BACKUP_INI_SECTION, NONE_ICON, FILE_FOLDER_ICON, FILE_REFRESH_ICON, FILE_TICK_ICON, INFO_ICON, ADD_ICON, REMOVE_ICON
 from .operator import OT_ProjectPathOperator, OT_MsfsBuildExePathOperator, OT_CompressonatorExePathOperator, OT_ReloadSettingsOperator, \
     OT_SaveSettingsOperator, OT_ProjectsPathOperator, OT_ProjectPathToMergeOperator, OT_addLodOperator, OT_removeLowerLodOperator, OT_openSettingsFileOperator
 from .tools import reload_setting_props
@@ -188,6 +188,14 @@ class SettingsOperator(PanelOperator):
             col.separator()
             self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "add_lights", "Add lights around the landmark")
             col.separator()
+        self.draw_footer(context, self.layout, self.operator_name)
+
+    def draw_altitude_adjustment_panel(self, context):
+        split = self.draw_setting_sections_panel(context)
+        col = self.draw_header(split)
+        col.separator()
+        self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "altitude_adjustment", "Adjustment to apply to the altitude of the while scenery (tiles, objects, colliders, landmarks, height maps)")
+        col.separator()
         self.draw_footer(context, self.layout, self.operator_name)
 
     def draw_python_panel(self, context):
@@ -594,6 +602,21 @@ class OT_RemoveTileCollidersPanel(SettingsOperator):
     starting_section = PROJECT_INI_SECTION
     displayed_sections = [
         PROJECT_INI_SECTION,
+        BUILD_INI_SECTION,
+        BACKUP_INI_SECTION,
+    ]
+
+
+class OT_AdjustSceneryAltitudePanel(SettingsOperator):
+    operator_name = "wm.adjust_scenery_altitude"
+    id_name = "wm.adjust_scenery_altitude_panel"
+    bl_idname = id_name
+    bl_label = "Updates the altitude of the whole scenery"
+    operator_description = """This script updates all the altitudes of the scenery components (tiles, objects, colliders, landmarks, height maps). """
+    starting_section = ALTITUDE_ADJUSTMENT_INI_SECTION
+    displayed_sections = [
+        PROJECT_INI_SECTION,
+        ALTITUDE_ADJUSTMENT_INI_SECTION,
         BUILD_INI_SECTION,
         BACKUP_INI_SECTION,
     ]

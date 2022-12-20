@@ -35,7 +35,7 @@ from .operator import PanelPropertyGroup, OT_ProjectPathOperator, OT_ProjectsPat
     OT_CreateTerraformAndExclusionPolygonsOperator, OT_GenerateHeightDataPanel, OT_GenerateHeightDataOperator, OT_RemoveWaterFrom3dDataPanel, OT_RemoveWaterFrom3dDataOperator, \
     OT_RemoveForestsAndWoodsFrom3dDataPanel, OT_RemoveForestsAndWoodsFrom3dDataOperator, OT_RemoveForestsWoodsAndParksFrom3dDataPanel, OT_KeepOnlyBuildings3dDataOperator, OT_KeepOnlyBuildings3dDataPanel, \
     OT_KeepOnlyBuildingsAndRoads3dDataOperator, OT_KeepOnlyBuildingsAndRoads3dDataPanel, OT_RemoveForestsWoodsAndParksFrom3dDataOperator, OT_CreateLandmarkFromGeocodeOperator, OT_CreateLandmarkFromGeocodePanel, OT_Exclude3dDataFromGeocodeOperator, OT_Exclude3dDataFromGeocodePanel, \
-    OT_AddTileCollidersPanel, OT_RemoveTileCollidersPanel, OT_AddTileCollidersOperator, OT_RemoveTileCollidersOperator
+    OT_AddTileCollidersPanel, OT_RemoveTileCollidersPanel, OT_AddTileCollidersOperator, OT_RemoveTileCollidersOperator, OT_AdjustSceneryAltitudePanel, OT_AdjustSceneryAltitudeOperator
 
 
 class TOPBAR_MT_google_earth_optimization_menus(Menu):
@@ -119,6 +119,8 @@ class TOPBAR_MT_other_tools_menu(Menu):
         layout.separator()
         layout.operator(OT_RemoveTileCollidersPanel.bl_idname)
         layout.separator()
+        layout.operator(OT_AdjustSceneryAltitudePanel.bl_idname)
+        layout.separator()
         layout.operator(OT_UpdateTilesPositionPanel.bl_idname)
         layout.separator()
         layout.operator(OT_FixTilesLightningIssuesPanel.bl_idname)
@@ -166,6 +168,7 @@ classes = (
     OT_removeLowerLodOperator,
     OT_SaveSettingsOperator,
     OT_ReloadSettingsOperator,
+    OT_AdjustSceneryAltitudeOperator,
     OT_InitMsfsSceneryPanel,
     OT_OptimizeSceneryPanel,
     OT_CleanPackageFilesPanel,
@@ -185,6 +188,7 @@ classes = (
     OT_AddTileCollidersPanel,
     OT_RemoveTileCollidersPanel,
     OT_CompressBuiltPackagePanel,
+    OT_AdjustSceneryAltitudePanel
 )
 
 

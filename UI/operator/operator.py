@@ -41,6 +41,7 @@ from scripts.keep_only_buildings_3d_data_script import keep_only_buildings_3d_da
 from scripts.keep_only_buildings_and_roads_3d_data_script import keep_only_buildings_and_roads_3d_data
 from scripts.create_landmark_from_geocode_script import create_landmark_from_geocode
 from scripts.exclude_3d_data_from_geocode_script import exclude_3d_data_from_geocode
+from scripts.adjust_scenery_altitude_script import adjust_scenery_altitude
 from utils import open_console
 from .tools import reload_current_operator, reload_setting_props
 from bpy_extras.io_utils import ImportHelper
@@ -498,6 +499,21 @@ class OT_RemoveTileCollidersOperator(ActionOperator):
     def execute(self, context):
         super().execute(context)
         remove_tile_colliders(context.scene.settings)
+        return {'FINISHED'}
+
+
+class OT_AdjustSceneryAltitudeOperator(ActionOperator):
+    bl_idname = "wm.adjust_scenery_altitude"
+    bl_label = "Updates the altitude of the whole scenery (tiles, objects, colliders, landmarks, height maps)..."
+
+    @classmethod
+    def poll(cls, context):
+        msfs_project = super().poll(context)
+        return os.path.isdir(msfs_project.scene_folder)
+
+    def execute(self, context):
+        super().execute(context)
+        adjust_scenery_altitude(context.scene.settings)
         return {'FINISHED'}
 
 

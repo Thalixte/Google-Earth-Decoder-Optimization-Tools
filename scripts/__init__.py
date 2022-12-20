@@ -33,3 +33,4 @@ from .generate_height_data_script import *
 from .create_terraform_and_exclusion_polygons_script import *
 from .exclude_3d_data_from_geocode_script import *
 from .create_landmark_from_geocode_script import *
+from .adjust_scenery_altitude_script import *

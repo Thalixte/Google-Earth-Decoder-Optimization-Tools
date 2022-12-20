@@ -52,6 +52,7 @@ class Settings:
     landmark_type: str
     height_adjustment: float
     landmark_offset: float
+    altitude_adjustment: float
     sections = list
     decoder_output_path = str
     red_level: float
@@ -100,6 +101,7 @@ class Settings:
         self.landmark_type = str()
         self.height_adjustment = 0.0
         self.landmark_offset = 0.0
+        self.altitude_adjustment = 0.0
         self.sections = []
         self.decoder_output_path = str()
         self.red_level = 1.0
@@ -161,6 +163,8 @@ class Settings:
         self.height_adjustment = "{:.9f}".format(float(str(self.height_adjustment))).rstrip("0").rstrip(".")
 
         self.landmark_offset = "{:.9f}".format(float(str(self.landmark_offset))).rstrip("0").rstrip(".")
+
+        self.altitude_adjustment = "{:.2f}".format(float(str(self.altitude_adjustment))).rstrip("0").rstrip(".")
 
         self.geocode_margin = "{:.2f}".format(float(str(self.geocode_margin))).rstrip("0").rstrip(".")
 

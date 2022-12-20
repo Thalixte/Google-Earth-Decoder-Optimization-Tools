@@ -352,6 +352,9 @@ class MsfsProject:
             self.__create_tiles_bounding_boxes()
             self.__isolate_lods_3d_data_from_geocode(geocode, geocode_gdf, settings, add_lights=True)
 
+    def adjust_altitude(self, altitude_adjustment):
+        self.__adjust_altitude(altitude_adjustment)
+
     def create_landmark_from_geocode(self, settings):
         geocode = settings.geocode
         self.__create_landmark_from_geocode(geocode, settings)
@@ -1259,6 +1262,10 @@ class MsfsProject:
                 tile.to_xml(self.objects_xml, xml.guid)
 
             pbar.update("%s converted" % obj_file_name)
+
+    def __adjust_altitude(self, altitude_adjustment):
+        isolated_print(altitude_adjustment)
+        self.objects_xml.adjust_altitude(altitude_adjustment)
 
     def __find_different_tiles(self, tiles, tiles_to_compare):
         different_tiles = []

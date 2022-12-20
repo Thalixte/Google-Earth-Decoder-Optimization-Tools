@@ -73,13 +73,16 @@ class ObjectsXml(Xml):
     OWNER_ATTR = "owner"
     VERSION_ATTR = "version"
 
-    LIBRARY_OBJECTS_SEARCH_PATTERN = "./" + SCENERY_OBJECT_TAG + "/" + LIBRARY_OBJECT_TAG
+    GROUPS_SEARCH_PATTERN = "./" + GROUP_TAG
+    SCENERY_OBJECTS_SEARCH_PATTERN = "./" + SCENERY_OBJECT_TAG
+    SCENERY_OBJECTS_GROUP_SEARCH_PATTERN = GROUPS_SEARCH_PATTERN + "/" + SCENERY_OBJECT_TAG
+    LIBRARY_OBJECTS_SEARCH_PATTERN = SCENERY_OBJECTS_SEARCH_PATTERN + "/" + LIBRARY_OBJECT_TAG
     SCENERY_OBJECT_SEARCH_PATTERN = LIBRARY_OBJECTS_SEARCH_PATTERN + "[@" + NAME_ATTR + "='"
-    SCENERY_OBJECT_GROUP_SEARCH_PATTERN = "./" + GROUP_TAG + "/" + SCENERY_OBJECT_TAG + "/" + LIBRARY_OBJECT_TAG + "[@" + NAME_ATTR + "='"
+    SCENERY_OBJECT_GROUP_SEARCH_PATTERN = SCENERY_OBJECTS_GROUP_SEARCH_PATTERN + "/" + LIBRARY_OBJECT_TAG + "[@" + NAME_ATTR + "='"
     POLYGONS_SEARCH_PATTERN = "./" + POLYGON_TAG
+    POLYGONS_GROUP_SEARCH_PATTERN = GROUPS_SEARCH_PATTERN + "./" + POLYGON_TAG
     POLYGON_ATTRIBUTES_SEARCH_PATTERN = "./" + ATTRIBUTE_TAG
     POLYGON_VERTICES_SEARCH_PATTERN = "./" + VERTEX_TAG
-    GROUPS_SEARCH_PATTERN = "./" + GROUP_TAG
     RECTANGLES_SEARCH_PATTERN = "./" + RECTANGLE_TAG
     RECTANGLE_HEIGHT_DATA_SEARCH_PATTERN = "./" + HEIGHT_MAP_TAG
     PARENT_GROUP_SEARCH_PATTERN = GROUPS_SEARCH_PATTERN + "[@" + GROUP_ID_ATTR + "='"
@@ -189,6 +192,14 @@ class ObjectsXml(Xml):
     def add_landmark_location(self, landmark_location):
         self.__add_landmark_location(landmark_location)
 
+    def find_all_scenery_objects(self, parent=None):
+        root = self.root
+
+        if parent is not None:
+            root = parent
+
+        return root.findall(self.SCENERY_OBJECTS_SEARCH_PATTERN)
+
     def find_scenery_objects(self, guid):
         return self.root.findall(self.SCENERY_OBJECT_SEARCH_PATTERN + guid.upper() + self.PARENT_PATTERN_SUFFIX)
 
@@ -201,37 +212,54 @@ class ObjectsXml(Xml):
     def find_scenery_objects_in_group_parents(self, guid):
         return self.root.findall(self.SCENERY_OBJECT_GROUP_SEARCH_PATTERN + guid.upper() + self.PARENT_PATTERN_SUFFIX + self.PARENT_SUFFIX)
 
-    def find_groups(self, group_name=None):
+    def find_groups(self, group_name=None, parent=None):
         pattern = self.GROUPS_SEARCH_PATTERN
+        root = self.root
+
+        if parent is not None:
+            root = parent
+
         if group_name is not None:
             pattern = self.GROUP_SEARCH_PATTERN + str(group_name) + self.PATTERN_SUFFIX
-        return self.root.findall(pattern)
 
-    def find_polygons(self, group_name=None):
+        return root.findall(pattern)
+
+    def find_polygons(self, group_name=None, parent=None):
         group_id = -1
         pattern = self.POLYGONS_SEARCH_PATTERN
+        root = self.root
+
+        if parent is not None:
+            root = parent
+
         if group_name is not None:
             related_groups = self.find_groups(group_name=group_name)
             for group in related_groups:
                 group_id = group.get(self.GROUP_ID_ATTR)
             pattern = self.POLYGON_SEARCH_PATTERN + str(group_id) + self.PATTERN_SUFFIX
-        return self.root.findall(pattern)
 
-    def find_rectangles(self, display_name=None, group_name=None):
+        return root.findall(pattern)
+
+    def find_rectangles(self, display_name=None, group_name=None, parent=None):
         group_id = -1
-        pattern = self.POLYGONS_SEARCH_PATTERN
+        pattern = self.RECTANGLES_SEARCH_PATTERN
+        root = self.root
+
+        if parent is not None:
+            root = parent
+
         if display_name is not None:
             pattern = self.RECTANGLE_DISPLAY_NAME_SEARCH_PATTERN + str(display_name) + self.PATTERN_SUFFIX
-            return self.root.findall(pattern)
+            return root.findall(pattern)
 
         if group_name is not None:
             related_groups = self.find_groups(group_name=group_name)
             for group in related_groups:
                 group_id = group.get(self.GROUP_ID_ATTR)
             pattern = self.HEIGHT_MAP_SEARCH_PATTERN + str(group_id) + self.PATTERN_SUFFIX
-            return self.root.findall(pattern)
+            return root.findall(pattern)
 
-        return self.root.findall(pattern)
+        return root.findall(pattern)
 
     def find_polygon_attributes(self, root):
         return root.findall(self.POLYGON_ATTRIBUTES_SEARCH_PATTERN)
@@ -242,9 +270,13 @@ class ObjectsXml(Xml):
     def find_rectangle_height_data(self, root):
         return root.findall(self.RECTANGLE_HEIGHT_DATA_SEARCH_PATTERN)
 
-    def find_landmarks(self, name=None):
+    def find_landmarks(self, name=None, parent=None):
         result = []
         pattern = self.LANDMARKS_SEARCH_PATTERN
+        root = self.root
+
+        if parent is not None:
+            root = parent
 
         if name is not None:
             pattern = self.remove_accents((self.LANDMARK_LOCATION_SEARCH_PATTERN + str(name).replace("'", "") + self.PATTERN_SUFFIX).lower())
@@ -252,9 +284,9 @@ class ObjectsXml(Xml):
             elems = parse_tree.findall(pattern)
             for elem in elems:
                 instance_id = elem.get(self.INSTANCE_ID_ATTR.lower())
-                result = self.root.findall(self.LANDMARK_LOCATION_INSTANCE_ID_SEARCH_PATTERN + instance_id.upper() + self.PATTERN_SUFFIX)
+                result = root.findall(self.LANDMARK_LOCATION_INSTANCE_ID_SEARCH_PATTERN + instance_id.upper() + self.PATTERN_SUFFIX)
         else:
-            result = self.root.findall(pattern)
+            result = root.findall(pattern)
 
         return result
 
@@ -270,6 +302,29 @@ class ObjectsXml(Xml):
             result = group_id if group_id > result else result
 
         return result + 1
+
+    def adjust_altitude(self, altitude_adjustment):
+        self.__adjust_all_altitude(self.root, altitude_adjustment)
+
+        scenery_groups = self.find_groups()
+        for scenery_group in scenery_groups:
+            self.__adjust_all_altitude(scenery_group, altitude_adjustment)
+
+        self.save()
+
+    def __adjust_all_altitude(self, root, altitude_adjustment):
+        scenery_objects = self.find_all_scenery_objects(parent=root)
+        self.__adjust_scenery_object_altitude(scenery_objects, altitude_adjustment)
+        polygons = self.find_polygons(parent=root)
+        self.__adjust_polygon_altitude(polygons, altitude_adjustment)
+        landmarks = self.find_landmarks(parent=root)
+        self.__adjust_landmark_altitude(landmarks, altitude_adjustment)
+        rectangles = self.find_rectangles(parent=root)
+        self.__adjust_rectangle_altitude(rectangles, altitude_adjustment)
+
+        for rectangle in rectangles:
+            height_data = self.find_rectangle_height_data(rectangle)
+            self.__adjust_height_map_altitude(height_data, altitude_adjustment)
 
     def __convert_objects_guid_to_upper(self):
         for tag in self.root.findall(self.LIBRARY_OBJECTS_SEARCH_PATTERN):
@@ -402,3 +457,39 @@ class ObjectsXml(Xml):
             new_lon = Decimal(tile.pos.lon) + Decimal(settings.lon_correction)
             scenery_object.set(self.LAT_ATTR, str(new_lat))
             scenery_object.set(self.LON_ATTR, str(new_lon))
+
+    def __adjust_scenery_object_altitude(self, found_scenery_objects, altitude_adjustment):
+        for scenery_object in found_scenery_objects:
+            cur_alt = float(scenery_object.get(self.ALT_ATTR))
+            new_alt = float(Decimal(cur_alt) + Decimal(altitude_adjustment))
+            scenery_object.set(self.ALT_ATTR, str(new_alt))
+
+    def __adjust_landmark_altitude(self, found_landmarks, altitude_adjustment):
+        for scenery_landmark in found_landmarks:
+            cur_alt = float(scenery_landmark.get(self.ALT_ATTR))
+            new_alt = float(Decimal(cur_alt) + Decimal(altitude_adjustment))
+            scenery_landmark.set(self.ALT_ATTR, str(new_alt))
+
+    def __adjust_polygon_altitude(self, found_polygons, altitude_adjustment):
+        for scenery_polygon in found_polygons:
+            cur_alt = float(scenery_polygon.get(self.ALTITUDE_ATTR))
+            new_alt = float(Decimal(cur_alt) + Decimal(altitude_adjustment))
+            scenery_polygon.set(self.ALTITUDE_ATTR, str(new_alt))
+
+    def __adjust_rectangle_altitude(self, found_rectangles, altitude_adjustment):
+        for scenery_rectangle in found_rectangles:
+            cur_alt = float(scenery_rectangle.get(self.ALTITUDE_ATTR))
+            new_alt = float(Decimal(cur_alt) + Decimal(altitude_adjustment))
+            scenery_rectangle.set(self.ALTITUDE_ATTR, str(new_alt))
+
+            if scenery_rectangle.get(self.ALTITUDE2_ATTR) is not None:
+                cur_alt2 = float(scenery_rectangle.get(self.ALTITUDE2_ATTR))
+                new_alt2 = float(Decimal(cur_alt2) + Decimal(altitude_adjustment))
+                scenery_rectangle.set(self.ALTITUDE2_ATTR, str(new_alt2))
+
+    def __adjust_height_map_altitude(self, found_height_maps, altitude_adjustment):
+        for scenery_height_map in found_height_maps:
+            height_data = scenery_height_map.get(self.DATA_ATTR).split()
+            for i, height in enumerate(height_data):
+                height_data[i] = float(Decimal(height) + Decimal(altitude_adjustment))
+            scenery_height_map.set(self.DATA_ATTR, " ".join([str(h) for h in height_data]))
