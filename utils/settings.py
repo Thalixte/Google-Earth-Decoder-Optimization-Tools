@@ -66,6 +66,8 @@ class Settings:
     exclude_ground: str
     exclude_nature_reserve: str
     exclude_parks: str
+    keep_constructions: str
+    keep_roads: str
     add_lights: str
 
     LODS_SECTION = "LODS"
@@ -116,6 +118,7 @@ class Settings:
         self.exclude_nature_reserve = "False"
         self.exclude_parks = "False"
         self.isolate_3d_data = "False"
+        self.keep_constructions = "False"
         self.keep_roads = "False"
         self.disable_terraform = "False"
         self.add_lights = "False"
@@ -183,6 +186,7 @@ class Settings:
         self.exclude_nature_reserve = json.loads(self.exclude_nature_reserve.lower())
         self.exclude_parks = json.loads(self.exclude_parks.lower())
         self.isolate_3d_data = json.loads(self.isolate_3d_data.lower())
+        self.keep_constructions = json.loads(self.keep_constructions.lower())
         self.keep_roads = json.loads(self.keep_roads.lower())
         self.disable_terraform = json.loads(self.disable_terraform.lower())
         self.add_lights = json.loads(self.add_lights.lower())

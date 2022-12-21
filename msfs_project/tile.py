@@ -123,7 +123,7 @@ class MsfsTile(MsfsSceneObject):
         osm_xml = OsmXml(dest_folder, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + self.name + OSM_FILE_EXT)
         osm_xml.create_from_geodataframes([self.bbox_gdf.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')], b)
 
-    def create_exclusion_mask_osm_file(self, dest_folder, b, exclusion_mask, building_mask=None, water_mask=None, road_mask=None, bridges_mask=None, hidden_roads=None, amenity_mask=None, airport_mask=None, rocks_mask=None, keep_holes=True, file_prefix=""):
+    def create_exclusion_mask_osm_file(self, dest_folder, b, exclusion_mask, building_mask=None, water_mask=None, construction_mask=None, road_mask=None, bridges_mask=None, hidden_roads=None, amenity_mask=None, airport_mask=None, rocks_mask=None, keep_holes=True, file_prefix=""):
         bbox_gdf = resize_gdf(self.bbox_gdf, 10 if keep_holes else 200)
         exclusion_mask_gdf = exclusion_mask.clip(bbox_gdf)
 
@@ -136,6 +136,11 @@ class MsfsTile(MsfsSceneObject):
                 if not building_mask.empty:
                     building_mask = clip_gdf(building_mask, bbox_gdf)
                     exclusion_mask_gdf = difference_gdf(exclusion_mask_gdf, building_mask)
+
+            if construction_mask is not None:
+                if not construction_mask.empty:
+                    construction_mask = clip_gdf(construction_mask.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY), bbox_gdf)
+                    exclusion_mask_gdf = difference_gdf(exclusion_mask_gdf, construction_mask)
 
             if road_mask is not None:
                 if not road_mask.empty:

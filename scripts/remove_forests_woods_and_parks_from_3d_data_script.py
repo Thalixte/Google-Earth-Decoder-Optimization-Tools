@@ -54,6 +54,7 @@ def remove_forests_woods_and_parks_from_3d_data(script_settings):
         script_settings.exclude_nature_reserve = True
         script_settings.exclude_parks = True
         script_settings.isolate_3d_data = False
+        script_settings.keep_constructions = False
         script_settings.keep_roads = False
         script_settings.disable_terraform = False
         script_settings.save()

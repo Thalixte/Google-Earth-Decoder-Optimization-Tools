@@ -971,12 +971,12 @@ class MsfsProject:
 
         if process_3d_data:
             if settings.isolate_3d_data:
-                create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, orig_bbox.assign(building=BOUNDING_BOX_OSM_KEY), building_mask=resize_gdf(building, 8), water_mask=water, road_mask=roads if settings.keep_roads else None, bridges_mask=bridges if settings.keep_roads else None, hidden_roads=hidden_roads if settings.keep_roads else None, amenity_mask=amenity if settings.keep_roads else None, airport_mask=airport, rocks_mask=rocks, file_prefix=EXCLUSION_OSM_FILE_PREFIX, title="CREATE EXCLUSION MASKS OSM FILES")
+                create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, orig_bbox.assign(building=BOUNDING_BOX_OSM_KEY), building_mask=resize_gdf(building, 8), water_mask=water, construction_mask=construction if settings.keep_constructions else None, road_mask=roads if settings.keep_roads else None, bridges_mask=bridges if settings.keep_roads else None, hidden_roads=hidden_roads if settings.keep_roads else None, amenity_mask=amenity if settings.keep_roads else None, airport_mask=airport, rocks_mask=rocks, file_prefix=EXCLUSION_OSM_FILE_PREFIX, title="CREATE EXCLUSION MASKS OSM FILES")
             else:
                 create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, exclusion, building_mask=building, airport_mask=airport, rocks_mask=rocks, file_prefix=EXCLUSION_OSM_FILE_PREFIX, title="CREATE EXCLUSION MASKS OSM FILES")
 
         if generate_height_data:
-            self.__generate_height_data(b, roads, bridges, hidden_roads, airport, building, water, orig_bbox.assign(building=BOUNDING_BOX_OSM_KEY) if settings.isolate_3d_data else exclusion, amenity, keep_roads=settings.keep_roads)
+            self.__generate_height_data(b, construction, roads, bridges, hidden_roads, airport, building, water, orig_bbox.assign(building=BOUNDING_BOX_OSM_KEY) if settings.isolate_3d_data else exclusion, amenity, keep_roads=settings.keep_roads, keep_constructions = settings.keep_constructions)
 
         # remove tiles that are completely in the water
         self.__remove_full_water_tiles(water_without_bridges)
@@ -1050,8 +1050,8 @@ class MsfsProject:
             shape.remove_from_xml(self.objects_xml, group_name)
             shape.to_xml(self.objects_xml)
 
-    def __generate_height_data(self, b, roads, bridges, hidden_roads, airport, building, water, exclusion, amenity, keep_roads=False):
-        create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, exclusion, building_mask=building, road_mask=roads if keep_roads else None, bridges_mask=bridges if keep_roads else None, hidden_roads=hidden_roads if keep_roads else None, amenity_mask=resize_gdf(amenity, -4) if keep_roads else None, airport_mask=airport, file_prefix=GROUND_OSM_KEY + "_" + EXCLUSION_OSM_FILE_PREFIX, title="CREATE GROUND EXCLUSION MASKS OSM FILES")
+    def __generate_height_data(self, b, construction, roads, bridges, hidden_roads, airport, building, water, exclusion, amenity, keep_roads=False, keep_constructions=False):
+        create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, exclusion, building_mask=building, construction_mask=construction if keep_constructions else None, road_mask=roads if keep_roads else None, bridges_mask=bridges if keep_roads else None, hidden_roads=hidden_roads if keep_roads else None, amenity_mask=resize_gdf(amenity, -4) if keep_roads else None, airport_mask=airport, file_prefix=GROUND_OSM_KEY + "_" + EXCLUSION_OSM_FILE_PREFIX, title="CREATE GROUND EXCLUSION MASKS OSM FILES")
         create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, resize_gdf(water, 10), keep_holes=False, file_prefix=WATER_OSM_KEY + "_" + EXCLUSION_OSM_FILE_PREFIX, title="CREATE WATER EXCLUSION MASKS OSM FILES")
 
     def __load_geodataframes(self, orig_bbox, b, settings):
@@ -1264,7 +1264,6 @@ class MsfsProject:
             pbar.update("%s converted" % obj_file_name)
 
     def __adjust_altitude(self, altitude_adjustment):
-        isolated_print(altitude_adjustment)
         self.objects_xml.adjust_altitude(altitude_adjustment)
 
     def __find_different_tiles(self, tiles, tiles_to_compare):

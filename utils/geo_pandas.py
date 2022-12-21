@@ -172,7 +172,7 @@ def create_bounding_box(coords):
     return gpd.GeoDataFrame(pd.DataFrame([], index=[0]), crs=EPSG.key + str(EPSG.WGS84_degree_unit), geometry=[b]), b
 
 
-def create_exclusion_masks_from_tiles(tiles, dest_folder, b, exclusion_mask, building_mask=None, water_mask=None, road_mask=None, bridges_mask=None, hidden_roads=None, amenity_mask=None, airport_mask=None, rocks_mask=None, keep_holes=True, file_prefix="", title="CREATE EXCLUSION MASKS OSM FILES"):
+def create_exclusion_masks_from_tiles(tiles, dest_folder, b, exclusion_mask, building_mask=None, water_mask=None, construction_mask=None, road_mask=None, bridges_mask=None, hidden_roads=None, amenity_mask=None, airport_mask=None, rocks_mask=None, keep_holes=True, file_prefix="", title="CREATE EXCLUSION MASKS OSM FILES"):
     valid_tiles = [tile for tile in list(tiles.values()) if tile.valid]
     pbar = ProgressBar(valid_tiles, title=title)
     exclusion = exclusion_mask.copy()
@@ -181,7 +181,7 @@ def create_exclusion_masks_from_tiles(tiles, dest_folder, b, exclusion_mask, bui
         # if tile.name != "30604050607051455" and tile.name != "30604160614140752" and tile.name != "30604160614140773" and tile.name != "30604160614140770" and tile.name != "30604160614140650" and tile.name != "30604160614140453" and tile.name != "30604143504360660" and tile.name != "30604050607051672" and tile.name != "30604050607051673":
         #     continue
 
-        tile.create_exclusion_mask_osm_file(dest_folder, b, exclusion, building_mask=building_mask, water_mask=water_mask, road_mask=road_mask, bridges_mask=bridges_mask, hidden_roads=hidden_roads, amenity_mask=amenity_mask, airport_mask=airport_mask, rocks_mask=rocks_mask, keep_holes=keep_holes, file_prefix=file_prefix)
+        tile.create_exclusion_mask_osm_file(dest_folder, b, exclusion, building_mask=building_mask, water_mask=water_mask, construction_mask=construction_mask, road_mask=road_mask, bridges_mask=bridges_mask, hidden_roads=hidden_roads, amenity_mask=amenity_mask, airport_mask=airport_mask, rocks_mask=rocks_mask, keep_holes=keep_holes, file_prefix=file_prefix)
         pbar.update("exclusion mask created for %s tile" % tile.name)
 
 
