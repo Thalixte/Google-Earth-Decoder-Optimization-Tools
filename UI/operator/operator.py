@@ -504,7 +504,7 @@ class OT_RemoveTileCollidersOperator(ActionOperator):
 
 class OT_AdjustSceneryAltitudeOperator(ActionOperator):
     bl_idname = "wm.adjust_scenery_altitude"
-    bl_label = "Updates the altitude of the whole scenery (tiles, objects, colliders, landmarks, height maps)..."
+    bl_label = "Adjusts the altitude of the whole scenery (tiles, objects, colliders, landmarks, height maps)..."
 
     @classmethod
     def poll(cls, context):

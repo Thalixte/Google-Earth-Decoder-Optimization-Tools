@@ -611,7 +611,7 @@ class OT_AdjustSceneryAltitudePanel(SettingsOperator):
     operator_name = "wm.adjust_scenery_altitude"
     id_name = "wm.adjust_scenery_altitude_panel"
     bl_idname = id_name
-    bl_label = "Updates the altitude of the whole scenery"
+    bl_label = "Adjusts the altitude of the whole scenery"
     operator_description = """This script updates all the altitudes of the scenery components (tiles, objects, colliders, landmarks, height maps). """
     starting_section = ALTITUDE_ADJUSTMENT_INI_SECTION
     displayed_sections = [

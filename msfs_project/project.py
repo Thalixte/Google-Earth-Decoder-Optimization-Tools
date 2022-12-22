@@ -772,7 +772,7 @@ class MsfsProject:
 
         return tiles, chunks(data, nb_parallel_blender_tasks)
 
-    def __retrieve_lods_to_exclude_or_isolate_3d_data_from_geocode(self, geocode, geocode_gdf, backup_subfolder, settings, add_lights=False):
+    def __retrieve_lods_to_exclude_or_isolate_3d_data_from_geocode(self, geocode, geocode_gdf, backup_subfolder, settings, add_lights=False, from_backup=True):
         data = []
         modified_tiles = []
         tiles_with_collider = []
@@ -814,7 +814,7 @@ class MsfsProject:
 
                 # when the original tiles are available in the backup, use them, otherwise use the current modified tiles (which give less accurate results than the original ones)
                 backup_path = self.__find_backup_path()
-                lod_folder = backup_path if os.path.isdir(backup_path) else lod.folder
+                lod_folder = backup_path if os.path.isdir(backup_path) and from_backup else lod.folder
 
                 if not os.path.isdir(lod_folder):
                     continue
@@ -976,7 +976,7 @@ class MsfsProject:
                 create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, exclusion, building_mask=building, airport_mask=airport, rocks_mask=rocks, file_prefix=EXCLUSION_OSM_FILE_PREFIX, title="CREATE EXCLUSION MASKS OSM FILES")
 
         if generate_height_data:
-            self.__generate_height_data(b, construction, roads, bridges, hidden_roads, airport, building, water, orig_bbox.assign(building=BOUNDING_BOX_OSM_KEY) if settings.isolate_3d_data else exclusion, amenity, keep_roads=settings.keep_roads, keep_constructions = settings.keep_constructions)
+            self.__generate_height_data(b, construction, roads, bridges, hidden_roads, airport, building, water, orig_bbox.assign(building=BOUNDING_BOX_OSM_KEY) if settings.isolate_3d_data else exclusion, amenity, keep_roads=settings.keep_roads, keep_constructions=settings.keep_constructions)
 
         # remove tiles that are completely in the water
         self.__remove_full_water_tiles(water_without_bridges)
@@ -1170,7 +1170,7 @@ class MsfsProject:
             tile.add_collider()
 
     def __exclude_lods_3d_data_from_geocode(self, geocode, geocode_gdf, settings):
-        modified_tiles, tiles_with_collider, lods_data = self.__retrieve_lods_to_exclude_or_isolate_3d_data_from_geocode(geocode, geocode_gdf, "exclude_3d_data_from_geocode", settings)
+        modified_tiles, tiles_with_collider, lods_data = self.__retrieve_lods_to_exclude_or_isolate_3d_data_from_geocode(geocode, geocode_gdf, "exclude_3d_data_from_geocode", settings, from_backup=False)
         self.__multithread_process_data(lods_data, "cleanup_lod_3d_data.py", "EXCLUDE LODS 3D DATA TILES FROM GEOCODE", "excluded")
         for tile in tiles_with_collider:
             for lod in tile.lods:
@@ -1184,7 +1184,7 @@ class MsfsProject:
             pbar.update("%s prepared for msfs" % lod.name)
 
     def __isolate_lods_3d_data_from_geocode(self, geocode, geocode_gdf, settings, add_lights=False):
-        modified_tiles, tiles_with_collider, lods_data = self.__retrieve_lods_to_exclude_or_isolate_3d_data_from_geocode(geocode, geocode_gdf, "isolate_3d_data_from_geocode", settings, add_lights=add_lights)
+        modified_tiles, tiles_with_collider, lods_data = self.__retrieve_lods_to_exclude_or_isolate_3d_data_from_geocode(geocode, geocode_gdf, "isolate_3d_data_from_geocode", settings, from_backup=False, add_lights=add_lights)
         self.__multithread_process_data(lods_data, "isolate_lod_3d_data.py", "ISOLATE LODS 3D DATA TILES FROM GEOCODE", "excluded")
         for tile in tiles_with_collider:
             for lod in tile.lods:

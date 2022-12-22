@@ -65,7 +65,7 @@ class MsfsLandmarkLocation:
 
         if tiles is not None:
             self.__find_altitude_from_tiles(tiles)
-            self.pos.alt =self.pos.alt + alt
+            self.pos.alt = float(self.pos.alt) + float(alt)
 
         if DISPLAY_NAME_OSM_TAG in geocode_gdf:
             name = geocode_gdf[DISPLAY_NAME_OSM_TAG].split(",", 1)
