@@ -34,8 +34,9 @@ from .operator import PanelPropertyGroup, OT_ProjectPathOperator, OT_ProjectsPat
     OT_FixTilesLightningIssuesOperator, OT_addLodOperator, OT_removeLowerLodOperator, OT_openSettingsFileOperator, OT_CreateTerraformAndExclusionPolygonsPanel, \
     OT_CreateTerraformAndExclusionPolygonsOperator, OT_GenerateHeightDataPanel, OT_GenerateHeightDataOperator, OT_RemoveWaterFrom3dDataPanel, OT_RemoveWaterFrom3dDataOperator, \
     OT_RemoveForestsAndWoodsFrom3dDataPanel, OT_RemoveForestsAndWoodsFrom3dDataOperator, OT_RemoveForestsWoodsAndParksFrom3dDataPanel, OT_KeepOnlyBuildings3dDataOperator, OT_KeepOnlyBuildings3dDataPanel, \
-    OT_KeepOnlyBuildingsAndRoads3dDataOperator, OT_KeepOnlyBuildingsAndRoads3dDataPanel, OT_RemoveForestsWoodsAndParksFrom3dDataOperator, OT_CreateLandmarkFromGeocodeOperator, OT_CreateLandmarkFromGeocodePanel, OT_Exclude3dDataFromGeocodeOperator, OT_Exclude3dDataFromGeocodePanel, \
-    OT_AddTileCollidersPanel, OT_RemoveTileCollidersPanel, OT_AddTileCollidersOperator, OT_RemoveTileCollidersOperator, OT_AdjustSceneryAltitudePanel, OT_AdjustSceneryAltitudeOperator
+    OT_KeepOnlyBuildingsAndRoads3dDataOperator, OT_KeepOnlyBuildingsAndRoads3dDataPanel, OT_RemoveForestsWoodsAndParksFrom3dDataOperator, OT_CreateLandmarkFromGeocodeOperator, OT_CreateLandmarkFromGeocodePanel, \
+    OT_Exclude3dDataFromGeocodeOperator, OT_Isolate3dDataFromGeocodeOperator, OT_Exclude3dDataFromGeocodePanel, OT_Isolate3dDataFromGeocodePanel, OT_AddTileCollidersPanel, OT_RemoveTileCollidersPanel, \
+    OT_AddTileCollidersOperator, OT_RemoveTileCollidersOperator, OT_AdjustSceneryAltitudePanel, OT_AdjustSceneryAltitudeOperator
 
 
 class TOPBAR_MT_google_earth_optimization_menus(Menu):
@@ -84,6 +85,8 @@ class TOPBAR_MT_edit_tiles_menu(Menu):
     def draw(self, context):
         layout = self.layout
         layout.operator(OT_Exclude3dDataFromGeocodePanel.bl_idname)
+        layout.separator()
+        layout.operator(OT_Isolate3dDataFromGeocodePanel.bl_idname)
         layout.separator()
         layout.operator(OT_RemoveWaterFrom3dDataPanel.bl_idname)
         layout.separator()
@@ -160,6 +163,7 @@ classes = (
     OT_KeepOnlyBuildingsAndRoads3dDataOperator,
     OT_CreateLandmarkFromGeocodeOperator,
     OT_Exclude3dDataFromGeocodeOperator,
+    OT_Isolate3dDataFromGeocodeOperator,
     OT_AddTileCollidersOperator,
     OT_RemoveTileCollidersOperator,
     OT_CompressBuiltPackageOperator,
@@ -185,6 +189,7 @@ classes = (
     OT_KeepOnlyBuildingsAndRoads3dDataPanel,
     OT_CreateLandmarkFromGeocodePanel,
     OT_Exclude3dDataFromGeocodePanel,
+    OT_Isolate3dDataFromGeocodePanel,
     OT_AddTileCollidersPanel,
     OT_RemoveTileCollidersPanel,
     OT_CompressBuiltPackagePanel,

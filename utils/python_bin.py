@@ -15,27 +15,20 @@
 #  #
 #
 #  <pep8 compliant>
+import os
+import sys
 
-from .colored_print import *
-from .check_configuration import *
-from .file_manip import *
-from .msfs_sdk import *
-from .octant import *
-from .script_errors import *
-from .settings import *
-from .xml import *
-from .folders import *
-from .backup import *
-from .python_bin import *
-from .install_lib import *
-from .console import *
-from .module import *
-from .isolated_print import *
-from .json import *
-from .chunks import *
-from .progress_bar import *
-from .compressonator import *
-from .script import *
-from .geo_pandas import *
-from .geometry import *
-from .open_elevation import *
+from utils.script_errors import ScriptError
+
+PIP_BIN = "python.exe"
+
+
+def get_python_bin_path():
+    # path to other python folders
+    python_bin_missing_msg = "python interpreter not found on your system"
+    python_exe = os.path.join(sys.prefix, 'bin', PIP_BIN)
+
+    if python_exe is None:
+        raise ScriptError(python_bin_missing_msg)
+
+    return python_exe

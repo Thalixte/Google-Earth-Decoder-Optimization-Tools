@@ -41,6 +41,7 @@ from scripts.keep_only_buildings_3d_data_script import keep_only_buildings_3d_da
 from scripts.keep_only_buildings_and_roads_3d_data_script import keep_only_buildings_and_roads_3d_data
 from scripts.create_landmark_from_geocode_script import create_landmark_from_geocode
 from scripts.exclude_3d_data_from_geocode_script import exclude_3d_data_from_geocode
+from scripts.isolate_3d_data_from_geocode_script import isolate_3d_data_from_geocode
 from scripts.adjust_scenery_altitude_script import adjust_scenery_altitude
 from utils import open_console
 from .tools import reload_current_operator, reload_setting_props
@@ -469,6 +470,21 @@ class OT_Exclude3dDataFromGeocodeOperator(ActionOperator):
     def execute(self, context):
         super().execute(context)
         exclude_3d_data_from_geocode(context.scene.settings)
+        return {'FINISHED'}
+
+
+class OT_Isolate3dDataFromGeocodeOperator(ActionOperator):
+    bl_idname = "wm.isolate_3d_data_from_geocode"
+    bl_label = "Isolate a building from the Google Earth 3d data"
+
+    @classmethod
+    def poll(cls, context):
+        msfs_project = super().poll(context)
+        return os.path.isdir(msfs_project.scene_folder) and context.scene.settings.geocode != str()
+
+    def execute(self, context):
+        super().execute(context)
+        isolate_3d_data_from_geocode(context.scene.settings)
         return {'FINISHED'}
 
 

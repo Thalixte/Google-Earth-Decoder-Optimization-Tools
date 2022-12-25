@@ -37,6 +37,7 @@ import bpy
 from os.path import normpath, join, dirname
 
 from constants import ALTERNATE_PYTHON_LIB_REPO, WIN64_SUFFIX, WIN32_SUFFIX, WHL_FILE_EXT, ZIP_FILE_EXT, TXT_FILE_EXT
+from utils.python_bin import get_python_bin_path
 from utils.script_errors import ScriptError
 
 PIP_LIB = "pip"
@@ -46,9 +47,9 @@ CHUNK_SIZE = 1048576
 
 def install_python_lib(lib, install_pip=False, force=False):
     # path to other python folders
-    python_missing_msg = "python interpreter not found on your system"
+    python_lib_missing_msg = "python libraries not found on your system"
     error_msg = "pip and " + lib + " installation failed in blender lib folder. Please consider running this script as an administrator"
-    python_exe = os.path.join(sys.prefix, 'bin', 'python.exe')
+    python_exe = get_python_bin_path()
 
     # python lib path fallback
     if not hasattr(bpy.app, "binary_path_python") or bpy.app.binary_path_python is None:
@@ -58,7 +59,7 @@ def install_python_lib(lib, install_pip=False, force=False):
         python_lib_path = normpath(join(dirname(bpy.app.binary_path_python), '..', '..', 'python\\lib'))
 
     if python_lib_path is None:
-        raise ScriptError(python_missing_msg)
+        raise ScriptError(python_lib_missing_msg)
 
     if not force and is_installed(python_lib_path, PIP_LIB) and is_installed(python_lib_path, lib):
         print(PIP_LIB, "and", lib, "correctly installed in blender lib folder")

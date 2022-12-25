@@ -17,7 +17,7 @@
 #  <pep8 compliant>
 
 import os
-from utils import install_python_lib, create_empty_gdf
+from utils import install_python_lib, create_empty_gdf, isolated_print
 
 try:
     import geopandas as gpd
@@ -123,7 +123,7 @@ class MsfsTile(MsfsSceneObject):
         osm_xml = OsmXml(dest_folder, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + self.name + OSM_FILE_EXT)
         osm_xml.create_from_geodataframes([self.bbox_gdf.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')], b)
 
-    def create_exclusion_mask_osm_file(self, dest_folder, b, exclusion_mask, building_mask=None, water_mask=None, construction_mask=None, road_mask=None, bridges_mask=None, hidden_roads=None, amenity_mask=None, airport_mask=None, rocks_mask=None, keep_holes=True, file_prefix=""):
+    def create_exclusion_mask_osm_file(self, pbar, dest_folder, b, exclusion_mask, building_mask, water_mask, construction_mask, road_mask, bridges_mask, hidden_roads, amenity_mask, airport_mask, rocks_mask, keep_holes, file_prefix):
         bbox_gdf = resize_gdf(self.bbox_gdf, 10 if keep_holes else 200)
         exclusion_mask_gdf = exclusion_mask.clip(bbox_gdf)
 
@@ -183,6 +183,9 @@ class MsfsTile(MsfsSceneObject):
 
         if not file_prefix:
             self.exclusion_mask_gdf = exclusion_mask_gdf
+
+
+        return self.name
 
     def generate_height_data(self, height_map_xml, group_id, altitude, height_adjustment, high_precision=False, inverted=False, positioning_file_path="", water_mask_file_path="", ground_mask_file_path="", debug=False):
         if not self.lods:

@@ -18,6 +18,8 @@
 
 import itertools
 import sys
+import time
+from multiprocessing import Pool, cpu_count
 from os.path import basename
 
 import io
@@ -53,8 +55,8 @@ from msfs_project.collider import MsfsCollider
 from msfs_project.tile import MsfsTile
 from msfs_project.shape import MsfsShapes
 from utils import replace_in_file, is_octant, backup_file, ScriptError, print_title, \
-    get_backup_file_path, isolated_print, chunks, create_bounding_box_from_tiles, clip_gdf, create_terraform_polygons_gdf, create_land_mass_gdf, create_exclusion_masks_from_tiles, preserve_holes, create_exclusion_building_polygons_gdf, create_whole_water_gdf, create_ground_exclusion_gdf, load_gdf, \
-    prepare_sea_gdf, prepare_bbox_gdf, prepare_gdf, create_exclusion_vegetation_polygons_gdf, load_gdf_from_geocode, difference_gdf, create_shore_water_gdf, resize_gdf, prepare_golf_gdf, pr_bg_orange, load_json_file, prepare_park_gdf, prepare_building_gdf, create_empty_gdf, union_gdf, prepare_roads_gdf
+    get_backup_file_path, isolated_print, chunks, create_bounding_box_from_tiles, clip_gdf, create_terraform_polygons_gdf, create_land_mass_gdf, preserve_holes, create_exclusion_building_polygons_gdf, create_whole_water_gdf, create_ground_exclusion_gdf, load_gdf, \
+    prepare_sea_gdf, prepare_bbox_gdf, prepare_gdf, create_exclusion_vegetation_polygons_gdf, load_gdf_from_geocode, difference_gdf, create_shore_water_gdf, resize_gdf, pr_bg_orange, load_json_file, prepare_park_gdf, prepare_building_gdf, create_empty_gdf, union_gdf, prepare_roads_gdf
 from pathlib import Path
 
 from utils.compressonator import Compressonator
@@ -772,7 +774,7 @@ class MsfsProject:
 
         return tiles, chunks(data, nb_parallel_blender_tasks)
 
-    def __retrieve_lods_to_exclude_or_isolate_3d_data_from_geocode(self, geocode, geocode_gdf, backup_subfolder, settings, add_lights=False, from_backup=True):
+    def __retrieve_lods_to_exclude_or_isolate_3d_data_from_geocode(self, geocode, geocode_gdf, backup_subfolder, settings, isolate=False, add_lights=False, from_backup=True):
         data = []
         modified_tiles = []
         tiles_with_collider = []
@@ -823,6 +825,10 @@ class MsfsProject:
                                                           "--positioning_file_path", str(os.path.join(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)),
                                                           "--mask_file_path", str(mask_file_path)]
 
+                if isolate:
+                    geocode_file_prefix = self.__get_geocode_file_prefix(geocode)
+                    params.extend(["--output_name", geocode_file_prefix + "_" + tile.name])
+
                 if add_lights:
                     params.extend(["--add_lights", str(add_lights)])
 
@@ -835,7 +841,7 @@ class MsfsProject:
         return modified_tiles, tiles_with_collider, chunks(data, settings.nb_parallel_blender_tasks)
 
     def __optimize_tile_lods(self, lods_data):
-        self.__multithread_process_data(lods_data, "optimize_tile_lod.py", "OPTIMIZE THE TILES", "optimized")
+        self.__multithread_blender_process_data(lods_data, "optimize_tile_lod.py", "OPTIMIZE THE TILES", "optimized")
 
     def __merge_tiles(self, tiles, project_to_merge_name, tiles_to_merge, objects_xml_to_merge):
         pbar = ProgressBar(tiles_to_merge.items(), title="MERGE THE TILES")
@@ -887,7 +893,7 @@ class MsfsProject:
         return chunks(data, nb_parallel_blender_tasks)
 
     def __split_tiles(self, tiles_data):
-        self.__multithread_process_data(tiles_data, "split_tile.py", "SPLIT THE TILES", "splitted")
+        self.__multithread_blender_process_data(tiles_data, "split_tile.py", "SPLIT THE TILES", "splitted")
 
     def __replace_tiles_in_objects_xml(self, previous_tile, new_tiles):
         previous_guid = previous_tile.xml.guid
@@ -922,7 +928,7 @@ class MsfsProject:
         new_group_id = self.objects_xml.get_new_group_id()
 
         tiles_data = self.__retrieve_tiles_to_calculate_height_map(settings.nb_parallel_blender_tasks, new_group_id=new_group_id, parallel=True, height_adjustment=float(settings.height_adjustment), high_precision=settings.high_precision)
-        self.__multithread_process_data(tiles_data, "calculate_tile_height_data.py", "CALCULATE HEIGHT MAPS FOR EACH TILE", "height map calculated")
+        self.__multithread_blender_process_data(tiles_data, "calculate_tile_height_data.py", "CALCULATE HEIGHT MAPS FOR EACH TILE", "height map calculated")
         self.__add_height_maps_to_objects_xml()
 
     def __add_height_maps_to_objects_xml(self):
@@ -971,9 +977,9 @@ class MsfsProject:
 
         if process_3d_data:
             if settings.isolate_3d_data:
-                create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, orig_bbox.assign(building=BOUNDING_BOX_OSM_KEY), building_mask=resize_gdf(building, 8), water_mask=water, construction_mask=construction if settings.keep_constructions else None, road_mask=roads if settings.keep_roads else None, bridges_mask=bridges if settings.keep_roads else None, hidden_roads=hidden_roads if settings.keep_roads else None, amenity_mask=amenity if settings.keep_roads else None, airport_mask=airport, rocks_mask=rocks, file_prefix=EXCLUSION_OSM_FILE_PREFIX, title="CREATE EXCLUSION MASKS OSM FILES")
+                self.__create_exclusion_masks_from_tiles(b, orig_bbox.assign(building=BOUNDING_BOX_OSM_KEY), building_mask=resize_gdf(building, 8), water_mask=water, construction_mask=construction if settings.keep_constructions else None, road_mask=roads if settings.keep_roads else None, bridges_mask=bridges if settings.keep_roads else None, hidden_roads=hidden_roads if settings.keep_roads else None, amenity_mask=amenity if settings.keep_roads else None, airport_mask=airport, rocks_mask=rocks, file_prefix=EXCLUSION_OSM_FILE_PREFIX, title="CREATE EXCLUSION MASKS OSM FILES")
             else:
-                create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, exclusion, building_mask=building, airport_mask=airport, rocks_mask=rocks, file_prefix=EXCLUSION_OSM_FILE_PREFIX, title="CREATE EXCLUSION MASKS OSM FILES")
+                self.__create_exclusion_masks_from_tiles(b, exclusion, building_mask=building, airport_mask=airport, rocks_mask=rocks, file_prefix=EXCLUSION_OSM_FILE_PREFIX, title="CREATE EXCLUSION MASKS OSM FILES")
 
         if generate_height_data:
             self.__generate_height_data(b, construction, roads, bridges, hidden_roads, airport, building, water, orig_bbox.assign(building=BOUNDING_BOX_OSM_KEY) if settings.isolate_3d_data else exclusion, amenity, keep_roads=settings.keep_roads, keep_constructions=settings.keep_constructions)
@@ -1051,8 +1057,22 @@ class MsfsProject:
             shape.to_xml(self.objects_xml)
 
     def __generate_height_data(self, b, construction, roads, bridges, hidden_roads, airport, building, water, exclusion, amenity, keep_roads=False, keep_constructions=False):
-        create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, exclusion, building_mask=building, construction_mask=construction if keep_constructions else None, road_mask=roads if keep_roads else None, bridges_mask=bridges if keep_roads else None, hidden_roads=hidden_roads if keep_roads else None, amenity_mask=resize_gdf(amenity, -4) if keep_roads else None, airport_mask=airport, file_prefix=GROUND_OSM_KEY + "_" + EXCLUSION_OSM_FILE_PREFIX, title="CREATE GROUND EXCLUSION MASKS OSM FILES")
-        create_exclusion_masks_from_tiles(self.tiles, self.osmfiles_folder, b, resize_gdf(water, 10), keep_holes=False, file_prefix=WATER_OSM_KEY + "_" + EXCLUSION_OSM_FILE_PREFIX, title="CREATE WATER EXCLUSION MASKS OSM FILES")
+        self.__create_exclusion_masks_from_tiles(b, exclusion, building_mask=building, construction_mask=construction if keep_constructions else None, road_mask=roads if keep_roads else None, bridges_mask=bridges if keep_roads else None, hidden_roads=hidden_roads if keep_roads else None, amenity_mask=resize_gdf(amenity, -4) if keep_roads else None, airport_mask=airport, file_prefix=GROUND_OSM_KEY + "_" + EXCLUSION_OSM_FILE_PREFIX, title="CREATE GROUND EXCLUSION MASKS OSM FILES")
+        self.__create_exclusion_masks_from_tiles(b, resize_gdf(water, 10), keep_holes=False, file_prefix=WATER_OSM_KEY + "_" + EXCLUSION_OSM_FILE_PREFIX, title="CREATE WATER EXCLUSION MASKS OSM FILES")
+
+    def __create_exclusion_masks_from_tiles(self, b, exclusion_mask, building_mask=None, water_mask=None, construction_mask=None, road_mask=None, bridges_mask=None, hidden_roads=None, amenity_mask=None, airport_mask=None, rocks_mask=None, keep_holes=True, file_prefix="", title="CREATE EXCLUSION MASKS OSM FILES"):
+        valid_tiles = [tile for tile in list(self.tiles.values()) if tile.valid]
+        pbar = ProgressBar(valid_tiles, title=title)
+        exclusion = exclusion_mask.copy()
+
+        for i, tile in enumerate(valid_tiles):
+            tile.create_exclusion_mask_osm_file(pbar, self.osmfiles_folder, b, exclusion, building_mask, water_mask, construction_mask, road_mask, bridges_mask, hidden_roads, amenity_mask, airport_mask, rocks_mask, keep_holes, file_prefix)
+            pbar.update("exclusion mask created for %s tile" % tile.name)
+
+    def __result_callback(self, result, pbar=None):
+        # iterate all results
+        for value in result:
+            pbar.update("exclusion mask created for %s tile" % value)
 
     def __load_geodataframes(self, orig_bbox, b, settings):
         # load all necessary GeoPandas Dataframes
@@ -1159,19 +1179,19 @@ class MsfsProject:
 
     def __reduce_number_of_vertices(self, nb_parallel_blender_tasks):
         lods_data = self.__retrieve_lods_to_decimate(nb_parallel_blender_tasks)
-        self.__multithread_process_data(lods_data, "reduce_lod_number_of_vertices.py", "REDUCE THE NUMBER OF VERTICES FOR ALL TILE LODS", "number of vertices reduced")
+        self.__multithread_blender_process_data(lods_data, "reduce_lod_number_of_vertices.py", "REDUCE THE NUMBER OF VERTICES FOR ALL TILE LODS", "number of vertices reduced")
 
     def __process_lods_3d_data(self, nb_parallel_blender_tasks, process_all=False):
         tiles_with_collider, lods_data = self.__retrieve_lods_to_process(nb_parallel_blender_tasks, force_cleanup=process_all)
-        self.__multithread_process_data(lods_data, "cleanup_lod_3d_data.py", "CLEAN LODS 3D DATA TILES", "cleaned")
+        self.__multithread_blender_process_data(lods_data, "cleanup_lod_3d_data.py", "CLEAN LODS 3D DATA TILES", "cleaned")
         for tile in tiles_with_collider:
             for lod in tile.lods:
                 lod.remove_road_and_collision_tags()
             tile.add_collider()
 
     def __exclude_lods_3d_data_from_geocode(self, geocode, geocode_gdf, settings):
-        modified_tiles, tiles_with_collider, lods_data = self.__retrieve_lods_to_exclude_or_isolate_3d_data_from_geocode(geocode, geocode_gdf, "exclude_3d_data_from_geocode", settings, from_backup=False)
-        self.__multithread_process_data(lods_data, "cleanup_lod_3d_data.py", "EXCLUDE LODS 3D DATA TILES FROM GEOCODE", "excluded")
+        modified_tiles, tiles_with_collider, lods_data = self.__retrieve_lods_to_exclude_or_isolate_3d_data_from_geocode(geocode, geocode_gdf, "exclude_3d_data_from_geocode", settings, isolate=False, from_backup=False)
+        self.__multithread_blender_process_data(lods_data, "cleanup_lod_3d_data.py", "EXCLUDE LODS 3D DATA TILES FROM GEOCODE", "excluded")
         for tile in tiles_with_collider:
             for lod in tile.lods:
                 lod.remove_road_and_collision_tags()
@@ -1184,8 +1204,8 @@ class MsfsProject:
             pbar.update("%s prepared for msfs" % lod.name)
 
     def __isolate_lods_3d_data_from_geocode(self, geocode, geocode_gdf, settings, add_lights=False):
-        modified_tiles, tiles_with_collider, lods_data = self.__retrieve_lods_to_exclude_or_isolate_3d_data_from_geocode(geocode, geocode_gdf, "isolate_3d_data_from_geocode", settings, from_backup=False, add_lights=add_lights)
-        self.__multithread_process_data(lods_data, "isolate_lod_3d_data.py", "ISOLATE LODS 3D DATA TILES FROM GEOCODE", "excluded")
+        modified_tiles, tiles_with_collider, lods_data = self.__retrieve_lods_to_exclude_or_isolate_3d_data_from_geocode(geocode, geocode_gdf, "isolate_3d_data_from_geocode", settings, isolate=True, from_backup=True, add_lights=add_lights)
+        self.__multithread_blender_process_data(lods_data, "isolate_lod_3d_data.py", "ISOLATE LODS 3D DATA TILES FROM GEOCODE", "excluded")
         for tile in tiles_with_collider:
             for lod in tile.lods:
                 lod.remove_road_and_collision_tags()
@@ -1290,6 +1310,10 @@ class MsfsProject:
     def __find_backup_path(self):
         backup_subfolder = os.path.join(self.PACKAGE_SOURCES_FOLDER, os.path.basename(self.model_lib_folder))
         return os.path.join(os.path.join(self.backup_folder, CLEANUP_3D_DATA_BACKUP_FOLDER), backup_subfolder)
+
+    def __multithread_blender_process_data(self, processed_data, script_name, title, update_msg):
+        params = [str(bpy.app.binary_path), "--background", "--python", os.path.join(os.path.dirname(os.path.dirname(__file__)), script_name), "--"]
+        self.__multithread_process_data(processed_data, params, script_name, title, update_msg)
 
     @staticmethod
     def __prepare_geodataframes(orig_road, orig_railway, orig_sea, orig_bbox, orig_land_mass, orig_boundary, orig_landuse, orig_natural, orig_natural_water,
@@ -1420,7 +1444,7 @@ class MsfsProject:
         return [], []
 
     @staticmethod
-    def __multithread_process_data(processed_data, script_name, title, update_msg):
+    def __multithread_process_data(processed_data, params, script_name, title, update_msg):
         ON_POSIX = 'posix' in sys.builtin_module_names
 
         processed_data, data = itertools.tee(processed_data)
@@ -1430,7 +1454,6 @@ class MsfsProject:
             for chunck in processed_data:
                 # create a pipe to get data
                 input_fd, output_fd = os.pipe()
-                params = [str(bpy.app.binary_path), "--background", "--python", os.path.join(os.path.dirname(os.path.dirname(__file__)), script_name), "--"]
 
                 for obj in chunck:
                     print("-------------------------------------------------------------------------------")
@@ -1477,3 +1500,14 @@ class MsfsProject:
             result.sort()
 
         return result
+
+    @staticmethod
+    def __get_geocode_file_prefix(geocode):
+        res = geocode
+
+        split = geocode.split(",")
+        if split:
+            res = split[0]
+
+        res = "_".join(filter(str.isalnum, res.split(" ")))
+        return res

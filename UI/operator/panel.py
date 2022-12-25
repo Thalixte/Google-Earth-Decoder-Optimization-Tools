@@ -177,10 +177,11 @@ class SettingsOperator(PanelOperator):
         if self.operator_name is not "wm.create_landmark_from_geocode":
             self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "geocode_margin", "Geocode margin")
             col.separator()
-            self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "preserve_roads", "Preserve roads")
-            col.separator()
-            self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "preserve_buildings", "Preserve buildings")
-            col.separator()
+            if self.operator_name is not "wm.isolate_3d_data_from_geocode":
+                self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "preserve_roads", "Preserve roads")
+                col.separator()
+                self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "preserve_buildings", "Preserve buildings")
+                col.separator()
         if self.operator_name is "wm.create_landmark_from_geocode":
             self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "landmark_type", "Landmark type")
             col.separator()
@@ -569,6 +570,27 @@ class OT_Exclude3dDataFromGeocodePanel(SettingsOperator):
         it allows you to remove a greater area to be sure to exclude completely the building).
         Optionally, in the GEOCODE section, if you want to preserve the roads next to the building to exclude (preserve roads checkbox).
         Optionally, in the GEOCODE section, if you want to preserve the buildings next to the building to exclude (preserve buildings checkbox).
+        """
+    starting_section = GEOCODE_INI_SECTION
+    displayed_sections = [
+        PROJECT_INI_SECTION,
+        GEOCODE_INI_SECTION,
+        BUILD_INI_SECTION,
+        BACKUP_INI_SECTION,
+    ]
+
+
+class OT_Isolate3dDataFromGeocodePanel(SettingsOperator):
+    operator_name = "wm.isolate_3d_data_from_geocode"
+    id_name = "wm.isolate_3d_data_from_geocode_panel"
+    bl_idname = id_name
+    bl_label = "Isolate a building from the Google Earth 3d data"
+    operator_description = """Automatically isolates a building from Google Earth 3d data, based on a geocode, or an osmid.
+        In the GEOCODE section, indicates the geocode you want to isolate from 3d data. This geocode is in the form "location name, city"
+        Alternatively, in the GEOCODE section, you can set the osmid (Open Street Map id) you want to isolate from 3d data.
+        Example: "Buckingham Palace, London" for a geocode, or "5208404", which is the osmid of Buckingham Palace. 
+        In the GEOCODE section, set the geocode margin (as OSM and Google Earth can have a slight difference between building position, 
+        it allows you to isolate a greater area to be sure to keep completely the building).
         """
     starting_section = GEOCODE_INI_SECTION
     displayed_sections = [

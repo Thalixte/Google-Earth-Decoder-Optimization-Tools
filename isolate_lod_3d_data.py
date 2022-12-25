@@ -60,7 +60,7 @@ if cwd not in sys.path:
 
 from utils import *
 from blender import clean_scene
-from msfs_project import MsfsLod, PROCESS_TYPE
+from msfs_project import MsfsLod, PROCESS_TYPE, MsfsTile
 
 # clear and open the system console
 # open_console()
@@ -109,6 +109,11 @@ try:
     )
 
     parser.add_argument(
+        "-on", "--output_name", dest="output_name", type=str, required=True,
+        help="name of the resulted files",
+    )
+
+    parser.add_argument(
         "-al", "--add_lights", dest="add_lights", type=str, required=False,
         help="add lights around the geocode",
     )
@@ -138,6 +143,9 @@ try:
     if not args.mask_file_path:
         raise ScriptError("Error: --mask_file=\"some string\" argument not given, aborting.")
 
+    if not args.output_name:
+        raise ScriptError("Error: --output_name=\"some string\" argument not given, aborting.")
+
     clean_scene()
 
     settings = Settings(get_sources_path())
@@ -153,6 +161,6 @@ try:
         debug = False
 
     lod = MsfsLod(os.path.splitext(args.model_file)[0][-2:], 0, args.folder, args.model_file)
-    lod.process_3d_data(args.positioning_file_path, args.mask_file_path, args.output_folder, process_type=PROCESS_TYPE.isolate_3d_data, add_lights=add_lights, debug=debug)
+    lod.process_3d_data(args.positioning_file_path, args.mask_file_path, args.output_folder, output_name=args.output_name, process_type=PROCESS_TYPE.isolate_3d_data, add_lights=add_lights, debug=debug)
 except:
     pass
