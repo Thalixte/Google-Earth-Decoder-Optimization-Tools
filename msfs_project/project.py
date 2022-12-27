@@ -774,10 +774,11 @@ class MsfsProject:
 
         return tiles, chunks(data, nb_parallel_blender_tasks)
 
-    def __retrieve_lods_to_exclude_or_isolate_3d_data_from_geocode(self, geocode, geocode_gdf, backup_subfolder, settings, isolate=False, add_lights=False, from_backup=True):
+    def __retrieve_lods_to_exclude_3d_data_from_geocode(self, geocode, geocode_gdf, backup_subfolder, settings):
         data = []
         modified_tiles = []
         tiles_with_collider = []
+
         for tile in self.tiles.values():
             if not os.path.isdir(tile.folder):
                 continue
@@ -814,23 +815,9 @@ class MsfsProject:
                 if not lod.valid:
                     continue
 
-                # when the original tiles are available in the backup, use them, otherwise use the current modified tiles (which give less accurate results than the original ones)
-                backup_path = self.__find_backup_path()
-                lod_folder = backup_path if os.path.isdir(backup_path) and from_backup else lod.folder
-
-                if not os.path.isdir(lod_folder):
-                    continue
-
-                params = ["--folder", str(lod_folder), "--output_folder", str(lod.folder), "--model_file", str(lod.model_file),
+                params = ["--folder", str(lod.folder), "--output_folder", str(lod.folder), "--model_file", str(lod.model_file),
                                                           "--positioning_file_path", str(os.path.join(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)),
                                                           "--mask_file_path", str(mask_file_path)]
-
-                if isolate:
-                    geocode_file_prefix = self.__get_geocode_file_prefix(geocode)
-                    params.extend(["--output_name", geocode_file_prefix + "_" + tile.name])
-
-                if add_lights:
-                    params.extend(["--add_lights", str(add_lights)])
 
                 data.append({"name": lod.name, "params": params})
                 modified_tiles.append(tile)
@@ -839,6 +826,60 @@ class MsfsProject:
             pr_bg_orange("Geocode (" + geocode + ") found in OSM data, but not in the scenery" + EOL + CEND)
 
         return modified_tiles, tiles_with_collider, chunks(data, settings.nb_parallel_blender_tasks)
+
+    def __retrieve_lods_to_isolate_3d_data_from_geocode(self, geocode, geocode_gdf, backup_subfolder, settings, add_lights=False):
+        data = []
+        src_tiles = []
+
+        for tile in self.tiles.values():
+            if not os.path.isdir(tile.folder):
+                continue
+
+            if not tile.valid:
+                continue
+
+            processed = clip_gdf(geocode_gdf, tile.bbox_gdf)
+            if processed.empty:
+                continue
+
+            if settings.backup_enabled:
+                backup_path = os.path.join(os.path.join(self.backup_folder, backup_subfolder), geocode)
+                tile.backup_files(backup_path)
+
+            mask_file_path = os.path.join(self.osmfiles_folder, GEOCODE_OSM_FILE_PREFIX + "_" + EXCLUSION_OSM_FILE_PREFIX + OSM_FILE_EXT)
+
+            if not os.path.isfile(mask_file_path):
+                continue
+
+            for lod in tile.lods:
+                if not os.path.isdir(lod.folder):
+                    continue
+
+                if not lod.valid:
+                    continue
+
+                # when the original tiles are available in the backup, use them, otherwise use the current modified tiles (which give less accurate results than the original ones)
+                backup_path = self.__find_backup_path()
+                lod_folder = backup_path if os.path.isdir(backup_path) else lod.folder
+
+                if not os.path.isdir(lod_folder):
+                    continue
+
+                params = ["--folder", str(lod_folder), "--output_folder", str(lod.folder), "--output_name", self.__get_geocode_file_prefix(geocode) + "_" + lod.name, "--model_file", str(lod.model_file),
+                                                          "--positioning_file_path", str(os.path.join(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)),
+                                                          "--mask_file_path", str(mask_file_path)]
+
+                if add_lights:
+                    params.extend(["--add_lights", str(add_lights)])
+
+                data.append({"name": lod.name, "params": params})
+
+            src_tiles.append(tile)
+
+        if not data:
+            pr_bg_orange("Geocode (" + geocode + ") found in OSM data, but not in the scenery" + EOL + CEND)
+
+        return src_tiles, chunks(data, settings.nb_parallel_blender_tasks)
 
     def __optimize_tile_lods(self, lods_data):
         self.__multithread_blender_process_data(lods_data, "optimize_tile_lod.py", "OPTIMIZE THE TILES", "optimized")
@@ -997,12 +1038,12 @@ class MsfsProject:
 
         orig_land_mass, orig_boundary, orig_road, orig_railway, orig_sea, orig_landuse, orig_grass, orig_nature_reserve, \
         orig_natural, orig_natural_water, orig_water, orig_waterway, orig_aeroway, orig_pitch, orig_construction, orig_park, orig_building, \
-        orig_wall, orig_rocks, orig_amenity, orig_airport = self.__load_geodataframes(orig_bbox, b, settings)
+        orig_wall, orig_man_made, orig_rocks, orig_amenity, orig_airport = self.__load_geodataframes(orig_bbox, b, settings)
 
         bbox, roads, bridges, hidden_roads, sea, pitch, construction, airport, building, \
         water_without_bridges, water, exclusion, rocks, amenity = self.__prepare_geodataframes(orig_road, orig_railway, orig_sea, orig_bbox, orig_land_mass, orig_boundary,
                                                                                                orig_landuse, orig_natural, orig_natural_water, orig_water, orig_waterway, orig_aeroway,
-                                                                                               orig_pitch, orig_construction, orig_airport, orig_building, orig_wall,
+                                                                                               orig_pitch, orig_construction, orig_airport, orig_building, orig_wall, orig_man_made,
                                                                                                orig_park, orig_nature_reserve, orig_rocks, orig_amenity, settings)
 
         if not exclusion.empty:
@@ -1069,14 +1110,9 @@ class MsfsProject:
             tile.create_exclusion_mask_osm_file(pbar, self.osmfiles_folder, b, exclusion, building_mask, water_mask, construction_mask, road_mask, bridges_mask, hidden_roads, amenity_mask, airport_mask, rocks_mask, keep_holes, file_prefix)
             pbar.update("exclusion mask created for %s tile" % tile.name)
 
-    def __result_callback(self, result, pbar=None):
-        # iterate all results
-        for value in result:
-            pbar.update("exclusion mask created for %s tile" % value)
-
     def __load_geodataframes(self, orig_bbox, b, settings):
         # load all necessary GeoPandas Dataframes
-        load_gdf_list = [None] * 21
+        load_gdf_list = [None] * 22
         pbar = ProgressBar(load_gdf_list, title="RETRIEVE GEODATAFRAMES (THE FIRST TIME, MAY TAKE SOME TIME TO COMPLETE, BE PATIENT...)")
         pbar.update("retrieving land mass geodataframe...", stall=True)
         orig_land_mass = create_land_mass_gdf(self.sources_folder, orig_bbox, b)
@@ -1131,7 +1167,10 @@ class MsfsProject:
         pbar.update("buildings geodataframe retrieved")
         pbar.update("retrieving walls geodataframe...", stall=True)
         orig_wall = load_gdf(self.coords, BARRIER_OSM_KEY, OSM_TAGS[BARRIER_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, WALL_OSM_TAG + SHP_FILE_EXT), is_wall=True)
-        pbar.update("buildings geodataframe retrieved")
+        pbar.update("walls geodataframe retrieved")
+        pbar.update("retrieving man mades geodataframe...", stall=True)
+        orig_man_made = load_gdf(self.coords, MAN_MADE_OSM_KEY, OSM_TAGS[MAN_MADE_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, MAN_MADE_OSM_KEY + SHP_FILE_EXT), is_man_made=True)
+        pbar.update("man mades geodataframe retrieved")
         pbar.update("retrieving rocks geodataframe...", stall=True)
         orig_rocks = load_gdf(self.coords, NATURAL_OSM_KEY, OSM_TAGS[ROCKS_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, ROCKS_OSM_KEY + SHP_FILE_EXT))
         pbar.update("rocks geodataframe retrieved")
@@ -1143,7 +1182,7 @@ class MsfsProject:
         pbar.update("airports geodataframe retrieved")
 
         return orig_land_mass, orig_boundary, orig_road, orig_railway, orig_sea, orig_landuse, orig_grass, orig_nature_reserve, \
-               orig_natural, orig_natural_water, orig_water, orig_waterway, orig_aeroway, orig_pitch, orig_construction, orig_park, orig_building, orig_wall, orig_rocks, orig_amenity, orig_airport
+               orig_natural, orig_natural_water, orig_water, orig_waterway, orig_aeroway, orig_pitch, orig_construction, orig_park, orig_building, orig_wall, orig_man_made, orig_rocks, orig_amenity, orig_airport
 
     def __create_geocode_osm_exclusion_files(self, geocode, b, geocode_margin, preserve_roads, preserve_buildings, coords, shpfiles_folder):
         print_title("RETRIEVE GEOCODE OSM FILES")
@@ -1190,7 +1229,7 @@ class MsfsProject:
             tile.add_collider()
 
     def __exclude_lods_3d_data_from_geocode(self, geocode, geocode_gdf, settings):
-        modified_tiles, tiles_with_collider, lods_data = self.__retrieve_lods_to_exclude_or_isolate_3d_data_from_geocode(geocode, geocode_gdf, "exclude_3d_data_from_geocode", settings, isolate=False, from_backup=False)
+        modified_tiles, tiles_with_collider, lods_data = self.__retrieve_lods_to_exclude_3d_data_from_geocode(geocode, geocode_gdf, "exclude_3d_data_from_geocode", settings)
         self.__multithread_blender_process_data(lods_data, "cleanup_lod_3d_data.py", "EXCLUDE LODS 3D DATA TILES FROM GEOCODE", "excluded")
         for tile in tiles_with_collider:
             for lod in tile.lods:
@@ -1204,13 +1243,32 @@ class MsfsProject:
             pbar.update("%s prepared for msfs" % lod.name)
 
     def __isolate_lods_3d_data_from_geocode(self, geocode, geocode_gdf, settings, add_lights=False):
-        modified_tiles, tiles_with_collider, lods_data = self.__retrieve_lods_to_exclude_or_isolate_3d_data_from_geocode(geocode, geocode_gdf, "isolate_3d_data_from_geocode", settings, isolate=True, from_backup=True, add_lights=add_lights)
+        new_tiles = []
+        src_tiles, lods_data = self.__retrieve_lods_to_isolate_3d_data_from_geocode(geocode, geocode_gdf, "isolate_3d_data_from_geocode", settings, add_lights=add_lights)
         self.__multithread_blender_process_data(lods_data, "isolate_lod_3d_data.py", "ISOLATE LODS 3D DATA TILES FROM GEOCODE", "excluded")
-        for tile in tiles_with_collider:
-            for lod in tile.lods:
-                lod.remove_road_and_collision_tags()
-            tile.add_collider()
-        lods = [lod for tile in modified_tiles for lod in tile.lods]
+
+        for tile in src_tiles:
+            new_tile = tile
+            new_tile.name = self.__get_geocode_file_prefix(geocode) + "_" + tile.name
+            new_tile.definition_file = new_tile.name + XML_FILE_EXT
+            new_tile.xml.file_path = os.path.join(new_tile.folder, new_tile.definition_file)
+
+            if os.path.exists(new_tile.xml.file_path):
+                return
+
+            new_tile.xml.guid = "{" + str(new_tile.generate_guid()) + "}"
+            new_tile.xml.root.set(new_tile.xml.GUID_ATTR, new_tile.xml.guid)
+            new_tile.xml.save()
+
+            for lod in new_tile.lods:
+                new_lod_name = self.__get_geocode_file_prefix(geocode) + "_" + lod.name
+                replace_in_file(new_tile.xml.file_path, lod.name, new_lod_name)
+                lod.name = new_lod_name
+                lod.model_file = new_lod_name + GLTF_FILE_EXT
+
+            new_tile.to_xml(self.objects_xml, new_tile.xml.guid)
+
+        lods = [lod for tile in new_tiles for lod in tile.lods]
         pbar = ProgressBar(list(lods), title="PREPARE THE TILES FOR MSFS")
         for lod in lods:
             lod.optimization_in_progress = False
@@ -1315,12 +1373,13 @@ class MsfsProject:
         params = [str(bpy.app.binary_path), "--background", "--python", os.path.join(os.path.dirname(os.path.dirname(__file__)), script_name), "--"]
         self.__multithread_process_data(processed_data, params, script_name, title, update_msg)
 
+
     @staticmethod
     def __prepare_geodataframes(orig_road, orig_railway, orig_sea, orig_bbox, orig_land_mass, orig_boundary, orig_landuse, orig_natural, orig_natural_water,
-                                orig_water, orig_waterway, orig_aeroway, orig_pitch, orig_construction, orig_airport, orig_building, orig_wall, orig_park, orig_nature_reserve,
-                                orig_rocks, orig_amenity, settings):
+                                orig_water, orig_waterway, orig_aeroway, orig_pitch, orig_construction, orig_airport, orig_building, orig_wall, orig_man_made,
+                                orig_park, orig_nature_reserve, orig_rocks, orig_amenity, settings):
         # prepare all the necessary GeoPandas Dataframes
-        itasks = 21
+        itasks = 22
 
         if settings.exclude_parks:
             itasks = itasks+1
@@ -1376,8 +1435,11 @@ class MsfsProject:
         pbar.update("preparing wall geodataframe...", stall=True)
         wall = clip_gdf(prepare_wall_gdf(orig_wall), bbox)
         pbar.update("wall geodataframe prepared")
+        pbar.update("preparing man mades geodataframe...", stall=True)
+        man_made = clip_gdf(prepare_wall_gdf(orig_man_made), bbox)
+        pbar.update("man mades geodataframe prepared")
         pbar.update("preparing building geodataframe...", stall=True)
-        building = clip_gdf(prepare_building_gdf(orig_building, wall), bbox)
+        building = clip_gdf(prepare_building_gdf(orig_building, wall, man_made), bbox)
         pbar.update("building geodataframe prepared")
         pbar.update("preparing rocks geodataframe...", stall=True)
         rocks = prepare_gdf(orig_rocks)

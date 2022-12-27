@@ -315,7 +315,7 @@ def load_gdf_from_geocode(geocode, geocode_margin=5.0, preserve_roads=True, pres
     return result.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)
 
 
-def load_gdf(coords, key, tags, shp_file_path="", keep_geocode_data=False, is_roads=False, is_sea=False, is_waterway=False, is_grass=False, is_wall=False, land_mass=None, bbox=None):
+def load_gdf(coords, key, tags, shp_file_path="", keep_geocode_data=False, is_roads=False, is_sea=False, is_waterway=False, is_grass=False, is_wall=False, is_man_made=False, land_mass=None, bbox=None):
     result = create_empty_gdf()
     has_cache = os.path.isfile(shp_file_path)
     logging.getLogger('shapely.geos').setLevel(logging.CRITICAL)
@@ -576,7 +576,7 @@ def prepare_bbox_gdf(bbox, land_mass, boundary):
     return resize_gdf(result, 20)
 
 
-def prepare_building_gdf(gdf, wall):
+def prepare_building_gdf(gdf, wall, man_made):
     result = gdf.copy()
 
     if not result.empty:
@@ -585,6 +585,9 @@ def prepare_building_gdf(gdf, wall):
 
     if not wall.empty:
         result = result.append(wall)
+
+    if not man_made.empty:
+        result = result.append(man_made)
 
     return result.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)
 

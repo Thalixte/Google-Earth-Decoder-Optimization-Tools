@@ -246,6 +246,18 @@ DISPLAY_NAME_OSM_TAG = "display_name"
 NAME_OSM_TAG = "name"
 WALL_OSM_TAG = "wall"
 CASTLE_WALL_OSM_TAG = "castle_wall"
+WATERMILL_OSM_TAG = "watermill"
+TOWER_OSM_TAG = "tower"
+MAST_OSM_TAG = "mast"
+BREAKWATER_OSM_TAG = "breakwater"
+STORAGE_TANK_OSM_TAG = "storage_tank"
+WORKS_OSM_TAG = "works"
+CHIMNEY_OSM_TAG = "chimney"
+OBELISK_OSM_TAG = "obelisk"
+SILO_OSM_TAG = "silo"
+TELESCOPE_OSM_TAG = "telescope"
+WATER_TOWER_OSM_TAG = "water_tower"
+OBSERVATORY_OSM_TAG = "observatory"
 
 AIRPORT_GEOCODE = "airport"
 
@@ -384,6 +396,22 @@ OSM_TAGS = {
     ],
     BARRIER_OSM_KEY: [
         WALL_OSM_TAG
+    ],
+    MAN_MADE_OSM_KEY: [
+        WATERMILL_OSM_TAG,
+        TOWER_OSM_TAG,
+        MAST_OSM_TAG,
+        BREAKWATER_OSM_TAG,
+        STORAGE_TANK_OSM_TAG,
+        WORKS_OSM_TAG,
+        CHIMNEY_OSM_TAG,
+        OBELISK_OSM_TAG,
+        SILO_OSM_TAG,
+        TELESCOPE_OSM_TAG,
+        WATER_TOWER_OSM_TAG,
+        OBSERVATORY_OSM_TAG,
+        PIER_OSM_TAG,
+        BRIDGE_OSM_TAG
     ],
     ROAD_REMOVAL_LANDUSE_OSM_KEY: [
         FOREST_OSM_TAG,

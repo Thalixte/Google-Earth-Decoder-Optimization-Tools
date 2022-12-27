@@ -17,7 +17,7 @@
 #  <pep8 compliant>
 
 import os
-from utils import install_python_lib, create_empty_gdf, isolated_print
+from utils import install_python_lib
 
 try:
     import geopandas as gpd
@@ -220,7 +220,7 @@ class MsfsTile(MsfsSceneObject):
                     self.coords = self.define_max_coords(subtile_coords)
 
     def __calculate_pos(self):
-        result = get_position_from_file_name(self.name)
+        result = get_position_from_file_name(self.name.split("_")[-1])
 
         if self.lods:
             lod = self.lods[0]
