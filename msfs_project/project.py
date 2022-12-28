@@ -169,7 +169,7 @@ class MsfsProject:
         if all_files:
             self.backup_tiles(backup_subfolder)
             self.backup_colliders(backup_subfolder)
-        self.backup_scene_objects(backup_subfolder)
+            self.backup_scene_objects(backup_subfolder)
 
     def clean(self):
         isolated_print(EOL)
@@ -343,6 +343,13 @@ class MsfsProject:
             self.__create_tiles_bounding_boxes()
             self.__isolate_lods_3d_data_from_geocode(geocode, geocode_gdf, settings)
 
+    def adjust_altitude(self, altitude_adjustment):
+        self.__adjust_altitude(altitude_adjustment)
+
+    def create_landmark_from_geocode(self, settings):
+        geocode = settings.geocode
+        self.__create_landmark_from_geocode(geocode, settings)
+
     def add_lights_to_geocode(self, settings):
         geocode = settings.geocode
         geocode_gdf = self.__create_geocode_osm_files(geocode, settings, False, False, self.coords, self.shpfiles_folder)
@@ -352,14 +359,7 @@ class MsfsProject:
 
         if not geocode_gdf.empty:
             self.__create_tiles_bounding_boxes()
-            self.__isolate_lods_3d_data_from_geocode(geocode, geocode_gdf, settings, add_lights=True)
-
-    def adjust_altitude(self, altitude_adjustment):
-        self.__adjust_altitude(altitude_adjustment)
-
-    def create_landmark_from_geocode(self, settings):
-        geocode = settings.geocode
-        self.__create_landmark_from_geocode(geocode, settings)
+            self.__add_lights_to_geocode(geocode, geocode_gdf, settings)
 
     def import_old_google_earth_decoder_tiles(self, settings):
         self.__import_old_google_earth_decoder_tiles(settings)
@@ -827,7 +827,7 @@ class MsfsProject:
 
         return modified_tiles, tiles_with_collider, chunks(data, settings.nb_parallel_blender_tasks)
 
-    def __retrieve_lods_to_isolate_3d_data_from_geocode(self, geocode, geocode_gdf, backup_subfolder, settings, add_lights=False):
+    def __retrieve_lods_to_isolate_3d_data_from_geocode(self, geocode, geocode_gdf, backup_subfolder, settings):
         data = []
         src_tiles = []
 
@@ -869,9 +869,6 @@ class MsfsProject:
                                                           "--positioning_file_path", str(os.path.join(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)),
                                                           "--mask_file_path", str(mask_file_path)]
 
-                if add_lights:
-                    params.extend(["--add_lights", str(add_lights)])
-
                 data.append({"name": lod.name, "params": params})
 
             src_tiles.append(tile)
@@ -880,6 +877,54 @@ class MsfsProject:
             pr_bg_orange("Geocode (" + geocode + ") found in OSM data, but not in the scenery" + EOL + CEND)
 
         return src_tiles, chunks(data, settings.nb_parallel_blender_tasks)
+
+    def __retrieve_process_data_to_add_lights_to_geocode(self, geocode, geocode_gdf, settings):
+        data = []
+        mask_files_paths = []
+        model_files_paths = []
+        lod_folder = ""
+
+        for tile in self.tiles.values():
+            if not os.path.isdir(tile.folder):
+                continue
+
+            if not tile.valid:
+                continue
+
+            processed = clip_gdf(geocode_gdf, tile.bbox_gdf)
+            if processed.empty:
+                continue
+
+            if not tile.lods:
+                continue
+
+            lod_idx = 1
+            if len(tile.lods) <= lod_idx:
+                continue
+
+            lod = tile.lods[lod_idx]
+
+            if not os.path.isdir(lod.folder):
+                continue
+
+            if not lod.valid:
+                continue
+
+            # when the original tiles are available in the backup, use them, otherwise use the current modified tiles (which give less accurate results than the original ones)
+            backup_path = self.__find_backup_path()
+            lod_folder = backup_path if os.path.isdir(backup_path) else lod.folder
+
+            if not os.path.isdir(lod_folder):
+                continue
+
+            mask_files_paths.append(str(os.path.join(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)))
+            model_files_paths.append(os.path.join(lod_folder, lod.model_file))
+
+        params = ["--folder", str(lod_folder), "--positioning_files_paths", "|".join(mask_files_paths), "-model_files_paths", "|".join(model_files_paths), "--scene_definition_file", self.objects_xml.file_path]
+
+        data.append({"name": "add_lights", "params": params})
+
+        return chunks(data, settings.nb_parallel_blender_tasks)
 
     def __optimize_tile_lods(self, lods_data):
         self.__multithread_blender_process_data(lods_data, "optimize_tile_lod.py", "OPTIMIZE THE TILES", "optimized")
@@ -1242,9 +1287,9 @@ class MsfsProject:
             lod.prepare_for_msfs()
             pbar.update("%s prepared for msfs" % lod.name)
 
-    def __isolate_lods_3d_data_from_geocode(self, geocode, geocode_gdf, settings, add_lights=False):
+    def __isolate_lods_3d_data_from_geocode(self, geocode, geocode_gdf, settings):
         new_tiles = []
-        src_tiles, lods_data = self.__retrieve_lods_to_isolate_3d_data_from_geocode(geocode, geocode_gdf, "isolate_3d_data_from_geocode", settings, add_lights=add_lights)
+        src_tiles, lods_data = self.__retrieve_lods_to_isolate_3d_data_from_geocode(geocode, geocode_gdf, "isolate_3d_data_from_geocode", settings)
         self.__multithread_blender_process_data(lods_data, "isolate_lod_3d_data.py", "ISOLATE LODS 3D DATA TILES FROM GEOCODE", "excluded")
 
         for tile in src_tiles:
@@ -1290,6 +1335,10 @@ class MsfsProject:
                 landmark_location.to_xml(self.objects_xml)
             else:
                 pr_bg_orange("Geocode (" + geocode + ") found in OSM data, but not in the scenery" + EOL + CEND)
+
+    def __add_lights_to_geocode(self, geocode, geocode_gdf, settings):
+        process_data = self.__retrieve_process_data_to_add_lights_to_geocode(geocode, geocode_gdf, settings)
+        self.__multithread_blender_process_data(process_data, "add_lights.py", "ADD LIGHTS TO GEOCODE", "lights created")
 
     def __import_old_google_earth_decoder_tiles(self, settings):
         obj_files = [model_file for model_file in Path(settings.decoder_output_path).glob(OBJ_FILE_PATTERN)]

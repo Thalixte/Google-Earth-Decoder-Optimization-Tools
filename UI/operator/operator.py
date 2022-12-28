@@ -40,6 +40,7 @@ from scripts.remove_forests_woods_and_parks_from_3d_data_script import remove_fo
 from scripts.keep_only_buildings_3d_data_script import keep_only_buildings_3d_data
 from scripts.keep_only_buildings_and_roads_3d_data_script import keep_only_buildings_and_roads_3d_data
 from scripts.create_landmark_from_geocode_script import create_landmark_from_geocode
+from scripts.add_lights_to_geocode_script import add_lights_to_geocode
 from scripts.exclude_3d_data_from_geocode_script import exclude_3d_data_from_geocode
 from scripts.isolate_3d_data_from_geocode_script import isolate_3d_data_from_geocode
 from scripts.adjust_scenery_altitude_script import adjust_scenery_altitude
@@ -161,32 +162,6 @@ class OT_MsfsBuildExePathOperator(FileBrowserOperator):
 
     def invoke(self, context, event):
         self.filepath = context.scene.setting_props.msfs_build_exe_path
-        context.window_manager.fileselect_add(self)
-        return {'RUNNING_MODAL'}
-
-
-class OT_CompressonatorExePathOperator(FileBrowserOperator):
-    bl_idname = "wm.compressonator_exe_path_operator"
-    bl_label = "Path to the compressonator bin exe that compresses the package texture files..."
-
-    filter_glob: StringProperty(
-        default="*.exe",
-        options={"HIDDEN"},
-    )
-    filepath: bpy.props.StringProperty(
-        subtype="FILE_PATH"
-    )
-
-    def draw(self, context):
-        super().draw(context)
-
-    def execute(self, context):
-        context.scene.setting_props.compressonator_exe_path = self.filepath
-        reload_current_operator(context)
-        return {'FINISHED'}
-
-    def invoke(self, context, event):
-        self.filepath = context.scene.setting_props.compressonator_exe_path
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
 
@@ -455,6 +430,21 @@ class OT_CreateLandmarkFromGeocodeOperator(ActionOperator):
     def execute(self, context):
         super().execute(context)
         create_landmark_from_geocode(context.scene.settings)
+        return {'FINISHED'}
+
+
+class OT_AddLightsToGeocodeOperator(ActionOperator):
+    bl_idname = "wm.add_lights_to_geocode"
+    bl_label = "Add lights all around a geocode"
+
+    @classmethod
+    def poll(cls, context):
+        msfs_project = super().poll(context)
+        return os.path.isdir(msfs_project.scene_folder) and context.scene.settings.geocode != str()
+
+    def execute(self, context):
+        super().execute(context)
+        add_lights_to_geocode(context.scene.settings)
         return {'FINISHED'}
 
 

@@ -114,11 +114,6 @@ try:
     )
 
     parser.add_argument(
-        "-al", "--add_lights", dest="add_lights", type=str, required=False,
-        help="add lights around the geocode",
-    )
-
-    parser.add_argument(
         "-dbg", "--debug", dest="debug", type=str, required=False,
         help="Debug the height data in blender",
     )
@@ -138,22 +133,15 @@ try:
         raise ScriptError("Error: --model_file=\"some string\" argument not given, aborting.")
 
     if not args.positioning_file_path:
-        raise ScriptError("Error: --positioning_file=\"some string\" argument not given, aborting.")
+        raise ScriptError("Error: --positioning_file_path=\"some string\" argument not given, aborting.")
 
     if not args.mask_file_path:
-        raise ScriptError("Error: --mask_file=\"some string\" argument not given, aborting.")
+        raise ScriptError("Error: --mask_file_path=\"some string\" argument not given, aborting.")
 
     if not args.output_name:
         raise ScriptError("Error: --output_name=\"some string\" argument not given, aborting.")
 
     clean_scene()
-
-    settings = Settings(get_sources_path())
-
-    if args.add_lights:
-        add_lights = json.loads(args.add_lights.lower())
-    else:
-        add_lights = False
 
     if args.debug:
         debug = json.loads(args.debug.lower())

@@ -174,7 +174,7 @@ class SettingsOperator(PanelOperator):
         col.separator()
         self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "geocode", "Geocode")
         col.separator()
-        if self.operator_name is not "wm.create_landmark_from_geocode":
+        if self.operator_name is "wm.exclude_3d_data_from_geocode" or self.operator_name is "wm.isolate_3d_data_from_geocode":
             self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "geocode_margin", "Geocode margin")
             col.separator()
             if self.operator_name is not "wm.isolate_3d_data_from_geocode":
@@ -187,7 +187,7 @@ class SettingsOperator(PanelOperator):
             col.separator()
             self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "landmark_offset", "Landmark offset")
             col.separator()
-            self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "add_lights", "Add lights around the landmark")
+            self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "add_lights", "Add lights all around the landmark")
             col.separator()
         self.draw_footer(context, self.layout, self.operator_name)
 
@@ -547,6 +547,24 @@ class OT_CreateLandmarkFromGeocodePanel(SettingsOperator):
         Example: "Buckingham Palace, London" for a POI, or "London, United Kingdom" for a city. 
         In the GEOCODE section, choose the type of landmark (POI, city).
         Optionally, in the GEOCODE section, indicates the landmark height offset to change the height of the landmark point.
+        """
+    starting_section = GEOCODE_INI_SECTION
+    displayed_sections = [
+        PROJECT_INI_SECTION,
+        GEOCODE_INI_SECTION,
+        BUILD_INI_SECTION,
+        BACKUP_INI_SECTION,
+    ]
+
+
+class OT_AddLightsToGeocodePanel(SettingsOperator):
+    operator_name = "wm.add_lights_to_geocode"
+    id_name = "wm.add_lights_to_geocode_panel"
+    bl_idname = id_name
+    bl_label = "Add lights all around a geocode"
+    operator_description = """Automatically creates MSFS lights all around a geocode.
+        In the GEOCODE section, set the geocode for which want to create a landmark in MSFS. This geocode is in the form "location name, city"
+        Example: "Buckingham Palace, London" for a POI, or "London, United Kingdom" for a city.
         """
     starting_section = GEOCODE_INI_SECTION
     displayed_sections = [

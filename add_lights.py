@@ -60,7 +60,7 @@ if cwd not in sys.path:
 
 from utils import *
 from blender import clean_scene
-from msfs_project import MsfsLod, PROCESS_TYPE
+from msfs_project import MsfsLod, PROCESS_TYPE, MsfsTile
 
 # clear and open the system console
 # open_console()
@@ -85,27 +85,17 @@ try:
 
     parser.add_argument(
         "-f", "--folder", dest="folder", type=str, required=True,
-        help="folder of the original MsfsLod model file",
+        help="folder of the original MsfsLod model files",
     )
 
     parser.add_argument(
-        "-of", "--output_folder", dest="output_folder", type=str, required=True,
-        help="folder of the modified MsfsLod model file",
+        "-m", "--model_files", dest="model_files", type=str, required=True,
+        help="names of the gltf model files",
     )
 
     parser.add_argument(
-        "-m", "--model_file", dest="model_file", type=str, required=True,
-        help="name of the gltf model file",
-    )
-
-    parser.add_argument(
-        "-p", "--positioning_file_path", dest="positioning_file_path", type=str, required=True,
-        help="path of the positioning mask file",
-    )
-
-    parser.add_argument(
-        "-msk", "--mask_file_path", dest="mask_file_path", type=str, required=True,
-        help="path of the exclusion mask file",
+        "-p", "--positioning_files_paths", dest="positioning_files_paths", type=str, required=True,
+        help="paths of the positioning mask files",
     )
 
     parser.add_argument(
@@ -121,17 +111,11 @@ try:
     if not args.folder:
         raise ScriptError("Error: --folder=\"some string\" argument not given, aborting.")
 
-    if not args.output_folder:
-        raise ScriptError("Error: --output_folder=\"some string\" argument not given, aborting.")
+    if not args.model_files:
+        raise ScriptError("Error: --model_files=\"some string\" argument not given, aborting.")
 
-    if not args.model_file:
-        raise ScriptError("Error: --model_file=\"some string\" argument not given, aborting.")
-
-    if not args.positioning_file_path:
-        raise ScriptError("Error: --positioning_file_path=\"some string\" argument not given, aborting.")
-
-    if not args.mask_file_path:
-        raise ScriptError("Error: --mask_file_path=\"some string\" argument not given, aborting.")
+    if not args.positioning_files_paths:
+        raise ScriptError("Error: --positioning_files_paths=\"some string\" argument not given, aborting.")
 
     clean_scene()
 
@@ -140,7 +124,7 @@ try:
     else:
         debug = False
 
-    lod = MsfsLod(os.path.splitext(args.model_file)[0][-2:], 0, args.folder, args.model_file)
-    lod.process_3d_data(args.positioning_file_path, args.mask_file_path, args.output_folder, process_type=PROCESS_TYPE.cleanup_3d_data, debug=debug)
+    # lod = MsfsLod(os.path.splitext(args.model_file)[0][-2:], 0, args.folder, args.model_file)
+    # lod.process_3d_data(args.positioning_file_path, args.mask_file_path, args.output_folder, output_name=args.output_name, process_type=PROCESS_TYPE.isolate_3d_data, add_lights=add_lights, debug=debug)
 except:
     pass

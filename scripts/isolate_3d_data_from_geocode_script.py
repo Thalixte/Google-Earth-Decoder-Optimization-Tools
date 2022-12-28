@@ -46,7 +46,7 @@ def isolate_3d_data_from_geocode(script_settings):
         check_configuration(script_settings, msfs_project)
 
         isolated_print(EOL)
-        print_title("CLEANUP 3D DATA")
+        print_title("ISOLATE 3D DATA FROM GEOCODE")
 
         msfs_project.isolate_3d_data_from_geocode(script_settings)
 

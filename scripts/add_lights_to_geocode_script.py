@@ -15,8 +15,10 @@
 #  #
 #
 #  <pep8 compliant>
+import os
+from pathlib import Path
 
-from utils import Settings, get_sources_path, reload_modules, print_title, isolated_print
+from utils import Settings, get_sources_path, reload_modules, print_title, isolated_print, load_gdf_from_geocode
 
 settings = Settings(get_sources_path())
 
@@ -36,7 +38,7 @@ from utils import check_configuration, ScriptError, build_package, pr_bg_green, 
 from msfs_project import MsfsProject
 
 
-def exclude_3d_data_from_geocode(script_settings):
+def add_lights_to_geocode(script_settings):
     try:
         isolated_print(EOL)
 
@@ -45,10 +47,13 @@ def exclude_3d_data_from_geocode(script_settings):
 
         check_configuration(script_settings, msfs_project)
 
-        isolated_print(EOL)
-        print_title("EXCLUDE 3D DATA FROM GEOCODE")
+        if script_settings.backup_enabled:
+            msfs_project.backup(Path(os.path.abspath(__file__)).stem.replace(SCRIPT_PREFIX, str()), all_files=False)
 
-        msfs_project.exclude_3d_data_from_geocode(script_settings)
+        isolated_print(EOL)
+        print_title("ADD LIGHTS TO GEOCODE")
+
+        msfs_project.add_lights_to_geocode(script_settings)
 
         if script_settings.build_package_enabled:
             build_package(msfs_project, script_settings)
@@ -70,4 +75,4 @@ def exclude_3d_data_from_geocode(script_settings):
 
 
 if __name__ == "__main__":
-    exclude_3d_data_from_geocode(settings)
+    add_lights_to_geocode(settings)
