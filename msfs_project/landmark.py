@@ -18,6 +18,7 @@
 
 from uuid import uuid4
 
+from blender.scene import align_models_with_masks, process_3d_data, create_geocode_bounding_box
 from constants import DISPLAY_NAME_OSM_TAG
 from msfs_project.position import MsfsPosition
 
@@ -50,6 +51,12 @@ class MsfsLandmarkLocation:
     def to_xml(self, xml):
         xml.add_landmark_location(self)
         xml.save()
+
+    @staticmethod
+    def add_lights(model_files_paths, positioning_files_paths, mask_file_path, scene_definition_file, debug=False):
+        align_models_with_masks(model_files_paths, positioning_files_paths, mask_file_path)
+        process_3d_data(intersect=True)
+        create_geocode_bounding_box()
 
     def __init_from_gdf(self, geocode_gdf, tiles=None, owner=None, type=None, alt=None, offset=None):
         if geocode_gdf.empty:

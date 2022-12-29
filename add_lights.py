@@ -60,71 +60,82 @@ if cwd not in sys.path:
 
 from utils import *
 from blender import clean_scene
-from msfs_project import MsfsLod, PROCESS_TYPE, MsfsTile
+from msfs_project import MsfsLod, PROCESS_TYPE, MsfsTile, MsfsLandmarkLocation
 
 # clear and open the system console
 # open_console()
 
-try:
-    # get the args passed to blender after "--", all of which are ignored by
-    # blender so scripts may receive their own arguments
-    argv = sys.argv
+# try:
+# get the args passed to blender after "--", all of which are ignored by
+# blender so scripts may receive their own arguments
+argv = sys.argv
 
-    if "--" not in argv:
-        argv = []  # as if no args are passed
-    else:
-        argv = argv[argv.index("--") + 1:]  # get all args after "--"
+if "--" not in argv:
+    argv = []  # as if no args are passed
+else:
+    argv = argv[argv.index("--") + 1:]  # get all args after "--"
 
-    # When --help or no args are given, print this help
-    usage_text = (
-            "Run blender in background mode with this script:"
-            "  blender --background --python " + __file__ + " -- [options]"
-    )
+# When --help or no args are given, print this help
+usage_text = (
+        "Run blender in background mode with this script:"
+        "  blender --background --python " + __file__ + " -- [options]"
+)
 
-    parser = argparse.ArgumentParser(description=usage_text)
+parser = argparse.ArgumentParser(description=usage_text)
 
-    parser.add_argument(
-        "-f", "--folder", dest="folder", type=str, required=True,
-        help="folder of the original MsfsLod model files",
-    )
+parser.add_argument(
+    "-m", "--model_files_paths", dest="model_files_paths", type=str, required=True,
+    help="names of the gltf model files",
+)
 
-    parser.add_argument(
-        "-m", "--model_files", dest="model_files", type=str, required=True,
-        help="names of the gltf model files",
-    )
+parser.add_argument(
+    "-p", "--positioning_files_paths", dest="positioning_files_paths", type=str, required=True,
+    help="paths of the positioning mask files",
+)
 
-    parser.add_argument(
-        "-p", "--positioning_files_paths", dest="positioning_files_paths", type=str, required=True,
-        help="paths of the positioning mask files",
-    )
+parser.add_argument(
+    "-msk", "--mask_file_path", dest="mask_file_path", type=str, required=True,
+    help="paths of the mask file",
+)
 
-    parser.add_argument(
-        "-dbg", "--debug", dest="debug", type=str, required=False,
-        help="Debug the height data in blender",
-    )
+parser.add_argument(
+    "-scf", "--scene_definition_file", dest="scene_definition_file", type=str, required=True,
+    help="path of the definition file of the scenery",
+)
 
-    args = parser.parse_args(argv)
+parser.add_argument(
+    "-dbg", "--debug", dest="debug", type=str, required=False,
+    help="Debug the lights creation in blender",
+)
 
-    if not argv:
-        raise ScriptError("Error: arguments not given, aborting.")
+args = parser.parse_args(argv)
 
-    if not args.folder:
-        raise ScriptError("Error: --folder=\"some string\" argument not given, aborting.")
+if not argv:
+    raise ScriptError("Error: arguments not given, aborting.")
 
-    if not args.model_files:
-        raise ScriptError("Error: --model_files=\"some string\" argument not given, aborting.")
+if not args.model_files_paths:
+    raise ScriptError("Error: --model_files_paths=\"some string\" argument not given, aborting.")
 
-    if not args.positioning_files_paths:
-        raise ScriptError("Error: --positioning_files_paths=\"some string\" argument not given, aborting.")
+if not args.positioning_files_paths:
+    raise ScriptError("Error: --positioning_files_paths=\"some string\" argument not given, aborting.")
 
-    clean_scene()
+if not args.mask_file_path:
+    raise ScriptError("Error: --mask_file_path=\"some string\" argument not given, aborting.")
 
-    if args.debug:
-        debug = json.loads(args.debug.lower())
-    else:
-        debug = False
+if not args.scene_definition_file:
+    raise ScriptError("Error: --scene_definition_file=\"some string\" argument not given, aborting.")
 
-    # lod = MsfsLod(os.path.splitext(args.model_file)[0][-2:], 0, args.folder, args.model_file)
-    # lod.process_3d_data(args.positioning_file_path, args.mask_file_path, args.output_folder, output_name=args.output_name, process_type=PROCESS_TYPE.isolate_3d_data, add_lights=add_lights, debug=debug)
-except:
-    pass
+clean_scene()
+
+if args.debug:
+    debug = json.loads(args.debug.lower())
+else:
+    debug = False
+
+model_files_paths = args.model_files_paths.split("|")
+positioning_files_paths = args.positioning_files_paths.split("|")
+landmarkLocation = MsfsLandmarkLocation()
+
+landmarkLocation.add_lights(model_files_paths, positioning_files_paths, args.mask_file_path, args.scene_definition_file, debug=debug)
+# except:
+#     pass

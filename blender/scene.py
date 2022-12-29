@@ -483,6 +483,71 @@ def align_model_with_mask(model_file_path, positioning_file_path, mask_file_path
     bpy.ops.object.delete()
 
 
+def align_models_with_masks(model_files, positionings, mask):
+    if not bpy.context.scene:
+        return False
+
+    objects_to_keep = []
+    obj = None
+
+    for i, model_file_path in enumerate(model_files):
+        positioning = positionings[i]
+        target = None
+        mesh = None
+
+        import_model_files([model_file_path], objects_to_keep=objects_to_keep)
+
+        for obj in bpy.context.selected_objects:
+            if obj.type != MESH_OBJECT_TYPE:
+                obj.select_set(True)
+                bpy.ops.object.delete()
+            else:
+                mesh = obj
+                mesh.select_set(True)
+
+        bpy.context.view_layer.objects.active = mesh
+        bpy.ops.object.join()
+        bpy.ops.transform.mirror(constraint_axis=(True, True, False), orient_type='GLOBAL')
+
+        for obj in bpy.context.selected_objects:
+            mesh = obj
+
+        bpy.ops.object.select_all(action=DESELECT_ACTION)
+        import_osm_file(positioning)
+        for obj in bpy.context.selected_objects:
+            obj.name = "Ways"
+            target = obj
+
+        mesh.select_set(True)
+        target.select_set(True)
+        bpy.context.view_layer.objects.active = target
+
+        bpy.ops.object.align(bb_quality=True, align_mode='OPT_3', relative_to='OPT_4', align_axis={'X', 'Y'})
+
+        bpy.ops.object.select_all(action=DESELECT_ACTION)
+        target.select_set(True)
+        bpy.ops.object.delete()
+
+        bpy.ops.object.select_all(action=SELECT_ACTION)
+
+        for obj in bpy.context.selected_objects:
+            objects_to_keep.append(obj)
+
+    bpy.context.view_layer.objects.active = obj
+    bpy.ops.object.join()
+
+    bpy.ops.object.select_all(action=DESELECT_ACTION)
+    import_osm_file(mask)
+
+    for obj in bpy.context.selected_objects:
+        obj.name = "Areas"
+        target = obj
+
+    bpy.ops.object.select_all(action=SELECT_ACTION)
+    bpy.context.view_layer.objects.active = target
+    bpy.ops.object.align(bb_quality=True, align_mode='OPT_2', relative_to='OPT_4', align_axis={'Z'})
+
+
 def reduce_number_of_vertices(model_file_path):
     import_model_files([model_file_path], clean=False)
     objects = bpy.context.scene.objects
@@ -515,8 +580,9 @@ def reduce_number_of_vertices(model_file_path):
     bpy.ops.object.select_all(action=SELECT_ACTION)
 
 
-def process_3d_data(model_file_path, intersect=False):
-    import_model_files([model_file_path], clean=False)
+def process_3d_data(model_file_path=None, intersect=False):
+    if model_file_path is not None:
+        import_model_files([model_file_path], clean=False)
 
     objects = bpy.context.scene.objects
 
@@ -580,6 +646,9 @@ def process_3d_data(model_file_path, intersect=False):
             if not add_weighted_normal_modifier(obj):
                 continue
 
+            for modifier in obj.modifiers:
+                bpy.ops.object.modifier_apply(modifier=modifier.name)
+
     bpy.ops.object.select_all(action=SELECT_ACTION)
 
 
@@ -601,7 +670,7 @@ def generate_model_height_data(model_file_path, lat, lon, altitude, height_adjus
     # fix wrong height data for ground tiles
     if os.path.exists(positioning_file_path) and os.path.exists(ground_mask_file_path):
         align_model_with_mask(model_file_path, positioning_file_path, ground_mask_file_path, objects_to_keep=[grid, height_grid])
-        process_3d_data(model_file_path, intersect=True)
+        process_3d_data(model_file_path=model_file_path, intersect=True)
         tile = get_tile_for_ray_cast(model_file_path, imported=False, objects_to_keep=[grid, height_grid])
         if inverted:
             hmatrix = calculate_height_map_from_coords_from_top(tile, grid_dimension, coords, depsgraph, lat, lon, altitude, hmatrix_base=hmatrix)
@@ -611,7 +680,7 @@ def generate_model_height_data(model_file_path, lat, lon, altitude, height_adjus
     # fix wrong height data for bridges on water
     if os.path.exists(positioning_file_path) and os.path.exists(water_mask_file_path):
         align_model_with_mask(model_file_path, positioning_file_path, water_mask_file_path, objects_to_keep=[grid, height_grid])
-        process_3d_data(model_file_path, intersect=True)
+        process_3d_data(model_file_path=model_file_path, intersect=True)
         tile = get_tile_for_ray_cast(model_file_path, imported=False, objects_to_keep=[grid, height_grid])
         hmatrix = fix_bridge_height_data_on_water(tile, depsgraph, lat, lon, altitude, hmatrix_base=hmatrix)
 
@@ -1209,7 +1278,7 @@ def face(rows, column, row):
     return column * rows + row, column * rows + row + 1, (column + 1) * rows + row + 1, (column + 1) * rows + row
 
 
-def create_bounding_box(obj, prefix, spheric=False):
+def create_bounding_box(obj, prefix, spheric=False, cut_base=False):
     scale = obj.scale
 
     minx = obj.bound_box[0][0] * scale.x
@@ -1230,18 +1299,37 @@ def create_bounding_box(obj, prefix, spheric=False):
 
     if spheric:
         bpy.ops.mesh.primitive_uv_sphere_add(location=loc, rotation=obj.rotation_euler)
-        dx = dx*2
-        dy = dy * 2
-        dz = dz * 2
+        dx = dx * 1.2
+        dy = dy * 1.2
+        dz = dz * 3
     else:
         bpy.ops.mesh.primitive_cube_add(location=loc, rotation=obj.rotation_euler)
 
-    new_obj = bpy.context.object
+    bounding_box_obj = bpy.context.object
 
-    new_obj.name = new_name
-    new_obj.dimensions = mathutils.Vector((dx, dy, dz))
+    bounding_box_obj.name = new_name
+    bounding_box_obj.dimensions = mathutils.Vector((dx, dy, dz))
 
-    return new_obj
+    if cut_base:
+        bpy.ops.object.select_all(action=DESELECT_ACTION)
+        bpy.ops.mesh.primitive_plane_add(location=loc, rotation=obj.rotation_euler)
+        plane = bpy.context.object
+        plane.dimensions = mathutils.Vector((dx, dy, dz))
+        plane.select_set(True)
+        obj.select_set(True)
+        bpy.context.view_layer.objects.active = obj
+        bpy.ops.object.align(bb_quality=True, align_mode='OPT_1', relative_to='OPT_4', align_axis={'Z'})
+        bounding_box_obj.select_set(True)
+        bpy.context.view_layer.objects.active = bounding_box_obj
+        if add_boolean_modifier(bounding_box_obj, plane, BOOLEAN_MODIFIER_OPERATION.DIFFERENCE):
+            for modifier in bounding_box_obj.modifiers:
+                bpy.ops.object.modifier_apply(modifier=modifier.name)
+
+        bpy.ops.object.select_all(action=DESELECT_ACTION)
+        plane.select_set(True)
+        bpy.ops.object.delete()
+
+    return bounding_box_obj
 
 
 def create_grid(obj, name, grid_dimension):
@@ -1388,10 +1476,9 @@ def remove_obj_faces(obj):
 
 def create_geocode_bounding_box():
     bpy.ops.object.select_all(action=SELECT_ACTION)
-    bpy.ops.object.join()
     obs = bpy.context.selected_objects
 
     for obj in obs:
-        bbox = create_bounding_box(obj, "geocode", spheric=True)
+        bbox = create_bounding_box(obj, "geocode_", spheric=True, cut_base=True)
 
 

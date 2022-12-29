@@ -21,7 +21,7 @@ import re
 import shutil
 from pathlib import Path
 
-from blender import import_model_files, bake_texture_files, fix_object_bounding_box, export_to_optimized_gltf_files, clean_scene, extract_splitted_tile, align_model_with_mask, process_3d_data, generate_model_height_data, reduce_number_of_vertices, create_geocode_bounding_box
+from blender import import_model_files, bake_texture_files, fix_object_bounding_box, export_to_optimized_gltf_files, clean_scene, extract_splitted_tile, align_model_with_mask, process_3d_data, generate_model_height_data, reduce_number_of_vertices
 from constants import PNG_TEXTURE_FORMAT, JPG_TEXTURE_FORMAT, GLTF_FILE_PATTERN, GLTF_FILE_EXT, XML_FILE_EXT, TEXTURE_FOLDER
 from msfs_project.binary import MsfsBinary
 from msfs_project.texture import MsfsTexture
@@ -239,10 +239,10 @@ class MsfsLod:
         align_model_with_mask(os.path.join(self.folder, self.model_file), positioning_file_path, mask_file_path)
 
         if process_type == PROCESS_TYPE.cleanup_3d_data:
-            process_3d_data(os.path.join(self.folder, self.model_file), intersect=False)
+            process_3d_data(model_file_path=os.path.join(self.folder, self.model_file), intersect=False)
 
         if process_type == PROCESS_TYPE.isolate_3d_data:
-            process_3d_data(os.path.join(self.folder, self.model_file), intersect=True)
+            process_3d_data(model_file_path=os.path.join(self.folder, self.model_file), intersect=True)
 
         output_model_file = output_name + self.LOD_SUFFIX + str(self.lod_level).zfill(2) + GLTF_FILE_EXT if output_name else self.model_file
 
@@ -252,8 +252,6 @@ class MsfsLod:
             model_file.remove_texture_path(self.name)
             model_file.add_cleaned_tag()
             model_file.dump()
-        else:
-            create_geocode_bounding_box()
 
         if not debug:
             clean_scene()
