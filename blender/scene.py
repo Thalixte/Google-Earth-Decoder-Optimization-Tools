@@ -83,9 +83,11 @@ OBJECT_NAME_SEP = "_"
 GEOID_HEIGHT_ORIGIN_MARGIN = 5.0
 FACES_ONLY_DELETE_CONTEXT = "FACES_ONLY"
 FACES_DELETE_CONTEXT = "FACES"
+EDGES_FACES_DELETE_CONTEXT = "EDGES_FACES"
 VERTICES_DELETE_CONTEXT = "VERTS"
 GRIDS_COLLECTION_NAME = "grids"
 HEIGHT_GRID_MATERIAL_NAME = "height_grid_material"
+COLLAPSE_DECIMATE_TYPE = "COLLAPSE"
 
 
 class BOOLEAN_MODIFIER_OPERATION:
@@ -1204,6 +1206,18 @@ def add_weighted_normal_modifier(obj):
     return True
 
 
+def add_decimate_modifier(obj, decimate_type, ratio):
+    decimaty = obj.modifiers.new(name="booly", type="DECIMATE")
+
+    if not decimaty:
+        return False
+
+    decimaty.decimate_type = decimate_type
+    decimaty.ratio = ratio
+
+    return True
+
+
 def flat_cutted_faces(obj):
     me = obj.data
 
@@ -1465,10 +1479,20 @@ def round_decimals_down(number: float, decimals: int=2):
 
 
 def remove_obj_faces(obj):
+    remove_obj_nodes(obj, FACES_ONLY_DELETE_CONTEXT)
+
+
+def remove_obj_faces_and_egdes(obj):
+    remove_obj_nodes(obj, EDGES_FACES_DELETE_CONTEXT)
+
+
+def remove_obj_nodes(obj, delete_context):
     me = obj.data
     bm = bmesh.new()
     bm.from_mesh(me)
-    bmesh.ops.delete(bm, geom=bm.faces, context=FACES_ONLY_DELETE_CONTEXT)
+    bmesh.ops.delete(bm, geom=bm.verts, context=delete_context)
+    bmesh.ops.delete(bm, geom=bm.edges, context=delete_context)
+    bmesh.ops.delete(bm, geom=bm.faces, context=delete_context)
     bm.to_mesh(me)
     me.update()
     bm.free()
@@ -1480,5 +1504,11 @@ def create_geocode_bounding_box():
 
     for obj in obs:
         bbox = create_bounding_box(obj, "geocode_", spheric=True, cut_base=True)
+        bbox.select_set(True)
+        bpy.context.view_layer.objects.active = bbox
+        if add_decimate_modifier(bbox, COLLAPSE_DECIMATE_TYPE, 0.1):
+            for modifier in bbox.modifiers:
+                bpy.ops.object.modifier_apply(modifier=modifier.name)
 
-
+        bpy.context.view_layer.objects.active = bbox
+        remove_obj_faces_and_egdes(bbox)
