@@ -59,7 +59,8 @@ class MsfsLandmarkLocation:
         process_3d_data(intersect=True)
         lights_gdf = create_geocode_bounding_box(lat, lon, alt)
 
-        isolated_print(lights_gdf)
+        if debug:
+            isolated_print(lights_gdf)
 
     def __init_from_gdf(self, geocode_gdf, tiles=None, owner=None, type=None, alt=None, offset=None):
         if geocode_gdf.empty:
