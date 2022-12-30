@@ -22,7 +22,8 @@ from math import floor
 from mathutils.bvhtree import BVHTree
 from collections import defaultdict
 from pathlib import Path
-from utils import install_python_lib
+from utils.install_lib import install_python_lib
+from utils.geo_pandas import create_latlon_gdf_from_meter_data
 
 try:
     import numpy as np
@@ -546,7 +547,7 @@ def align_models_with_masks(model_files, positionings, mask):
         target = obj
 
     bpy.ops.object.select_all(action=SELECT_ACTION)
-    bpy.context.view_layer.objects.active = target
+    bpy.context.view_layer.objects.active = mesh
     bpy.ops.object.align(bb_quality=True, align_mode='OPT_2', relative_to='OPT_4', align_axis={'Z'})
 
 
@@ -1498,7 +1499,10 @@ def remove_obj_nodes(obj, delete_context):
     bm.free()
 
 
-def create_geocode_bounding_box():
+def create_geocode_bounding_box(lat, lon, alt):
+    data = {"x": [], "y": [], "z": []}
+    geoid_height = get_geoid_height(lat, lon)
+
     bpy.ops.object.select_all(action=SELECT_ACTION)
     obs = bpy.context.selected_objects
 
@@ -1512,3 +1516,19 @@ def create_geocode_bounding_box():
 
         bpy.context.view_layer.objects.active = bbox
         remove_obj_faces_and_egdes(bbox)
+
+        depsgraph = bpy.context.evaluated_depsgraph_get()
+        bm = bmesh.new()
+        bm.from_object(bbox, depsgraph)
+        bm.verts.ensure_lookup_table()
+
+        for v in bm.verts:
+            coords = bbox.matrix_world @ v.co
+            data["x"].append(coords.x)
+            data["y"].append(coords.y)
+            data["z"].append(coords.z)
+
+        bm.free()
+        gdf = create_latlon_gdf_from_meter_data(data, lat, lon, geoid_height+alt)
+
+        return gdf

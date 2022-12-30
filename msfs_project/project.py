@@ -352,6 +352,9 @@ class MsfsProject:
 
     def add_lights_to_geocode(self, settings):
         geocode = settings.geocode
+        geocode_gdf = load_gdf_from_geocode(geocode, check_geocode=True)
+        lat = geocode_gdf.lat
+        lon = geocode_gdf.lon
         geocode_gdf = self.__create_geocode_osm_files(geocode, settings, False, False, self.coords, self.shpfiles_folder)
 
         if geocode_gdf is None:
@@ -359,7 +362,7 @@ class MsfsProject:
 
         if not geocode_gdf.empty:
             self.__create_tiles_bounding_boxes()
-            self.__add_lights_to_geocode(geocode, geocode_gdf, settings)
+            self.__add_lights_to_geocode(geocode, geocode_gdf, lat, lon, settings)
 
     def import_old_google_earth_decoder_tiles(self, settings):
         self.__import_old_google_earth_decoder_tiles(settings)
@@ -878,11 +881,12 @@ class MsfsProject:
 
         return src_tiles, chunks(data, settings.nb_parallel_blender_tasks)
 
-    def __retrieve_process_data_to_add_lights_to_geocode(self, geocode, geocode_gdf, settings):
+    def __retrieve_process_data_to_add_lights_to_geocode(self, geocode, geocode_gdf, lat, lon, settings):
         data = []
         mask_files_paths = []
         positioning_files_paths = []
         model_files_paths = []
+        alt = -9999.99
 
         for tile in self.tiles.values():
             if not os.path.isdir(tile.folder):
@@ -917,11 +921,13 @@ class MsfsProject:
             if not os.path.isdir(lod_folder):
                 continue
 
+            alt = max(alt, tile.pos.alt)
+
             positioning_files_paths.append(str(os.path.join(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)))
             model_files_paths.append(os.path.join(lod_folder, lod.model_file))
             mask_file_path = os.path.join(self.osmfiles_folder, GEOCODE_OSM_FILE_PREFIX + "_" + EXCLUSION_OSM_FILE_PREFIX + OSM_FILE_EXT)
 
-        params = ["--positioning_files_paths", str('"') + "|".join(positioning_files_paths) + str('"'), "--model_files_paths", str('"') + "|".join(model_files_paths) + str('"'), "--mask_file_path", str('"') + mask_file_path + str('"'), "--scene_definition_file", str('"') + self.objects_xml.file_path + str('"')]
+        params = ["--positioning_files_paths", str('"') + "|".join(positioning_files_paths) + str('"'), "--model_files_paths", str('"') + "|".join(model_files_paths) + str('"'), "--mask_file_path", str('"') + mask_file_path + str('"'), "--lat", str(lat[0]), "--lon", str(lon[0]), "--alt", str(alt), "--scene_definition_file", str('"') + self.objects_xml.file_path + str('"')]
 
         data.append({"name": "add_lights", "params": params})
 
@@ -1337,8 +1343,8 @@ class MsfsProject:
             else:
                 pr_bg_orange("Geocode (" + geocode + ") found in OSM data, but not in the scenery" + EOL + CEND)
 
-    def __add_lights_to_geocode(self, geocode, geocode_gdf, settings):
-        process_data = self.__retrieve_process_data_to_add_lights_to_geocode(geocode, geocode_gdf, settings)
+    def __add_lights_to_geocode(self, geocode, geocode_gdf, lat, lon, settings):
+        process_data = self.__retrieve_process_data_to_add_lights_to_geocode(geocode, geocode_gdf, lat, lon, settings)
         self.__multithread_blender_process_data(process_data, "add_lights.py", "ADD LIGHTS TO GEOCODE", "lights created")
 
     def __import_old_google_earth_decoder_tiles(self, settings):

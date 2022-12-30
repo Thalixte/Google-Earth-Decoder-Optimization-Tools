@@ -930,26 +930,31 @@ def derivation_split_method(input_p, keep_polys):
 
 
 def create_grid_from_hmatrix(hmatrix, lat, lon):
-    result = []
     n = 0
 
-    data = {"x": [], "y": []}
+    data = {"x": [], "y": [], "z": []}
     for y, heights in hmatrix.items():
         if n % 2 == 0:
             for x, h in heights.items():
                 data["x"].append(x)
                 data["y"].append(y)
+                data["z"].append(z)
 
         n = n + 1
 
+    return create_latlon_gdf_from_meter_data(data, lat, lon, 0.0)
+
+
+def create_latlon_gdf_from_meter_data(data, lat, lon, alt):
+    result = []
     df = pd.DataFrame(data)
-    gdf = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df["x"], df["y"]), crs=EPSG.key + str(EPSG.WGS84_meter_unit))
+    gdf = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df["x"], df["y"], df["z"]), crs=EPSG.key + str(EPSG.WGS84_meter_unit))
 
     gdf = gdf.to_crs(EPSG.key + str(EPSG.WGS84_degree_unit))
 
     for point in gdf[GEOMETRY_OSM_COLUMN]:
         co = list(point.coords)
-        result.append((lat + co[0][0], lon + co[0][1]))
+        result.append((lat + co[0][0], lon + co[0][1], alt + co[0][2]))
 
     gdf[GEOMETRY_OSM_COLUMN] = result
 

@@ -16,8 +16,6 @@
 #
 #  <pep8 compliant>
 
-# 21615171614242537
-
 import argparse
 import os
 import site
@@ -99,6 +97,21 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    "-lat", "--lat", dest="lat", type=str, required=True,
+    help="latitude of the geocode",
+)
+
+parser.add_argument(
+    "-lon", "--lon", dest="lon", type=str, required=True,
+    help="longitude of the geocode",
+)
+
+parser.add_argument(
+    "-alt", "--alt", dest="alt", type=str, required=True,
+    help="altitude of the geocode",
+)
+
+parser.add_argument(
     "-scf", "--scene_definition_file", dest="scene_definition_file", type=str, required=True,
     help="path of the definition file of the scenery",
 )
@@ -122,6 +135,12 @@ if not args.positioning_files_paths:
 if not args.mask_file_path:
     raise ScriptError("Error: --mask_file_path=\"some string\" argument not given, aborting.")
 
+if not args.lat:
+    raise ScriptError("Error: --lat=\"some string\" argument not given, aborting.")
+
+if not args.alt:
+    raise ScriptError("Error: --alt=\"some string\" argument not given, aborting.")
+
 if not args.scene_definition_file:
     raise ScriptError("Error: --scene_definition_file=\"some string\" argument not given, aborting.")
 
@@ -136,6 +155,6 @@ model_files_paths = args.model_files_paths.split("|")
 positioning_files_paths = args.positioning_files_paths.split("|")
 landmarkLocation = MsfsLandmarkLocation()
 
-landmarkLocation.add_lights(model_files_paths, positioning_files_paths, args.mask_file_path, args.scene_definition_file, debug=debug)
+landmarkLocation.add_lights(model_files_paths, positioning_files_paths, args.mask_file_path, float(args.lat), float(args.lon), float(args.alt), args.scene_definition_file, debug=debug)
 # except:
 #     pass
