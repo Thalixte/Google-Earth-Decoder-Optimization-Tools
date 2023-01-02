@@ -18,8 +18,6 @@
 
 import itertools
 import sys
-import time
-from multiprocessing import Pool, cpu_count
 from os.path import basename
 
 import io
@@ -42,7 +40,6 @@ from osmnx.utils_geo import bbox_to_poly
 import bpy
 from blender import convert_obj_file_to_gltf_file
 from msfs_project.landmark import MsfsLandmarks
-from msfs_project.geoid import get_geoid_height
 from msfs_project.height_map_xml import HeightMapXml
 from msfs_project.height_map import MsfsHeightMaps
 from msfs_project.osm_xml import OsmXml
@@ -353,6 +350,10 @@ class MsfsProject:
     def add_lights_to_geocode(self, settings):
         geocode = settings.geocode
         geocode_gdf = load_gdf_from_geocode(geocode, check_geocode=True)
+
+        if geocode_gdf.empty:
+            return None
+
         lat = geocode_gdf.lat
         lon = geocode_gdf.lon
         geocode_gdf = self.__create_geocode_osm_files(geocode, settings, False, False, self.coords, self.shpfiles_folder)
@@ -883,12 +884,11 @@ class MsfsProject:
 
     def __retrieve_process_data_to_add_lights_to_geocode(self, geocode, geocode_gdf, lat, lon, settings):
         data = []
-        mask_files_paths = []
         positioning_files_paths = []
         model_files_paths = []
         alt = -9999.99
 
-        for tile in self.tiles.values():
+        for i, tile in enumerate(self.tiles.values()):
             if not os.path.isdir(tile.folder):
                 continue
 
@@ -922,12 +922,19 @@ class MsfsProject:
                 continue
 
             alt = max(alt, tile.pos.alt)
+            prefix = geocode.split(",")
+            if prefix:
+                prefix = prefix[0]
+            else:
+                prefix = None
 
             positioning_files_paths.append(str(os.path.join(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)))
             model_files_paths.append(os.path.join(lod_folder, lod.model_file))
             mask_file_path = os.path.join(self.osmfiles_folder, GEOCODE_OSM_FILE_PREFIX + "_" + EXCLUSION_OSM_FILE_PREFIX + OSM_FILE_EXT)
 
-        params = ["--positioning_files_paths", str('"') + "|".join(positioning_files_paths) + str('"'), "--model_files_paths", str('"') + "|".join(model_files_paths) + str('"'), "--mask_file_path", str('"') + mask_file_path + str('"'), "--lat", str(lat[0]), "--lon", str(lon[0]), "--alt", str(alt), "--scene_definition_file", str('"') + self.objects_xml.file_path + str('"')]
+        params = ["--positioning_files_paths", str('"') + "|".join(positioning_files_paths) + str('"'), "--model_files_paths", str('"') + "|".join(model_files_paths) + str('"'),
+                  "--mask_file_path", str('"') + mask_file_path + str('"'), "--lat", str(lat[0]), "--lon", str(lon[0]), "--alt", str(alt),
+                  "--geocode_prefix", str('"') + prefix + str('"'), "--scene_definition_file", str('"') + self.objects_xml.file_path + str('"')]
 
         data.append({"name": "add_lights", "params": params})
 
@@ -1329,15 +1336,28 @@ class MsfsProject:
 
     def __create_landmark_from_geocode(self, geocode, settings):
         ox.config(use_cache=False, log_level=lg.DEBUG)
+        alt = 0.0
+
         print_title("RETRIEVE OSM GEOCODE DATA")
         geocode_gdf = load_gdf_from_geocode(geocode, keep_data=True, shpfiles_folder=self.shpfiles_folder)
 
+        if geocode_gdf.empty:
+            return
+
+        # self.__create_tiles_bounding_boxes()
+        #
+        # for tile in self.tiles.values():
+        #     if tile.valid:
+        #         processed = clip_gdf(geocode_gdf, tile.bbox_gdf)
+        #         if not processed.empty:
+        #             alt = tile.pos.alt
+
         print_title("WRITE LANDMARK TO SCENERY XML FILE")
-        landmarks = MsfsLandmarks(geocode_gdf=geocode_gdf, tiles=self.tiles, owner=settings.author_name, type=settings.landmark_type, alt=get_geoid_height(self.sources_folder, geocode_gdf.lat, geocode_gdf.lon), offset=settings.landmark_offset)
+        landmarks = MsfsLandmarks(geocode_gdf=geocode_gdf, tiles=self.tiles, owner=settings.author_name, type=settings.landmark_type, alt=alt, offset=settings.landmark_offset)
 
         for landmark_location in landmarks.landmark_locations:
             # if a landmark has a correct altitude, it is valid
-            if landmark_location.has_alt:
+            if landmark_location.is_in_tiles:
                 self.objects_xml.remove_landmarks(name=landmark_location.name)
                 landmark_location.to_xml(self.objects_xml)
             else:

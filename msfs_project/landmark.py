@@ -15,11 +15,12 @@
 #  #
 #
 #  <pep8 compliant>
-
+import os
 from uuid import uuid4
 
 from blender.scene import align_models_with_masks, process_3d_data, create_geocode_bounding_box
 from constants import DISPLAY_NAME_OSM_TAG
+from msfs_project.light import MsfsLights
 from msfs_project.position import MsfsPosition
 from utils.console import isolated_print
 
@@ -35,13 +36,13 @@ class MsfsLandmarkLocation:
     type: str
     pos: MsfsPosition
     offset: str
-    has_alt: bool
+    is_in_tiles: bool
 
     def __init__(self, geocode_gdf=None, tiles=None, owner=None, type=None, alt=None, offset=None, xml=None, elem=None):
         # default landmark location type is POI
         self.type = self.LANDMARK_LOCATION_TYPE.poi
         self.name = str()
-        self.has_alt = False
+        self.is_in_tiles = False
 
         if geocode_gdf is not None:
             self.__init_from_gdf(geocode_gdf, tiles=tiles, owner=owner, type=type, alt=alt, offset=offset)
@@ -54,10 +55,15 @@ class MsfsLandmarkLocation:
         xml.save()
 
     @staticmethod
-    def add_lights(model_files_paths, positioning_files_paths, mask_file_path, lat, lon, alt, scene_definition_file, debug=False):
+    def add_lights(model_files_paths, positioning_files_paths, mask_file_path, lat, lon, alt, geocode_prefix, xml, debug=False):
         align_models_with_masks(model_files_paths, positioning_files_paths, mask_file_path)
         process_3d_data(intersect=True)
         lights_gdf = create_geocode_bounding_box(lat, lon, alt)
+
+        lights = MsfsLights(lights_gdf=lights_gdf, guid=None, prefix=geocode_prefix, name=None)
+
+        if xml:
+            lights.to_xml(xml)
 
         if debug:
             isolated_print(lights_gdf)
@@ -66,17 +72,19 @@ class MsfsLandmarkLocation:
         if geocode_gdf.empty:
             return
 
+        if alt is not None:
+            alt = float(alt)
+
         self.instance_id = "{" + str(uuid4()).upper() + "}"
         self.owner = owner or str()
-        self.pos = MsfsPosition(geocode_gdf.lat, geocode_gdf.lon, "{:.6f}".format(float(alt) or 0.0))
+        self.pos = MsfsPosition(geocode_gdf.lat, geocode_gdf.lon, "{:.6f}".format(alt or 0.0))
         self.offset = "{:.6f}".format(float(offset) or 0.0)
 
         if type in self.LANDMARK_LOCATION_TYPE.__dict__.values():
             self.type = type
 
         if tiles is not None:
-            self.__find_altitude_from_tiles(tiles)
-            self.pos.alt = float(self.pos.alt) + float(alt)
+            self.__is_in_tiles(tiles)
 
         if DISPLAY_NAME_OSM_TAG in geocode_gdf:
             name = geocode_gdf[DISPLAY_NAME_OSM_TAG].split(",", 1)
@@ -90,14 +98,13 @@ class MsfsLandmarkLocation:
         self.offset = elem.get(xml.OFFSET_ATTR)
         self.owner = elem.get(xml.OWNER_ATTR)
         self.type = elem.get(xml.TYPE_ATTR)
-        self.has_alt = True
+        self.is_in_tiles = True
 
-    def __find_altitude_from_tiles(self, tiles):
+    def __is_in_tiles(self, tiles):
         coords = (self.pos.lat, self.pos.lat, self.pos.lon, self.pos.lon)
         for tile in tiles.values():
             if tile.contains(coords):
-                self.pos.alt = tile.pos.alt
-                self.has_alt = True
+                self.is_in_tiles = True
                 return
 
 

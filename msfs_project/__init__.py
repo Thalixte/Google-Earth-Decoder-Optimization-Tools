@@ -24,6 +24,7 @@ from .tile import *
 from .shape import *
 from .height_map import *
 from .landmark import *
+from .light import *
 from .lod import *
 from .position import *
 from .gltf import *

@@ -20,7 +20,7 @@ import copy
 import os
 from decimal import Decimal
 
-from constants import HEIGHT_MAP_DISPLAY_NAME
+from constants import HEIGHT_MAP_DISPLAY_NAME, LIGHT_WARM_GUID, LIGHT_HEADING
 from utils.progress_bar import ProgressBar
 from utils import Xml
 import xml.etree.ElementTree as Et
@@ -128,6 +128,13 @@ class ObjectsXml(Xml):
             self.root.remove(scenery_object)
         self.save()
 
+    def remove_lights(self, light_guid=LIGHT_WARM_GUID, lat=None, lon=None, alt=None):
+        lights = self.find_lights(light_guid)
+        lights_to_remove = [light for light in lights if float(light.get(self.LAT_ATTR)) == float(lat) and float(light.get(self.LON_ATTR)) == float(lon) and float(light.get(self.ALT_ATTR)) == float(alt)]
+
+        for light in lights_to_remove:
+            self.root.remove(light)
+
     def remove_shapes(self, group_name):
         for polygon in self.find_polygons(group_name=group_name):
             self.root.remove(polygon)
@@ -191,6 +198,9 @@ class ObjectsXml(Xml):
 
     def add_landmark_location(self, landmark_location):
         self.__add_landmark_location(landmark_location)
+
+    def add_light(self, light):
+        self.__add_light(light)
 
     def find_all_scenery_objects(self, parent=None):
         root = self.root
@@ -289,6 +299,16 @@ class ObjectsXml(Xml):
             result = root.findall(pattern)
 
         return result
+
+    def find_lights(self, light_guid=LIGHT_WARM_GUID):
+        res = []
+
+        for scenery_object in self.find_scenery_objects(light_guid):
+            res.append(scenery_object)
+        for scenery_object in self.find_scenery_objects_in_group(light_guid):
+            res.append(scenery_object)
+
+        return res
 
     def get_new_group_id(self):
         result = 0
@@ -450,6 +470,28 @@ class ObjectsXml(Xml):
             attrib[self.OWNER_ATTR] = str(landmark_location.owner)
 
         return Et.SubElement(self.root, self.LANDMARK_LOCATION_TAG, attrib=attrib)
+
+    def __add_light(self, light):
+        light_elem = Et.SubElement(self.root, self.SCENERY_OBJECT_TAG, attrib={
+            self.DISPLAY_NAME_ATTR: light.name,
+            self.ALT_ATTR: "{:.14f}".format(light.pos.alt),
+            self.ALTITUDE_IS_AGL_ATTR: str(True).upper(),
+            self.BANK_ATTR: "{:.6f}".format(0.0),
+            self.HEADING_ATTR: "{:.6f}".format(light.heading),
+            self.IMAGE_COMPLEXITY_ATTR: str("VERY_SPARSE"),
+            self.LAT_ATTR: "{:.14f}".format(light.pos.lat),
+            self.LON_ATTR: "{:.14f}".format(light.pos.lon),
+            self.PITCH_ATTR: "{:.6f}".format(0.0),
+            self.SNAP_TO_GROUND_ATTR: str(False).upper(),
+            self.SNAP_TO_NORMAL_ATTR: str(False).upper()
+        })
+
+        Et.SubElement(light_elem, self.LIBRARY_OBJECT_TAG, attrib={
+            self.NAME_ATTR: light.guid,
+            self.SCALE_ATTR: "{:.6f}".format(1.0)
+        })
+
+        return light_elem
 
     def __update_scenery_object_pos(self, tile, found_scenery_objects, settings):
         for scenery_object in found_scenery_objects:
