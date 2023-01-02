@@ -149,6 +149,6 @@ try:
         debug = False
 
     lod = MsfsLod(os.path.splitext(args.model_file)[0][-2:], 0, args.folder, args.model_file)
-    lod.process_3d_data(args.positioning_file_path, args.mask_file_path, args.output_folder, output_name=args.output_name, process_type=PROCESS_TYPE.isolate_3d_data, add_lights=add_lights, debug=debug)
+    lod.process_3d_data(args.positioning_file_path, args.mask_file_path, args.output_folder, output_name=args.output_name, process_type=PROCESS_TYPE.isolate_3d_data, debug=debug)
 except:
     pass

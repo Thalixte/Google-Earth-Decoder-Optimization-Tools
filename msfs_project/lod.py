@@ -229,7 +229,7 @@ class MsfsLod:
         model_file.remove_texture_path(self.name)
         model_file.dump()
 
-    def process_3d_data(self, positioning_file_path, mask_file_path, output_folder, output_name=None, process_type=PROCESS_TYPE.cleanup_3d_data, add_lights=False, debug=False):
+    def process_3d_data(self, positioning_file_path, mask_file_path, output_folder, output_name=None, process_type=PROCESS_TYPE.cleanup_3d_data, debug=False):
         # Import the gltf files located in the object folder
         isolated_print("align", self.name, "model with mask")
         model_file = MsfsGltf(os.path.join(self.folder, self.model_file))
@@ -245,13 +245,11 @@ class MsfsLod:
             process_3d_data(model_file_path=os.path.join(self.folder, self.model_file), intersect=True)
 
         output_model_file = output_name + self.LOD_SUFFIX + str(self.lod_level).zfill(2) + GLTF_FILE_EXT if output_name else self.model_file
-
-        if not add_lights:
-            export_to_optimized_gltf_files(os.path.join(output_folder, output_model_file), TEXTURE_FOLDER, use_selection=True, export_extras=False, apply_modifiers=True)
-            model_file = MsfsGltf(os.path.join(output_folder, output_model_file))
-            model_file.remove_texture_path(self.name)
-            model_file.add_cleaned_tag()
-            model_file.dump()
+        export_to_optimized_gltf_files(os.path.join(output_folder, output_model_file), TEXTURE_FOLDER, use_selection=True, export_extras=False, apply_modifiers=True)
+        model_file = MsfsGltf(os.path.join(output_folder, output_model_file))
+        model_file.remove_texture_path(self.name)
+        model_file.add_cleaned_tag()
+        model_file.dump()
 
         if not debug:
             clean_scene()
