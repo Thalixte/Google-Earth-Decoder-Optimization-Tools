@@ -248,6 +248,7 @@ class MsfsLod:
         export_to_optimized_gltf_files(os.path.join(output_folder, output_model_file), TEXTURE_FOLDER, use_selection=True, export_extras=False, apply_modifiers=True)
         model_file = MsfsGltf(os.path.join(output_folder, output_model_file))
         model_file.remove_texture_path(self.name)
+        model_file.add_extension_tag(model_file.ASOBO_MATERIAL_INVISIBLE_TAG, only_last_material=True)
         model_file.add_cleaned_tag()
         model_file.dump()
 

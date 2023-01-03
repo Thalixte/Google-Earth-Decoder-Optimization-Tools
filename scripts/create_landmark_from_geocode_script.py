@@ -46,7 +46,24 @@ def create_landmark_from_geocode(script_settings):
         isolated_print(EOL)
         geocode_gdf = load_gdf_from_geocode(script_settings.geocode, check_geocode=True)
 
+        if geocode_gdf.empty:
+            geocode_gdf = load_gdf_from_geocode(WAY_OSM_PREFIX + script_settings.geocode, by_osmid=True, check_geocode=True)
+
+        if geocode_gdf.empty:
+            geocode_gdf = load_gdf_from_geocode(RELATION_OSM_PREFIX + script_settings.geocode, by_osmid=True, check_geocode=True)
+
+        if geocode_gdf.empty:
+            geocode_gdf = load_gdf_from_geocode(NODE_OSM_PREFIX + script_settings.geocode, by_osmid=True, check_geocode=True)
+
         if not geocode_gdf.empty:
+            lat = [0, 0.0]
+            lon = [0, 0.0]
+
+            if LAT_OSM_KEY in geocode_gdf:
+                lat = geocode_gdf[LAT_OSM_KEY]
+            if LON_OSM_KEY in geocode_gdf:
+                lon = geocode_gdf[LON_OSM_KEY]
+
             # instantiate the msfsProject and create the necessary resources if it does not exist
             msfs_project = MsfsProject(script_settings.projects_path, script_settings.project_name, script_settings.definition_file, script_settings.author_name, script_settings.sources_path)
 
@@ -57,7 +74,7 @@ def create_landmark_from_geocode(script_settings):
 
             isolated_print(EOL)
             print_title("CREATE LANDMARK FROM GEOCODE")
-            msfs_project.create_landmark_from_geocode(script_settings)
+            msfs_project.create_landmark_from_geocode(script_settings, lat, lon)
 
             if script_settings.add_lights:
                 print_title("ADD LIGHTS TO GEOCODE")

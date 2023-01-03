@@ -343,19 +343,12 @@ class MsfsProject:
     def adjust_altitude(self, altitude_adjustment):
         self.__adjust_altitude(altitude_adjustment)
 
-    def create_landmark_from_geocode(self, settings):
+    def create_landmark_from_geocode(self, settings, lat, lon):
         geocode = settings.geocode
         self.__create_landmark_from_geocode(geocode, settings)
 
-    def add_lights_to_geocode(self, settings):
+    def add_lights_to_geocode(self, settings, lat, lon):
         geocode = settings.geocode
-        geocode_gdf = load_gdf_from_geocode(geocode, check_geocode=True)
-
-        if geocode_gdf.empty:
-            return None
-
-        lat = geocode_gdf.lat
-        lon = geocode_gdf.lon
         geocode_gdf = self.__create_geocode_osm_files(geocode, settings, False, False, self.coords, self.shpfiles_folder)
 
         if geocode_gdf is None:
@@ -869,7 +862,7 @@ class MsfsProject:
                 if not os.path.isdir(lod_folder):
                     continue
 
-                params = ["--folder", str(lod_folder), "--output_folder", str(lod.folder), "--output_name", self.__get_geocode_file_prefix(geocode) + "_" + lod.name, "--model_file", str(lod.model_file),
+                params = ["--folder", str(lod_folder), "--output_folder", str(lod.folder), "--output_name", self.__get_geocode_file_prefix(geocode) + "_" + tile.name, "--model_file", str(lod.model_file),
                                                           "--positioning_file_path", str(os.path.join(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)),
                                                           "--mask_file_path", str(mask_file_path)]
 
@@ -1194,8 +1187,8 @@ class MsfsProject:
         pbar.update("retrieving grass geodataframe...", stall=True)
         orig_grass = load_gdf(self.coords, LANDUSE_OSM_KEY, OSM_TAGS[GRASS_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, GRASS_OSM_KEY + SHP_FILE_EXT), is_grass=True)
         pbar.update("grass geodataframe retrieved")
-        pbar.update("retrieving nature geodataframe...", stall=True)
-        orig_nature_reserve = load_gdf(self.coords, LEISURE_OSM_KEY, OSM_TAGS[LEISURE_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, LEISURE_OSM_KEY + SHP_FILE_EXT))
+        pbar.update("retrieving nature reserves geodataframe...", stall=True)
+        orig_nature_reserve = load_gdf(self.coords, LEISURE_OSM_KEY, OSM_TAGS[LEISURE_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, NATURE_RESERVE_OSM_TAG + SHP_FILE_EXT))
         pbar.update("nature reserves geodataframe retrieved")
         pbar.update("retrieving other naturals geodataframe...", stall=True)
         orig_natural = load_gdf(self.coords, NATURAL_OSM_KEY, OSM_TAGS[NATURAL_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, NATURAL_OSM_KEY + SHP_FILE_EXT))

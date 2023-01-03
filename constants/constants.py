@@ -163,6 +163,10 @@ REMOVE_ICON = "REMOVE"
 
 DUMMY_OBJECT = "dummy"
 
+WAY_OSM_PREFIX = "W"
+RELATION_OSM_PREFIX = "R"
+NODE_OSM_PREFIX = "N"
+
 LANDUSE_OSM_KEY = "landuse"
 LEISURE_OSM_KEY = "leisure"
 NATURAL_OSM_KEY = "natural"
@@ -196,6 +200,8 @@ OSMID_OSM_KEY = "osmid"
 LANES_OSM_KEY = "lanes"
 ONEWAY_OSM_KEY = "oneway"
 BARRIER_OSM_KEY = "barrier"
+LAT_OSM_KEY = "lat"
+LON_OSM_KEY = "lon"
 
 FOREST_OSM_TAG = "forest"
 NATURE_RESERVE_OSM_TAG = "nature_reserve"

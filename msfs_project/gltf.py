@@ -179,7 +179,7 @@ class MsfsGltf:
         except:
             pass
 
-    def add_extension_tag(self, extension_tag):
+    def add_extension_tag(self, extension_tag, only_last_material=False):
         if not self.data: return
 
         self.data[self.EXTENSIONS_USED_TAG].append(extension_tag)
@@ -187,7 +187,10 @@ class MsfsGltf:
         if self.MATERIALS_TAG not in self.data.keys(): return
 
         try:
-            for material in self.data[self.MATERIALS_TAG]:
+            for i, material in enumerate(self.data[self.MATERIALS_TAG]):
+                if only_last_material and i < (len(self.data[self.MATERIALS_TAG])-1):
+                    continue
+
                 material[self.EXTENSIONS_TAG][extension_tag] = {
                     self.ENABLED_TAG: True
                 }

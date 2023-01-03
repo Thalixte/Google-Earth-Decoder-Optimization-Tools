@@ -180,6 +180,7 @@ def export_to_optimized_gltf_files(file, texture_folder, use_selection=False, ex
     model_file = MsfsGltf(file)
     model_file.clean_empty_meshes()
     model_file.fix_gltf_nodes()
+    model_file.add_asobo_extensions()
     model_file.add_optimization_tag()
     model_file.dump()
 
@@ -588,6 +589,7 @@ def process_3d_data(model_file_path=None, intersect=False):
         import_model_files([model_file_path], clean=False)
 
     objects = bpy.context.scene.objects
+    bboxes = []
 
     mask = bpy.context.scene.objects.get("Areas")
     grid = bpy.context.scene.objects.get("grid")
@@ -606,6 +608,8 @@ def process_3d_data(model_file_path=None, intersect=False):
             if obj == mask or obj == grid or obj == height_grid or BOUNDING_BOX_OSM_KEY in obj.name:
                 continue
 
+            bboxes.append(create_bounding_box(obj, "bbox_"))
+
             # only cleanup objects contained in the mask, or touched by the mask
             if object_touches_mask(obj, mask) or intersect:
                 bpy.context.view_layer.objects.active = obj
@@ -620,7 +624,7 @@ def process_3d_data(model_file_path=None, intersect=False):
                 updated_objects.append(obj)
 
     for obj in updated_objects:
-        if obj == mask or obj == grid or obj == height_grid or BOUNDING_BOX_OSM_KEY in obj.name:
+        if obj in bboxes or obj == mask or obj == grid or obj == height_grid or BOUNDING_BOX_OSM_KEY in obj.name:
             continue
 
         if obj.type != MESH_OBJECT_TYPE:
@@ -631,7 +635,19 @@ def process_3d_data(model_file_path=None, intersect=False):
             flat_cutted_faces(obj)
 
     bpy.ops.object.select_all(action=DESELECT_ACTION)
+
+    for bbox in bboxes:
+        bbox.select_set(True)
+        bpy.context.view_layer.objects.active = bbox
+
+    bpy.ops.object.join()
+    bbox = bpy.context.active_object
+    final_bbox = create_bounding_box(bbox, "final_")
+    add_new_obj_material(final_bbox, OSM_MATERIAL_NAME)
+
+    bpy.ops.object.select_all(action=DESELECT_ACTION)
     mask.select_set(True)
+    bbox.select_set(True)
     bpy.ops.object.delete()
     bpy.ops.object.select_all(action=SELECT_ACTION)
 
@@ -1316,7 +1332,7 @@ def create_bounding_box(obj, prefix, spheric=False, cut_base=False):
         bpy.ops.mesh.primitive_uv_sphere_add(location=loc, rotation=obj.rotation_euler)
         dx = dx * 1.2
         dy = dy * 1.2
-        dz = dz * 3
+        dz = dz * 1.2
     else:
         bpy.ops.mesh.primitive_cube_add(location=loc, rotation=obj.rotation_euler)
 
@@ -1529,6 +1545,6 @@ def create_geocode_bounding_box(lat, lon, alt):
             data["z"].append(coords.z)
 
         bm.free()
-        gdf = create_latlon_gdf_from_meter_data(data, lat, lon, geoid_height+alt)
+        gdf = create_latlon_gdf_from_meter_data(data, lat, lon, 0.0)
 
         return gdf
