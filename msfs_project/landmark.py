@@ -57,7 +57,7 @@ class MsfsLandmarkLocation:
     @staticmethod
     def add_lights(model_files_paths, positioning_files_paths, mask_file_path, lat, lon, alt, geocode_prefix, xml, debug=False):
         align_models_with_masks(model_files_paths, positioning_files_paths, mask_file_path)
-        process_3d_data(intersect=True)
+        process_3d_data(intersect=True, no_bounding_box=True)
         lights_gdf = create_geocode_bounding_box(lat, lon, alt)
 
         lights = MsfsLights(lights_gdf=lights_gdf, guid=None, prefix=geocode_prefix, name=None)

@@ -57,6 +57,7 @@ def generate_height_data(script_settings):
         script_settings.isolate_3d_data = True
         script_settings.keep_constructions = True
         script_settings.keep_roads = True
+        script_settings.keep_residential = False
         script_settings.disable_terraform = True
         script_settings.save()
         msfs_project.prepare_3d_data(script_settings, generate_height_data=True, process_3d_data=False, create_polygons=False)

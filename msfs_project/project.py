@@ -25,7 +25,7 @@ import shutil
 import os
 import subprocess
 from utils import install_python_lib
-from utils.geo_pandas import prepare_wall_gdf, create_exclusion_building_gdf, prepare_water_gdf, prepare_amenity_gdf, prepare_hidden_roads_gdf, prepare_water_exclusion_gdf
+from utils.geo_pandas import prepare_wall_gdf, create_exclusion_building_gdf, prepare_water_gdf, prepare_amenity_gdf, prepare_hidden_roads_gdf, prepare_water_exclusion_gdf, prepare_residential_gdf
 from constants import *
 
 try:
@@ -674,7 +674,7 @@ class MsfsProject:
             if not tile.valid:
                 continue
 
-            # if tile.name != "30604050607051455" and tile.name != "30604160614140752" and tile.name != "30604160614140773" and tile.name != "30604160614140770" and tile.name != "30604160614140650" and tile.name != "30604160614140453" and tile.name != "30604143504360660" and tile.name != "30604050607051672" and tile.name != "30604050607051673":
+            # if tile.name != "30604050607051455" and tile.name != "30604160614140752" and tile.name != "30604160614140773" and tile.name != "30604160614140770" and tile.name != "30604160614140650" and tile.name != "30604160614140453" and tile.name != "30604143504360660" and tile.name != "30604050607051672" and tile.name != "21615350715260724":
             #     continue
 
             has_rocks = tile.has_rocks and not high_precision
@@ -1063,19 +1063,19 @@ class MsfsProject:
 
         # retrieve_osm_data
         orig_water, orig_natural_water, bbox, roads, bridges, hidden_roads, sea, pitch, construction, airport, building, \
-        water_without_bridges, water, exclusion, rocks, amenity = self.__retrieve_osm_data(b, orig_bbox, settings)
+        water_without_bridges, water, exclusion, rocks, amenity, residential = self.__retrieve_osm_data(b, orig_bbox, settings)
 
         if create_polygons:
             self.__create_scenery_polygons(b, orig_bbox, orig_water, orig_natural_water, bbox, sea, pitch, construction, airport, exclusion, disable_terraform=settings.disable_terraform)
 
         if process_3d_data:
             if settings.isolate_3d_data:
-                self.__create_exclusion_masks_from_tiles(b, orig_bbox.assign(building=BOUNDING_BOX_OSM_KEY), building_mask=resize_gdf(building, 8), water_mask=water, construction_mask=construction if settings.keep_constructions else None, road_mask=roads if settings.keep_roads else None, bridges_mask=bridges if settings.keep_roads else None, hidden_roads=hidden_roads if settings.keep_roads else None, amenity_mask=amenity if settings.keep_roads else None, airport_mask=airport, rocks_mask=rocks, file_prefix=EXCLUSION_OSM_FILE_PREFIX, title="CREATE EXCLUSION MASKS OSM FILES")
+                self.__create_exclusion_masks_from_tiles(b, orig_bbox.assign(building=BOUNDING_BOX_OSM_KEY), building_mask=resize_gdf(building, 8), water_mask=water, construction_mask=construction if settings.keep_constructions else None, road_mask=roads if settings.keep_roads else None, bridges_mask=bridges if settings.keep_roads else None, hidden_roads=hidden_roads if settings.keep_roads else None, amenity_mask=amenity if settings.keep_roads else None, residential_mask=residential if settings.keep_residential else None, airport_mask=airport, rocks_mask=rocks, file_prefix=EXCLUSION_OSM_FILE_PREFIX, title="CREATE EXCLUSION MASKS OSM FILES")
             else:
                 self.__create_exclusion_masks_from_tiles(b, exclusion, building_mask=building, airport_mask=airport, rocks_mask=rocks, file_prefix=EXCLUSION_OSM_FILE_PREFIX, title="CREATE EXCLUSION MASKS OSM FILES")
 
         if generate_height_data:
-            self.__generate_height_data(b, construction, roads, bridges, hidden_roads, airport, building, water, orig_bbox.assign(building=BOUNDING_BOX_OSM_KEY) if settings.isolate_3d_data else exclusion, amenity, keep_roads=settings.keep_roads, keep_constructions=settings.keep_constructions)
+            self.__generate_height_data(b, construction, roads, bridges, hidden_roads, airport, building, water, orig_bbox.assign(building=BOUNDING_BOX_OSM_KEY) if settings.isolate_3d_data else exclusion, amenity, residential, keep_roads=settings.keep_roads, keep_residential=settings.keep_residential, keep_constructions=settings.keep_constructions)
 
         # remove tiles that are completely in the water
         self.__remove_full_water_tiles(water_without_bridges)
@@ -1090,13 +1090,18 @@ class MsfsProject:
 
         orig_land_mass, orig_boundary, orig_road, orig_railway, orig_sea, orig_landuse, orig_grass, orig_nature_reserve, \
         orig_natural, orig_natural_water, orig_water, orig_waterway, orig_aeroway, orig_pitch, orig_construction, orig_park, orig_building, \
-        orig_wall, orig_man_made, orig_rocks, orig_amenity, orig_airport = self.__load_geodataframes(orig_bbox, b, settings)
+        orig_wall, orig_man_made, orig_rocks, orig_amenity, orig_residential, orig_airport = self.__load_geodataframes(orig_bbox, b, settings)
 
         bbox, roads, bridges, hidden_roads, sea, pitch, construction, airport, building, \
-        water_without_bridges, water, exclusion, rocks, amenity = self.__prepare_geodataframes(orig_road, orig_railway, orig_sea, orig_bbox, orig_land_mass, orig_boundary,
+        water_without_bridges, water, exclusion, rocks, amenity, residential = self.__prepare_geodataframes(orig_road, orig_railway, orig_sea, orig_bbox, orig_land_mass, orig_boundary,
                                                                                                orig_landuse, orig_natural, orig_natural_water, orig_water, orig_waterway, orig_aeroway,
                                                                                                orig_pitch, orig_construction, orig_airport, orig_building, orig_wall, orig_man_made,
-                                                                                               orig_park, orig_nature_reserve, orig_rocks, orig_amenity, settings)
+                                                                                               orig_park, orig_nature_reserve, orig_rocks, orig_amenity, orig_residential, settings)
+
+        if not residential.empty:
+            # for debugging purpose, generate the residential osm file
+            osm_xml = OsmXml(self.osmfiles_folder, RESIDENTIAL_OSM_KEY + OSM_FILE_EXT)
+            osm_xml.create_from_geodataframes([preserve_holes(residential.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore'))], b)
 
         if not exclusion.empty:
             # for debugging purpose, generate the exclusion osm file
@@ -1104,7 +1109,7 @@ class MsfsProject:
             osm_xml.create_from_geodataframes([preserve_holes(exclusion.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore'))], b, True, [(HEIGHT_OSM_TAG, 1000)])
 
         return orig_water, orig_natural_water, bbox, roads, bridges, hidden_roads, sea, pitch, construction, airport, building, \
-               water_without_bridges, water, exclusion, rocks, amenity
+               water_without_bridges, water, exclusion, rocks, amenity, residential
 
     def __create_scenery_polygons(self, b, orig_bbox, orig_water, orig_natural_water, bbox, sea, pitch, construction, airport, exclusion, disable_terraform=False):
         print_title("CREATE PITCH TERRAFORM POLYGONS GEO DATAFRAMES...)")
@@ -1149,22 +1154,25 @@ class MsfsProject:
             shape.remove_from_xml(self.objects_xml, group_name)
             shape.to_xml(self.objects_xml)
 
-    def __generate_height_data(self, b, construction, roads, bridges, hidden_roads, airport, building, water, exclusion, amenity, keep_roads=False, keep_constructions=False):
-        self.__create_exclusion_masks_from_tiles(b, exclusion, building_mask=building, construction_mask=construction if keep_constructions else None, road_mask=roads if keep_roads else None, bridges_mask=bridges if keep_roads else None, hidden_roads=hidden_roads if keep_roads else None, amenity_mask=resize_gdf(amenity, -4) if keep_roads else None, airport_mask=airport, file_prefix=GROUND_OSM_KEY + "_" + EXCLUSION_OSM_FILE_PREFIX, title="CREATE GROUND EXCLUSION MASKS OSM FILES")
+    def __generate_height_data(self, b, construction, roads, bridges, hidden_roads, airport, building, water, exclusion, amenity, residential, keep_roads=False, keep_residential=False, keep_constructions=False):
+        self.__create_exclusion_masks_from_tiles(b, exclusion, building_mask=building, construction_mask=construction if keep_constructions else None, road_mask=roads if keep_roads else None, bridges_mask=bridges if keep_roads else None, hidden_roads=hidden_roads if keep_roads else None, amenity_mask=resize_gdf(amenity, -4) if keep_roads else None, residential_mask=residential if keep_residential else None, airport_mask=airport, file_prefix=GROUND_OSM_KEY + "_" + EXCLUSION_OSM_FILE_PREFIX, title="CREATE GROUND EXCLUSION MASKS OSM FILES")
         self.__create_exclusion_masks_from_tiles(b, resize_gdf(water, 10), keep_holes=False, file_prefix=WATER_OSM_KEY + "_" + EXCLUSION_OSM_FILE_PREFIX, title="CREATE WATER EXCLUSION MASKS OSM FILES")
 
-    def __create_exclusion_masks_from_tiles(self, b, exclusion_mask, building_mask=None, water_mask=None, construction_mask=None, road_mask=None, bridges_mask=None, hidden_roads=None, amenity_mask=None, airport_mask=None, rocks_mask=None, keep_holes=True, file_prefix="", title="CREATE EXCLUSION MASKS OSM FILES"):
+    def __create_exclusion_masks_from_tiles(self, b, exclusion_mask, building_mask=None, water_mask=None, construction_mask=None, road_mask=None, bridges_mask=None, hidden_roads=None, amenity_mask=None, residential_mask=None, airport_mask=None, rocks_mask=None, keep_holes=True, file_prefix="", title="CREATE EXCLUSION MASKS OSM FILES"):
         valid_tiles = [tile for tile in list(self.tiles.values()) if tile.valid]
         pbar = ProgressBar(valid_tiles, title=title)
         exclusion = exclusion_mask.copy()
 
         for i, tile in enumerate(valid_tiles):
-            tile.create_exclusion_mask_osm_file(pbar, self.osmfiles_folder, b, exclusion, building_mask, water_mask, construction_mask, road_mask, bridges_mask, hidden_roads, amenity_mask, airport_mask, rocks_mask, keep_holes, file_prefix)
+            # if tile.name != "30604050607051455" and tile.name != "30604160614140752" and tile.name != "30604160614140773" and tile.name != "30604160614140770" and tile.name != "30604160614140650" and tile.name != "30604160614140453" and tile.name != "30604143504360660" and tile.name != "30604050607051672" and tile.name != "21615350715260724":
+            #     continue
+
+            tile.create_exclusion_mask_osm_file(pbar, self.osmfiles_folder, b, exclusion, building_mask, water_mask, construction_mask, road_mask, bridges_mask, hidden_roads, amenity_mask, residential_mask, airport_mask, rocks_mask, keep_holes, file_prefix)
             pbar.update("exclusion mask created for %s tile" % tile.name)
 
     def __load_geodataframes(self, orig_bbox, b, settings):
         # load all necessary GeoPandas Dataframes
-        load_gdf_list = [None] * 22
+        load_gdf_list = [None] * 23
         pbar = ProgressBar(load_gdf_list, title="RETRIEVE GEODATAFRAMES (THE FIRST TIME, MAY TAKE SOME TIME TO COMPLETE, BE PATIENT...)")
         pbar.update("retrieving land mass geodataframe...", stall=True)
         orig_land_mass = create_land_mass_gdf(self.sources_folder, orig_bbox, b)
@@ -1229,12 +1237,16 @@ class MsfsProject:
         pbar.update("retrieving amenity geodataframe...", stall=True)
         orig_amenity = load_gdf(self.coords, AMENITY_OSM_KEY, True, shp_file_path=os.path.join(self.shpfiles_folder, AMENITY_OSM_KEY + SHP_FILE_EXT))
         pbar.update("amenity geodataframe retrieved")
+        pbar.update("retrieving residential geodataframe...", stall=True)
+        orig_residential = load_gdf(self.coords, LANDUSE_OSM_KEY, OSM_TAGS[RESIDENTIAL_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, RESIDENTIAL_OSM_KEY + SHP_FILE_EXT))
+        pbar.update("residential geodataframe retrieved")
         pbar.update("retrieving airports geodataframe...", stall=True)
         orig_airport = load_gdf_from_geocode(AIRPORT_GEOCODE + ", " + settings.airport_city.lower(), shpfiles_folder=self.shpfiles_folder, coords=self.coords, keep_data=True, display_warnings=False)
         pbar.update("airports geodataframe retrieved")
 
         return orig_land_mass, orig_boundary, orig_road, orig_railway, orig_sea, orig_landuse, orig_grass, orig_nature_reserve, \
-               orig_natural, orig_natural_water, orig_water, orig_waterway, orig_aeroway, orig_pitch, orig_construction, orig_park, orig_building, orig_wall, orig_man_made, orig_rocks, orig_amenity, orig_airport
+               orig_natural, orig_natural_water, orig_water, orig_waterway, orig_aeroway, orig_pitch, orig_construction, orig_park, orig_building, \
+               orig_wall, orig_man_made, orig_rocks, orig_amenity, orig_residential, orig_airport
 
     def __create_geocode_osm_exclusion_files(self, geocode, b, geocode_margin, preserve_roads, preserve_buildings, coords, shpfiles_folder):
         print_title("RETRIEVE GEOCODE OSM FILES")
@@ -1446,9 +1458,12 @@ class MsfsProject:
     @staticmethod
     def __prepare_geodataframes(orig_road, orig_railway, orig_sea, orig_bbox, orig_land_mass, orig_boundary, orig_landuse, orig_natural, orig_natural_water,
                                 orig_water, orig_waterway, orig_aeroway, orig_pitch, orig_construction, orig_airport, orig_building, orig_wall, orig_man_made,
-                                orig_park, orig_nature_reserve, orig_rocks, orig_amenity, settings):
+                                orig_park, orig_nature_reserve, orig_rocks, orig_amenity, orig_residential, settings):
         # prepare all the necessary GeoPandas Dataframes
         itasks = 22
+
+        if settings.keep_residential:
+            itasks = itasks+1
 
         if settings.exclude_parks:
             itasks = itasks+1
@@ -1528,6 +1543,13 @@ class MsfsProject:
         else:
             nature_reserve = create_empty_gdf()
 
+        if settings.keep_residential:
+            pbar.update("preparing residential geodataframe...", stall=True)
+            residential = clip_gdf(prepare_residential_gdf(orig_residential, water, natural, natural_water, park, orig_airport), bbox)
+            pbar.update("residential geodataframe prepared")
+        else:
+            residential = create_empty_gdf()
+
         pbar.update("creating whole water geodataframe...", stall=True)
         whole_water = create_whole_water_gdf(natural_water, water, sea)
         pbar.update("whole water geodataframe created")
@@ -1544,7 +1566,7 @@ class MsfsProject:
         pbar.update("exclusion geodataframe created")
 
         return bbox, roads, bridges, hidden_roads, sea, pitch, construction, airport, building, \
-               whole_water, water_exclusion, exclusion, rocks, amenity
+               whole_water, water_exclusion, exclusion, rocks, amenity, residential
 
     @staticmethod
     def __backup_objects(objects: dict, backup_path, pbar_title="backup files"):

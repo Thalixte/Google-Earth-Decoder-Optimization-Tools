@@ -584,7 +584,7 @@ def reduce_number_of_vertices(model_file_path):
     bpy.ops.object.select_all(action=SELECT_ACTION)
 
 
-def process_3d_data(model_file_path=None, intersect=False):
+def process_3d_data(model_file_path=None, intersect=False, no_bounding_box=False):
     if model_file_path is not None:
         import_model_files([model_file_path], clean=False)
 
@@ -648,6 +648,8 @@ def process_3d_data(model_file_path=None, intersect=False):
     bpy.ops.object.select_all(action=DESELECT_ACTION)
     mask.select_set(True)
     bbox.select_set(True)
+    if no_bounding_box:
+        final_bbox.select_set(True)
     bpy.ops.object.delete()
     bpy.ops.object.select_all(action=SELECT_ACTION)
 
@@ -689,7 +691,7 @@ def generate_model_height_data(model_file_path, lat, lon, altitude, height_adjus
     # fix wrong height data for ground tiles
     if os.path.exists(positioning_file_path) and os.path.exists(ground_mask_file_path):
         align_model_with_mask(model_file_path, positioning_file_path, ground_mask_file_path, objects_to_keep=[grid, height_grid])
-        process_3d_data(model_file_path=model_file_path, intersect=True)
+        process_3d_data(model_file_path=model_file_path, intersect=True, no_bounding_box=True)
         tile = get_tile_for_ray_cast(model_file_path, imported=False, objects_to_keep=[grid, height_grid])
         if inverted:
             hmatrix = calculate_height_map_from_coords_from_top(tile, grid_dimension, coords, depsgraph, lat, lon, altitude, hmatrix_base=hmatrix)
@@ -699,7 +701,7 @@ def generate_model_height_data(model_file_path, lat, lon, altitude, height_adjus
     # fix wrong height data for bridges on water
     if os.path.exists(positioning_file_path) and os.path.exists(water_mask_file_path):
         align_model_with_mask(model_file_path, positioning_file_path, water_mask_file_path, objects_to_keep=[grid, height_grid])
-        process_3d_data(model_file_path=model_file_path, intersect=True)
+        process_3d_data(model_file_path=model_file_path, intersect=True, no_bounding_box=True)
         tile = get_tile_for_ray_cast(model_file_path, imported=False, objects_to_keep=[grid, height_grid])
         hmatrix = fix_bridge_height_data_on_water(tile, depsgraph, lat, lon, altitude, hmatrix_base=hmatrix)
 

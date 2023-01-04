@@ -66,6 +66,7 @@ class Settings:
     exclude_ground: str
     exclude_nature_reserve: str
     exclude_parks: str
+    keep_residential: str
     keep_constructions: str
     keep_roads: str
     add_lights: str
@@ -117,6 +118,7 @@ class Settings:
         self.exclude_ground = "False"
         self.exclude_nature_reserve = "False"
         self.exclude_parks = "False"
+        self.keep_residential = "False"
         self.isolate_3d_data = "False"
         self.keep_constructions = "False"
         self.keep_roads = "False"
@@ -185,6 +187,7 @@ class Settings:
         self.exclude_ground = json.loads(self.exclude_ground.lower())
         self.exclude_nature_reserve = json.loads(self.exclude_nature_reserve.lower())
         self.exclude_parks = json.loads(self.exclude_parks.lower())
+        self.keep_residential = json.loads(self.keep_residential.lower())
         self.isolate_3d_data = json.loads(self.isolate_3d_data.lower())
         self.keep_constructions = json.loads(self.keep_constructions.lower())
         self.keep_roads = json.loads(self.keep_roads.lower())

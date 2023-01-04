@@ -5,8 +5,7 @@ import bpy
 # Import the gltf files located in a specific folder
 ##################################################################
 from blender.material import set_new_msfs_material
-
-OSM_MATERIAL_NAME = "OSM_material"
+from constants import OSM_MATERIAL_NAME
 
 
 def import_osm_file(osm_file):

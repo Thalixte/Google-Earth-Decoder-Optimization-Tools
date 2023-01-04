@@ -21,7 +21,7 @@ import warnings
 
 from constants import GEOMETRY_OSM_COLUMN, BOUNDING_BOX_OSM_KEY, SHAPE_TEMPLATES_FOLDER, OSM_LAND_SHAPEFILE, ROAD_OSM_KEY, BRIDGE_OSM_TAG, SERVICE_OSM_KEY, NOT_SHORE_WATER_OSM_KEY, WATER_OSM_KEY, NATURAL_OSM_KEY, OSM_TAGS, FOOTWAY_OSM_TAG, PATH_OSM_TAG, MAN_MADE_OSM_KEY, PIER_OSM_TAG, GOLF_OSM_KEY, FAIRWAY_OSM_TAG, EOL, CEND, TUNNEL_OSM_TAG, SEAMARK_TYPE_OSM_TAG, BUILDING_OSM_KEY, SHP_FILE_EXT, ELEMENT_TY_OSM_KEY, OSMID_OSM_KEY, RAILWAY_OSM_KEY, LANES_OSM_KEY, ONEWAY_OSM_KEY, ROAD_WITH_BORDERS, \
     ROAD_LANE_WIDTH, GEOCODE_OSM_FILE_PREFIX, PEDESTRIAN_ROAD_TYPE, FOOTWAY_ROAD_TYPE, SERVICE_ROAD_TYPE, LANDUSE_OSM_KEY, CONSTRUCTION_OSM_KEY, GDAL_LIB_PREFIX, FIONA_LIB_PREFIX, LAND_MASS_REPO, LAND_MASS_ARCHIVE, LEISURE_OSM_KEY, NETWORKX_LIB, RTREE_LIB, MATPLOTLIB_LIB, PANDAS_LIB, GEOPANDAS_LIB, OSMNX_LIB, SHAPELY_LIB, PATH_ROAD_TYPE, TRACK_ROAD_TYPE, AREA_OSM_TAG, NOT_EXCLUSION_BUILDING_OSM_KEY, WALL_OSM_KEY, WALL_OSM_TAG, CASTLE_WALL_OSM_TAG, CYCLEWAY_ROAD_TYPE, FULL_PREFIX, \
-    ROAD_REMOVAL_LANDUSE_OSM_KEY, ROAD_REMOVAL_NATURAL_OSM_KEY
+    ROAD_REMOVAL_LANDUSE_OSM_KEY, ROAD_REMOVAL_NATURAL_OSM_KEY, PROPOSED_OSM_TAG
 from utils import pr_bg_orange, install_python_lib, install_alternate_python_lib, install_shapefile_resource
 
 try:
@@ -434,6 +434,11 @@ def prepare_roads_gdf(gdf, railway_gdf, bridge_only=True, automatic_road_width_c
     if not roads.empty:
         roads = roads[~roads[GEOMETRY_OSM_COLUMN].isna()]
 
+        # remove proposed roads
+        roads = roads[~(roads[ROAD_OSM_KEY] == PROPOSED_OSM_TAG)]
+        if PROPOSED_OSM_TAG in roads:
+            roads = roads[roads[PROPOSED_OSM_TAG].isna()]
+
         if TUNNEL_OSM_TAG in roads:
             roads = roads[roads[TUNNEL_OSM_TAG].isna()]
 
@@ -564,6 +569,28 @@ def prepare_amenity_gdf(gdf, water, natural_water, airport):
             result = difference_gdf(result, water)
         if not natural_water.empty:
             result = difference_gdf(result, natural_water)
+        if not airport.empty:
+            result = difference_gdf(result, airport)
+        result = result[(result.geom_type == SHAPELY_TYPE.polygon) | (result.geom_type == SHAPELY_TYPE.multiPolygon)]
+
+    return result
+
+
+def prepare_residential_gdf(gdf, water, natural, natural_water, park, airport):
+    if gdf is None:
+        return create_empty_gdf()
+
+    result = gdf.copy()
+
+    if not result.empty:
+        if not water.empty:
+            result = difference_gdf(result, water)
+        if not natural.empty:
+            result = difference_gdf(result, natural)
+        if not natural_water.empty:
+            result = difference_gdf(result, natural_water)
+        if not park.empty:
+            result = difference_gdf(result, park)
         if not airport.empty:
             result = difference_gdf(result, airport)
         result = result[(result.geom_type == SHAPELY_TYPE.polygon) | (result.geom_type == SHAPELY_TYPE.multiPolygon)]
@@ -939,7 +966,7 @@ def create_grid_from_hmatrix(hmatrix, lat, lon):
             for x, h in heights.items():
                 data["x"].append(x)
                 data["y"].append(y)
-                data["z"].append(z)
+                data["z"].append(0.0)
 
         n = n + 1
 

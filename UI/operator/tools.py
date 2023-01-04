@@ -117,6 +117,10 @@ def reload_exclude_parks(context):
     context.scene.setting_props.exclude_parks = context.scene.settings.exclude_parks
 
 
+def reload_keep_residential(context):
+    context.scene.setting_props.keep_residential = context.scene.settings.keep_residential
+
+
 def reload_high_precision(context):
     context.scene.setting_props.high_precision = context.scene.settings.high_precision
 
@@ -232,6 +236,7 @@ def reload_setting_props(context, reload_settings_file=True):
     reload_exclude_ground(context)
     reload_exclude_nature_reserve(context)
     reload_exclude_parks(context)
+    reload_keep_residential(context)
     reload_high_precision(context)
     reload_height_adjustment(context)
     reload_geocode(context)

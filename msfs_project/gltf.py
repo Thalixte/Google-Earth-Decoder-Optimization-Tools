@@ -16,7 +16,7 @@
 #
 #  <pep8 compliant>
 
-from constants import TEXTURE_FOLDER
+from constants import TEXTURE_FOLDER, OSM_MATERIAL_NAME
 from utils import load_json_file, save_json_file, insert_key_value
 
 
@@ -46,6 +46,8 @@ class MsfsGltf:
     COLLISION_TAG = "Collision"
     ENABLED_TAG = "enabled"
     EXTRAS_TAG = "extras"
+    ALPHA_MODE_TAG = "alphaMode"
+    ALPHA_CUTOFF_TAG = "alphaCutoff"
     ASOBO_MATERIAL_DAY_NIGHT_SWITCH_TAG = "ASOBO_material_day_night_switch"
     ASOBO_MATERIAL_FAKE_TERRAIN_TAG = "ASOBO_material_fake_terrain"
     ASOBO_MATERIAL_INVISIBLE_TAG = "ASOBO_material_invisible"
@@ -53,6 +55,8 @@ class MsfsGltf:
     ASOBO_ASSETS_OPTIMIZED_TAG = "ASOBO_asset_optimized"
     ASOBO_IMAGE_CONVERTED_TAG = "ASOBO_image_converted_meta"
     TANGENT_SPACE_CONVENTION_TAG = "tangent_space_convention"
+    MASK_ALPHA_MODE = "MASK"
+    MASK_ALPHA_CUTOFF = 10.0
 
     def __init__(self, file_path):
         self.file_path = file_path
@@ -175,11 +179,14 @@ class MsfsGltf:
 
         try:
             for material in self.data[self.MATERIALS_TAG]:
-                material[self.EXTENSIONS_TAG] = material_extensions_data
+                if OSM_MATERIAL_NAME not in material[self.NAME_TAG]:
+                    material[self.EXTENSIONS_TAG] = material_extensions_data
+                else:
+                    self.prepare_bounding_box_material()
         except:
             pass
 
-    def add_extension_tag(self, extension_tag, only_last_material=False):
+    def add_extension_tag(self, extension_tag):
         if not self.data: return
 
         self.data[self.EXTENSIONS_USED_TAG].append(extension_tag)
@@ -187,13 +194,33 @@ class MsfsGltf:
         if self.MATERIALS_TAG not in self.data.keys(): return
 
         try:
-            for i, material in enumerate(self.data[self.MATERIALS_TAG]):
-                if only_last_material and i < (len(self.data[self.MATERIALS_TAG])-1):
-                    continue
+            for material in self.data[self.MATERIALS_TAG]:
 
                 material[self.EXTENSIONS_TAG][extension_tag] = {
                     self.ENABLED_TAG: True
                 }
+        except:
+            pass
+
+    def prepare_bounding_box_material(self):
+        if not self.data: return
+
+        self.data[self.EXTENSIONS_USED_TAG].append(self.ASOBO_MATERIAL_INVISIBLE_TAG)
+
+        try:
+            for i, material in enumerate(self.data[self.MATERIALS_TAG]):
+                if OSM_MATERIAL_NAME not in material[self.NAME_TAG]:
+                    continue
+
+                material_extensions_data = {
+                    self.ASOBO_MATERIAL_INVISIBLE_TAG: {
+                        self.ENABLED_TAG: True
+                    },
+                }
+
+                material[self.EXTENSIONS_TAG] = material_extensions_data
+                material[self.ALPHA_MODE_TAG] = self.MASK_ALPHA_MODE
+                material[self.ALPHA_CUTOFF_TAG] = self.MASK_ALPHA_CUTOFF
         except:
             pass
 

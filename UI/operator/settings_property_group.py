@@ -88,6 +88,9 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
     def exclude_parks_updated(self, context):
         context.scene.settings.exclude_parks = self.exclude_parks
 
+    def keep_residential_updated(self, context):
+        context.scene.settings.keep_residential = self.keep_residential
+
     def high_precision_updated(self, context):
         context.scene.settings.high_precision = self.high_precision
 
@@ -273,6 +276,12 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         description="Exclude parks 3d data",
         default=bpy.types.Scene.settings.exclude_parks,
         update=exclude_parks_updated
+    )
+    keep_residential: BoolProperty(
+        name="Keep residential area 3d data",
+        description="Keep residential area 3d data",
+        default=bpy.types.Scene.settings.keep_residential,
+        update=keep_residential_updated
     )
     high_precision: BoolProperty(
         name="High precision height data generation",

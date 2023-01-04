@@ -163,6 +163,8 @@ REMOVE_ICON = "REMOVE"
 
 DUMMY_OBJECT = "dummy"
 
+OSM_MATERIAL_NAME = "OSM_material"
+
 WAY_OSM_PREFIX = "W"
 RELATION_OSM_PREFIX = "R"
 NODE_OSM_PREFIX = "N"
@@ -254,6 +256,7 @@ PATH_OSM_TAG = "path"
 FAIRWAY_OSM_TAG = "fairway"
 AREA_OSM_TAG = "area"
 CONSTRUCTION_OSM_TAG = "construction"
+RESIDENTIAL_OSM_TAG = "residential"
 DISPLAY_NAME_OSM_TAG = "display_name"
 NAME_OSM_TAG = "name"
 WALL_OSM_TAG = "wall"
@@ -270,6 +273,7 @@ SILO_OSM_TAG = "silo"
 TELESCOPE_OSM_TAG = "telescope"
 WATER_TOWER_OSM_TAG = "water_tower"
 OBSERVATORY_OSM_TAG = "observatory"
+PROPOSED_OSM_TAG = "proposed"
 
 AIRPORT_GEOCODE = "airport"
 
@@ -375,6 +379,9 @@ OSM_TAGS = {
     ],
     CONSTRUCTION_OSM_KEY: [
         CONSTRUCTION_OSM_TAG
+    ],
+    RESIDENTIAL_OSM_KEY: [
+        RESIDENTIAL_OSM_TAG
     ],
     GRASS_OSM_KEY: [
         GRASS_OSM_TAG

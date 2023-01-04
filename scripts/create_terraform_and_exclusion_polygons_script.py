@@ -56,6 +56,7 @@ def create_terraform_and_exclusion_polygons(script_settings):
         script_settings.exclude_parks = True
         script_settings.isolate_3d_data = False
         script_settings.keep_roads = False
+        script_settings.keep_residential = False
         script_settings.disable_terraform = True
         script_settings.ground_exclusion_margin = STANDARD_EXCLUSION_MARGIN
         script_settings.save()
