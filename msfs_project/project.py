@@ -1511,7 +1511,7 @@ class MsfsProject:
         construction = clip_gdf(prepare_gdf(orig_construction), bbox)
         pbar.update("construction geodataframe prepared")
         pbar.update("preparing amenity geodataframe...", stall=True)
-        amenity = clip_gdf(prepare_amenity_gdf(orig_amenity, water, natural_water, orig_airport), bbox)
+        amenity = prepare_amenity_gdf(orig_amenity, water, natural_water, orig_airport)
         pbar.update("amenity geodataframe prepared")
         pbar.update("preparing airport geodataframe...", stall=True)
         airport = prepare_gdf(orig_airport)
@@ -1545,7 +1545,7 @@ class MsfsProject:
 
         if settings.keep_residential:
             pbar.update("preparing residential geodataframe...", stall=True)
-            residential = clip_gdf(prepare_residential_gdf(orig_residential, water, natural, natural_water, park, orig_airport), bbox)
+            residential = prepare_residential_gdf(orig_residential, water, natural, natural_water, park, orig_airport)
             pbar.update("residential geodataframe prepared")
         else:
             residential = create_empty_gdf()
