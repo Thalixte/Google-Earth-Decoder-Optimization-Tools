@@ -726,17 +726,25 @@ class MsfsProject:
     def __retrieve_lods_to_process(self, nb_parallel_blender_tasks, force_cleanup=False):
         data = []
         tiles = []
-        for tile in self.tiles.values():
-            mask_file_path = os.path.join(self.osmfiles_folder, EXCLUSION_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)
 
-            if not os.path.isfile(mask_file_path):
-                continue
+        # when the original tiles are available in the backup, use them, otherwise use the current modified tiles (which give less accurate results than the original ones)
+        backup_path = self.__find_backup_path()
+
+        for tile in self.tiles.values():
+            copy_lods = False
 
             if not os.path.isdir(tile.folder):
                 continue
 
             if not tile.valid:
                 continue
+
+            mask_file_path = os.path.join(self.osmfiles_folder, EXCLUSION_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)
+
+            if not os.path.isfile(mask_file_path):
+                # if no mask file is present for this tile, this means that the tile will not be cleaned, so if it has been cleaned before,
+                # we ensure to retrieve the previous one (i.e. the entire tile, it it exists in the backup path)
+                copy_lods = True
 
             collider = self.__get_tile_collider(tile.name)
             has_collider = (collider is not None)
@@ -752,8 +760,6 @@ class MsfsProject:
                 if not lod.valid:
                     continue
 
-                # when the original tiles are available in the backup, use them, otherwise use the current modified tiles (which give less accurate results than the original ones)
-                backup_path = self.__find_backup_path()
                 lod_folder = backup_path if os.path.isdir(backup_path) else lod.folder
 
                 if not os.path.isdir(lod_folder):
@@ -764,6 +770,12 @@ class MsfsProject:
 
                 if lod.cleaned and not force_cleanup:
                     continue
+
+                if copy_lods:
+                    shutil.copyfile(os.path.join(lod_folder, lod.model_file), os.path.join(lod.folder, lod.model_file))
+
+                    for binary in lod.binaries:
+                        shutil.copyfile(os.path.join(lod_folder, binary.file), os.path.join(binary.folder, binary.file))
 
                 data.append({"name": lod.name, "params": ["--folder", str(lod_folder), "--output_folder", str(lod.folder), "--model_file", str(lod.model_file),
                                                           "--positioning_file_path", str(os.path.join(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)),
@@ -880,6 +892,11 @@ class MsfsProject:
         positioning_files_paths = []
         model_files_paths = []
         alt = -9999.99
+        prefix = str()
+        mask_file_path = os.path.join(self.osmfiles_folder, GEOCODE_OSM_FILE_PREFIX + "_" + EXCLUSION_OSM_FILE_PREFIX + OSM_FILE_EXT)
+
+        if not os.path.isfile(mask_file_path):
+            return
 
         for i, tile in enumerate(self.tiles.values()):
             if not os.path.isdir(tile.folder):
@@ -919,11 +936,10 @@ class MsfsProject:
             if prefix:
                 prefix = prefix[0]
             else:
-                prefix = None
+                prefix = str()
 
             positioning_files_paths.append(str(os.path.join(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)))
             model_files_paths.append(os.path.join(lod_folder, lod.model_file))
-            mask_file_path = os.path.join(self.osmfiles_folder, GEOCODE_OSM_FILE_PREFIX + "_" + EXCLUSION_OSM_FILE_PREFIX + OSM_FILE_EXT)
 
         params = ["--positioning_files_paths", str('"') + "|".join(positioning_files_paths) + str('"'), "--model_files_paths", str('"') + "|".join(model_files_paths) + str('"'),
                   "--mask_file_path", str('"') + mask_file_path + str('"'), "--lat", str(lat[0]), "--lon", str(lon[0]), "--alt", str(alt),
