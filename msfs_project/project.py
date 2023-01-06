@@ -731,8 +731,6 @@ class MsfsProject:
         backup_path = self.__find_backup_path()
 
         for tile in self.tiles.values():
-            copy_lods = False
-
             if not os.path.isdir(tile.folder):
                 continue
 
@@ -740,11 +738,7 @@ class MsfsProject:
                 continue
 
             mask_file_path = os.path.join(self.osmfiles_folder, EXCLUSION_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)
-
-            if not os.path.isfile(mask_file_path):
-                # if no mask file is present for this tile, this means that the tile will not be cleaned, so if it has been cleaned before,
-                # we ensure to retrieve the previous one (i.e. the entire tile, it it exists in the backup path)
-                copy_lods = True
+            copy_lods = (not os.path.isfile(mask_file_path))
 
             collider = self.__get_tile_collider(tile.name)
             has_collider = (collider is not None)
@@ -771,6 +765,8 @@ class MsfsProject:
                 if lod.cleaned and not force_cleanup:
                     continue
 
+                # if no mask file is present for this tile, this means that the tile will not be cleaned, so if it has been cleaned before,
+                # we ensure to retrieve the previous one (i.e. the entire tile, it it exists in the backup path)
                 if copy_lods:
                     shutil.copyfile(os.path.join(lod_folder, lod.model_file), os.path.join(lod.folder, lod.model_file))
 
