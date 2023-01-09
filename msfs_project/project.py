@@ -24,8 +24,9 @@ import io
 import shutil
 import os
 import subprocess
+
 from utils import install_python_lib
-from utils.geo_pandas import prepare_wall_gdf, create_exclusion_building_gdf, prepare_water_gdf, prepare_amenity_gdf, prepare_hidden_roads_gdf, prepare_water_exclusion_gdf, prepare_residential_gdf
+from utils.geo_pandas import prepare_wall_gdf, create_exclusion_building_gdf, prepare_water_gdf, prepare_amenity_gdf, prepare_hidden_roads_gdf, prepare_water_exclusion_gdf, prepare_residential_gdf, update_exclusion_building_polygons_gdf
 from constants import *
 
 try:
@@ -328,6 +329,11 @@ class MsfsProject:
         if not geocode_gdf.empty:
             self.__create_tiles_bounding_boxes()
             self.__exclude_lods_3d_data_from_geocode(geocode, geocode_gdf, settings)
+            # update the existing exclusion building gdf file
+            # exclusion_building = osmnx.geometries_from_xml(os.path.join(self.osmfiles_folder, "exclusion_building_polygons" + OSM_FILE_EXT))
+            # construction = osmnx.geometries_from_xml(os.path.join(self.osmfiles_folder, "construction_terraform_polygons" + OSM_FILE_EXT))
+            # amenity = osmnx.geometries_from_xml(os.path.join(self.osmfiles_folder, "amenity_terraform_polygons" + OSM_FILE_EXT))
+            # update_exclusion_building_polygons_gdf(exclusion_building, construction, amenity)
 
     def isolate_3d_data_from_geocode(self, settings):
         geocode = settings.geocode
@@ -1078,7 +1084,7 @@ class MsfsProject:
         water_without_bridges, water, exclusion, rocks, amenity, residential = self.__retrieve_osm_data(b, orig_bbox, settings)
 
         if create_polygons:
-            self.__create_scenery_polygons(b, orig_bbox, orig_water, orig_natural_water, bbox, sea, pitch, construction, airport, exclusion, disable_terraform=settings.disable_terraform)
+            self.__create_scenery_polygons(b, orig_bbox, orig_water, orig_natural_water, bbox, sea, pitch, amenity, construction, airport, exclusion, disable_terraform=settings.disable_terraform)
 
         if process_3d_data:
             if settings.isolate_3d_data:
@@ -1123,12 +1129,18 @@ class MsfsProject:
         return orig_water, orig_natural_water, bbox, roads, bridges, hidden_roads, sea, pitch, construction, airport, building, \
                water_without_bridges, water, exclusion, rocks, amenity, residential
 
-    def __create_scenery_polygons(self, b, orig_bbox, orig_water, orig_natural_water, bbox, sea, pitch, construction, airport, exclusion, disable_terraform=False):
+    def __create_scenery_polygons(self, b, orig_bbox, orig_water, orig_natural_water, bbox, sea, pitch, amenity, construction, airport, exclusion, disable_terraform=False):
         print_title("CREATE PITCH TERRAFORM POLYGONS GEO DATAFRAMES...)")
         pitch_terraform_polygons = create_terraform_polygons_gdf(pitch, exclusion)
         # for debugging purpose
         osm_xml = OsmXml(self.osmfiles_folder, "pitch_terraform_polygons" + OSM_FILE_EXT)
         osm_xml.create_from_geodataframes([pitch_terraform_polygons.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')], b)
+
+        print_title("CREATE AMENITY TERRAFORM POLYGONS GEO DATAFRAMES...)")
+        amenity_terraform_polygons = create_terraform_polygons_gdf(amenity, exclusion)
+        # for debugging purpose
+        osm_xml = OsmXml(self.osmfiles_folder, "amenity_terraform_polygons" + OSM_FILE_EXT)
+        osm_xml.create_from_geodataframes([amenity_terraform_polygons.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')], b)
 
         print_title("CREATE CONSTRUCTION TERRAFORM POLYGONS GEO DATAFRAMES...)")
         construction_terraform_polygons = create_terraform_polygons_gdf(construction, exclusion)
@@ -1157,8 +1169,10 @@ class MsfsProject:
             self.shapes[EXCLUSION_VEGETATION_POLYGONS_DISPLAY_NAME] = MsfsShapes(shape_gdf=exclusion_vegetation_polygons, group_display_name=EXCLUSION_VEGETATION_POLYGONS_DISPLAY_NAME, group_id=new_group_id + 1, exclude_vegetation=True, exclude_buildings=True)
         if not pitch_terraform_polygons.empty:
             self.shapes[PITCH_TERRAFORM_POLYGONS_DISPLAY_NAME] = MsfsShapes(shape_gdf=pitch_terraform_polygons, group_display_name=PITCH_TERRAFORM_POLYGONS_DISPLAY_NAME, group_id=new_group_id + 2, tiles=self.tiles, flatten=not disable_terraform)
+        if not amenity_terraform_polygons.empty:
+            self.shapes[AMENITY_TERRAFORM_POLYGONS_DISPLAY_NAME] = MsfsShapes(shape_gdf=amenity_terraform_polygons, group_display_name=AMENITY_TERRAFORM_POLYGONS_DISPLAY_NAME, group_id=new_group_id + 3, tiles=self.tiles, flatten=not disable_terraform)
         if not construction_terraform_polygons.empty:
-            self.shapes[CONSTRUCTION_TERRAFORM_POLYGONS_DISPLAY_NAME] = MsfsShapes(shape_gdf=construction_terraform_polygons, group_display_name=CONSTRUCTION_TERRAFORM_POLYGONS_DISPLAY_NAME, group_id=new_group_id + 3, tiles=self.tiles, flatten=False)
+            self.shapes[CONSTRUCTION_TERRAFORM_POLYGONS_DISPLAY_NAME] = MsfsShapes(shape_gdf=construction_terraform_polygons, group_display_name=CONSTRUCTION_TERRAFORM_POLYGONS_DISPLAY_NAME, group_id=new_group_id + 4, tiles=self.tiles, flatten=False)
 
         # reload the xml file to retrieve the last updates
         self.objects_xml = ObjectsXml(self.scene_folder, self.SCENE_OBJECTS_FILE)
@@ -1241,7 +1255,7 @@ class MsfsProject:
         orig_wall = load_gdf(self.coords, BARRIER_OSM_KEY, OSM_TAGS[BARRIER_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, WALL_OSM_TAG + SHP_FILE_EXT), is_wall=True)
         pbar.update("walls geodataframe retrieved")
         pbar.update("retrieving man mades geodataframe...", stall=True)
-        orig_man_made = load_gdf(self.coords, MAN_MADE_OSM_KEY, OSM_TAGS[MAN_MADE_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, MAN_MADE_OSM_KEY + SHP_FILE_EXT), is_man_made=True)
+        orig_man_made = load_gdf(self.coords, MAN_MADE_OSM_KEY, OSM_TAGS[MAN_MADE_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, MAN_MADE_OSM_KEY + SHP_FILE_EXT))
         pbar.update("man mades geodataframe retrieved")
         pbar.update("retrieving rocks geodataframe...", stall=True)
         orig_rocks = load_gdf(self.coords, NATURAL_OSM_KEY, OSM_TAGS[ROCKS_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, ROCKS_OSM_KEY + SHP_FILE_EXT))

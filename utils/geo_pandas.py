@@ -202,7 +202,7 @@ def load_gdf_from_geocode(geocode, geocode_margin=5.0, preserve_roads=True, pres
             result = create_empty_gdf()
             pass
 
-    load_gdf_list = [None] * 7
+    load_gdf_list = [None] * 8
     if display_warnings:
         pbar = ProgressBar(load_gdf_list, title="RETRIEVE GEODATAFRAMES (THE FIRST TIME, MAY TAKE SOME TIME TO COMPLETE, BE PATIENT...)")
         pbar.update("retrieving buildings geodataframe...", stall=True)
@@ -211,6 +211,12 @@ def load_gdf_from_geocode(geocode, geocode_margin=5.0, preserve_roads=True, pres
     orig_building = load_gdf(coords, BUILDING_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, BUILDING_OSM_KEY + SHP_FILE_EXT), keep_geocode_data=True)
     if display_warnings:
         pbar.update("buildings geodataframe retrieved")
+        pbar.update("retrieving man made geodataframe...", stall=True)
+    # load gdf twice to ensure to retrieve if from cache (to have osmid in a key, not in an index)
+    load_gdf(coords, MAN_MADE_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, MAN_MADE_OSM_KEY + SHP_FILE_EXT))
+    orig_man_made = load_gdf(coords, MAN_MADE_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, MAN_MADE_OSM_KEY + SHP_FILE_EXT), keep_geocode_data=True)
+    if display_warnings:
+        pbar.update("man made geodataframe retrieved")
         pbar.update("retrieving natural geodataframe...", stall=True)
     # load gdf twice to ensure to retrieve if from cache (to have osmid in a key, not in an index)
     load_gdf(coords, NATURAL_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, FULL_PREFIX + NATURAL_OSM_KEY + SHP_FILE_EXT))
@@ -255,6 +261,8 @@ def load_gdf_from_geocode(geocode, geocode_margin=5.0, preserve_roads=True, pres
                 osmid = geocode
                 if ELEMENT_TY_OSM_KEY in orig_building and OSMID_OSM_KEY in orig_building:
                     result = orig_building[((orig_building[ELEMENT_TY_OSM_KEY] == OSMID_TYPE.way) | (orig_building[ELEMENT_TY_OSM_KEY] == OSMID_TYPE.relation)) & (orig_building[OSMID_OSM_KEY] == int(osmid))]
+                if ELEMENT_TY_OSM_KEY in orig_man_made and OSMID_OSM_KEY in orig_man_made:
+                    result = orig_man_made[((orig_man_made[ELEMENT_TY_OSM_KEY] == OSMID_TYPE.way) | (orig_man_made[ELEMENT_TY_OSM_KEY] == OSMID_TYPE.relation)) & (orig_man_made[OSMID_OSM_KEY] == int(osmid))]
                 if result.empty and ELEMENT_TY_OSM_KEY in orig_natural and OSMID_OSM_KEY in orig_natural:
                     result = orig_natural[((orig_natural[ELEMENT_TY_OSM_KEY] == OSMID_TYPE.way) | (orig_natural[ELEMENT_TY_OSM_KEY] == OSMID_TYPE.relation)) & (orig_natural[OSMID_OSM_KEY] == int(osmid))]
                 if result.empty and ELEMENT_TY_OSM_KEY in orig_landuse and OSMID_OSM_KEY in orig_landuse:
@@ -316,7 +324,7 @@ def load_gdf_from_geocode(geocode, geocode_margin=5.0, preserve_roads=True, pres
     return result.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)
 
 
-def load_gdf(coords, key, tags, shp_file_path="", keep_geocode_data=False, is_roads=False, is_sea=False, is_waterway=False, is_grass=False, is_wall=False, is_man_made=False, land_mass=None, bbox=None):
+def load_gdf(coords, key, tags, shp_file_path="", keep_geocode_data=False, is_roads=False, is_sea=False, is_waterway=False, is_grass=False, is_wall=False, land_mass=None, bbox=None):
     result = create_empty_gdf()
     has_cache = os.path.isfile(shp_file_path)
     logging.getLogger('shapely.geos').setLevel(logging.CRITICAL)
@@ -787,6 +795,20 @@ def create_exclusion_building_polygons_gdf(bbox, exclusion, airport):
     return result
 
 
+def update_exclusion_building_polygons_gdf(exclusion_building, construction, amenity):
+    result = exclusion_building.copy()
+    construction = resize_gdf(construction, 30)
+    amenity = resize_gdf(amenity, 30)
+
+    if not construction.empty:
+        result = difference_gdf(result, construction)
+
+    if not amenity.empty:
+        result = difference_gdf(result, amenity)
+
+    return result.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)
+
+
 def create_exclusion_vegetation_polygons_gdf(exclusion):
     exclusion = exclusion.dissolve()
     result = preserve_holes(exclusion, split_method=PRESERVE_HOLES_METHOD.derivation_split)
@@ -1002,6 +1024,8 @@ def calculate_road_width(row):
     if is_railway or pd.isna(row[LANES_OSM_KEY]) or row[LANES_OSM_KEY] is None:
         lanes = 1 if is_oneway else 2
 
+    if ";" in str(lanes):
+        lanes = lanes.split(";")[0]
     lanes = float(lanes)
     road_width = lanes * ROAD_LANE_WIDTH
     if road_type in ROAD_WITH_BORDERS or is_railway:

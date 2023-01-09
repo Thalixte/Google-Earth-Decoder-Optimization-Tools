@@ -205,7 +205,8 @@ class MsfsGltf:
     def prepare_bounding_box_material(self):
         if not self.data: return
 
-        self.data[self.EXTENSIONS_USED_TAG].append(self.ASOBO_MATERIAL_INVISIBLE_TAG)
+        if self.ASOBO_MATERIAL_INVISIBLE_TAG not in self.data[self.EXTENSIONS_USED_TAG]:
+            self.data[self.EXTENSIONS_USED_TAG].append(self.ASOBO_MATERIAL_INVISIBLE_TAG)
 
         try:
             for i, material in enumerate(self.data[self.MATERIALS_TAG]):

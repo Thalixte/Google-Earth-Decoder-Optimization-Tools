@@ -133,6 +133,7 @@ LIGHT_COLD_DISPLAY_NAME = "Light cold"
 LIGHT_HEADING = "-179.999995"
 
 PITCH_TERRAFORM_POLYGONS_DISPLAY_NAME = "GEDOT_generated_pitch_terraform_polygons"
+AMENITY_TERRAFORM_POLYGONS_DISPLAY_NAME = "GEDOT_generated_amenity_terraform_polygons"
 CONSTRUCTION_TERRAFORM_POLYGONS_DISPLAY_NAME = "GEDOT_generated_construction_terraform_polygons"
 GOLF_TERRAFORM_POLYGONS_DISPLAY_NAME = "GEDOT_generated_golf_terraform_polygons"
 EXCLUSION_BUILDING_POLYGONS_DISPLAY_NAME = "GEDOT_generated_exclusion_building_polygons"

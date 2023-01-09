@@ -155,7 +155,8 @@ class SettingsOperator(PanelOperator):
         col.separator()
         self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "airport_city", "Airport city")
         col.separator()
-        self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "keep_residential", "Keep residential area 3d data")
+        if self.operator_name is not "wm.create_terraform_and_exclusion_polygons":
+            self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "keep_residential", "Keep residential area 3d data")
         col.separator()
         # self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "exclude_ground", "Exclude ground 3d data")
         # col.separator()
