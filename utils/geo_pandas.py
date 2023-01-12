@@ -786,8 +786,10 @@ def create_terraform_polygons_gdf(gdf, exclusion):
 
 
 def create_exclusion_building_polygons_gdf(bbox, exclusion, airport):
+    boundary = bbox.copy()
+    boundary = resize_gdf(boundary, -20)
     adjusted_exclusion = resize_gdf(exclusion, 20)
-    adjusted_exclusion = union_gdf(bbox, adjusted_exclusion)
+    adjusted_exclusion = union_gdf(boundary, adjusted_exclusion)
     airport = resize_gdf(airport, -50)
     adjusted_exclusion = difference_gdf(adjusted_exclusion, airport)
     adjusted_exclusion = adjusted_exclusion.dissolve()
