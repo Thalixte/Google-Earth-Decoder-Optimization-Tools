@@ -117,6 +117,11 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    "-hnreduct", "--height_noise_reduction", dest="height_noise_reduction", type=str, required=True,
+    help="noise reduction of the height map",
+)
+
+parser.add_argument(
     "-hr", "--has_rocks", dest="has_rocks", type=str, required=True,
     help="indicates if the tile has rocks inside",
 )
@@ -172,6 +177,9 @@ if not args.altitude:
 if not args.height_adjustment:
     raise ScriptError("Error: --height_adjustment=\"some string\" argument not given, aborting.")
 
+if not args.height_noise_reduction:
+    raise ScriptError("Error: --height_noise_reduction=\"some string\" argument not given, aborting.")
+
 if not args.has_rocks:
     raise ScriptError("Error: --has_rocks=\"true/false\" argument not given, aborting.")
 
@@ -194,6 +202,6 @@ positioning_file_path = args.positioning_file_path if args.positioning_file_path
 water_mask_file_path = args.water_mask_file_path if args.water_mask_file_path else str()
 
 tile = MsfsTile(args.folder, args.name, args.definition_file)
-tile.generate_height_data(HeightMapXml(args.height_map_xml_folder, HEIGHT_MAP_SUFFIX + args.name + XML_FILE_EXT), args.group_id, float(args.altitude), float(args.height_adjustment), high_precision=high_precision, inverted=has_rocks, positioning_file_path=positioning_file_path, water_mask_file_path=water_mask_file_path, ground_mask_file_path=ground_mask_file_path, debug=debug)
+tile.generate_height_data(HeightMapXml(args.height_map_xml_folder, HEIGHT_MAP_SUFFIX + args.name + XML_FILE_EXT), args.group_id, float(args.altitude), float(args.height_adjustment), float(args.height_noise_reduction), high_precision=high_precision, inverted=has_rocks, positioning_file_path=positioning_file_path, water_mask_file_path=water_mask_file_path, ground_mask_file_path=ground_mask_file_path, debug=debug)
 # except:
 #     pass

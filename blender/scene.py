@@ -673,7 +673,7 @@ def process_3d_data(model_file_path=None, intersect=False, no_bounding_box=False
     bpy.ops.object.select_all(action=SELECT_ACTION)
 
 
-def generate_model_height_data(model_file_path, lat, lon, altitude, height_adjustment, inverted=False, positioning_file_path="", water_mask_file_path="", ground_mask_file_path="", debug=False):
+def generate_model_height_data(model_file_path, lat, lon, altitude, height_adjustment, height_noise_reduction, inverted=False, positioning_file_path="", water_mask_file_path="", ground_mask_file_path="", debug=False):
     if not bpy.context.scene:
         return False
 
@@ -686,7 +686,7 @@ def generate_model_height_data(model_file_path, lat, lon, altitude, height_adjus
 
     depsgraph = bpy.context.evaluated_depsgraph_get()
     depsgraph.update()
-    hmatrix = calculate_height_map_from_coords_from_bottom(tile, grid_dimension, coords, depsgraph, lat, lon, altitude, height_adjustment)
+    hmatrix = calculate_height_map_from_coords_from_bottom(tile, grid_dimension, coords, depsgraph, lat, lon, altitude, height_adjustment, height_noise_reduction)
 
     # fix wrong height data for ground tiles
     if os.path.exists(positioning_file_path) and os.path.exists(ground_mask_file_path):
@@ -981,9 +981,10 @@ def apply_transform(ob, use_location=False, use_rotation=False, use_scale=False)
     ob.matrix_basis = basis[0] @ basis[1] @ basis[2]
 
 
-def calculate_height_map_from_coords_from_bottom(tile, grid_dimension, coords, depsgraph, lat, lon, altitude, height_adjustment):
+def calculate_height_map_from_coords_from_bottom(tile, grid_dimension, coords, depsgraph, lat, lon, altitude, height_adjustment, height_noise_reduction):
     results = defaultdict(dict)
     geoid_height = get_geoid_height(lat, lon)
+    new_coords = []
 
     # downsample the grid for bottom ray casting
     coords = [co for i, co in enumerate(coords)]
@@ -993,12 +994,22 @@ def calculate_height_map_from_coords_from_bottom(tile, grid_dimension, coords, d
         ray_direction = [0, 0, 1]
         result = tile.evaluated_get(depsgraph).ray_cast(p, ray_direction, distance=1000)
         if result[0]:
-            x = round_decimals_down(result[1][0], 1)
-            y = round_decimals_down(result[1][1], 1)
-            h = result[1][2]
-            if len(results[y]) <= grid_dimension:
+            new_coords.append(mathutils.Vector((p[0], p[1], result[1][2])))
+
+    if new_coords:
+        # fix noise in the height map data
+        new_coords = spatial_median_kdtree(np.array(new_coords), height_noise_reduction)
+        # new_coords = spatial_median(np.array(new_coords), 20)
+
+        new_coords = [co for i, co in enumerate(new_coords)]
+
+        for i, co in enumerate(new_coords):
+            p1 = co
+            x = round_decimals_down(p1[0], 1)
+            y = round_decimals_down(p1[1], 1)
+            h = p1[2]
+            if len(results[y]) < grid_dimension:
                 h = h + altitude + geoid_height
-                # h = h if h >= geoid_height - GEOID_HEIGHT_ORIGIN_MARGIN else geoid_height - height_adjustment
                 results[y][x] = h + height_adjustment
 
     return results

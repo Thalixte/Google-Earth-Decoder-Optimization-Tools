@@ -202,60 +202,64 @@ def load_gdf_from_geocode(geocode, geocode_margin=5.0, preserve_roads=True, pres
             result = create_empty_gdf()
             pass
 
-    load_gdf_list = [None] * 8
+    load_gdf_list = [None] * 1
+
     if display_warnings:
         pbar = ProgressBar(load_gdf_list, title="RETRIEVE GEODATAFRAMES (THE FIRST TIME, MAY TAKE SOME TIME TO COMPLETE, BE PATIENT...)")
         pbar.update("retrieving buildings geodataframe...", stall=True)
     # load gdf twice to ensure to retrieve if from cache (to have osmid in a key, not in an index)
     load_gdf(coords, BUILDING_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, BUILDING_OSM_KEY + SHP_FILE_EXT))
     orig_building = load_gdf(coords, BUILDING_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, BUILDING_OSM_KEY + SHP_FILE_EXT), keep_geocode_data=True)
+
     if display_warnings:
         pbar.update("buildings geodataframe retrieved")
-        pbar.update("retrieving man made geodataframe...", stall=True)
-    # load gdf twice to ensure to retrieve if from cache (to have osmid in a key, not in an index)
-    load_gdf(coords, MAN_MADE_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, MAN_MADE_OSM_KEY + SHP_FILE_EXT))
-    orig_man_made = load_gdf(coords, MAN_MADE_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, MAN_MADE_OSM_KEY + SHP_FILE_EXT), keep_geocode_data=True)
-    if display_warnings:
-        pbar.update("man made geodataframe retrieved")
-        pbar.update("retrieving natural geodataframe...", stall=True)
-    # load gdf twice to ensure to retrieve if from cache (to have osmid in a key, not in an index)
-    load_gdf(coords, NATURAL_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, FULL_PREFIX + NATURAL_OSM_KEY + SHP_FILE_EXT))
-    orig_natural = load_gdf(coords, NATURAL_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, FULL_PREFIX + NATURAL_OSM_KEY + SHP_FILE_EXT), keep_geocode_data=True)
-    if display_warnings:
-        pbar.update("natural geodataframe retrieved")
-        pbar.update("retrieving landuse geodataframe...", stall=True)
-    # load gdf twice to ensure to retrieve if from cache (to have osmid in a key, not in an index)
-    load_gdf(coords, LANDUSE_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, FULL_PREFIX + LANDUSE_OSM_KEY + SHP_FILE_EXT))
-    orig_landuse = load_gdf(coords, LANDUSE_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, FULL_PREFIX + LANDUSE_OSM_KEY + SHP_FILE_EXT), keep_geocode_data=True)
-    if display_warnings:
-        pbar.update("landuse geodataframe retrieved")
-        pbar.update("retrieving leisures geodataframe...", stall=True)
-    # load gdf twice to ensure to retrieve if from cache (to have osmid in a key, not in an index)
-    load_gdf(coords, LEISURE_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, LEISURE_OSM_KEY + SHP_FILE_EXT))
-    orig_leisure = load_gdf(coords, LEISURE_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, LEISURE_OSM_KEY + SHP_FILE_EXT), keep_geocode_data=True)
-    if display_warnings:
-        pbar.update("leisures geodataframe retrieved")
-        pbar.update("retrieving constructions geodataframe...", stall=True)
-    # load gdf twice to ensure to retrieve if from cache (to have osmid in a key, not in an index)
-    load_gdf(coords, LANDUSE_OSM_KEY, OSM_TAGS[CONSTRUCTION_OSM_KEY], shp_file_path=os.path.join(shpfiles_folder, CONSTRUCTION_OSM_KEY + SHP_FILE_EXT))
-    orig_construction = load_gdf(coords, LANDUSE_OSM_KEY, OSM_TAGS[CONSTRUCTION_OSM_KEY], shp_file_path=os.path.join(shpfiles_folder, CONSTRUCTION_OSM_KEY + SHP_FILE_EXT), keep_geocode_data=True)
-    if display_warnings:
-        pbar.update("constructions geodataframe retrieved")
-        pbar.update("retrieving roads geodataframe...", stall=True)
-    # load gdf twice to ensure to retrieve if from cache (to have osmid in a key, not in an index)
-    load_gdf(coords, ROAD_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, ROAD_OSM_KEY + SHP_FILE_EXT), is_roads=True)
-    orig_road = load_gdf(coords, ROAD_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, ROAD_OSM_KEY + SHP_FILE_EXT), is_roads=True, keep_geocode_data=True)
-    if display_warnings:
-        pbar.update("roads geodataframe retrieved")
-        pbar.update("retrieving railways geodataframe...", stall=True)
-    # load gdf twice to ensure to retrieve if from cache (to have osmid in a key, not in an index)
-    load_gdf(coords, RAILWAY_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, RAILWAY_OSM_KEY + SHP_FILE_EXT), is_roads=True)
-    orig_railway = load_gdf(coords, RAILWAY_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, RAILWAY_OSM_KEY + SHP_FILE_EXT), is_roads=True, keep_geocode_data=True)
-    if display_warnings:
-        pbar.update("railways geodataframe retrieved")
-    road = prepare_roads_gdf(orig_road, orig_railway)
 
     if result.empty:
+        load_gdf_list = [None] * 7
+        if display_warnings:
+            pbar.update("retrieving man made geodataframe...", stall=True)
+        # load gdf twice to ensure to retrieve if from cache (to have osmid in a key, not in an index)
+        load_gdf(coords, MAN_MADE_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, MAN_MADE_OSM_KEY + SHP_FILE_EXT))
+        orig_man_made = load_gdf(coords, MAN_MADE_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, MAN_MADE_OSM_KEY + SHP_FILE_EXT), keep_geocode_data=True)
+        if display_warnings:
+            pbar.update("man made geodataframe retrieved")
+            pbar.update("retrieving natural geodataframe...", stall=True)
+        # load gdf twice to ensure to retrieve if from cache (to have osmid in a key, not in an index)
+        load_gdf(coords, NATURAL_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, FULL_PREFIX + NATURAL_OSM_KEY + SHP_FILE_EXT))
+        orig_natural = load_gdf(coords, NATURAL_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, FULL_PREFIX + NATURAL_OSM_KEY + SHP_FILE_EXT), keep_geocode_data=True)
+        if display_warnings:
+            pbar.update("natural geodataframe retrieved")
+            pbar.update("retrieving landuse geodataframe...", stall=True)
+        # load gdf twice to ensure to retrieve if from cache (to have osmid in a key, not in an index)
+        load_gdf(coords, LANDUSE_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, FULL_PREFIX + LANDUSE_OSM_KEY + SHP_FILE_EXT))
+        orig_landuse = load_gdf(coords, LANDUSE_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, FULL_PREFIX + LANDUSE_OSM_KEY + SHP_FILE_EXT), keep_geocode_data=True)
+        if display_warnings:
+            pbar.update("landuse geodataframe retrieved")
+            pbar.update("retrieving leisures geodataframe...", stall=True)
+        # load gdf twice to ensure to retrieve if from cache (to have osmid in a key, not in an index)
+        load_gdf(coords, LEISURE_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, LEISURE_OSM_KEY + SHP_FILE_EXT))
+        orig_leisure = load_gdf(coords, LEISURE_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, LEISURE_OSM_KEY + SHP_FILE_EXT), keep_geocode_data=True)
+        if display_warnings:
+            pbar.update("leisures geodataframe retrieved")
+            pbar.update("retrieving constructions geodataframe...", stall=True)
+        # load gdf twice to ensure to retrieve if from cache (to have osmid in a key, not in an index)
+        load_gdf(coords, LANDUSE_OSM_KEY, OSM_TAGS[CONSTRUCTION_OSM_KEY], shp_file_path=os.path.join(shpfiles_folder, CONSTRUCTION_OSM_KEY + SHP_FILE_EXT))
+        orig_construction = load_gdf(coords, LANDUSE_OSM_KEY, OSM_TAGS[CONSTRUCTION_OSM_KEY], shp_file_path=os.path.join(shpfiles_folder, CONSTRUCTION_OSM_KEY + SHP_FILE_EXT), keep_geocode_data=True)
+        if display_warnings:
+            pbar.update("constructions geodataframe retrieved")
+            pbar.update("retrieving roads geodataframe...", stall=True)
+        # load gdf twice to ensure to retrieve if from cache (to have osmid in a key, not in an index)
+        load_gdf(coords, ROAD_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, ROAD_OSM_KEY + SHP_FILE_EXT), is_roads=True)
+        orig_road = load_gdf(coords, ROAD_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, ROAD_OSM_KEY + SHP_FILE_EXT), is_roads=True, keep_geocode_data=True)
+        if display_warnings:
+            pbar.update("roads geodataframe retrieved")
+            pbar.update("retrieving railways geodataframe...", stall=True)
+        # load gdf twice to ensure to retrieve if from cache (to have osmid in a key, not in an index)
+        load_gdf(coords, RAILWAY_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, RAILWAY_OSM_KEY + SHP_FILE_EXT), is_roads=True)
+        orig_railway = load_gdf(coords, RAILWAY_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, RAILWAY_OSM_KEY + SHP_FILE_EXT), is_roads=True, keep_geocode_data=True)
+        if display_warnings:
+            pbar.update("railways geodataframe retrieved")
+        road = prepare_roads_gdf(orig_road, orig_railway, bridge_only=False)
         try:
             if coords is not None and shpfiles_folder is not None:
                 osmid = geocode
@@ -787,7 +791,7 @@ def create_terraform_polygons_gdf(gdf, exclusion):
 
 def create_exclusion_building_polygons_gdf(bbox, exclusion, airport):
     boundary = bbox.copy()
-    boundary = resize_gdf(boundary, -20)
+    boundary = resize_gdf(boundary, -100)
     adjusted_exclusion = resize_gdf(exclusion, 20)
     adjusted_exclusion = union_gdf(boundary, adjusted_exclusion)
     airport = resize_gdf(airport, -50)

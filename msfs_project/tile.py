@@ -139,21 +139,21 @@ class MsfsTile(MsfsSceneObject):
 
             if construction_mask is not None:
                 if not construction_mask.empty:
-                    construction_mask = clip_gdf(construction_mask.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY), bbox_gdf)
+                    construction_mask = clip_gdf(construction_mask, bbox_gdf)
                     exclusion_mask_gdf = difference_gdf(exclusion_mask_gdf, construction_mask)
 
             if road_mask is not None:
                 if not road_mask.empty:
-                    road_mask = clip_gdf(road_mask.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY), bbox_gdf)
+                    road_mask = clip_gdf(road_mask, bbox_gdf)
 
                     if hidden_roads is not None:
                         if not hidden_roads.empty:
-                            hidden_roads = clip_gdf(hidden_roads.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY), bbox_gdf)
+                            hidden_roads = clip_gdf(hidden_roads, bbox_gdf)
                             road_mask = difference_gdf(road_mask, hidden_roads)
 
                     if bridges_mask is not None:
                         if not bridges_mask.empty:
-                            bridges_mask = clip_gdf(bridges_mask.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY), bbox_gdf)
+                            bridges_mask = clip_gdf(bridges_mask, bbox_gdf)
                             road_mask = union_gdf(road_mask, bridges_mask)
 
                     exclusion_mask_gdf = difference_gdf(exclusion_mask_gdf, road_mask)
@@ -192,7 +192,7 @@ class MsfsTile(MsfsSceneObject):
 
         return self.name
 
-    def generate_height_data(self, height_map_xml, group_id, altitude, height_adjustment, high_precision=False, inverted=False, positioning_file_path="", water_mask_file_path="", ground_mask_file_path="", debug=False):
+    def generate_height_data(self, height_map_xml, group_id, altitude, height_adjustment, height_noise_reduction, high_precision=False, inverted=False, positioning_file_path="", water_mask_file_path="", ground_mask_file_path="", debug=False):
         if not self.lods:
             return
 
@@ -203,7 +203,7 @@ class MsfsTile(MsfsSceneObject):
             lod = self.lods[0]
 
         if os.path.isdir(lod.folder):
-            height_data, width, altitude = lod.calculate_height_data(self.coords[0], self.coords[2], altitude, height_adjustment, inverted=inverted, positioning_file_path=positioning_file_path, water_mask_file_path=water_mask_file_path, ground_mask_file_path=ground_mask_file_path, debug=debug)
+            height_data, width, altitude = lod.calculate_height_data(self.coords[0], self.coords[2], altitude, height_adjustment, height_noise_reduction, inverted=inverted, positioning_file_path=positioning_file_path, water_mask_file_path=water_mask_file_path, ground_mask_file_path=ground_mask_file_path, debug=debug)
             self.height_map = MsfsHeightMap(tile=self, height_data=height_data, width=width, altitude=altitude, group_id=group_id)
             self.height_map.to_xml(height_map_xml)
 

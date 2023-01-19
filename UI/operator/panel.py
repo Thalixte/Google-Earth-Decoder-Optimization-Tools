@@ -159,7 +159,8 @@ class SettingsOperator(PanelOperator):
                                   "wm.keep_only_buildings_3d_data",
                                   "wm.keep_only_buildings_and_roads_3d_data"]:
             self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "keep_residential", "Keep residential area 3d data")
-        col.separator()
+            col.separator()
+
         # self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "exclude_ground", "Exclude ground 3d data")
         # col.separator()
         # self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "exclude_nature_reserve", "Exclude nature reserves 3d data")
@@ -168,6 +169,8 @@ class SettingsOperator(PanelOperator):
         # col.separator()
         if self.operator_name is "wm.generate_height_data" or self.operator_name is "wm.prepare_3d_data":
             self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "height_adjustment", "Height data adjustment (in meters)")
+            col.separator()
+            self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "height_noise_reduction", "Height data noise_reduction factor for bottom ray-tracing")
             col.separator()
             self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "high_precision", "High precision height data generation")
             col.separator()

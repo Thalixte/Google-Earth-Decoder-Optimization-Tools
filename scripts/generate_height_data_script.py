@@ -60,7 +60,7 @@ def generate_height_data(script_settings):
         script_settings.keep_residential = False
         script_settings.disable_terraform = True
         script_settings.save()
-        msfs_project.prepare_3d_data(script_settings, generate_height_data=True, process_3d_data=False, create_polygons=False)
+        msfs_project.prepare_3d_data(script_settings, generate_height_data=True, process_3d_data=False, create_polygons=False, process_all=True)
 
         if script_settings.build_package_enabled:
             build_package(msfs_project, script_settings)

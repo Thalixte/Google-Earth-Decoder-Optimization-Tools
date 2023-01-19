@@ -670,7 +670,7 @@ class MsfsProject:
 
         return chunks(data, nb_parallel_blender_tasks)
 
-    def __retrieve_tiles_to_calculate_height_map(self, nb_parallel_blender_tasks, new_group_id=-1, parallel=True, height_adjustment=0.0, high_precision=False):
+    def __retrieve_tiles_to_calculate_height_map(self, nb_parallel_blender_tasks, new_group_id=-1, parallel=True, height_adjustment=0.0, height_noise_reduction=0.0, high_precision=False):
         data = []
 
         for guid, tile in self.tiles.items():
@@ -696,7 +696,7 @@ class MsfsProject:
                 continue
 
             params = ["--folder", str(tile_folder), "--name", str(tile.name), "--definition_file", str(tile.definition_file),
-                      "--height_map_xml_folder", str(self.xmlfiles_folder), "--group_id", str(new_group_id), "--altitude", str(tile.pos.alt), "--height_adjustment", str(height_adjustment)]
+                      "--height_map_xml_folder", str(self.xmlfiles_folder), "--group_id", str(new_group_id), "--altitude", str(tile.pos.alt), "--height_adjustment", str(height_adjustment), "--height_noise_reduction", str(height_noise_reduction)]
 
             if has_mask_file:
                 params.extend(["--positioning_file_path", str(os.path.join(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT))])
@@ -1038,7 +1038,7 @@ class MsfsProject:
         self.objects_xml.remove_height_maps(HEIGHT_MAPS_DISPLAY_NAME, True)
         new_group_id = self.objects_xml.get_new_group_id()
 
-        tiles_data = self.__retrieve_tiles_to_calculate_height_map(settings.nb_parallel_blender_tasks, new_group_id=new_group_id, parallel=True, height_adjustment=float(settings.height_adjustment), high_precision=settings.high_precision)
+        tiles_data = self.__retrieve_tiles_to_calculate_height_map(settings.nb_parallel_blender_tasks, new_group_id=new_group_id, parallel=True, height_adjustment=float(settings.height_adjustment), height_noise_reduction=float(settings.height_noise_reduction), high_precision=settings.high_precision)
         self.__multithread_blender_process_data(tiles_data, "calculate_tile_height_data.py", "CALCULATE HEIGHT MAPS FOR EACH TILE", "height map calculated")
         self.__add_height_maps_to_objects_xml()
 
@@ -1093,10 +1093,10 @@ class MsfsProject:
                 self.__create_exclusion_masks_from_tiles(b, exclusion, building_mask=building, airport_mask=airport, rocks_mask=rocks, file_prefix=EXCLUSION_OSM_FILE_PREFIX, title="CREATE EXCLUSION MASKS OSM FILES", process_all=process_all)
 
         if generate_height_data:
-            self.__generate_height_data(b, construction, roads, bridges, hidden_roads, airport, building, water, orig_bbox.assign(building=BOUNDING_BOX_OSM_KEY) if settings.isolate_3d_data else exclusion, amenity, residential, keep_roads=settings.keep_roads, keep_residential=settings.keep_residential, keep_constructions=settings.keep_constructions, process_all=process_all)
+            self.__generate_height_data(b, construction, roads, bridges, hidden_roads, airport, building, water_without_bridges, orig_bbox.assign(building=BOUNDING_BOX_OSM_KEY) if settings.isolate_3d_data else exclusion, amenity, residential, keep_roads=settings.keep_roads, keep_residential=settings.keep_residential, keep_constructions=settings.keep_constructions, process_all=process_all)
 
         # remove tiles that are completely in the water
-        self.__remove_full_water_tiles(water_without_bridges)
+        self.__remove_full_water_tiles(water)
 
     def __retrieve_osm_data(self, b, orig_bbox, settings):
         print_title("RETRIEVE OSM DATA")
@@ -1189,6 +1189,26 @@ class MsfsProject:
 
         if not process_all:
             valid_tiles = [tile for tile in valid_tiles if not tile.cleaned]
+
+        if construction_mask is not None:
+            if not construction_mask.empty:
+                construction_mask = construction_mask.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)
+
+        if road_mask is not None:
+            if not road_mask.empty:
+                road_mask = road_mask.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)
+
+        if hidden_roads is not None:
+            if not hidden_roads.empty:
+                hidden_roads.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)
+
+        if bridges_mask is not None:
+            if not bridges_mask.empty:
+                bridges_mask = bridges_mask.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)
+
+        if amenity_mask is not None:
+            if not amenity_mask.empty:
+                amenity_mask = amenity_mask.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)
 
         pbar = ProgressBar(valid_tiles, title=title)
         exclusion = exclusion_mask.copy()
@@ -1293,11 +1313,11 @@ class MsfsProject:
 
         return geocode_gdf
 
-    def __remove_full_water_tiles(self, water_without_bridges):
+    def __remove_full_water_tiles(self, water):
         tiles_to_remove = []
         valid_tiles = [tile for tile in list(self.tiles.values()) if tile.valid]
         for tile in valid_tiles:
-            not_in_water = difference_gdf(tile.bbox_gdf, water_without_bridges)
+            not_in_water = difference_gdf(tile.bbox_gdf, water)
             if not_in_water.empty:
                 tiles_to_remove.append(tile)
 
