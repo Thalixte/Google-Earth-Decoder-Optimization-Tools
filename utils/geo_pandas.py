@@ -22,7 +22,7 @@ import warnings
 from constants import GEOMETRY_OSM_COLUMN, BOUNDING_BOX_OSM_KEY, SHAPE_TEMPLATES_FOLDER, OSM_LAND_SHAPEFILE, ROAD_OSM_KEY, BRIDGE_OSM_TAG, SERVICE_OSM_KEY, NOT_SHORE_WATER_OSM_KEY, WATER_OSM_KEY, NATURAL_OSM_KEY, OSM_TAGS, FOOTWAY_OSM_TAG, PATH_OSM_TAG, MAN_MADE_OSM_KEY, PIER_OSM_TAG, GOLF_OSM_KEY, FAIRWAY_OSM_TAG, EOL, CEND, TUNNEL_OSM_TAG, SEAMARK_TYPE_OSM_TAG, BUILDING_OSM_KEY, SHP_FILE_EXT, ELEMENT_TY_OSM_KEY, OSMID_OSM_KEY, RAILWAY_OSM_KEY, LANES_OSM_KEY, ONEWAY_OSM_KEY, ROAD_WITH_BORDERS, \
     ROAD_LANE_WIDTH, GEOCODE_OSM_FILE_PREFIX, PEDESTRIAN_ROAD_TYPE, FOOTWAY_ROAD_TYPE, SERVICE_ROAD_TYPE, LANDUSE_OSM_KEY, CONSTRUCTION_OSM_KEY, GDAL_LIB_PREFIX, FIONA_LIB_PREFIX, LAND_MASS_REPO, LAND_MASS_ARCHIVE, LEISURE_OSM_KEY, NETWORKX_LIB, RTREE_LIB, MATPLOTLIB_LIB, PANDAS_LIB, GEOPANDAS_LIB, OSMNX_LIB, SHAPELY_LIB, PATH_ROAD_TYPE, TRACK_ROAD_TYPE, AREA_OSM_TAG, NOT_EXCLUSION_BUILDING_OSM_KEY, WALL_OSM_KEY, WALL_OSM_TAG, CASTLE_WALL_OSM_TAG, CYCLEWAY_ROAD_TYPE, FULL_PREFIX, \
     ROAD_REMOVAL_LANDUSE_OSM_KEY, ROAD_REMOVAL_NATURAL_OSM_KEY, PROPOSED_OSM_TAG
-from utils import pr_bg_orange, install_python_lib, install_alternate_python_lib, install_shapefile_resource
+from utils import pr_bg_orange, install_python_lib, install_alternate_python_lib, install_shapefile_resource, isolated_print
 
 try:
     import osgeo
@@ -202,7 +202,7 @@ def load_gdf_from_geocode(geocode, geocode_margin=5.0, preserve_roads=True, pres
             result = create_empty_gdf()
             pass
 
-    load_gdf_list = [None] * 1
+    load_gdf_list = [None] * 8 if result.empty else [None] * 1
 
     if display_warnings:
         pbar = ProgressBar(load_gdf_list, title="RETRIEVE GEODATAFRAMES (THE FIRST TIME, MAY TAKE SOME TIME TO COMPLETE, BE PATIENT...)")
@@ -215,7 +215,6 @@ def load_gdf_from_geocode(geocode, geocode_margin=5.0, preserve_roads=True, pres
         pbar.update("buildings geodataframe retrieved")
 
     if result.empty:
-        load_gdf_list = [None] * 7
         if display_warnings:
             pbar.update("retrieving man made geodataframe...", stall=True)
         # load gdf twice to ensure to retrieve if from cache (to have osmid in a key, not in an index)
@@ -265,7 +264,7 @@ def load_gdf_from_geocode(geocode, geocode_margin=5.0, preserve_roads=True, pres
                 osmid = geocode
                 if ELEMENT_TY_OSM_KEY in orig_building and OSMID_OSM_KEY in orig_building:
                     result = orig_building[((orig_building[ELEMENT_TY_OSM_KEY] == OSMID_TYPE.way) | (orig_building[ELEMENT_TY_OSM_KEY] == OSMID_TYPE.relation)) & (orig_building[OSMID_OSM_KEY] == int(osmid))]
-                if ELEMENT_TY_OSM_KEY in orig_man_made and OSMID_OSM_KEY in orig_man_made:
+                if result.empty and ELEMENT_TY_OSM_KEY in orig_man_made and OSMID_OSM_KEY in orig_man_made:
                     result = orig_man_made[((orig_man_made[ELEMENT_TY_OSM_KEY] == OSMID_TYPE.way) | (orig_man_made[ELEMENT_TY_OSM_KEY] == OSMID_TYPE.relation)) & (orig_man_made[OSMID_OSM_KEY] == int(osmid))]
                 if result.empty and ELEMENT_TY_OSM_KEY in orig_natural and OSMID_OSM_KEY in orig_natural:
                     result = orig_natural[((orig_natural[ELEMENT_TY_OSM_KEY] == OSMID_TYPE.way) | (orig_natural[ELEMENT_TY_OSM_KEY] == OSMID_TYPE.relation)) & (orig_natural[OSMID_OSM_KEY] == int(osmid))]
@@ -681,6 +680,12 @@ def prepare_hidden_roads_gdf(landuse_gdf, natural_gdf):
         result = result[(result.geom_type == SHAPELY_TYPE.polygon) | (result.geom_type == SHAPELY_TYPE.multiPolygon)]
 
     return result.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)
+
+
+def create_point_gdf(lat, lon, alt):
+    data = {"x": [lon], "y": [lat], "z": [alt]}
+    df = pd.DataFrame(data)
+    return gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df["x"], df["y"], df["z"]), crs=EPSG.key + str(EPSG.WGS84_degree_unit))
 
 
 def create_land_mass_gdf(sources_path, bbox, b):

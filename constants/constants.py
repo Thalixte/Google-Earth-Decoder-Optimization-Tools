@@ -99,7 +99,7 @@ CLEANUP_3D_DATA_BACKUP_FOLDER = "cleanup_3d_data"
 SCRIPT_PREFIX = "_script"
 COLLIDER_SUFFIX = "_collider"
 GEOCODE_SUFFIX = "_geocode"
-HEIGHT_MAP_SUFFIX = "height_map_"
+HEIGHT_MAP_PREFIX = "height_map_"
 
 RESOURCE_FOLDER = "resource"
 TEMPLATES_FOLDER = RESOURCE_FOLDER + "\\" + "templates"
@@ -180,6 +180,7 @@ AEROWAY_OSM_KEY = "aeroway"
 BOUNDARY_OSM_KEY = "boundary"
 BOUNDING_BOX_OSM_KEY = "box"
 RESIDENTIAL_OSM_KEY = "residential"
+INDUSTRIAL_OSM_KEY = "industrial"
 AMENITY_OSM_KEY = "amenity"
 BUILDING_OSM_KEY = "building"
 ROCKS_OSM_KEY = "rocks"
@@ -258,6 +259,7 @@ FAIRWAY_OSM_TAG = "fairway"
 AREA_OSM_TAG = "area"
 CONSTRUCTION_OSM_TAG = "construction"
 RESIDENTIAL_OSM_TAG = "residential"
+INDUSTRIAL_OSM_TAG = "industrial"
 DISPLAY_NAME_OSM_TAG = "display_name"
 NAME_OSM_TAG = "name"
 WALL_OSM_TAG = "wall"
@@ -284,6 +286,9 @@ BOUNDING_BOX_OSM_FILE_PREFIX = "bbox"
 WHOLE_WATER_OSM_FILE_PREFIX = "whole_water"
 BUILDING_OSM_FILE_PREFIX = "building"
 GEOCODE_OSM_FILE_PREFIX = "geocode"
+LANDMARK_LOCATION_OSM_FILE_NAME = GEOCODE_OSM_FILE_PREFIX + "_landmark_location"
+
+GEOCODE_LIGHTS_PREFIX = GEOCODE_OSM_FILE_PREFIX + "_lights"
 
 FEET_TO_METER_RATIO = 0.3048
 TILE_THICKNESS = 0.5
@@ -383,6 +388,9 @@ OSM_TAGS = {
     ],
     RESIDENTIAL_OSM_KEY: [
         RESIDENTIAL_OSM_TAG
+    ],
+    INDUSTRIAL_OSM_KEY: [
+        INDUSTRIAL_OSM_TAG
     ],
     GRASS_OSM_KEY: [
         GRASS_OSM_TAG

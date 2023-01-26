@@ -26,7 +26,7 @@ import os
 import subprocess
 
 from utils import install_python_lib
-from utils.geo_pandas import prepare_wall_gdf, create_exclusion_building_gdf, prepare_water_gdf, prepare_amenity_gdf, prepare_hidden_roads_gdf, prepare_water_exclusion_gdf, prepare_residential_gdf, update_exclusion_building_polygons_gdf
+from utils.geo_pandas import prepare_wall_gdf, create_exclusion_building_gdf, prepare_water_gdf, prepare_amenity_gdf, prepare_hidden_roads_gdf, prepare_water_exclusion_gdf, prepare_residential_gdf, create_point_gdf
 from constants import *
 
 try:
@@ -43,6 +43,8 @@ from blender import convert_obj_file_to_gltf_file
 from msfs_project.landmark import MsfsLandmarks
 from msfs_project.height_map_xml import HeightMapXml
 from msfs_project.height_map import MsfsHeightMaps
+from msfs_project.lights_xml import LightsXml
+from msfs_project.light import MsfsLights
 from msfs_project.osm_xml import OsmXml
 from msfs_project.project_xml import MsfsProjectXml
 from msfs_project.package_definitions_xml import MsfsPackageDefinitionsXml
@@ -353,12 +355,22 @@ class MsfsProject:
         geocode = settings.geocode
         self.__create_landmark_from_geocode(geocode, settings)
 
-    def add_lights_to_geocode(self, settings, lat, lon):
+    def add_lights_to_geocode(self, settings):
         geocode = settings.geocode
         geocode_gdf = self.__create_geocode_osm_files(geocode, settings, False, False, self.coords, self.shpfiles_folder)
 
         if geocode_gdf is None:
             return geocode_gdf
+
+        lat = geocode_gdf.centroid.y.iloc[0]
+        lon = geocode_gdf.centroid.x.iloc[0]
+
+        point_gdf = create_point_gdf(lat, lon, 0.0)
+
+        if not point_gdf.empty:
+            # for debugging purpose, generate the osm file
+            osm_xml = OsmXml(self.osmfiles_folder, LANDMARK_LOCATION_OSM_FILE_NAME + OSM_FILE_EXT)
+            osm_xml.create_from_geodataframes([point_gdf], bbox_to_poly(self.coords[1], self.coords[0], self.coords[2], self.coords[3]), is_point=True)
 
         if not geocode_gdf.empty:
             self.__create_tiles_bounding_boxes()
@@ -520,6 +532,7 @@ class MsfsProject:
         if self.objects_xml:
             self.shapes = {PITCH_TERRAFORM_POLYGONS_DISPLAY_NAME: MsfsShapes(xml=self.objects_xml, group_display_name=PITCH_TERRAFORM_POLYGONS_DISPLAY_NAME),
                            CONSTRUCTION_TERRAFORM_POLYGONS_DISPLAY_NAME: MsfsShapes(xml=self.objects_xml, group_display_name=CONSTRUCTION_TERRAFORM_POLYGONS_DISPLAY_NAME),
+                           AMENITY_TERRAFORM_POLYGONS_DISPLAY_NAME: MsfsShapes(xml=self.objects_xml, group_display_name=AMENITY_TERRAFORM_POLYGONS_DISPLAY_NAME),
                            # GOLF_TERRAFORM_POLYGONS_DISPLAY_NAME: MsfsShapes(xml=self.objects_xml, group_display_name=GOLF_TERRAFORM_POLYGONS_DISPLAY_NAME),
                            EXCLUSION_BUILDING_POLYGONS_DISPLAY_NAME: MsfsShapes(xml=self.objects_xml, group_display_name=EXCLUSION_BUILDING_POLYGONS_DISPLAY_NAME),
                            EXCLUSION_VEGETATION_POLYGONS_DISPLAY_NAME: MsfsShapes(xml=self.objects_xml, group_display_name=EXCLUSION_VEGETATION_POLYGONS_DISPLAY_NAME)}
@@ -896,8 +909,12 @@ class MsfsProject:
         alt = -9999.99
         prefix = str()
         mask_file_path = os.path.join(self.osmfiles_folder, GEOCODE_OSM_FILE_PREFIX + "_" + EXCLUSION_OSM_FILE_PREFIX + OSM_FILE_EXT)
+        landmark_location_file_path = os.path.join(self.osmfiles_folder, LANDMARK_LOCATION_OSM_FILE_NAME + OSM_FILE_EXT)
 
         if not os.path.isfile(mask_file_path):
+            return
+
+        if not os.path.isfile(landmark_location_file_path):
             return
 
         for i, tile in enumerate(self.tiles.values()):
@@ -943,9 +960,9 @@ class MsfsProject:
             positioning_files_paths.append(str(os.path.join(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)))
             model_files_paths.append(os.path.join(lod_folder, lod.model_file))
 
-        params = ["--positioning_files_paths", str('"') + "|".join(positioning_files_paths) + str('"'), "--model_files_paths", str('"') + "|".join(model_files_paths) + str('"'),
-                  "--mask_file_path", str('"') + mask_file_path + str('"'), "--lat", str(lat[0]), "--lon", str(lon[0]), "--alt", str(alt),
-                  "--geocode_prefix", str('"') + prefix + str('"'), "--scene_definition_file", str('"') + self.objects_xml.file_path + str('"')]
+        params = ["--positioning_files_paths", str('"') + "|".join(positioning_files_paths) + str('"'), "--model_files_paths", str('"') + "|".join(model_files_paths) + str('"'), "--lights_xml_folder", str('"') + str(self.xmlfiles_folder) + str('"'),
+                  "--landmark_location_file_path", str('"') + landmark_location_file_path + str('"'), "--mask_file_path", str('"') + mask_file_path + str('"'), "--lat", str(lat), "--lon", str(lon), "--alt", str(alt),
+                  "--geocode_prefix", str('"') + prefix + str('"')]
 
         data.append({"name": "add_lights", "params": params})
 
@@ -1046,8 +1063,8 @@ class MsfsProject:
         height_maps = None
 
         for tile in self.tiles.values():
-            if os.path.isdir(tile.folder) and os.path.isfile(os.path.join(self.xmlfiles_folder, HEIGHT_MAP_SUFFIX + tile.name + XML_FILE_EXT)):
-                height_maps = MsfsHeightMaps(xml=HeightMapXml(self.xmlfiles_folder, HEIGHT_MAP_SUFFIX + tile.name + XML_FILE_EXT))
+            if os.path.isdir(tile.folder) and os.path.isfile(os.path.join(self.xmlfiles_folder, HEIGHT_MAP_PREFIX + tile.name + XML_FILE_EXT)):
+                height_maps = MsfsHeightMaps(xml=HeightMapXml(self.xmlfiles_folder, HEIGHT_MAP_PREFIX + tile.name + XML_FILE_EXT))
                 if height_maps:
                     self.objects_xml.add_height_map(height_maps.rectangles[0])
 
@@ -1124,7 +1141,7 @@ class MsfsProject:
         if not exclusion.empty:
             # for debugging purpose, generate the exclusion osm file
             osm_xml = OsmXml(self.osmfiles_folder, EXCLUSION_OSM_FILE_PREFIX + OSM_FILE_EXT)
-            osm_xml.create_from_geodataframes([preserve_holes(exclusion.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore'))], b, True, [(HEIGHT_OSM_TAG, 1000)])
+            osm_xml.create_from_geodataframes([preserve_holes(exclusion.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore'))], b, extrude=True, additional_tags=[(HEIGHT_OSM_TAG, 1000)])
 
         return orig_water, orig_natural_water, bbox, roads, bridges, hidden_roads, sea, pitch, construction, airport, building, \
                water_without_bridges, water, exclusion, rocks, amenity, residential
@@ -1290,6 +1307,9 @@ class MsfsProject:
         pbar.update("retrieving residential geodataframe...", stall=True)
         orig_residential = load_gdf(self.coords, LANDUSE_OSM_KEY, OSM_TAGS[RESIDENTIAL_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, RESIDENTIAL_OSM_KEY + SHP_FILE_EXT))
         pbar.update("residential geodataframe retrieved")
+        pbar.update("retrieving industrial geodataframe...", stall=True)
+        orig_residential = load_gdf(self.coords, LANDUSE_OSM_KEY, OSM_TAGS[INDUSTRIAL_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, INDUSTRIAL_OSM_KEY + SHP_FILE_EXT))
+        pbar.update("industrial geodataframe retrieved")
         pbar.update("retrieving airports geodataframe...", stall=True)
         orig_airport = load_gdf_from_geocode(AIRPORT_GEOCODE + ", " + settings.airport_city.lower(), shpfiles_folder=self.shpfiles_folder, coords=self.coords, keep_data=True, display_warnings=False)
         pbar.update("airports geodataframe retrieved")
@@ -1309,7 +1329,7 @@ class MsfsProject:
         if not geocode_gdf.empty:
             # for debugging purpose, generate the osm file
             osm_xml = OsmXml(self.osmfiles_folder, GEOCODE_OSM_FILE_PREFIX + "_" + EXCLUSION_OSM_FILE_PREFIX + OSM_FILE_EXT)
-            osm_xml.create_from_geodataframes([preserve_holes(geocode_gdf)], b, True, [(HEIGHT_OSM_TAG, 1000)])
+            osm_xml.create_from_geodataframes([preserve_holes(geocode_gdf)], b, extrude=True, additional_tags=[(HEIGHT_OSM_TAG, 1000)])
 
         return geocode_gdf
 
@@ -1419,8 +1439,27 @@ class MsfsProject:
                 pr_bg_orange("Geocode (" + geocode + ") found in OSM data, but not in the scenery" + EOL + CEND)
 
     def __add_lights_to_geocode(self, geocode, geocode_gdf, lat, lon, settings):
+        # ensure to clean the xml folder containing the lights data by removing it
+        try:
+            shutil.rmtree(self.xmlfiles_folder)
+        except:
+            pass
+
+        # create the xml folder if it does not exist
+        os.makedirs(self.xmlfiles_folder, exist_ok=True)
+
         process_data = self.__retrieve_process_data_to_add_lights_to_geocode(geocode, geocode_gdf, lat, lon, settings)
         self.__multithread_blender_process_data(process_data, "add_lights.py", "ADD LIGHTS TO GEOCODE", "lights created")
+        self.__add_lights_to_objects_xml()
+
+    def __add_lights_to_objects_xml(self):
+        if os.path.isfile(os.path.join(self.xmlfiles_folder, GEOCODE_LIGHTS_PREFIX + XML_FILE_EXT)):
+            lights = MsfsLights(xml=LightsXml(self.xmlfiles_folder, GEOCODE_LIGHTS_PREFIX + XML_FILE_EXT))
+            for light in lights.lights:
+                light.remove_from_xml(self.objects_xml)
+                self.objects_xml.add_light(light)
+
+        self.objects_xml.save()
 
     def __import_old_google_earth_decoder_tiles(self, settings):
         obj_files = [model_file for model_file in Path(settings.decoder_output_path).glob(OBJ_FILE_PATTERN)]
@@ -1510,7 +1549,7 @@ class MsfsProject:
                                 orig_water, orig_waterway, orig_aeroway, orig_pitch, orig_construction, orig_airport, orig_building, orig_wall, orig_man_made,
                                 orig_park, orig_nature_reserve, orig_rocks, orig_amenity, orig_residential, settings):
         # prepare all the necessary GeoPandas Dataframes
-        itasks = 22
+        itasks = 23
 
         if settings.keep_residential:
             itasks = itasks+1

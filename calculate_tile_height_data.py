@@ -202,6 +202,6 @@ positioning_file_path = args.positioning_file_path if args.positioning_file_path
 water_mask_file_path = args.water_mask_file_path if args.water_mask_file_path else str()
 
 tile = MsfsTile(args.folder, args.name, args.definition_file)
-tile.generate_height_data(HeightMapXml(args.height_map_xml_folder, HEIGHT_MAP_SUFFIX + args.name + XML_FILE_EXT), args.group_id, float(args.altitude), float(args.height_adjustment), float(args.height_noise_reduction), high_precision=high_precision, inverted=has_rocks, positioning_file_path=positioning_file_path, water_mask_file_path=water_mask_file_path, ground_mask_file_path=ground_mask_file_path, debug=debug)
+tile.generate_height_data(HeightMapXml(args.height_map_xml_folder, HEIGHT_MAP_PREFIX + args.name + XML_FILE_EXT), args.group_id, float(args.altitude), float(args.height_adjustment), float(args.height_noise_reduction), high_precision=high_precision, inverted=has_rocks, positioning_file_path=positioning_file_path, water_mask_file_path=water_mask_file_path, ground_mask_file_path=ground_mask_file_path, debug=debug)
 # except:
 #     pass

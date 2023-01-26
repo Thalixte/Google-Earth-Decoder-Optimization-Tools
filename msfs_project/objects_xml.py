@@ -22,7 +22,7 @@ from decimal import Decimal
 
 from constants import HEIGHT_MAP_DISPLAY_NAME, LIGHT_WARM_GUID, LIGHT_HEADING
 from utils.progress_bar import ProgressBar
-from utils import Xml
+from utils import Xml, isolated_print
 import xml.etree.ElementTree as Et
 
 
@@ -102,7 +102,7 @@ class ObjectsXml(Xml):
         if not os.path.isfile(self.file_path):
             self.root = Et.Element(self.FS_DATA_TAG)
             self.root.set(self.VERSION_ATTR, str(self.FS_DATA_VERSION))
-            self.tree = tree = Et.ElementTree(self.root)
+            self.tree = Et.ElementTree(self.root)
 
         self.__convert_objects_guid_to_upper()
 
@@ -474,21 +474,21 @@ class ObjectsXml(Xml):
     def __add_light(self, light):
         light_elem = Et.SubElement(self.root, self.SCENERY_OBJECT_TAG, attrib={
             self.DISPLAY_NAME_ATTR: light.name,
-            self.ALT_ATTR: "{:.14f}".format(light.pos.alt),
+            self.ALT_ATTR: str(light.pos.alt),
             self.ALTITUDE_IS_AGL_ATTR: str(True).upper(),
-            self.BANK_ATTR: "{:.6f}".format(0.0),
-            self.HEADING_ATTR: "{:.6f}".format(light.heading),
-            self.IMAGE_COMPLEXITY_ATTR: str("VERY_SPARSE"),
-            self.LAT_ATTR: "{:.14f}".format(light.pos.lat),
-            self.LON_ATTR: "{:.14f}".format(light.pos.lon),
-            self.PITCH_ATTR: "{:.6f}".format(0.0),
+            self.BANK_ATTR: str(0.0),
+            self.HEADING_ATTR: str(light.heading),
+            self.IMAGE_COMPLEXITY_ATTR: "VERY_SPARSE",
+            self.LAT_ATTR: str(light.pos.lat),
+            self.LON_ATTR: str(light.pos.lon),
+            self.PITCH_ATTR: str(0.0),
             self.SNAP_TO_GROUND_ATTR: str(False).upper(),
             self.SNAP_TO_NORMAL_ATTR: str(False).upper()
         })
 
         Et.SubElement(light_elem, self.LIBRARY_OBJECT_TAG, attrib={
             self.NAME_ATTR: light.guid,
-            self.SCALE_ATTR: "{:.6f}".format(1.0)
+            self.SCALE_ATTR: str(1.0)
         })
 
         return light_elem

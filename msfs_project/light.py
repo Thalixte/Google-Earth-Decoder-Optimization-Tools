@@ -18,10 +18,8 @@
 
 from uuid import uuid4
 
-from blender.scene import align_models_with_masks, process_3d_data, create_geocode_bounding_box
-from constants import DISPLAY_NAME_OSM_TAG, GEOMETRY_OSM_COLUMN, LIGHT_WARM_GUID, LIGHT_COLD_GUID, LIGHT_HEADING, LIGHT_COLD_DISPLAY_NAME, LIGHT_WARM_DISPLAY_NAME
+from constants import GEOMETRY_OSM_COLUMN, LIGHT_WARM_GUID, LIGHT_COLD_GUID, LIGHT_HEADING, LIGHT_COLD_DISPLAY_NAME, LIGHT_WARM_DISPLAY_NAME
 from msfs_project.position import MsfsPosition
-from utils.console import isolated_print
 
 
 class MsfsLight:
@@ -41,7 +39,8 @@ class MsfsLight:
     def __init__(self, light_gdf=None, guid=None, prefix=None, name=None, idx=None, xml=None, elem=None):
         # default light guid is of light warm type
         self.guid = guid or self.LIGHT_GUID.warm
-        self.name = (prefix + " " or str()) + (name or self.LIGHT_DISPLAY_NAME.warm + " ") + (str(idx).zfill(4) or str())
+        prefix = str() if prefix is None else prefix
+        self.name = prefix + (name or self.LIGHT_DISPLAY_NAME.warm + " ") + (str(idx).zfill(4) or str())
         self.heading = float(LIGHT_HEADING)
 
         if light_gdf is not None:
@@ -62,7 +61,11 @@ class MsfsLight:
         self.pos = MsfsPosition(light_gdf[GEOMETRY_OSM_COLUMN][0], light_gdf[GEOMETRY_OSM_COLUMN][1], light_gdf[GEOMETRY_OSM_COLUMN][2])
 
     def __init_from_xml(self, xml, elem):
-        self.guid = elem.get(xml.NAME_ATTR)
+        children = list(elem.iter(xml.LIBRARY_OBJECT_TAG))
+
+        for child in children:
+            self.guid = child.get(xml.NAME_ATTR)
+
         self.name = elem.get(xml.DISPLAY_NAME_ATTR)
         self.pos = MsfsPosition(elem.get(xml.LAT_ATTR), elem.get(xml.LON_ATTR), elem.get(xml.ALT_ATTR))
         self.heading = float(elem.get(xml.HEADING_ATTR))

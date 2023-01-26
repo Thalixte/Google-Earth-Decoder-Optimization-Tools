@@ -545,7 +545,6 @@ def align_models_with_masks(model_files, positionings, mask):
 
     for obj in bpy.context.selected_objects:
         obj.name = "Areas"
-        target = obj
 
     bpy.ops.object.select_all(action=SELECT_ACTION)
     bpy.context.view_layer.objects.active = mesh
@@ -584,7 +583,7 @@ def reduce_number_of_vertices(model_file_path):
     bpy.ops.object.select_all(action=SELECT_ACTION)
 
 
-def process_3d_data(model_file_path=None, intersect=False, no_bounding_box=False):
+def process_3d_data(model_file_path=None, intersect=False, no_bounding_box=False, keep_mask=False):
     if model_file_path is not None:
         import_model_files([model_file_path], clean=False)
 
@@ -646,8 +645,9 @@ def process_3d_data(model_file_path=None, intersect=False, no_bounding_box=False
     add_new_obj_material(final_bbox, OSM_MATERIAL_NAME)
 
     bpy.ops.object.select_all(action=DESELECT_ACTION)
-    mask.select_set(True)
     bbox.select_set(True)
+    if not keep_mask:
+        mask.select_set(True)
     if no_bounding_box:
         final_bbox.select_set(True)
     bpy.ops.object.delete()
@@ -853,6 +853,9 @@ def get_tile_for_ray_cast(model_file_path, imported=True, objects_to_keep=[]):
         if obj.type != MESH_OBJECT_TYPE:
             obj.select_set(True)
             bpy.ops.object.delete()
+        if BOUNDING_BOX_OSM_KEY in obj.name:
+            obj.select_set(True)
+            bpy.ops.object.delete()
         else:
             mesh = obj
 
@@ -1043,7 +1046,7 @@ def calculate_height_map_from_coords_from_top(tile, grid_dimension, coords, deps
             h = p1[2]
             if len(results[y]) < grid_dimension:
                 h = h + altitude + geoid_height
-                h = h if h >= geoid_height else geoid_height
+                # h = h if h >= geoid_height else geoid_height
 
                 if hmatrix_base is not None:
                     if y in hmatrix_base:
@@ -1097,7 +1100,8 @@ def adjust_height_data_on_exclusion_area(tile, depsgraph, lat, lon, altitude, ex
         y = round(p1[1], 1)
         h = p1[2]
         h = h + altitude + geoid_height
-        h = h + 1.0 if h >= geoid_height else geoid_height
+        h = h + 1.0
+        # h = h + 1.0 if h >= geoid_height else geoid_height
 
         if hmatrix_base is not None:
             if y in hmatrix_base:
@@ -1322,7 +1326,7 @@ def face(rows, column, row):
     return column * rows + row, column * rows + row + 1, (column + 1) * rows + row + 1, (column + 1) * rows + row
 
 
-def create_bounding_box(obj, prefix, spheric=False, cut_base=False):
+def create_bounding_box(obj, prefix, spheric=False, cut_base=False, scale_x=1.0, scale_y=1.0, scale_z=1.0):
     scale = obj.scale
 
     minx = obj.bound_box[0][0] * scale.x
@@ -1343,9 +1347,9 @@ def create_bounding_box(obj, prefix, spheric=False, cut_base=False):
 
     if spheric:
         bpy.ops.mesh.primitive_uv_sphere_add(location=loc, rotation=obj.rotation_euler)
-        dx = dx * 1.2
-        dy = dy * 1.2
-        dz = dz * 1.2
+        dx = dx * scale_x
+        dy = dy * scale_y
+        dz = dz * scale_z
     else:
         bpy.ops.mesh.primitive_cube_add(location=loc, rotation=obj.rotation_euler)
 
@@ -1528,34 +1532,106 @@ def remove_obj_nodes(obj, delete_context):
     bm.free()
 
 
-def create_geocode_bounding_box(lat, lon, alt):
+def create_geocode_bounding_box(lat, lon, alt, landmark_location_file_path, debug=False):
     data = {"x": [], "y": [], "z": []}
-    geoid_height = get_geoid_height(lat, lon)
+    height_adjust = 20.0
+    scale_x = 1.5
+    scale_y = 1.5
+    scale_z = 1.5
+    nb_vertices_treshold = 70
+    bpy.ops.object.select_all(action=DESELECT_ACTION)
+    mask = bpy.context.scene.objects.get("Areas")
+    mask.select_set(True)
+    mask.scale.x = scale_x
+    mask.scale.y = scale_y
+    mask.scale.z = scale_z
+
+    bpy.ops.object.select_all(action=DESELECT_ACTION)
+    import_osm_file(landmark_location_file_path)
+    for obj in bpy.context.selected_objects:
+        obj.name = "center"
+        center = obj
 
     bpy.ops.object.select_all(action=SELECT_ACTION)
     obs = bpy.context.selected_objects
+    bpy.ops.object.select_all(action=DESELECT_ACTION)
 
     for obj in obs:
-        bbox = create_bounding_box(obj, "geocode_", spheric=True, cut_base=True)
+        if obj == mask:
+            continue
+
+        if obj == center:
+            continue
+
+        bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='BOUNDS')
+        bbox = create_bounding_box(obj, "geocode_", spheric=True, cut_base=True, scale_x = scale_x, scale_y=scale_y, scale_z=scale_z)
+        mask.select_set(True)
+        bpy.context.view_layer.objects.active = bbox
+        bbox.select_set(True)
+        bpy.ops.object.align(bb_quality=True, align_mode='OPT_2', relative_to='OPT_4', align_axis={'X', 'Y', 'Z'})
+        bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
         bbox.select_set(True)
         bpy.context.view_layer.objects.active = bbox
-        if add_decimate_modifier(bbox, COLLAPSE_DECIMATE_TYPE, 0.1):
+
+        if add_decimate_modifier(bbox, COLLAPSE_DECIMATE_TYPE, 0.175):
             for modifier in bbox.modifiers:
                 bpy.ops.object.modifier_apply(modifier=modifier.name)
 
-        bpy.context.view_layer.objects.active = bbox
-        remove_obj_faces_and_egdes(bbox)
+        if add_boolean_modifier(bbox, mask, BOOLEAN_MODIFIER_OPERATION.INTERSECT):
+            for modifier in bbox.modifiers:
+                bpy.ops.object.modifier_apply(modifier=modifier.name)
+
+        bpy.ops.object.select_all(action=DESELECT_ACTION)
+        mask.select_set(True)
+        bpy.ops.object.delete()
 
         depsgraph = bpy.context.evaluated_depsgraph_get()
         bm = bmesh.new()
         bm.from_object(bbox, depsgraph)
         bm.verts.ensure_lookup_table()
 
+        if len(bm.verts) > nb_vertices_treshold:
+            if debug:
+                isolated_print("number of vertices: ", len(bm.verts))
+
+            if add_decimate_modifier(bbox, COLLAPSE_DECIMATE_TYPE, 0.35):
+                for modifier in bbox.modifiers:
+                    bpy.ops.object.modifier_apply(modifier=modifier.name)
+
+        bbox.select_set(True)
+        bpy.context.view_layer.objects.active = bbox
+        remove_obj_faces_and_egdes(bbox)
+
+        bpy.ops.object.select_all(action=DESELECT_ACTION)
+
+        depsgraph = bpy.context.evaluated_depsgraph_get()
+        bm = bmesh.new()
+        bm.from_object(center, depsgraph)
+        bm.verts.ensure_lookup_table()
+
         for v in bm.verts:
+            center_coords = v.co
+
+        bpy.ops.object.select_all(action=DESELECT_ACTION)
+
+        depsgraph = bpy.context.evaluated_depsgraph_get()
+        bm = bmesh.new()
+        bm.from_object(bbox, depsgraph)
+        bm.verts.ensure_lookup_table()
+
+        bpy.ops.object.select_all(action=DESELECT_ACTION)
+
+        if debug:
+            isolated_print("number of vertices: ", len(bm.verts))
+
+        for v in bm.verts:
+            if debug:
+                isolated_print(v.co)
+
             coords = bbox.matrix_world @ v.co
-            data["x"].append(coords.x)
-            data["y"].append(coords.y)
-            data["z"].append(coords.z)
+            data["x"].append(coords.x - center_coords.x)
+            data["y"].append(coords.y - center_coords.y)
+            data["z"].append(coords.z + alt + height_adjust - obj.location.z)
 
         bm.free()
         gdf = create_latlon_gdf_from_meter_data(data, lat, lon, 0.0)

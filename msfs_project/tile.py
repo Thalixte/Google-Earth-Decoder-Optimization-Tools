@@ -185,7 +185,7 @@ class MsfsTile(MsfsSceneObject):
 
             if not exclusion_mask.empty:
                 osm_xml = OsmXml(dest_folder, file_name)
-                osm_xml.create_from_geodataframes([exclusion_mask], b, True, [(HEIGHT_OSM_TAG, 1000)])
+                osm_xml.create_from_geodataframes([exclusion_mask], b, extrude=True, additional_tags=[(HEIGHT_OSM_TAG, 1000)])
 
         if not file_prefix:
             self.exclusion_mask_gdf = exclusion_mask_gdf

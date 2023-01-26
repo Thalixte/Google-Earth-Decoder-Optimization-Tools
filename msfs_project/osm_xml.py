@@ -31,7 +31,7 @@ except ModuleNotFoundError:
     import shapely
 
 from pandas import isna
-from shapely.geometry import Polygon, MultiPolygon
+from shapely.geometry import Polygon, MultiPolygon, Point
 
 from constants import DUMMY_OBJECT
 from utils import Xml
@@ -70,31 +70,36 @@ class OsmXml(Xml):
     def __init__(self, file_folder, file_name):
         super().__init__(file_folder, file_name)
 
-    def create_from_geodataframes(self, geopandas_data_frames, bbox_poly, extrude=False, additional_tags=[]):
+    def create_from_geodataframes(self, geopandas_data_frames, bbox_poly, extrude=False, additional_tags=[], is_point=False):
         osm_root = Et.Element(self.OSM_TAG, attrib={
             self.VERSION_ATTR: self.GENERATOR_VERSION,
             self.GENERATOR_ATTR: self.APP_NAME
         })
 
         Et.SubElement(osm_root, self.BOUNDS_TAG, attrib={
-            self.MIN_LAT_ATTR: str(bbox_poly.bounds[0]),
-            self.MIN_LON_ATTR: str(bbox_poly.bounds[1]),
-            self.MAX_LAT_ATTR: str(bbox_poly.bounds[2]),
-            self.MAX_LON_ATTR: str(bbox_poly.bounds[3])})
+            self.MIN_LON_ATTR: str(bbox_poly.bounds[0]),
+            self.MIN_LAT_ATTR: str(bbox_poly.bounds[1]),
+            self.MAX_LON_ATTR: str(bbox_poly.bounds[2]),
+            self.MAX_LAT_ATTR: str(bbox_poly.bounds[3])})
 
         i = 0
         for geopandas_data_frame in geopandas_data_frames:
             for index, row in geopandas_data_frame.iterrows():
-                if not isinstance(row.geometry, Polygon) and not isinstance(row.geometry, MultiPolygon):
+                if not is_point and not isinstance(row.geometry, Polygon) and not isinstance(row.geometry, MultiPolygon):
                     continue
 
                 if isinstance(row.geometry, Polygon):
-                    polygons = [row.geometry]
+                    geometries = [row.geometry]
+                elif is_point and isinstance(row.geometry, Point):
+                    geometries = [row.geometry]
                 else:
-                    polygons = row.geometry
+                    geometries = row.geometry
 
-                for polygon in polygons:
-                    if len(polygon.exterior.coords) <= 0:
+                for geometry in geometries:
+                    if is_point:
+                        if len(geometry.coords) <= 0:
+                            continue
+                    elif len(geometry.exterior.coords) <= 0:
                         continue
 
                     current_way = Et.SubElement(osm_root, self.WAY_TAG, attrib={
@@ -104,7 +109,12 @@ class OsmXml(Xml):
                         self.UID_ATTR: str(i),
                         self.CHANGES_ET_ATTR: str(False)})
 
-                    for point in polygon.exterior.coords:
+                    if is_point:
+                        coords = geometry.coords
+                    else:
+                        coords = geometry.exterior.coords
+
+                    for point in coords:
                         i = i + 1
                         current_node = Et.SubElement(osm_root, self.NODE_TAG, attrib={
                             self.ID_ATTR: str(i),
@@ -115,8 +125,7 @@ class OsmXml(Xml):
                             self.LON_ATTR: str(point[0]),
                             self.CHANGES_ET_ATTR: str(False)})
 
-                        Et.SubElement(current_way, self.ND_TAG, attrib={
-                            self.REF_ATTR: str(i)})
+                        Et.SubElement(current_way, self.ND_TAG, attrib={self.REF_ATTR: str(i)})
 
                     for column in geopandas_data_frame.columns:
                         if column != self.GEOMETRY_OSM_COLUMN and not isna(str(row[column])):
