@@ -58,7 +58,7 @@ if cwd not in sys.path:
 
 from utils import *
 from blender import clean_scene
-from msfs_project import MsfsLandmarkLocation, LightsXml
+from msfs_project import MsfsLandmarkLocation, ObjectsXml
 
 # clear and open the system console
 # open_console()
@@ -102,11 +102,6 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    "-lxf", "--lights_xml_folder", dest="lights_xml_folder", type=str, required=True,
-    help="folder of the lights xml file",
-)
-
-parser.add_argument(
     "-lat", "--lat", dest="lat", type=str, required=True,
     help="latitude of the geocode",
 )
@@ -124,6 +119,11 @@ parser.add_argument(
 parser.add_argument(
     "-gpr", "--geocode_prefix", dest="geocode_prefix", type=str, required=True,
     help="prefix of the lights display name, based on the geocode",
+)
+
+parser.add_argument(
+    "-scf", "--scene_definition_file", dest="scene_definition_file", type=str, required=True,
+    help="path of the definition file of the scenery",
 )
 
 parser.add_argument(
@@ -148,9 +148,6 @@ if not args.mask_file_path:
 if not args.mask_file_path:
     raise ScriptError("Error: --mask_file_path=\"some string\" argument not given, aborting.")
 
-if not args.lights_xml_folder:
-    raise ScriptError("Error: --lights_xml_folder=\"some string\" argument not given, aborting.")
-
 if not args.lat:
     raise ScriptError("Error: --lat=\"some string\" argument not given, aborting.")
 
@@ -159,6 +156,9 @@ if not args.alt:
 
 if not args.geocode_prefix:
     raise ScriptError("Error: --geocode_prefix=\"some string\" argument not given, aborting.")
+
+if not args.scene_definition_file:
+    raise ScriptError("Error: --scene_definition_file=\"some string\" argument not given, aborting.")
 
 clean_scene()
 
@@ -171,13 +171,14 @@ model_files_paths = args.model_files_paths.replace('"', '').split("|")
 positioning_files_paths = args.positioning_files_paths.replace('"', '').split("|")
 
 # sanitize the file paths
-lights_xml_folder = args.lights_xml_folder.replace('"', '')
 landmark_location_file_path = args.landmark_location_file_path.replace('"', '')
 mask_file_path = args.mask_file_path.replace('"', '')
 geocode_prefix = args.geocode_prefix.replace('"', '')
+definition_file = args.scene_definition_file.replace('"', '')
 
 landmarkLocation = MsfsLandmarkLocation()
+xml = ObjectsXml(os.path.dirname(definition_file), os.path.basename(definition_file))
 
-landmarkLocation.add_lights(LightsXml(lights_xml_folder, GEOCODE_LIGHTS_PREFIX + XML_FILE_EXT), model_files_paths, positioning_files_paths, landmark_location_file_path, mask_file_path, float(args.lat), float(args.lon), float(args.alt), geocode_prefix, debug=debug)
+landmarkLocation.add_lights(model_files_paths, positioning_files_paths, landmark_location_file_path, mask_file_path, float(args.lat), float(args.lon), float(args.alt), geocode_prefix, xml, debug=debug)
 # except:
 #     pass

@@ -16,8 +16,6 @@
 #
 #  <pep8 compliant>
 
-from uuid import uuid4
-
 from constants import GEOMETRY_OSM_COLUMN, LIGHT_WARM_GUID, LIGHT_COLD_GUID, LIGHT_HEADING, LIGHT_COLD_DISPLAY_NAME, LIGHT_WARM_DISPLAY_NAME
 from msfs_project.position import MsfsPosition
 
@@ -52,7 +50,6 @@ class MsfsLight:
     def to_xml(self, xml):
         self.remove_from_xml(xml)
         xml.add_light(self)
-        xml.save()
 
     def __init_from_gdf(self, light_gdf):
         if light_gdf.empty:
@@ -98,3 +95,4 @@ class MsfsLights:
     def to_xml(self, xml):
         for light in self.lights:
             light.to_xml(xml)
+        xml.save()

@@ -43,8 +43,6 @@ from blender import convert_obj_file_to_gltf_file
 from msfs_project.landmark import MsfsLandmarks
 from msfs_project.height_map_xml import HeightMapXml
 from msfs_project.height_map import MsfsHeightMaps
-from msfs_project.lights_xml import LightsXml
-from msfs_project.light import MsfsLights
 from msfs_project.osm_xml import OsmXml
 from msfs_project.project_xml import MsfsProjectXml
 from msfs_project.package_definitions_xml import MsfsPackageDefinitionsXml
@@ -960,9 +958,9 @@ class MsfsProject:
             positioning_files_paths.append(str(os.path.join(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)))
             model_files_paths.append(os.path.join(lod_folder, lod.model_file))
 
-        params = ["--positioning_files_paths", str('"') + "|".join(positioning_files_paths) + str('"'), "--model_files_paths", str('"') + "|".join(model_files_paths) + str('"'), "--lights_xml_folder", str('"') + str(self.xmlfiles_folder) + str('"'),
+        params = ["--positioning_files_paths", str('"') + "|".join(positioning_files_paths) + str('"'), "--model_files_paths", str('"') + "|".join(model_files_paths) + str('"'),
                   "--landmark_location_file_path", str('"') + landmark_location_file_path + str('"'), "--mask_file_path", str('"') + mask_file_path + str('"'), "--lat", str(lat), "--lon", str(lon), "--alt", str(alt),
-                  "--geocode_prefix", str('"') + prefix + str('"')]
+                  "--geocode_prefix", str('"') + prefix + str('"'), "--scene_definition_file", str('"') + self.objects_xml.file_path + str('"')]
 
         data.append({"name": "add_lights", "params": params})
 
@@ -1439,27 +1437,8 @@ class MsfsProject:
                 pr_bg_orange("Geocode (" + geocode + ") found in OSM data, but not in the scenery" + EOL + CEND)
 
     def __add_lights_to_geocode(self, geocode, geocode_gdf, lat, lon, settings):
-        # ensure to clean the xml folder containing the lights data by removing it
-        try:
-            shutil.rmtree(self.xmlfiles_folder)
-        except:
-            pass
-
-        # create the xml folder if it does not exist
-        os.makedirs(self.xmlfiles_folder, exist_ok=True)
-
         process_data = self.__retrieve_process_data_to_add_lights_to_geocode(geocode, geocode_gdf, lat, lon, settings)
         self.__multithread_blender_process_data(process_data, "add_lights.py", "ADD LIGHTS TO GEOCODE", "lights created")
-        self.__add_lights_to_objects_xml()
-
-    def __add_lights_to_objects_xml(self):
-        if os.path.isfile(os.path.join(self.xmlfiles_folder, GEOCODE_LIGHTS_PREFIX + XML_FILE_EXT)):
-            lights = MsfsLights(xml=LightsXml(self.xmlfiles_folder, GEOCODE_LIGHTS_PREFIX + XML_FILE_EXT))
-            for light in lights.lights:
-                light.remove_from_xml(self.objects_xml)
-                self.objects_xml.add_light(light)
-
-        self.objects_xml.save()
 
     def __import_old_google_earth_decoder_tiles(self, settings):
         obj_files = [model_file for model_file in Path(settings.decoder_output_path).glob(OBJ_FILE_PATTERN)]
