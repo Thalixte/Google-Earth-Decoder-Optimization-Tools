@@ -31,7 +31,7 @@ class MsfsHeightMapGroup:
 
     def __init__(self, xml=None, elem=None, group_display_name=HEIGHT_MAPS_DISPLAY_NAME, group_id=None):
         self.tag = "Group"
-        self.display_name = HEIGHT_MAPS_DISPLAY_NAME
+        self.display_name = group_display_name
         self.group_index = 1
         self.group_id = 1 if group_id is None else group_id
         self.group_generated = (group_id is not None)

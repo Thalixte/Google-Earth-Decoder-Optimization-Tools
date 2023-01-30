@@ -905,7 +905,6 @@ class MsfsProject:
         positioning_files_paths = []
         model_files_paths = []
         alt = -9999.99
-        prefix = str()
         mask_file_path = os.path.join(self.osmfiles_folder, GEOCODE_OSM_FILE_PREFIX + "_" + EXCLUSION_OSM_FILE_PREFIX + OSM_FILE_EXT)
         landmark_location_file_path = os.path.join(self.osmfiles_folder, LANDMARK_LOCATION_OSM_FILE_NAME + OSM_FILE_EXT)
 
@@ -949,18 +948,25 @@ class MsfsProject:
                 continue
 
             alt = max(alt, tile.pos.alt)
-            prefix = geocode.split(",")
-            if prefix:
-                prefix = prefix[0]
-            else:
-                prefix = str()
 
             positioning_files_paths.append(str(os.path.join(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)))
             model_files_paths.append(os.path.join(lod_folder, lod.model_file))
 
+        prefix = geocode.split(",")
+
+        if prefix:
+            prefix = prefix[0]
+            group_suffix = prefix.replace(" ", "_")
+        else:
+            prefix = str()
+            group_suffix = str()
+
+        self.objects_xml.remove_lights(LIGHTS_DISPLAY_NAME + "_" + group_suffix, True)
+        new_group_id = self.objects_xml.get_new_group_id()
+
         params = ["--positioning_files_paths", str('"') + "|".join(positioning_files_paths) + str('"'), "--model_files_paths", str('"') + "|".join(model_files_paths) + str('"'),
                   "--landmark_location_file_path", str('"') + landmark_location_file_path + str('"'), "--mask_file_path", str('"') + mask_file_path + str('"'), "--lat", str(lat), "--lon", str(lon), "--alt", str(alt),
-                  "--geocode_prefix", str('"') + prefix + str('"'), "--scene_definition_file", str('"') + self.objects_xml.file_path + str('"')]
+                  "--geocode_prefix", str('"') + prefix + str('"'), "--scene_definition_file", str('"') + self.objects_xml.file_path + str('"'), "--group_id", str(new_group_id)]
 
         data.append({"name": "add_lights", "params": params})
 

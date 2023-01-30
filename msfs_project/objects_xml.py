@@ -20,7 +20,7 @@ import copy
 import os
 from decimal import Decimal
 
-from constants import HEIGHT_MAP_DISPLAY_NAME, LIGHT_WARM_GUID, LIGHT_HEADING
+from constants import HEIGHT_MAP_DISPLAY_NAME, LIGHT_WARM_GUID, LIGHT_HEADING, LIGHTS_DISPLAY_NAME
 from utils.progress_bar import ProgressBar
 from utils import Xml, isolated_print
 import xml.etree.ElementTree as Et
@@ -79,6 +79,7 @@ class ObjectsXml(Xml):
     LIBRARY_OBJECTS_SEARCH_PATTERN = SCENERY_OBJECTS_SEARCH_PATTERN + "/" + LIBRARY_OBJECT_TAG
     SCENERY_OBJECT_SEARCH_PATTERN = LIBRARY_OBJECTS_SEARCH_PATTERN + "[@" + NAME_ATTR + "='"
     SCENERY_OBJECT_GROUP_SEARCH_PATTERN = SCENERY_OBJECTS_GROUP_SEARCH_PATTERN + "/" + LIBRARY_OBJECT_TAG + "[@" + NAME_ATTR + "='"
+    SCENERY_OBJECT_GROUP_ID_SEARCH_PATTERN = SCENERY_OBJECTS_SEARCH_PATTERN + "[@" + PARENT_GROUP_ID_ATTR + "='"
     POLYGONS_SEARCH_PATTERN = "./" + POLYGON_TAG
     POLYGONS_GROUP_SEARCH_PATTERN = GROUPS_SEARCH_PATTERN + "./" + POLYGON_TAG
     POLYGON_ATTRIBUTES_SEARCH_PATTERN = "./" + ATTRIBUTE_TAG
@@ -128,12 +129,14 @@ class ObjectsXml(Xml):
             self.root.remove(scenery_object)
         self.save()
 
-    def remove_lights(self, light_guid=LIGHT_WARM_GUID, lat=None, lon=None, alt=None):
-        lights = self.find_lights(light_guid)
-        lights_to_remove = [light for light in lights if float(light.get(self.LAT_ATTR)) == float(lat) and float(light.get(self.LON_ATTR)) == float(lon) and float(light.get(self.ALT_ATTR)) == float(alt)]
-
-        for light in lights_to_remove:
+    def remove_lights(self, group_name, remove_groups):
+        for light in self.find_lights(group_name=group_name):
             self.root.remove(light)
+
+        if remove_groups:
+            for group in self.find_groups(group_name=group_name):
+                self.root.remove(group)
+            self.save()
 
     def remove_shapes(self, group_name):
         for polygon in self.find_polygons(group_name=group_name):
@@ -195,6 +198,9 @@ class ObjectsXml(Xml):
 
     def add_height_map_group(self, height_map):
         self.__add_generated_group(height_map.group)
+
+    def add_light_group(self, light):
+        self.__add_generated_group(light.group)
 
     def add_landmark_location(self, landmark_location):
         self.__add_landmark_location(landmark_location)
@@ -300,13 +306,26 @@ class ObjectsXml(Xml):
 
         return result
 
-    def find_lights(self, light_guid=LIGHT_WARM_GUID):
+    def find_lights(self, light_guid=None, group_name=None, parent=None):
         res = []
+        group_id = -1
+        root = self.root
 
-        for scenery_object in self.find_scenery_objects(light_guid):
-            res.append(scenery_object)
-        for scenery_object in self.find_scenery_objects_in_group(light_guid):
-            res.append(scenery_object)
+        if parent is not None:
+            root = parent
+
+        if light_guid is not None:
+            for scenery_object in self.find_scenery_objects(light_guid):
+                res.append(scenery_object)
+            for scenery_object in self.find_scenery_objects_in_group(light_guid):
+                res.append(scenery_object)
+
+        if group_name is not None:
+            related_groups = self.find_groups(group_name=group_name)
+            for group in related_groups:
+                group_id = group.get(self.GROUP_ID_ATTR)
+            pattern = self.SCENERY_OBJECT_GROUP_ID_SEARCH_PATTERN + str(group_id) + self.PATTERN_SUFFIX
+            return root.findall(pattern)
 
         return res
 
@@ -473,6 +492,7 @@ class ObjectsXml(Xml):
 
     def __add_light(self, light):
         light_elem = Et.SubElement(self.root, self.SCENERY_OBJECT_TAG, attrib={
+            self.PARENT_GROUP_ID_ATTR: str(light.group.group_id),
             self.DISPLAY_NAME_ATTR: light.name,
             self.ALT_ATTR: str(light.pos.alt),
             self.ALTITUDE_IS_AGL_ATTR: str(True).upper(),

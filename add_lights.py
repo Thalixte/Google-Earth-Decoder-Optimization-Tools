@@ -131,6 +131,11 @@ parser.add_argument(
     help="Debug the lights creation in blender",
 )
 
+parser.add_argument(
+    "-gi", "--group_id", dest="group_id", type=str, required=True,
+    help="id of the group containing the lights",
+)
+
 args = parser.parse_args(argv)
 
 if not argv:
@@ -160,6 +165,9 @@ if not args.geocode_prefix:
 if not args.scene_definition_file:
     raise ScriptError("Error: --scene_definition_file=\"some string\" argument not given, aborting.")
 
+if not args.group_id:
+    raise ScriptError("Error: --group_id=\"some string\" argument not given, aborting.")
+
 clean_scene()
 
 if args.debug:
@@ -179,6 +187,6 @@ definition_file = args.scene_definition_file.replace('"', '')
 landmarkLocation = MsfsLandmarkLocation()
 xml = ObjectsXml(os.path.dirname(definition_file), os.path.basename(definition_file))
 
-landmarkLocation.add_lights(model_files_paths, positioning_files_paths, landmark_location_file_path, mask_file_path, float(args.lat), float(args.lon), float(args.alt), geocode_prefix, xml, debug=debug)
+landmarkLocation.add_lights(model_files_paths, positioning_files_paths, landmark_location_file_path, mask_file_path, float(args.lat), float(args.lon), float(args.alt), geocode_prefix, xml, args.group_id, debug=debug)
 # except:
 #     pass

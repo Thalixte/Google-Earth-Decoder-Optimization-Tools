@@ -55,7 +55,7 @@ class MsfsLandmarkLocation:
         xml.save()
 
     @staticmethod
-    def add_lights(model_files_paths, positioning_files_paths, landmark_location_file_path, mask_file_path, lat, lon, alt, geocode_prefix, xml, debug=False):
+    def add_lights(model_files_paths, positioning_files_paths, landmark_location_file_path, mask_file_path, lat, lon, alt, geocode_prefix, xml, group_id, debug=False):
         align_models_with_masks(model_files_paths, positioning_files_paths, mask_file_path)
         process_3d_data(intersect=True, no_bounding_box=True, keep_mask=True)
         lights_gdf = create_geocode_bounding_box(lat, lon, alt, landmark_location_file_path, debug=debug)
@@ -63,7 +63,7 @@ class MsfsLandmarkLocation:
         if debug:
             isolated_print(lights_gdf)
 
-        lights = MsfsLights(lights_gdf=lights_gdf, guid=None, prefix=geocode_prefix, name=None)
+        lights = MsfsLights(lights_gdf=lights_gdf, guid=None, prefix=geocode_prefix, name=None, group_id=group_id)
 
         if xml:
             lights.to_xml(xml)
