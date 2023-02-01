@@ -197,6 +197,9 @@ class SettingsOperator(PanelOperator):
             col.separator()
             self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "add_lights", "Add lights all around the landmark")
             col.separator()
+        if self.operator_name is "wm.create_landmark_from_geocode" or self.operator_name is "wm.add_lights_to_geocode":
+            self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "light_guid", "Select the type of light")
+            col.separator()
         self.draw_footer(context, self.layout, self.operator_name)
 
     def draw_altitude_adjustment_panel(self, context):

@@ -82,6 +82,11 @@ usage_text = (
 parser = argparse.ArgumentParser(description=usage_text)
 
 parser.add_argument(
+    "-guid", "--light_guid", dest="light_guid", type=str, required=True,
+    help="guid of the light model",
+)
+
+parser.add_argument(
     "-m", "--model_files_paths", dest="model_files_paths", type=str, required=True,
     help="names of the gltf model files",
 )
@@ -141,6 +146,9 @@ args = parser.parse_args(argv)
 if not argv:
     raise ScriptError("Error: arguments not given, aborting.")
 
+if not args.light_guid:
+    raise ScriptError("Error: --light_guid=\"some string\" argument not given, aborting.")
+
 if not args.model_files_paths:
     raise ScriptError("Error: --model_files_paths=\"some string\" argument not given, aborting.")
 
@@ -187,6 +195,6 @@ definition_file = args.scene_definition_file.replace('"', '')
 landmarkLocation = MsfsLandmarkLocation()
 xml = ObjectsXml(os.path.dirname(definition_file), os.path.basename(definition_file))
 
-landmarkLocation.add_lights(model_files_paths, positioning_files_paths, landmark_location_file_path, mask_file_path, float(args.lat), float(args.lon), float(args.alt), geocode_prefix, xml, args.group_id, debug=debug)
+landmarkLocation.add_lights(args.light_guid, model_files_paths, positioning_files_paths, landmark_location_file_path, mask_file_path, float(args.lat), float(args.lon), float(args.alt), geocode_prefix, xml, args.group_id, debug=debug)
 # except:
 #     pass

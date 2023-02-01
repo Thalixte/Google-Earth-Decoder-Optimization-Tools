@@ -1226,6 +1226,32 @@ def add_boolean_modifier(obj, mask, operation):
     return True
 
 
+def add_remesh_sharp_modifier(obj, octree_depth, scale=0.9):
+    remeshy = obj.modifiers.new(name="remeshy", type="REMESH")
+
+    if not remeshy:
+        return False
+
+    remeshy.mode = "SHARP"
+    remeshy.octree_depth = octree_depth
+    remeshy.scale = scale
+
+    return True
+
+
+def add_remesh_voxel_modifier(obj, voxel_size):
+    remeshy = obj.modifiers.new(name="remeshy", type="REMESH")
+
+    if not remeshy:
+        return False
+
+    remeshy.mode = "VOXEL"
+    remeshy.voxel_size = voxel_size
+    remeshy.use_smooth_shade = True
+
+    return True
+
+
 def add_weighted_normal_modifier(obj):
     weighty = obj.modifiers.new(name="weighty", type="WEIGHTED_NORMAL")
 
@@ -1532,19 +1558,22 @@ def remove_obj_nodes(obj, delete_context):
     bm.free()
 
 
-def create_geocode_bounding_box(lat, lon, alt, landmark_location_file_path, debug=False):
-    data = {"x": [], "y": [], "z": []}
+def create_geocode_bounding_box(lat, lon, alt, landmark_location_file_path, new_lights=False, debug=False):
+    data = {"x": [], "y": [], "z": [], "@": []}
+    center_coords = 0.0
     height_adjust = 20.0
     scale_x = 1.5
     scale_y = 1.5
     scale_z = 1.5
-    nb_vertices_treshold = 70
+    margin = 300.0 if new_lights else 100.0
+    nb_vertices_treshold = 80
     bpy.ops.object.select_all(action=DESELECT_ACTION)
     mask = bpy.context.scene.objects.get("Areas")
     mask.select_set(True)
     mask.scale.x = scale_x
     mask.scale.y = scale_y
     mask.scale.z = scale_z
+    final_points_collection = None
 
     bpy.ops.object.select_all(action=DESELECT_ACTION)
     import_osm_file(landmark_location_file_path)
@@ -1564,7 +1593,7 @@ def create_geocode_bounding_box(lat, lon, alt, landmark_location_file_path, debu
             continue
 
         bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='BOUNDS')
-        bbox = create_bounding_box(obj, "geocode_", spheric=True, cut_base=True, scale_x = scale_x, scale_y=scale_y, scale_z=scale_z)
+        bbox = create_bounding_box(obj, "geocode_", spheric=True, cut_base=True, scale_x=scale_x, scale_y=scale_y, scale_z=scale_z)
         mask.select_set(True)
         bpy.context.view_layer.objects.active = bbox
         bbox.select_set(True)
@@ -1573,13 +1602,26 @@ def create_geocode_bounding_box(lat, lon, alt, landmark_location_file_path, debu
         bbox.select_set(True)
         bpy.context.view_layer.objects.active = bbox
 
+        if add_remesh_sharp_modifier(mask, 7):
+            for modifier in bbox.modifiers:
+                bpy.ops.object.modifier_apply(modifier=modifier.name)
+
         if add_decimate_modifier(bbox, COLLAPSE_DECIMATE_TYPE, 0.175):
             for modifier in bbox.modifiers:
                 bpy.ops.object.modifier_apply(modifier=modifier.name)
 
         if add_boolean_modifier(bbox, mask, BOOLEAN_MODIFIER_OPERATION.INTERSECT):
-            for modifier in bbox.modifiers:
-                bpy.ops.object.modifier_apply(modifier=modifier.name)
+            depsgraph = bpy.context.evaluated_depsgraph_get()
+            bm = bmesh.new()
+            bm.from_object(bbox, depsgraph)
+            bm.verts.ensure_lookup_table()
+
+            if len(bm.verts) > 0:
+                for modifier in bbox.modifiers:
+                    bpy.ops.object.modifier_apply(modifier=modifier.name)
+            else:
+                for modifier in bbox.modifiers:
+                    bpy.ops.object.modifier_remove(modifier=modifier.name)
 
         bpy.ops.object.select_all(action=DESELECT_ACTION)
         mask.select_set(True)
@@ -1590,17 +1632,35 @@ def create_geocode_bounding_box(lat, lon, alt, landmark_location_file_path, debu
         bm.from_object(bbox, depsgraph)
         bm.verts.ensure_lookup_table()
 
-        if len(bm.verts) > nb_vertices_treshold:
+        i = 0.99
+
+        remeshed = False
+
+        while len(bm.verts) > nb_vertices_treshold:
             if debug:
                 isolated_print("number of vertices: ", len(bm.verts))
 
-            if add_decimate_modifier(bbox, COLLAPSE_DECIMATE_TYPE, 0.35):
-                for modifier in bbox.modifiers:
-                    bpy.ops.object.modifier_apply(modifier=modifier.name)
+            for modifier in bbox.modifiers:
+                bpy.ops.object.modifier_remove(modifier=modifier.name)
 
-        bbox.select_set(True)
-        bpy.context.view_layer.objects.active = bbox
-        remove_obj_faces_and_egdes(bbox)
+            # if add_decimate_modifier(bbox, COLLAPSE_DECIMATE_TYPE, 0.35):
+            if add_remesh_sharp_modifier(bbox, 4, scale=i):
+                remeshed = True
+
+            depsgraph = bpy.context.evaluated_depsgraph_get()
+            bm = bmesh.new()
+            bm.from_object(bbox, depsgraph)
+            bm.verts.ensure_lookup_table()
+            i = i - 0.01
+
+        if remeshed:
+            for modifier in bbox.modifiers:
+                bpy.ops.object.modifier_apply(modifier=modifier.name)
+
+        if not debug:
+            bbox.select_set(True)
+            bpy.context.view_layer.objects.active = bbox
+            remove_obj_faces_and_egdes(bbox)
 
         bpy.ops.object.select_all(action=DESELECT_ACTION)
 
@@ -1623,15 +1683,31 @@ def create_geocode_bounding_box(lat, lon, alt, landmark_location_file_path, debu
 
         if debug:
             isolated_print("number of vertices: ", len(bm.verts))
+            final_points_collection = bpy.data.collections.new(name="final points")
+            bpy.context.scene.collection.children.link(final_points_collection)
 
-        for v in bm.verts:
+        for i, v in enumerate(bm.verts):
             if debug:
                 isolated_print(v.co)
 
             coords = bbox.matrix_world @ v.co
-            data["x"].append(coords.x - center_coords.x)
-            data["y"].append(coords.y - center_coords.y)
+
+            vec = coords - center_coords
+            radius = vec.length + margin
+            npo = (vec.normalized() * radius)
+
+            if debug:
+                pc = point_cloud("p" + str(i), [(npo.x + center_coords.x, npo.y + center_coords.y, coords.z)])
+                final_points_collection.objects.link(pc)
+
+            v1 = mathutils.Vector((vec.x, vec.y)).normalized()
+            axis = mathutils.Vector((1, 0))
+            angle = v1.angle_signed(axis)*(180/np.pi)
+
+            data["x"].append(npo.x)
+            data["y"].append(npo.y)
             data["z"].append(coords.z + alt + height_adjust - obj.location.z)
+            data["@"].append(angle)
 
         bm.free()
         gdf = create_latlon_gdf_from_meter_data(data, lat, lon, 0.0)

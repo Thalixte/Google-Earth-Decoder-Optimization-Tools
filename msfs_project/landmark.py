@@ -19,7 +19,7 @@ import os
 from uuid import uuid4
 
 from blender.scene import align_models_with_masks, process_3d_data, create_geocode_bounding_box
-from constants import DISPLAY_NAME_OSM_TAG
+from constants import DISPLAY_NAME_OSM_TAG, LIGHT_WARM_GUID, LIGHT_COLD_GUID
 from msfs_project.light import MsfsLights
 from msfs_project.position import MsfsPosition
 from utils.console import isolated_print
@@ -55,15 +55,15 @@ class MsfsLandmarkLocation:
         xml.save()
 
     @staticmethod
-    def add_lights(model_files_paths, positioning_files_paths, landmark_location_file_path, mask_file_path, lat, lon, alt, geocode_prefix, xml, group_id, debug=False):
+    def add_lights(light_guid, model_files_paths, positioning_files_paths, landmark_location_file_path, mask_file_path, lat, lon, alt, geocode_prefix, xml, group_id, debug=False):
         align_models_with_masks(model_files_paths, positioning_files_paths, mask_file_path)
         process_3d_data(intersect=True, no_bounding_box=True, keep_mask=True)
-        lights_gdf = create_geocode_bounding_box(lat, lon, alt, landmark_location_file_path, debug=debug)
+        lights_gdf = create_geocode_bounding_box(lat, lon, alt, landmark_location_file_path, new_lights=(light_guid not in [LIGHT_WARM_GUID, LIGHT_COLD_GUID]), debug=debug)
 
         if debug:
             isolated_print(lights_gdf)
 
-        lights = MsfsLights(lights_gdf=lights_gdf, guid=None, prefix=geocode_prefix, name=None, group_id=group_id)
+        lights = MsfsLights(lights_gdf=lights_gdf, guid=light_guid, prefix=geocode_prefix, name=None, group_id=group_id)
 
         if xml:
             lights.to_xml(xml)

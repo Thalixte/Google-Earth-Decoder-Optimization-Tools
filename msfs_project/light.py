@@ -16,7 +16,7 @@
 #
 #  <pep8 compliant>
 
-from constants import GEOMETRY_OSM_COLUMN, LIGHT_WARM_GUID, LIGHT_COLD_GUID, LIGHT_HEADING, LIGHT_COLD_DISPLAY_NAME, LIGHT_WARM_DISPLAY_NAME, LIGHTS_DISPLAY_NAME
+from constants import GEOMETRY_OSM_COLUMN, LIGHT_WARM_GUID, LIGHT_HEADING, LIGHT_WARM_DISPLAY_NAME, LIGHTS_DISPLAY_NAME
 from msfs_project.position import MsfsPosition
 
 
@@ -53,26 +53,19 @@ class MsfsLightsGroup:
 
 
 class MsfsLight:
-    class LIGHT_GUID:
-        warm = LIGHT_WARM_GUID
-        cold = LIGHT_COLD_GUID
-
-    class LIGHT_DISPLAY_NAME:
-        warm = LIGHT_WARM_DISPLAY_NAME
-        cold = LIGHT_COLD_DISPLAY_NAME
-
     guid: str
     name: str
     pos: MsfsPosition
     heading: float
     group: MsfsLightsGroup
+    HEADING_COL = "@"
 
     def __init__(self, light_gdf=None, guid=None, prefix=None, name=None, idx=None, xml=None, elem=None, group_id=None):
         # default light guid is of light warm type
-        self.guid = guid or self.LIGHT_GUID.warm
+        self.guid = guid or LIGHT_WARM_GUID
         prefix = str() if prefix is None else prefix
         group_suffix = str() if prefix is None else prefix.replace(" ", "_")
-        self.name = prefix + (name or self.LIGHT_DISPLAY_NAME.warm + " ") + (str(idx).zfill(4) or str())
+        self.name = prefix + (name or LIGHT_WARM_DISPLAY_NAME + " ") + (str(idx).zfill(4) or str())
         self.heading = float(LIGHT_HEADING)
 
         if light_gdf is not None:
@@ -89,6 +82,7 @@ class MsfsLight:
             return
 
         self.pos = MsfsPosition(light_gdf[GEOMETRY_OSM_COLUMN][0], light_gdf[GEOMETRY_OSM_COLUMN][1], light_gdf[GEOMETRY_OSM_COLUMN][2])
+        self.heading = light_gdf[self.HEADING_COL]
         self.group = MsfsLightsGroup(group_id=group_id, group_display_name=LIGHTS_DISPLAY_NAME + "_" + group_suffix)
 
     def __init_from_xml(self, xml, elem):

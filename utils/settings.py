@@ -21,7 +21,7 @@ import json
 import os
 
 from constants import ENCODING, PNG_TEXTURE_FORMAT, INI_FILE, MSFS_SDK_INI_SECTION, BUILD_INI_SECTION, \
-    COMPRESSONATOR_INI_SECTION, BACKUP_INI_SECTION, PYTHON_INI_SECTION, XML_FILE_EXT
+    COMPRESSONATOR_INI_SECTION, BACKUP_INI_SECTION, PYTHON_INI_SECTION, XML_FILE_EXT, LIGHT_COLD_GUID
 
 
 class Settings:
@@ -71,6 +71,7 @@ class Settings:
     keep_constructions: str
     keep_roads: str
     add_lights: str
+    light_guid: str
 
     LODS_SECTION = "LODS"
     TARGET_MIN_SIZE_VALUES_SETTING = "target_min_size_values"
@@ -126,6 +127,7 @@ class Settings:
         self.keep_roads = "False"
         self.disable_terraform = "False"
         self.add_lights = "False"
+        self.light_guid = LIGHT_COLD_GUID
 
         config = cp.ConfigParser()
         if os.path.isfile(INI_FILE):

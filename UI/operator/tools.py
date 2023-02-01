@@ -161,6 +161,10 @@ def reload_add_lights(context):
     context.scene.setting_props.add_lights = context.scene.settings.add_lights
 
 
+def reload_light_guid(context):
+    context.scene.setting_props.light_guid = context.scene.settings.light_guid
+
+
 def reload_altitude_adjustment(context):
     context.scene.setting_props.altitude_adjustment = float(context.scene.settings.altitude_adjustment)
 
@@ -251,6 +255,7 @@ def reload_setting_props(context, reload_settings_file=True):
     reload_landmark_type(context)
     reload_landmark_offset(context)
     reload_add_lights(context)
+    reload_light_guid(context)
     reload_altitude_adjustment(context)
     reload_build_package_enabled(context)
     reload_msfs_build_exe_path(context)

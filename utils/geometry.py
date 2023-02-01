@@ -88,5 +88,3 @@ def extend_line(p1, p2, ratio):
     a = p1
     b = (p1[0]+ratio*(p2[0]-p1[0]), p1[1]+ratio*(p2[1]-p1[1]) )
     return LineString([a, b])
-
-    

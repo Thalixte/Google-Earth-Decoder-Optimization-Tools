@@ -85,6 +85,7 @@ class MsfsProject:
     scene_objects_xml_file_path: str
     business_json_path: str
     thumbnail_picture_path: str
+    light_models_path: str
     built_packages_folder: str
     built_project_package_folder: str
     model_lib_output_dir: str
@@ -405,6 +406,7 @@ class MsfsProject:
         self.shapes = dict()
         self.height_maps = dict()
         self.colliders = dict()
+        self.light_models_path = os.path.join(sources_path, LIGHT_MODELS_FOLDER)
 
         if init_structure:
             try:
@@ -478,7 +480,7 @@ class MsfsProject:
             try:
                 shutil.copyfile(src_file_path, dest_file_path)
             except WindowsError:
-                raise ScriptError("Impossible de copier le fichier " + sources_path + " vers " + dest_file_path)
+                raise ScriptError("File copy not possible from " + sources_path + " to " + dest_file_path)
 
         if replace_content:
             replace_in_file(dest_file_path, self.DUMMY_STRING.capitalize(), self.project_name)
@@ -964,7 +966,7 @@ class MsfsProject:
         self.objects_xml.remove_lights(LIGHTS_DISPLAY_NAME + "_" + group_suffix, True)
         new_group_id = self.objects_xml.get_new_group_id()
 
-        params = ["--positioning_files_paths", str('"') + "|".join(positioning_files_paths) + str('"'), "--model_files_paths", str('"') + "|".join(model_files_paths) + str('"'),
+        params = ["--light_guid", settings.light_guid, "--positioning_files_paths", str('"') + "|".join(positioning_files_paths) + str('"'), "--model_files_paths", str('"') + "|".join(model_files_paths) + str('"'),
                   "--landmark_location_file_path", str('"') + landmark_location_file_path + str('"'), "--mask_file_path", str('"') + mask_file_path + str('"'), "--lat", str(lat), "--lon", str(lon), "--alt", str(alt),
                   "--geocode_prefix", str('"') + prefix + str('"'), "--scene_definition_file", str('"') + self.objects_xml.file_path + str('"'), "--group_id", str(new_group_id)]
 
@@ -1391,7 +1393,7 @@ class MsfsProject:
     def __isolate_lods_3d_data_from_geocode(self, geocode, geocode_gdf, settings):
         new_tiles = []
         src_tiles, lods_data = self.__retrieve_lods_to_isolate_3d_data_from_geocode(geocode, geocode_gdf, "isolate_3d_data_from_geocode", settings)
-        self.__multithread_blender_process_data(lods_data, "isolate_lod_3d_data.py", "ISOLATE LODS 3D DATA TILES FROM GEOCODE", "excluded")
+        self.__multithread_blender_process_data(lods_data, "isolate_lod_3d_data.py", "ISOLATE LODS 3D DATA TILES FROM GEOCODE", "isolated")
 
         for tile in src_tiles:
             new_tile = tile
@@ -1451,6 +1453,11 @@ class MsfsProject:
                 pr_bg_orange("Geocode (" + geocode + ") found in OSM data, but not in the scenery" + EOL + CEND)
 
     def __add_lights_to_geocode(self, geocode, geocode_gdf, lat, lon, settings):
+        try:
+            shutil.copytree(self.light_models_path, self.model_lib_folder, dirs_exist_ok=True)
+        except WindowsError:
+            raise ScriptError("File copy not possible from " + self.light_models_path + " to " + self.model_lib_folder)
+
         process_data = self.__retrieve_process_data_to_add_lights_to_geocode(geocode, geocode_gdf, lat, lon, settings)
         self.__multithread_blender_process_data(process_data, "add_lights.py", "ADD LIGHTS TO GEOCODE", "lights created")
 
