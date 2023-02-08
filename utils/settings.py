@@ -48,6 +48,7 @@ class Settings:
     airport_city: str
     geocode: str
     geocode_margin: float
+    building_margin: float
     ground_exclusion_margin: float
     landmark_type: str
     height_adjustment: float
@@ -100,6 +101,7 @@ class Settings:
         self.airport_city = str()
         self.geocode = str()
         self.geocode_margin = 5.0
+        self.building_margin = 0.0
         self.ground_exclusion_margin = 10.0
         self.preserve_roads = "True"
         self.preserve_buildings = "True"
@@ -178,6 +180,8 @@ class Settings:
         self.altitude_adjustment = "{:.2f}".format(float(str(self.altitude_adjustment))).rstrip("0").rstrip(".")
 
         self.geocode_margin = "{:.2f}".format(float(str(self.geocode_margin))).rstrip("0").rstrip(".")
+
+        self.building_margin = "{:.2f}".format(float(str(self.geocode_margin))).rstrip("0").rstrip(".")
 
         self.ground_exclusion_margin = "{:.2f}".format(float(str(self.ground_exclusion_margin))).rstrip("0").rstrip(".")
 

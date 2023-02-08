@@ -88,7 +88,16 @@ EDGES_FACES_DELETE_CONTEXT = "EDGES_FACES"
 VERTICES_DELETE_CONTEXT = "VERTS"
 GRIDS_COLLECTION_NAME = "grids"
 HEIGHT_GRID_MATERIAL_NAME = "height_grid_material"
+BOOLEAN_MODIFIER = "BOOLEAN"
+DECIMATE_MODIFIER = "DECIMATE"
+WEIGHTED_NORMAL_MODIFIER = "WEIGHTED_NORMAL"
+REMESH_MODIFIER = "REMESH"
+SUBSURFACE_MODIFIER = "SUBSURF"
 COLLAPSE_DECIMATE_TYPE = "COLLAPSE"
+SHARP_REMESH_MODE = "SHARP"
+VOXEL_REMESH_MODE = "VOXEL"
+SIMPLE_SUBSURFACE_DIVISION_TYPE = "SIMPLE"
+EXACT_BOOLEAN_SOLVER = "EXACT"
 
 
 class BOOLEAN_MODIFIER_OPERATION:
@@ -556,19 +565,13 @@ def reduce_number_of_vertices(model_file_path):
     objects = bpy.context.scene.objects
 
     for obj in objects:
-        bpy.context.view_layer.objects.active = obj
-        decimate = obj.modifiers.new(name="decimate", type="DECIMATE")
-
-        if not decimate:
-            continue
-
-        decimate.decimate_type = "DISSOLVE"
-        for modifier in obj.modifiers:
-            bpy.ops.object.modifier_apply(modifier=modifier.name)
+        if add_decimate_modifier(obj, COLLAPSE_DECIMATE_TYPE, 0.75):
+            for modifier in obj.modifiers:
+                bpy.ops.object.modifier_apply(modifier=modifier.name)
 
     for obj in objects:
         bpy.context.view_layer.objects.active = obj
-        weighted_normal = obj.modifiers.new(name="weighty", type="WEIGHTED_NORMAL")
+        weighted_normal = obj.modifiers.new(name="weighty", type=WEIGHTED_NORMAL_MODIFIER)
 
         if not weighted_normal:
             continue
@@ -1199,12 +1202,12 @@ def object_touches_mask(obj, mask):
 
 
 def add_subsurface_modifier(obj):
-    subsurfacy = obj.modifiers.new(name="subsurfacy", type="SUBSURF")
+    subsurfacy = obj.modifiers.new(name="subsurfacy", type=SUBSURFACE_MODIFIER)
 
     if not subsurfacy:
         return False
 
-    subsurfacy.subdivision_type = "SIMPLE"
+    subsurfacy.subdivision_type = SIMPLE_SUBSURFACE_DIVISION_TYPE
     subsurfacy.levels = 2
     subsurfacy.render_levels = 2
     subsurfacy.use_limit_surface = True
@@ -1213,21 +1216,21 @@ def add_subsurface_modifier(obj):
 
 
 def add_boolean_modifier(obj, mask, operation):
-    booly = obj.modifiers.new(name="booly", type="BOOLEAN")
+    booly = obj.modifiers.new(name="booly", type=BOOLEAN_MODIFIER)
 
     if not booly:
         return False
 
     booly.object = mask
     booly.operation = operation
-    booly.solver = "EXACT"
+    booly.solver = EXACT_BOOLEAN_SOLVER
     booly.use_hole_tolerant = True
 
     return True
 
 
 def add_remesh_sharp_modifier(obj, octree_depth, scale=0.9):
-    remeshy = obj.modifiers.new(name="remeshy", type="REMESH")
+    remeshy = obj.modifiers.new(name="remeshy", type=REMESH_MODIFIER)
 
     if not remeshy:
         return False
@@ -1240,12 +1243,12 @@ def add_remesh_sharp_modifier(obj, octree_depth, scale=0.9):
 
 
 def add_remesh_voxel_modifier(obj, voxel_size):
-    remeshy = obj.modifiers.new(name="remeshy", type="REMESH")
+    remeshy = obj.modifiers.new(name="remeshy", type=REMESH_MODIFIER)
 
     if not remeshy:
         return False
 
-    remeshy.mode = "VOXEL"
+    remeshy.mode = VOXEL_REMESH_MODE
     remeshy.voxel_size = voxel_size
     remeshy.use_smooth_shade = True
 
@@ -1253,7 +1256,7 @@ def add_remesh_voxel_modifier(obj, voxel_size):
 
 
 def add_weighted_normal_modifier(obj):
-    weighty = obj.modifiers.new(name="weighty", type="WEIGHTED_NORMAL")
+    weighty = obj.modifiers.new(name="weighty", type=WEIGHTED_NORMAL_MODIFIER)
 
     if not weighty:
         return False
@@ -1267,7 +1270,7 @@ def add_weighted_normal_modifier(obj):
 
 
 def add_decimate_modifier(obj, decimate_type, ratio):
-    decimaty = obj.modifiers.new(name="booly", type="DECIMATE")
+    decimaty = obj.modifiers.new(name="booly", type=DECIMATE_MODIFIER)
 
     if not decimaty:
         return False
@@ -1606,9 +1609,11 @@ def create_geocode_bounding_box(lat, lon, alt, landmark_location_file_path, new_
             for modifier in bbox.modifiers:
                 bpy.ops.object.modifier_apply(modifier=modifier.name)
 
-        if add_decimate_modifier(bbox, COLLAPSE_DECIMATE_TYPE, 0.175):
-            for modifier in bbox.modifiers:
-                bpy.ops.object.modifier_apply(modifier=modifier.name)
+        if not add_decimate_modifier(bbox, COLLAPSE_DECIMATE_TYPE, 0.175):
+            continue
+
+        for modifier in bbox.modifiers:
+            bpy.ops.object.modifier_apply(modifier=modifier.name)
 
         if add_boolean_modifier(bbox, mask, BOOLEAN_MODIFIER_OPERATION.INTERSECT):
             depsgraph = bpy.context.evaluated_depsgraph_get()

@@ -49,7 +49,7 @@ def create_terraform_and_exclusion_polygons(script_settings):
             msfs_project.backup(Path(os.path.abspath(__file__)).stem.replace(SCRIPT_PREFIX, str()), all_files=False)
 
         isolated_print(EOL)
-        print_title("ADJUST HEIGHT DATA")
+        print_title("CREATE TERRAFORM AND EXCLUSION POLYGONS")
 
         script_settings.exclude_ground = True
         script_settings.exclude_nature_reserve = True

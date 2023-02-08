@@ -64,7 +64,7 @@ class MsfsLight:
         # default light guid is of light warm type
         self.guid = guid or LIGHT_WARM_GUID
         prefix = str() if prefix is None else prefix
-        group_suffix = str() if prefix is None else prefix.replace(" ", "_")
+        group_suffix = str() if prefix is None else prefix.replace(" ", "_").replace("'", str())
         self.name = prefix + (name or LIGHT_WARM_DISPLAY_NAME + " ") + (str(idx).zfill(4) or str())
         self.heading = float(LIGHT_HEADING)
 
