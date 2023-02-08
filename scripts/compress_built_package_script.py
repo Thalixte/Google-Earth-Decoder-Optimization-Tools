@@ -43,9 +43,6 @@ def compress_built_package(script_settings):
 
         msfs_project.compress_built_package(script_settings)
 
-        if script_settings.build_package_enabled:
-            build_package(msfs_project, script_settings)
-
         pr_bg_green("Script correctly applied" + constants.CEND)
 
     except ScriptError as ex:
