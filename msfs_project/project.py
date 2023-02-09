@@ -361,6 +361,9 @@ class MsfsProject:
         if geocode_gdf is None:
             return geocode_gdf
 
+        if geocode_gdf.empty:
+            return geocode_gdf
+
         lat = geocode_gdf.centroid.y.iloc[0]
         lon = geocode_gdf.centroid.x.iloc[0]
 
