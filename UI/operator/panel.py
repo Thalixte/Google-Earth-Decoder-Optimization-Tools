@@ -158,7 +158,7 @@ class SettingsOperator(PanelOperator):
         if self.operator_name in ["wm.generate_height_data",
                                   "wm.keep_only_buildings_3d_data",
                                   "wm.keep_only_buildings_and_roads_3d_data"]:
-            self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "keep_residential", "Keep residential area 3d data")
+            self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "keep_residential_and_industrial", "Keep residential and industrial area 3d data")
             col.separator()
 
         # self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "exclude_ground", "Exclude ground 3d data")
@@ -174,6 +174,11 @@ class SettingsOperator(PanelOperator):
             col.separator()
             self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "high_precision", "High precision height data generation")
             col.separator()
+
+        if self.operator_name is not "wm.generate_height_data" and self.operator_name is not "wm.prepare_3d_data":
+            self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "process_all", "Process all the tiles (if unticked, process only the tiles that has not been cleaned)")
+            col.separator()
+
         self.draw_footer(context, self.layout, self.operator_name)
 
     def draw_geocode_panel(self, context):

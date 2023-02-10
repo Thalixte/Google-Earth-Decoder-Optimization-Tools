@@ -59,7 +59,7 @@ def keep_only_buildings_and_roads_3d_data(script_settings):
         script_settings.disable_terraform = True
         script_settings.building_margin = 8.0
         script_settings.save()
-        msfs_project.prepare_3d_data(script_settings, generate_height_data=False, process_3d_data=True, create_polygons=False, process_all=False)
+        msfs_project.prepare_3d_data(script_settings, generate_height_data=False, process_3d_data=True, create_polygons=False, process_all=script_settings.process_all)
 
         isolated_print(EOL)
         print_title("CLEAN PACKAGE FILES")

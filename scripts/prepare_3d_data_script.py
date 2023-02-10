@@ -53,7 +53,7 @@ def prepare_3d_data(script_settings):
         script_settings.ground_exclusion_margin = 10.0
         script_settings.save()
 
-        msfs_project.prepare_3d_data(script_settings, generate_height_data=True, clean_3d_data=True, create_polygons=True)
+        msfs_project.prepare_3d_data(script_settings, generate_height_data=True, clean_3d_data=True, create_polygons=True, process_all=True)
 
         isolated_print(EOL)
         print_title("CLEAN PACKAGE FILES")

@@ -91,8 +91,11 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
     def exclude_parks_updated(self, context):
         context.scene.settings.exclude_parks = self.exclude_parks
 
-    def keep_residential_updated(self, context):
-        context.scene.settings.keep_residential = self.keep_residential
+    def keep_residential_and_industrial_updated(self, context):
+        context.scene.settings.keep_residential_and_industrial = self.keep_residential_and_industrial
+
+    def process_all_updated(self, context):
+        context.scene.settings.process_all = self.process_all
 
     def high_precision_updated(self, context):
         context.scene.settings.high_precision = self.high_precision
@@ -286,11 +289,17 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         default=bpy.types.Scene.settings.exclude_parks,
         update=exclude_parks_updated
     )
-    keep_residential: BoolProperty(
-        name="Keep residential area 3d data",
-        description="Keep residential area 3d data",
-        default=bpy.types.Scene.settings.keep_residential,
-        update=keep_residential_updated
+    keep_residential_and_industrial: BoolProperty(
+        name="Keep residential and industrial area 3d data",
+        description="Keep residential and industrial area 3d data",
+        default=bpy.types.Scene.settings.keep_residential_and_industrial,
+        update=keep_residential_and_industrial_updated
+    )
+    process_all: BoolProperty(
+        name="Process all the tiles (if unticked, process only the tiles that has not been cleaned)",
+        description="Process all the tiles (if unticked, process only the tiles that has not been cleaned)",
+        default=bpy.types.Scene.settings.process_all,
+        update=process_all_updated
     )
     high_precision: BoolProperty(
         name="High precision height data generation",
