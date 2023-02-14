@@ -208,7 +208,7 @@ class MsfsTile(MsfsSceneObject):
             lod = self.lods[0]
 
         if os.path.isdir(lod.folder):
-            height_data, width, altitude = lod.calculate_height_data(self.coords[0], self.coords[2], altitude, height_adjustment, height_noise_reduction, inverted=inverted, positioning_file_path=positioning_file_path, water_mask_file_path=water_mask_file_path, ground_mask_file_path=ground_mask_file_path, debug=debug)
+            height_data, width, altitude = lod.calculate_height_data(self.coords[0], self.coords[2], altitude, height_adjustment, height_noise_reduction, inverted=inverted, positioning_file_path=positioning_file_path, water_mask_file_path=water_mask_file_path, ground_mask_file_path=ground_mask_file_path, high_precision=high_precision, debug=debug)
             self.height_map = MsfsHeightMap(tile=self, height_data=height_data, width=width, altitude=altitude, group_id=group_id)
             self.height_map.to_xml(height_map_xml)
 
