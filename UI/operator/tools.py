@@ -78,6 +78,10 @@ def reload_output_texture_format(context):
     context.scene.setting_props.output_texture_format = context.scene.settings.output_texture_format
 
 
+def reload_collider_as_lower_lod(context):
+    context.scene.setting_props.collider_as_lower_lod = context.scene.settings.collider_as_lower_lod
+
+
 def reload_backup_enabled(context):
     context.scene.setting_props.backup_enabled = context.scene.settings.backup_enabled
 
@@ -240,6 +244,7 @@ def reload_setting_props(context, reload_settings_file=True):
     reload_author_name(context)
     reload_bake_textures_enabled(context)
     reload_output_texture_format(context)
+    reload_collider_as_lower_lod(context)
     reload_backup_enabled(context)
     reload_lat_correction(context)
     reload_lon_correction(context)

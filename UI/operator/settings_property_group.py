@@ -58,6 +58,9 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
     def output_texture_format_updated(self, context):
         context.scene.settings.output_texture_format = self.output_texture_format
 
+    def collider_as_lower_lod_updated(self, context):
+        context.scene.settings.collider_as_lower_lod = self.collider_as_lower_lod
+
     def backup_enabled_updated(self, context):
         context.scene.settings.backup_enabled = self.backup_enabled
 
@@ -237,6 +240,12 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         ],
         default=bpy.types.Scene.settings.output_texture_format,
         update=output_texture_format_updated
+    )
+    collider_as_lower_lod: BoolProperty(
+        name="Add the collider as the lower LOD for each tile",
+        description="Add the collider as the lower LOD for each tile (make the tiles disappear when they take less than 1% of the screen)",
+        default=bpy.types.Scene.settings.collider_as_lower_lod,
+        update=collider_as_lower_lod_updated
     )
     backup_enabled: BoolProperty(
         name="Backup enabled",

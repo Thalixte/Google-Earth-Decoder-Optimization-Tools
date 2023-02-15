@@ -91,6 +91,9 @@ class SettingsOperator(PanelOperator):
         col.separator()
         self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "nb_parallel_blender_tasks", "Number of parallel Blender tasks")
         col.separator()
+        if self.operator_name in ["wm.add_tile_colliders"]:
+            self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "collider_as_lower_lod", "Add the collider as the lower LOD for each tile")
+            col.separator()
         self.draw_footer(context, self.layout, self.operator_name)
 
     def draw_merge_panel(self, context):
@@ -155,9 +158,7 @@ class SettingsOperator(PanelOperator):
         col.separator()
         self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "airport_city", "Airport city")
         col.separator()
-        if self.operator_name in ["wm.generate_height_data",
-                                  "wm.keep_only_buildings_3d_data",
-                                  "wm.keep_only_buildings_and_roads_3d_data"]:
+        if self.operator_name in ["wm.generate_height_data", "wm.keep_only_buildings_3d_data", "wm.keep_only_buildings_and_roads_3d_data"]:
             self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "keep_residential_and_industrial", "Keep residential and industrial area 3d data")
             col.separator()
 

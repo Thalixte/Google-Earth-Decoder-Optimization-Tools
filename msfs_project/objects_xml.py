@@ -22,7 +22,7 @@ from decimal import Decimal
 
 from constants import HEIGHT_MAP_DISPLAY_NAME, LIGHT_WARM_GUID, LIGHT_HEADING, LIGHTS_DISPLAY_NAME
 from utils.progress_bar import ProgressBar
-from utils import Xml, isolated_print
+from utils import Xml
 import xml.etree.ElementTree as Et
 
 

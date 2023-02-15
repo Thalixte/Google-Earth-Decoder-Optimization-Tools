@@ -74,6 +74,7 @@ class Settings:
     keep_roads: str
     add_lights: str
     light_guid: str
+    collider_as_lower_lod: str
 
     LODS_SECTION = "LODS"
     TARGET_MIN_SIZE_VALUES_SETTING = "target_min_size_values"
@@ -132,6 +133,7 @@ class Settings:
         self.disable_terraform = "False"
         self.add_lights = "False"
         self.light_guid = LIGHT_COLD_GUID
+        self.collider_as_lower_lod = "False"
 
         config = cp.ConfigParser()
         if os.path.isfile(INI_FILE):
@@ -209,6 +211,8 @@ class Settings:
 
         self.preserve_roads = json.loads(self.preserve_roads.lower())
         self.preserve_buildings = json.loads(self.preserve_buildings.lower())
+
+        self.collider_as_lower_lod = json.loads(self.collider_as_lower_lod.lower())
 
         if self.definition_file_to_merge == str() and self.project_path_to_merge != str():
             self.definition_file_to_merge = os.path.basename(self.project_path_to_merge).capitalize() + XML_FILE_EXT

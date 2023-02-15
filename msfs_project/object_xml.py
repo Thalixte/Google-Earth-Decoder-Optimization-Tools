@@ -17,6 +17,7 @@
 #  <pep8 compliant>
 
 from utils import Xml
+import xml.etree.ElementTree as Et
 
 
 class MsfsObjectXml(Xml):
@@ -30,8 +31,9 @@ class MsfsObjectXml(Xml):
     MODEL_FILE_ATTR = "ModelFile"
     MODEL_INFO_VERSION = "1.1"
 
-    SCENERY_OBJECT_LODS_SEARCH_PATTERN = "./" + LODS_TAG + "/" + LOD_TAG
-    SCENERY_OBJECT_LOD_MODEL_FILE_SEARCH_PATTERN = SCENERY_OBJECT_LODS_SEARCH_PATTERN + "[@ModelFile='"
+    SCENERY_OBJECT_LODS_SEARCH_PATTERN = "./" + LODS_TAG
+    SCENERY_OBJECT_LOD_SEARCH_PATTERN = SCENERY_OBJECT_LODS_SEARCH_PATTERN + "/" + LOD_TAG
+    SCENERY_OBJECT_LOD_MODEL_FILE_SEARCH_PATTERN = SCENERY_OBJECT_LOD_SEARCH_PATTERN + "[@ModelFile='"
     
     def __init__(self, file_folder, file_name):
         super().__init__(file_folder, file_name)
@@ -42,7 +44,7 @@ class MsfsObjectXml(Xml):
         self.save()
 
     def find_scenery_lods(self):
-        return self.root.findall(self.SCENERY_OBJECT_LODS_SEARCH_PATTERN)
+        return self.root.findall(self.SCENERY_OBJECT_LOD_SEARCH_PATTERN)
 
     def find_scenery_lod_models(self, file_name):
         return self.root.findall(self.SCENERY_OBJECT_LOD_MODEL_FILE_SEARCH_PATTERN + file_name + self.PATTERN_SUFFIX)
@@ -50,8 +52,25 @@ class MsfsObjectXml(Xml):
     def find_scenery_lod_models_parents(self, file_name):
         return self.root.findall(self.SCENERY_OBJECT_LOD_MODEL_FILE_SEARCH_PATTERN + file_name + self.PARENT_PATTERN_SUFFIX)
 
+    def add_lod(self, file_name, min_size):
+        for lods_tag in self.root.findall(self.SCENERY_OBJECT_LODS_SEARCH_PATTERN):
+            Et.SubElement(lods_tag, self.LOD_TAG, attrib={
+                self.MODEL_FILE_ATTR: file_name,
+                self.MIN_SIZE_ATTR: str(min_size)
+            })
+        self.save()
+
+    def update_lod_min_size(self, file_name, min_size):
+        for lod in self.find_scenery_lod_models(file_name):
+            lod.set(self.MIN_SIZE_ATTR, str(min_size))
+            self.save()
+
     def remove_lod(self, file_name):
+        removed = False
         for parent_lod_tag in self.find_scenery_lod_models_parents(file_name):
             for lod in self.find_scenery_lod_models(file_name):
                 parent_lod_tag.remove(lod)
+                removed = True
         self.save()
+
+        return removed

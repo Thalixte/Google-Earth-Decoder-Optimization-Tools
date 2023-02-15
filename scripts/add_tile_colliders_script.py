@@ -42,7 +42,7 @@ def add_tile_colliders(script_settings):
             msfs_project.backup(Path(os.path.abspath(__file__)).stem.replace(SCRIPT_PREFIX, str()), all_files=False)
 
         isolated_print(EOL)
-        msfs_project.add_tile_colliders()
+        msfs_project.add_tile_colliders(script_settings.collider_as_lower_lod)
 
         if script_settings.build_package_enabled:
             build_package(msfs_project, script_settings)

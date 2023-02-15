@@ -17,6 +17,8 @@
 #  <pep8 compliant>
 
 import os
+
+from msfs_project.lod import MsfsLod
 from utils import install_python_lib
 
 try:
@@ -71,7 +73,7 @@ class MsfsTile(MsfsSceneObject):
                 else:
                     pbar.update("folder %s created" % lod.name)
 
-    def add_collider(self):
+    def add_collider(self, collider_as_lower_lod=False):
         new_collider = None
         for idx, lod in enumerate(self.lods):
             if idx < (len(self.lods) - 1): continue
@@ -82,7 +84,23 @@ class MsfsTile(MsfsSceneObject):
             create_new_definition_file(os.path.join(self.folder, collider_definition_file_name), has_lods=False)
             new_collider = MsfsCollider(self.folder, self.name + COLLIDER_SUFFIX, os.path.join(self.folder, collider_definition_file_name))
 
+        if collider_as_lower_lod:
+            lod.min_size = 1
+            self.xml.update_lod_min_size(lod.model_file, lod.min_size)
+            self.lods.append(MsfsLod(len(self.lods), 0, self.folder, collider_model_file))
+            self.xml.add_lod(collider_model_file, 0)
+
         return new_collider
+
+    def remove_collider_lod(self):
+        if self.xml.remove_lod(self.name + COLLIDER_SUFFIX + GLTF_FILE_EXT):
+            self.lods.pop()
+
+        for idx, lod in enumerate(self.lods):
+            if idx < (len(self.lods) - 1): continue
+            if not os.path.isfile(os.path.join(lod.folder, lod.model_file)): continue
+            lod.min_size = 0
+            self.xml.update_lod_min_size(lod.model_file, lod.min_size)
 
     def add_geocode(self):
         new_geocode = None
