@@ -39,3 +39,4 @@ from .script import *
 from .geo_pandas import *
 from .geometry import *
 from .open_elevation import *
+from .string import *

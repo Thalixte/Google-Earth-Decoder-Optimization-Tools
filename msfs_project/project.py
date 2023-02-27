@@ -25,7 +25,8 @@ import shutil
 import os
 import subprocess
 
-from utils import install_python_lib
+from utils import install_python_lib, remove_accents
+from utils.string import remove_accents
 from utils.geo_pandas import prepare_wall_gdf, create_exclusion_building_gdf, prepare_water_gdf, prepare_amenity_gdf, prepare_hidden_roads_gdf, prepare_water_exclusion_gdf, prepare_residential_gdf, create_point_gdf
 from constants import *
 
@@ -1770,5 +1771,5 @@ class MsfsProject:
         if split:
             res = split[0]
 
-        res = "_".join(filter(str.isalnum, res.split(" ")))
+        res = remove_accents("_".join(filter(str.isalnum, res.split(" "))))
         return res

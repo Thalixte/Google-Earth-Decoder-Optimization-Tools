@@ -20,13 +20,8 @@ import os
 import xml.etree.ElementTree as Et
 
 from constants import *
-from utils import pretty_print, line_prepender, install_python_lib
-
-try:
-    from fontTools import unicodedata
-except ModuleNotFoundError:
-    install_python_lib('fontTools')
-    from fontTools import unicodedata
+from utils import pretty_print, line_prepender
+from utils.string import remove_accents
 
 
 class Xml:
@@ -67,7 +62,7 @@ class Xml:
     def to_parseable(self, tree):
         t = Et.tostring(tree)
         t = t.lower().replace(b"'", b"")
-        t = self.remove_accents(t.decode(ENCODING))
+        t = remove_accents(t.decode(ENCODING))
         return Et.fromstring(t)
 
     @staticmethod
@@ -75,8 +70,3 @@ class Xml:
         for parent in parents:
             for elem in elems:
                 parent.remove(elem)
-
-    @staticmethod
-    def remove_accents(input_str):
-        nfkd_form = unicodedata.normalize('NFKD', input_str)
-        return u"".join([c for c in nfkd_form if not unicodedata.combining(c)])
