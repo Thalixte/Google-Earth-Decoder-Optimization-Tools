@@ -144,6 +144,7 @@ class MsfsTile(MsfsSceneObject):
     def create_exclusion_mask_osm_file(self, dest_folder, b, exclusion_mask, building_mask, water_mask, construction_mask, road_mask, bridges_mask, hidden_roads, amenity_mask, residential_mask, industrial_mask, airport_mask, rocks_mask, keep_holes, file_prefix):
         bbox_gdf = resize_gdf(self.bbox_gdf, 10 if keep_holes else 200)
         exclusion_mask_gdf = exclusion_mask.clip(bbox_gdf)
+        tile_rocks = None
 
         if rocks_mask is not None:
             tile_rocks = clip_gdf(rocks_mask, self.bbox_gdf)
@@ -154,6 +155,10 @@ class MsfsTile(MsfsSceneObject):
                 if not building_mask.empty:
                     building_mask = clip_gdf(building_mask, bbox_gdf)
                     exclusion_mask_gdf = difference_gdf(exclusion_mask_gdf, building_mask)
+
+            if tile_rocks is not None:
+                if not tile_rocks.empty:
+                    exclusion_mask_gdf = difference_gdf(exclusion_mask_gdf, tile_rocks)
 
             if construction_mask is not None:
                 if not construction_mask.empty:
