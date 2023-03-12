@@ -15,6 +15,7 @@
 #  #
 #
 #  <pep8 compliant>
+from collections import defaultdict
 
 from constants import HEIGHT_MAPS_DISPLAY_NAME, HEIGHT_MAP_DISPLAY_NAME
 from msfs_project.position import MsfsPosition
@@ -68,11 +69,11 @@ class MsfsHeightMap:
     altitude: str
     group: MsfsHeightMapGroup
 
-    def __init__(self, tile=None, elem=None, height_data=None, xml=None, width=None, altitude=None, group_id=None):
+    def __init__(self, tile=None, elem=None, height_data=None, inverted_height_data=None, xml=None, width=None, altitude=None, group_id=None):
         self.display_name = HEIGHT_MAP_DISPLAY_NAME
 
         if tile is not None and height_data is not None:
-            self.__init_from_height_data(tile, height_data, width, altitude, group_id)
+            self.__init_from_height_data(tile, height_data, inverted_height_data, width, altitude, group_id)
 
         if xml is not None and elem is not None:
             self.__init_from_xml(xml, elem)
@@ -80,16 +81,32 @@ class MsfsHeightMap:
     def to_xml(self, xml):
         xml.add_height_map(self)
 
-    def __init_from_height_data(self, tile, height_data, width, altitude, group_id):
+    def __init_from_height_data(self, tile, height_data, inverted_height_data, width, altitude, group_id):
         lod = len(tile.name)
         lod_limit = lod - 1 if lod >= 19 else lod
         self.falloff = 100
         self.priority = 10
         self.altitude = altitude
         self.size = self.__guess_height_map_size(height_data)
+        self.inverted_size = self.__guess_height_map_size(inverted_height_data)
         self.pos = get_latlonbox_from_file_name(tile.name).bl_point
         self.pos2 = get_latlonbox_from_file_name(tile.name[0:lod_limit]).tl_point
         self.mid = get_latlonbox_from_file_name(tile.name).mid_point
+
+        hdata = defaultdict(dict)
+
+        for y, heights in height_data.items():
+            for x, h in heights.items():
+                # isolated_print("len(inverted_height_data[x]): ", len(inverted_height_data[x]))
+                # isolated_print("self.inverted_size: ", self.inverted_size)
+                if len(inverted_height_data[x]) == self.inverted_size:
+                    hdata[y][x] = h
+
+        height_data = {}
+
+        for y, heights in hdata.items():
+            height_data[y] = [h for i, h in enumerate(list(heights.values()))]
+
         self.height_data = self.__serialize_height_data(height_data)
         self.width = width
         self.group = MsfsHeightMapGroup(group_id=group_id)
@@ -115,6 +132,8 @@ class MsfsHeightMap:
     def __serialize_height_data(self, height_data):
         result = ""
         for i, x_data in enumerate(height_data.values()):
+            # isolated_print("len(x_data): ", len(x_data))
+            # isolated_print("self.size: ", self.size)
             if len(x_data) != self.size:
                 continue
 
@@ -126,7 +145,9 @@ class MsfsHeightMap:
     @staticmethod
     def __guess_height_map_size(height_data):
         x_size = [len(x_data) for x_data in list(height_data.values())]
-        return max(x_size, key=x_size.count)
+        max_size = max(x_size)
+        min_size = min(x_size)
+        return min_size if (max_size - min_size) <= 5 else max_size
 
 
 class MsfsHeightMaps:

@@ -19,7 +19,7 @@
 import os
 
 from msfs_project.lod import MsfsLod
-from utils import install_python_lib
+from utils import install_python_lib, isolated_print
 
 try:
     import geopandas as gpd
@@ -158,6 +158,7 @@ class MsfsTile(MsfsSceneObject):
 
             if tile_rocks is not None:
                 if not tile_rocks.empty:
+                    tile_rocks = clip_gdf(rocks_mask, bbox_gdf)
                     exclusion_mask_gdf = difference_gdf(exclusion_mask_gdf, tile_rocks)
 
             if construction_mask is not None:
@@ -213,14 +214,14 @@ class MsfsTile(MsfsSceneObject):
 
             if not exclusion_mask.empty:
                 osm_xml = OsmXml(dest_folder, file_name)
-                osm_xml.create_from_geodataframes([exclusion_mask], b, extrude=True, additional_tags=[(HEIGHT_OSM_TAG, 1000)])
+                osm_xml.create_from_geodataframes([exclusion_mask], b, extrude=True, additional_tags=[(HEIGHT_OSM_TAG, 3000)])
 
         if not file_prefix:
             self.exclusion_mask_gdf = exclusion_mask_gdf
 
         return self.name
 
-    def generate_height_data(self, height_map_xml, group_id, altitude, height_adjustment, height_noise_reduction, high_precision=False, inverted=False, positioning_file_path="", water_mask_file_path="", ground_mask_file_path="", debug=False):
+    def generate_height_data(self, height_map_xml, group_id, altitude, height_adjustment, height_noise_reduction, high_precision=False, positioning_file_path="", water_mask_file_path="", rocks_mask_file_path="", ground_mask_file_path="", debug=False):
         if not self.lods:
             return
 
@@ -231,8 +232,12 @@ class MsfsTile(MsfsSceneObject):
             lod = self.lods[0]
 
         if os.path.isdir(lod.folder):
-            height_data, width, altitude = lod.calculate_height_data(self.coords[0], self.coords[2], altitude, height_adjustment, height_noise_reduction, inverted=inverted, positioning_file_path=positioning_file_path, water_mask_file_path=water_mask_file_path, ground_mask_file_path=ground_mask_file_path, high_precision=high_precision, debug=debug)
-            self.height_map = MsfsHeightMap(tile=self, height_data=height_data, width=width, altitude=altitude, group_id=group_id)
+            height_data, inverted_height_data, width, altitude = lod.calculate_height_data(self.coords[0], self.coords[2], altitude, height_adjustment, height_noise_reduction, positioning_file_path=positioning_file_path, water_mask_file_path=water_mask_file_path, ground_mask_file_path=ground_mask_file_path, rocks_mask_file_path=rocks_mask_file_path, high_precision=high_precision, debug=debug)
+            self.height_map = MsfsHeightMap(tile=self, height_data=height_data, inverted_height_data=inverted_height_data, width=width, altitude=altitude, group_id=group_id)
+
+            if debug:
+                isolated_print(self.height_map.height_data)
+
             self.height_map.to_xml(height_map_xml)
 
     def split(self, settings):

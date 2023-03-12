@@ -19,6 +19,8 @@
 import os
 from math import floor
 
+from scipy.interpolate import griddata
+
 from mathutils.bvhtree import BVHTree
 from collections import defaultdict
 from pathlib import Path
@@ -107,6 +109,7 @@ class BOOLEAN_MODIFIER_OPERATION:
 
 class EXCLUSION_TYPE:
     GROUND = "GROUND"
+    ROCKS = "ROCKS"
     WATER = "WATER"
 
 
@@ -676,7 +679,7 @@ def process_3d_data(model_file_path=None, intersect=False, no_bounding_box=False
     bpy.ops.object.select_all(action=SELECT_ACTION)
 
 
-def generate_model_height_data(model_file_path, lat, lon, altitude, height_adjustment, height_noise_reduction, inverted=False, positioning_file_path="", water_mask_file_path="", ground_mask_file_path="", high_precision=False, debug=False):
+def generate_model_height_data(model_file_path, lat, lon, altitude, height_adjustment, height_noise_reduction, positioning_file_path=str(), water_mask_file_path=str(), ground_mask_file_path=str(), rocks_mask_file_path=str(), high_precision=False, debug=False):
     if not bpy.context.scene:
         return False
 
@@ -692,30 +695,34 @@ def generate_model_height_data(model_file_path, lat, lon, altitude, height_adjus
     hmatrix = calculate_height_map_from_coords_from_bottom(tile, grid_dimension, coords, depsgraph, lat, lon, altitude, height_adjustment, height_noise_reduction)
 
     if high_precision:
-        hmatrix = calculate_height_map_from_coords_from_top(tile, grid_dimension, coords, depsgraph, lat, lon, altitude, hmatrix_base=hmatrix, height_noise_reduction=height_noise_reduction)
+        hmatrix = calculate_height_map_from_coords_from_top(tile, grid_dimension, coords, depsgraph, lat, lon, altitude, hmatrix, height_noise_reduction=height_noise_reduction)
 
     # fix wrong height data for ground tiles
     if os.path.exists(positioning_file_path) and os.path.exists(ground_mask_file_path):
         align_model_with_mask(model_file_path, positioning_file_path, ground_mask_file_path, objects_to_keep=[grid, height_grid])
         process_3d_data(model_file_path=model_file_path, intersect=True, no_bounding_box=True)
         tile = get_tile_for_ray_cast(model_file_path, imported=False, objects_to_keep=[grid, height_grid])
-        if inverted:
-            hmatrix = calculate_height_map_from_coords_from_top(tile, grid_dimension, coords, depsgraph, lat, lon, altitude, hmatrix_base=hmatrix)
-        else:
-            hmatrix = adjust_height_data_on_ground_exclusion(tile, depsgraph, lat, lon, altitude, hmatrix_base=hmatrix)
+        hmatrix = adjust_height_data_on_ground_exclusion(tile, depsgraph, lat, lon, altitude, hmatrix)
+
+    # fix wrong height data for rock parts of the tiles
+    if os.path.exists(positioning_file_path) and os.path.exists(rocks_mask_file_path):
+        align_model_with_mask(model_file_path, positioning_file_path, rocks_mask_file_path, objects_to_keep=[grid, height_grid])
+        process_3d_data(model_file_path=model_file_path, intersect=False, no_bounding_box=True)
+        tile = get_tile_for_ray_cast(model_file_path, imported=False, objects_to_keep=[grid, height_grid])
+        hmatrix = adjust_height_data_on_rocks_exclusion(tile, depsgraph, lat, lon, altitude, hmatrix)
 
     # fix wrong height data for bridges on water
     if os.path.exists(positioning_file_path) and os.path.exists(water_mask_file_path):
         align_model_with_mask(model_file_path, positioning_file_path, water_mask_file_path, objects_to_keep=[grid, height_grid])
         process_3d_data(model_file_path=model_file_path, intersect=True, no_bounding_box=True)
         tile = get_tile_for_ray_cast(model_file_path, imported=False, objects_to_keep=[grid, height_grid])
-        hmatrix = fix_bridge_height_data_on_water(tile, depsgraph, lat, lon, altitude, hmatrix_base=hmatrix)
+        hmatrix = fix_bridge_height_data_on_water(tile, depsgraph, lat, lon, altitude, hmatrix)
 
-    results = {}
-    j = 0
+    inverted_hmatrix = defaultdict(dict)
 
     for y, heights in hmatrix.items():
-        results[y] = [h for i, h in enumerate(list(heights.values()))]
+        for x, height in heights.items():
+            inverted_hmatrix[x][y] = height
 
     bpy.ops.object.select_all(action=DESELECT_ACTION)
     grid.select_set(True)
@@ -738,9 +745,7 @@ def generate_model_height_data(model_file_path, lat, lon, altitude, height_adjus
 
         bpy.ops.object.select_all(action=SELECT_ACTION)
 
-        isolated_print(results)
-
-    return results, width, altitude
+    return hmatrix, inverted_hmatrix, width, altitude
 
 
 def debug_height_data(new_collection, hmatrix, height_grid, height_grid_coords, model_file_path):
@@ -1001,46 +1006,68 @@ def calculate_height_map_from_coords_from_bottom(tile, grid_dimension, coords, d
     for co in coords:
         p = co
         ray_direction = [0, 0, 1]
-        result = tile.evaluated_get(depsgraph).ray_cast(p, ray_direction, distance=1000)
+        result = tile.evaluated_get(depsgraph).ray_cast(p, ray_direction, distance=3000)
         if result[0]:
             new_coords.append(mathutils.Vector((p[0], p[1], result[1][2])))
+        else:
+            new_coords.append(mathutils.Vector((p[0], p[1], np.nan)))
+
+    if new_coords:
+        points = np.array([[co[0], co[1]] for co in new_coords])
+        values = np.array([co[2] for co in new_coords])
+
+        # Use griddata to interpolate missing values
+        interpolated = griddata(points[~np.isnan(values)], values[~np.isnan(values)], points, method='nearest')
+
+        for i, co in enumerate(new_coords):
+            new_coords[i] = (co[0], co[1], interpolated[i])
+
+        points = np.array([[co[0], co[1]] for co in new_coords])
+        values = np.array([co[2] for co in new_coords])
+
+        # Use griddata to interpolate missing values
+        interpolated = griddata(points[~np.isnan(values)], values[~np.isnan(values)], points, method='nearest')
+
+        for i, co in enumerate(new_coords):
+            new_coords[i] = (co[0], co[1], interpolated[i])
 
     if new_coords:
         # fix noise in the height map data
-        new_coords = spatial_median_kdtree(np.array(new_coords), height_noise_reduction)
+        tree = cKDTree(new_coords, leafsize=60)
+        new_coords = spatial_median_kdtree(tree, np.array(new_coords), height_noise_reduction)
         # new_coords = spatial_median(np.array(new_coords), 20)
 
         new_coords = [co for i, co in enumerate(new_coords)]
 
-        for i, co in enumerate(new_coords):
-            p1 = co
+        for i, p in enumerate(new_coords):
+            p1 = p
             x = round_decimals_down(p1[0], 1)
             y = round_decimals_down(p1[1], 1)
             h = p1[2]
-            if len(results[y]) < grid_dimension:
+
+            if len(results[y]) <= grid_dimension:
                 h = h + altitude + geoid_height
                 results[y][x] = h + height_adjustment
 
     return results
 
 
-def calculate_height_map_from_coords_from_top(tile, grid_dimension, coords, depsgraph, lat, lon, altitude, hmatrix_base=None, height_noise_reduction=35):
+def calculate_height_map_from_coords_from_top(tile, grid_dimension, coords, depsgraph, lat, lon, altitude, hmatrix_base, height_noise_reduction=35):
     results = defaultdict(dict)
     geoid_height = get_geoid_height(lat, lon)
     new_coords = []
 
     for co in coords:
-        p = mathutils.Vector((co[0], co[1], 500))
+        p = mathutils.Vector((co[0], co[1], 3000))
         ray_direction_inverted = [0, 0, -1]
-        result = tile.evaluated_get(depsgraph).ray_cast(p, ray_direction_inverted, distance=1000)
+        result = tile.evaluated_get(depsgraph).ray_cast(p, ray_direction_inverted, distance=3000)
         if result[0]:
             new_coords.append(result[1])
-        else:
-            new_coords.append(mathutils.Vector((p[0], p[1], result[1][2])))
 
     if new_coords:
         # fix noise in the height map data
-        new_coords = spatial_median_kdtree(np.array(new_coords), height_noise_reduction)
+        tree = cKDTree(new_coords, leafsize=60)
+        new_coords = spatial_median_kdtree(tree, np.array(new_coords), height_noise_reduction)
         # new_coords = spatial_median(np.array(new_coords), 20)
 
         new_coords = [co for i, co in enumerate(new_coords)]
@@ -1050,7 +1077,8 @@ def calculate_height_map_from_coords_from_top(tile, grid_dimension, coords, deps
             x = round_decimals_down(p1[0], 1)
             y = round_decimals_down(p1[1], 1)
             h = p1[2]
-            if len(results[y]) < grid_dimension:
+
+            if len(results[y]) <= grid_dimension:
                 h = h + altitude + geoid_height
                 # h = h if h >= geoid_height else geoid_height
 
@@ -1067,12 +1095,16 @@ def calculate_height_map_from_coords_from_top(tile, grid_dimension, coords, deps
     return results
 
 
-def fix_bridge_height_data_on_water(tile, depsgraph, lat, lon, altitude, hmatrix_base=None):
+def fix_bridge_height_data_on_water(tile, depsgraph, lat, lon, altitude, hmatrix_base):
     return adjust_height_data_on_exclusion_area(tile, depsgraph, lat, lon, altitude, EXCLUSION_TYPE.WATER, hmatrix_base)
 
 
-def adjust_height_data_on_ground_exclusion(tile, depsgraph, lat, lon, altitude, hmatrix_base=None):
+def adjust_height_data_on_ground_exclusion(tile, depsgraph, lat, lon, altitude, hmatrix_base):
     return adjust_height_data_on_exclusion_area(tile, depsgraph, lat, lon, altitude, EXCLUSION_TYPE.GROUND, hmatrix_base)
+
+
+def adjust_height_data_on_rocks_exclusion(tile, depsgraph, lat, lon, altitude, hmatrix_base):
+    return adjust_height_data_on_exclusion_area(tile, depsgraph, lat, lon, altitude, EXCLUSION_TYPE.ROCKS, hmatrix_base)
 
 
 def adjust_height_data_on_exclusion_area(tile, depsgraph, lat, lon, altitude, exclusion_type, hmatrix_base):
@@ -1084,14 +1116,14 @@ def adjust_height_data_on_exclusion_area(tile, depsgraph, lat, lon, altitude, ex
         for y in results:
             for x in results[y]:
                 p1 = mathutils.Vector((x, y, 0))
-                p2 = mathutils.Vector((x, y, 500))
+                p2 = mathutils.Vector((x, y, 3000))
 
                 if exclusion_type == EXCLUSION_TYPE.WATER:
                     ray_direction = (0, 0, 1)
-                    result = tile.evaluated_get(depsgraph).ray_cast(p1, ray_direction, distance=1000)
+                    result = tile.evaluated_get(depsgraph).ray_cast(p1, ray_direction, distance=3000)
                 else:
                     ray_direction = (0, 0, -1)
-                    result = tile.evaluated_get(depsgraph).ray_cast(p2, ray_direction, distance=1000)
+                    result = tile.evaluated_get(depsgraph).ray_cast(p2, ray_direction, distance=3000)
 
                 if result[0]:
                     new_coords.append(result[1])
@@ -1099,8 +1131,9 @@ def adjust_height_data_on_exclusion_area(tile, depsgraph, lat, lon, altitude, ex
     if new_coords:
         if exclusion_type == EXCLUSION_TYPE.WATER:
             # fix noise in the height map data
-            new_coords = spatial_median_kdtree(np.array(new_coords), 100)
-        else:
+            tree = cKDTree(new_coords, leafsize=60)
+            new_coords = spatial_median_kdtree(tree, np.array(new_coords), 100)
+        elif exclusion_type == EXCLUSION_TYPE.GROUND:
             new_coords = spatial_median(np.array(new_coords), 20)
 
     for i, co in enumerate(new_coords):
@@ -1109,8 +1142,10 @@ def adjust_height_data_on_exclusion_area(tile, depsgraph, lat, lon, altitude, ex
         y = round(p1[1], 1)
         h = p1[2]
         h = h + altitude + geoid_height
-        h = h + 1.0
-        # h = h + 1.0 if h >= geoid_height else geoid_height
+        if exclusion_type == EXCLUSION_TYPE.ROCKS:
+            h = h - 5.0
+        else:
+            h = h + 1.0
 
         if hmatrix_base is not None:
             if y in hmatrix_base:
@@ -1170,9 +1205,8 @@ def spatial_median(pointcloud, radius):
 
 
 # less accurate, but faster method
-def spatial_median_kdtree(pointcloud, radius):
+def spatial_median_kdtree(tree, pointcloud, radius):
     new_p = []
-    tree = cKDTree(pointcloud, leafsize=60)
 
     results = tree.query_ball_point(pointcloud, r=radius)
     for idx, result in enumerate(results):

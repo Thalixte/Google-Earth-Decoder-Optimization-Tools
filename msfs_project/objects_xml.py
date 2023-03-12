@@ -20,9 +20,10 @@ import copy
 import os
 from decimal import Decimal
 
-from constants import HEIGHT_MAP_DISPLAY_NAME, LIGHT_WARM_GUID, LIGHT_HEADING, LIGHTS_DISPLAY_NAME
+from constants import HEIGHT_MAP_DISPLAY_NAME
 from utils.progress_bar import ProgressBar
 from utils import Xml
+from utils.string import remove_accents
 import xml.etree.ElementTree as Et
 
 
@@ -295,7 +296,7 @@ class ObjectsXml(Xml):
             root = parent
 
         if name is not None:
-            pattern = self.remove_accents((self.LANDMARK_LOCATION_SEARCH_PATTERN + str(name).replace("'", "") + self.PATTERN_SUFFIX).lower())
+            pattern = remove_accents((self.LANDMARK_LOCATION_SEARCH_PATTERN + str(name).replace("'", "") + self.PATTERN_SUFFIX).lower())
             parse_tree = self.to_parseable(copy.deepcopy(self.root))
             elems = parse_tree.findall(pattern)
             for elem in elems:
