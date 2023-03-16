@@ -100,6 +100,7 @@ SCRIPT_PREFIX = "_script"
 COLLIDER_SUFFIX = "_collider"
 GEOCODE_SUFFIX = "_geocode"
 HEIGHT_MAP_PREFIX = "height_map_"
+LANDMARK_PREFIX = "landmark_"
 
 RESOURCE_FOLDER = "resource"
 TEMPLATES_FOLDER = RESOURCE_FOLDER + "\\" + "templates"

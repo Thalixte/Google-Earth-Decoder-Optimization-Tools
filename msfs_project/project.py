@@ -189,7 +189,6 @@ class MsfsProject:
         isolated_print(EOL)
         dest_format = settings.output_texture_format
         src_format = JPG_TEXTURE_FORMAT if dest_format == PNG_TEXTURE_FORMAT else PNG_TEXTURE_FORMAT
-        lods = [lod for tile in self.tiles.values() for lod in tile.lods]
         self.__convert_tiles_textures(src_format, dest_format)
         self.update_min_size_values(settings)
         self.objects_xml.update_objects_position(self, settings)
@@ -198,13 +197,6 @@ class MsfsProject:
         if self.__optimization_needed():
             self.__create_optimization_folders()
             self.__optimize_tile_lods(self.__retrieve_lods_to_optimize(settings.nb_parallel_blender_tasks))
-
-        pbar = ProgressBar(list(lods), title="PREPARE THE TILES FOR MSFS")
-        for lod in lods:
-            lod.folder = os.path.dirname(lod.folder) if self.__optimization_needed() else lod.folder
-            lod.optimization_in_progress = False
-            lod.prepare_for_msfs()
-            pbar.update("%s prepared for msfs" % lod.name)
 
     def fix_tiles_lightning_issues(self, settings):
         isolated_print(EOL)
@@ -353,7 +345,7 @@ class MsfsProject:
 
     def create_landmark_from_geocode(self, settings, lat, lon):
         geocode = settings.geocode
-        self.__create_landmark_from_geocode(geocode, settings)
+        self.__create_landmark_from_geocode(geocode, settings, self.coords)
 
     def add_lights_to_geocode(self, settings):
         geocode = settings.geocode
@@ -1122,7 +1114,7 @@ class MsfsProject:
 
         if process_3d_data:
             if settings.isolate_3d_data:
-                self.__create_exclusion_masks_from_tiles(b, orig_bbox.assign(building=BOUNDING_BOX_OSM_KEY), building_mask=resize_gdf(building, settings.building_margin), water_mask=water, construction_mask=construction if settings.keep_constructions else None, road_mask=roads if settings.keep_roads else None, bridges_mask=bridges if settings.keep_roads else None, hidden_roads=hidden_roads if settings.keep_roads else None, amenity_mask=amenity if settings.keep_roads else None, residential_mask=residential if settings.keep_residential_and_industrial else None, industrial_mask=industrial if settings.keep_residential_and_industrial else None, airport_mask=airport, rocks_mask=rocks, file_prefix=EXCLUSION_OSM_FILE_PREFIX, title="CREATE EXCLUSION MASKS OSM FILES", process_all=process_all)
+                self.__create_exclusion_masks_from_tiles(b, orig_bbox.assign(building=BOUNDING_BOX_OSM_KEY), building_mask=resize_gdf(building, settings.building_margin), water_mask=water, construction_mask=construction if settings.keep_constructions else None, road_mask=roads if settings.keep_roads else None, bridges_mask=bridges if settings.keep_roads else None, hidden_roads=hidden_roads if settings.keep_roads else None, amenity_mask=amenity if settings.keep_roads else None, residential_mask=residential if settings.keep_residential_and_industrial else None, industrial_mask=industrial if settings.keep_residential_and_industrial else None, airport_mask=airport, rocks_mask=resize_gdf(rocks, settings.building_margin), file_prefix=EXCLUSION_OSM_FILE_PREFIX, title="CREATE EXCLUSION MASKS OSM FILES", process_all=process_all)
             else:
                 self.__create_exclusion_masks_from_tiles(b, exclusion, building_mask=building, airport_mask=airport, rocks_mask=rocks, file_prefix=EXCLUSION_OSM_FILE_PREFIX, title="CREATE EXCLUSION MASKS OSM FILES", process_all=process_all)
 
@@ -1163,7 +1155,7 @@ class MsfsProject:
             osm_xml.create_from_geodataframes([preserve_holes(industrial.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore'))], b)
 
         if not exclusion.empty:
-            print_title("CREATE EXCLUSION OSM FILE")
+            print_title("CREATE GLOBAL EXCLUSION OSM FILE")
             # for debugging purpose, generate the exclusion osm file
             osm_xml = OsmXml(self.osmfiles_folder, EXCLUSION_OSM_FILE_PREFIX + OSM_FILE_EXT)
             osm_xml.create_from_geodataframes([preserve_holes(exclusion.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore'))], b, extrude=True, additional_tags=[(HEIGHT_OSM_TAG, 1000)])
@@ -1172,38 +1164,38 @@ class MsfsProject:
                water_without_bridges, water, exclusion, rocks, amenity, residential, industrial
 
     def __create_scenery_polygons(self, b, orig_bbox, orig_water, orig_natural_water, bbox, sea, pitch, amenity, construction, industrial, airport, exclusion, disable_terraform=False):
-        print_title("CREATE PITCH TERRAFORM POLYGONS GEO DATAFRAMES...)")
+        print_title("CREATE PITCH TERRAFORM POLYGONS GEO DATAFRAMES...")
         pitch_terraform_polygons = create_terraform_polygons_gdf(pitch, exclusion)
         # for debugging purpose
         osm_xml = OsmXml(self.osmfiles_folder, "pitch_terraform_polygons" + OSM_FILE_EXT)
         osm_xml.create_from_geodataframes([pitch_terraform_polygons.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')], b)
 
-        print_title("CREATE AMENITY TERRAFORM POLYGONS GEO DATAFRAMES...)")
+        print_title("CREATE AMENITY TERRAFORM POLYGONS GEO DATAFRAMES...")
         amenity_terraform_polygons = create_terraform_polygons_gdf(amenity, exclusion)
         # for debugging purpose
         osm_xml = OsmXml(self.osmfiles_folder, "amenity_terraform_polygons" + OSM_FILE_EXT)
         osm_xml.create_from_geodataframes([amenity_terraform_polygons.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')], b)
 
-        print_title("CREATE CONSTRUCTION TERRAFORM POLYGONS GEO DATAFRAMES...)")
+        print_title("CREATE CONSTRUCTION TERRAFORM POLYGONS GEO DATAFRAMES...")
         construction_terraform_polygons = create_terraform_polygons_gdf(construction, exclusion)
         # for debugging purpose
         osm_xml = OsmXml(self.osmfiles_folder, "construction_terraform_polygons" + OSM_FILE_EXT)
         osm_xml.create_from_geodataframes([construction_terraform_polygons.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')], b)
 
-        print_title("CREATE INDUSTRIAL TERRAFORM POLYGONS GEO DATAFRAMES...)")
+        print_title("CREATE INDUSTRIAL TERRAFORM POLYGONS GEO DATAFRAMES...")
         industrial_terraform_polygons = create_terraform_polygons_gdf(industrial, exclusion)
         # for debugging purpose
         osm_xml = OsmXml(self.osmfiles_folder, "industrial_terraform_polygons" + OSM_FILE_EXT)
         osm_xml.create_from_geodataframes([industrial_terraform_polygons.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')], b)
 
-        print_title("CREATE EXCLUSION BUILDINGS POLYGONS GEO DATAFRAMES...)")
+        print_title("CREATE EXCLUSION BUILDINGS POLYGONS GEO DATAFRAMES...")
         exclusion_building = create_exclusion_building_gdf(orig_water, orig_natural_water, sea, bbox)
         exclusion_building_polygons = create_exclusion_building_polygons_gdf(orig_bbox, exclusion_building, airport)
         # for debugging purpose
         osm_xml = OsmXml(self.osmfiles_folder, "exclusion_building_polygons" + OSM_FILE_EXT)
         osm_xml.create_from_geodataframes([exclusion_building_polygons.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')], b)
 
-        print_title("CREATE EXCLUSION VEGETATION POLYGONS GEO DATAFRAMES...)")
+        print_title("CREATE EXCLUSION VEGETATION POLYGONS GEO DATAFRAMES...")
         shore_water = create_shore_water_gdf(orig_water, orig_natural_water, sea, bbox)
         exclusion_vegetation_polygons = create_exclusion_vegetation_polygons_gdf(shore_water)
         # for debugging purpose
@@ -1363,7 +1355,7 @@ class MsfsProject:
         if not geocode_gdf.empty:
             # for debugging purpose, generate the osm file
             osm_xml = OsmXml(self.osmfiles_folder, GEOCODE_OSM_FILE_PREFIX + "_" + EXCLUSION_OSM_FILE_PREFIX + OSM_FILE_EXT)
-            osm_xml.create_from_geodataframes([preserve_holes(geocode_gdf)], b, extrude=True, additional_tags=[(HEIGHT_OSM_TAG, 1000)])
+            osm_xml.create_from_geodataframes([preserve_holes(geocode_gdf)], b, extrude=True, additional_tags=[(HEIGHT_OSM_TAG, 3000)])
 
         return geocode_gdf
 
@@ -1443,12 +1435,12 @@ class MsfsProject:
             lod.prepare_for_msfs()
             pbar.update("%s prepared for msfs" % lod.name)
 
-    def __create_landmark_from_geocode(self, geocode, settings):
+    def __create_landmark_from_geocode(self, geocode, settings, coords):
         ox.config(use_cache=False, log_level=lg.DEBUG)
         alt = 0.0
 
         print_title("RETRIEVE OSM GEOCODE DATA")
-        geocode_gdf = load_gdf_from_geocode(geocode, keep_data=True, shpfiles_folder=self.shpfiles_folder)
+        geocode_gdf = load_gdf_from_geocode(geocode, coords=coords, keep_data=True, shpfiles_folder=self.shpfiles_folder)
 
         if geocode_gdf.empty:
             return

@@ -16,7 +16,7 @@
 #
 #  <pep8 compliant>
 
-from utils import Settings, get_sources_path, reload_modules, isolated_print
+from utils import Settings, get_sources_path, reload_modules, isolated_print, print_title
 
 settings = Settings(get_sources_path())
 
@@ -44,6 +44,12 @@ def optimize_scenery(script_settings):
 
         clean_scene()
         msfs_project.optimize(script_settings)
+
+        isolated_print(EOL)
+        print_title("CLEAN PACKAGE FILES")
+
+        msfs_project = MsfsProject(script_settings.projects_path, script_settings.project_name, script_settings.definition_file, script_settings.author_name, script_settings.sources_path)
+        msfs_project.clean()
 
         if script_settings.build_package_enabled:
             build_package(msfs_project, script_settings)

@@ -21,7 +21,7 @@ import warnings
 
 from constants import GEOMETRY_OSM_COLUMN, BOUNDING_BOX_OSM_KEY, SHAPE_TEMPLATES_FOLDER, OSM_LAND_SHAPEFILE, ROAD_OSM_KEY, BRIDGE_OSM_TAG, SERVICE_OSM_KEY, NOT_SHORE_WATER_OSM_KEY, WATER_OSM_KEY, NATURAL_OSM_KEY, OSM_TAGS, FOOTWAY_OSM_TAG, PATH_OSM_TAG, MAN_MADE_OSM_KEY, PIER_OSM_TAG, GOLF_OSM_KEY, FAIRWAY_OSM_TAG, EOL, CEND, TUNNEL_OSM_TAG, SEAMARK_TYPE_OSM_TAG, BUILDING_OSM_KEY, SHP_FILE_EXT, ELEMENT_TY_OSM_KEY, OSMID_OSM_KEY, RAILWAY_OSM_KEY, LANES_OSM_KEY, ONEWAY_OSM_KEY, ROAD_WITH_BORDERS, \
     ROAD_LANE_WIDTH, GEOCODE_OSM_FILE_PREFIX, PEDESTRIAN_ROAD_TYPE, FOOTWAY_ROAD_TYPE, SERVICE_ROAD_TYPE, LANDUSE_OSM_KEY, CONSTRUCTION_OSM_KEY, GDAL_LIB_PREFIX, FIONA_LIB_PREFIX, LAND_MASS_REPO, LAND_MASS_ARCHIVE, LEISURE_OSM_KEY, NETWORKX_LIB, RTREE_LIB, MATPLOTLIB_LIB, PANDAS_LIB, GEOPANDAS_LIB, OSMNX_LIB, SHAPELY_LIB, PATH_ROAD_TYPE, TRACK_ROAD_TYPE, AREA_OSM_TAG, NOT_EXCLUSION_BUILDING_OSM_KEY, WALL_OSM_KEY, WALL_OSM_TAG, CASTLE_WALL_OSM_TAG, CYCLEWAY_ROAD_TYPE, FULL_PREFIX, \
-    ROAD_REMOVAL_LANDUSE_OSM_KEY, ROAD_REMOVAL_NATURAL_OSM_KEY, PROPOSED_OSM_TAG
+    ROAD_REMOVAL_LANDUSE_OSM_KEY, ROAD_REMOVAL_NATURAL_OSM_KEY, PROPOSED_OSM_TAG, LANDMARK_PREFIX, LON_OSM_KEY, LAT_OSM_KEY
 from utils import pr_bg_orange, install_python_lib, install_alternate_python_lib, install_shapefile_resource, isolated_print
 
 try:
@@ -102,6 +102,7 @@ class SHAPELY_TYPE:
 class OSMID_TYPE:
     way = "way"
     relation = "relation"
+    node = "node"
 
 
 class OVERLAY_OPERATOR:
@@ -172,12 +173,15 @@ def create_bounding_box(coords):
     return gpd.GeoDataFrame(pd.DataFrame([], index=[0]), crs=EPSG.key + str(EPSG.WGS84_degree_unit), geometry=[b]), b
 
 
-def resize_gdf(gdf, resize_distance, single_sided=True):
+def resize_gdf(gdf, resize_distance, single_sided=True, keep_points=False):
     if gdf.empty:
         return gdf
 
     gdf = gdf.to_crs(EPSG.key + str(EPSG.WGS84_meter_unit))
-    gdf[GEOMETRY_OSM_COLUMN] = gdf[GEOMETRY_OSM_COLUMN].buffer(resize_distance, cap_style=CAP_STYLE.flat, join_style=JOIN_STYLE.mitre, single_sided=single_sided)
+    if keep_points:
+        gdf[GEOMETRY_OSM_COLUMN] = gdf[GEOMETRY_OSM_COLUMN].buffer(resize_distance)
+    else:
+        gdf[GEOMETRY_OSM_COLUMN] = gdf[GEOMETRY_OSM_COLUMN].buffer(resize_distance, cap_style=CAP_STYLE.flat, join_style=JOIN_STYLE.mitre, single_sided=single_sided)
     return gdf.to_crs(EPSG.key + str(EPSG.WGS84_degree_unit))
 
 
@@ -218,8 +222,8 @@ def load_gdf_from_geocode(geocode, geocode_margin=5.0, preserve_roads=True, pres
         if display_warnings:
             pbar.update("retrieving man made geodataframe...", stall=True)
         # load gdf twice to ensure to retrieve if from cache (to have osmid in a key, not in an index)
-        load_gdf(coords, MAN_MADE_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, MAN_MADE_OSM_KEY + SHP_FILE_EXT))
-        orig_man_made = load_gdf(coords, MAN_MADE_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, MAN_MADE_OSM_KEY + SHP_FILE_EXT), keep_geocode_data=True)
+        load_gdf(coords, MAN_MADE_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, LANDMARK_PREFIX + MAN_MADE_OSM_KEY + SHP_FILE_EXT), keep_points=True)
+        orig_man_made = load_gdf(coords, MAN_MADE_OSM_KEY, True, shp_file_path=os.path.join(shpfiles_folder, LANDMARK_PREFIX + MAN_MADE_OSM_KEY + SHP_FILE_EXT), keep_geocode_data=True, keep_points=True)
         if display_warnings:
             pbar.update("man made geodataframe retrieved")
             pbar.update("retrieving natural geodataframe...", stall=True)
@@ -265,7 +269,7 @@ def load_gdf_from_geocode(geocode, geocode_margin=5.0, preserve_roads=True, pres
                 if ELEMENT_TY_OSM_KEY in orig_building and OSMID_OSM_KEY in orig_building:
                     result = orig_building[((orig_building[ELEMENT_TY_OSM_KEY] == OSMID_TYPE.way) | (orig_building[ELEMENT_TY_OSM_KEY] == OSMID_TYPE.relation)) & (orig_building[OSMID_OSM_KEY] == int(osmid))]
                 if result.empty and ELEMENT_TY_OSM_KEY in orig_man_made and OSMID_OSM_KEY in orig_man_made:
-                    result = orig_man_made[((orig_man_made[ELEMENT_TY_OSM_KEY] == OSMID_TYPE.way) | (orig_man_made[ELEMENT_TY_OSM_KEY] == OSMID_TYPE.relation)) & (orig_man_made[OSMID_OSM_KEY] == int(osmid))]
+                    result = orig_man_made[((orig_man_made[ELEMENT_TY_OSM_KEY] == OSMID_TYPE.way) | (orig_man_made[ELEMENT_TY_OSM_KEY] == OSMID_TYPE.relation) | (orig_man_made[ELEMENT_TY_OSM_KEY] == OSMID_TYPE.node)) & (orig_man_made[OSMID_OSM_KEY] == int(osmid))]
                 if result.empty and ELEMENT_TY_OSM_KEY in orig_natural and OSMID_OSM_KEY in orig_natural:
                     result = orig_natural[((orig_natural[ELEMENT_TY_OSM_KEY] == OSMID_TYPE.way) | (orig_natural[ELEMENT_TY_OSM_KEY] == OSMID_TYPE.relation)) & (orig_natural[OSMID_OSM_KEY] == int(osmid))]
                 if result.empty and ELEMENT_TY_OSM_KEY in orig_landuse and OSMID_OSM_KEY in orig_landuse:
@@ -285,6 +289,9 @@ def load_gdf_from_geocode(geocode, geocode_margin=5.0, preserve_roads=True, pres
         if display_warnings:
             pr_bg_orange(("Osmid" if geocode.isnumeric() else "Geocode") + " (" + geocode + ") not found in OSM data" + EOL + CEND)
         return create_empty_gdf()
+
+    result[LON_OSM_KEY] = result.centroid.iloc[0].x
+    result[LAT_OSM_KEY] = result.centroid.iloc[0].y
 
     bounds_coords = result.bounds.iloc[0]
     result_coords = (bounds_coords["maxy"], bounds_coords["miny"], bounds_coords["maxx"], bounds_coords["minx"])
@@ -327,7 +334,7 @@ def load_gdf_from_geocode(geocode, geocode_margin=5.0, preserve_roads=True, pres
     return result.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)
 
 
-def load_gdf(coords, key, tags, shp_file_path="", keep_geocode_data=False, is_roads=False, is_sea=False, is_waterway=False, is_grass=False, is_wall=False, land_mass=None, bbox=None):
+def load_gdf(coords, key, tags, shp_file_path="", keep_geocode_data=False, is_roads=False, is_sea=False, is_waterway=False, is_grass=False, is_wall=False, land_mass=None, bbox=None, keep_points=False):
     result = create_empty_gdf()
     has_cache = os.path.isfile(shp_file_path)
     logging.getLogger('shapely.geos').setLevel(logging.CRITICAL)
@@ -351,8 +358,9 @@ def load_gdf(coords, key, tags, shp_file_path="", keep_geocode_data=False, is_ro
             if not result.empty:
                 result.index.names = list(map(lambda x: x[:10], result.index.names))
 
-            # remove points to fix shapefile saving issues
-            result = result[~(result.geom_type == SHAPELY_TYPE.point)]
+            if not keep_points:
+                # remove points to fix shapefile saving issues
+                result = result[~(result.geom_type == SHAPELY_TYPE.point)]
 
     if not result.empty:
         keys.insert(0, GEOMETRY_OSM_COLUMN)
@@ -390,8 +398,8 @@ def load_gdf(coords, key, tags, shp_file_path="", keep_geocode_data=False, is_ro
         result = result[keys]
 
         if not has_cache and shp_file_path != "":
-            if not is_roads and not is_waterway and not keep_geocode_data:
-                result = resize_gdf(result, 0.00001)
+            if (not is_roads and not is_waterway and not keep_geocode_data) or keep_points:
+                result = resize_gdf(result, 0.00001, keep_points=keep_points)
 
             try:
                 warnings.simplefilter("ignore", FutureWarning, append=True)
@@ -499,6 +507,7 @@ def prepare_roads_gdf(gdf, railway_gdf, bridge_only=True, automatic_road_width_c
 
         result = result.reset_index(drop=True)
         result = result.to_crs(EPSG.key + str(EPSG.WGS84_meter_unit))
+        result = result.explode()
         for index, row in result.iterrows():
             road_width = calculate_road_width(row) if automatic_road_width_calculation else 22
             result.loc[index, GEOMETRY_OSM_COLUMN] = row[GEOMETRY_OSM_COLUMN].buffer(road_width, resolution=32, cap_style=CAP_STYLE.square, join_style=JOIN_STYLE.mitre, mitre_limit=20.0, single_sided=False)

@@ -49,7 +49,7 @@ def generate_height_data(script_settings):
             msfs_project.backup(Path(os.path.abspath(__file__)).stem.replace(SCRIPT_PREFIX, str()), all_files=False)
 
         isolated_print(EOL)
-        print_title("PREPARE 3D DATA")
+        print_title("GENERATE HEIGHT DATA")
 
         script_settings.exclude_ground = True
         script_settings.exclude_nature_reserve = True

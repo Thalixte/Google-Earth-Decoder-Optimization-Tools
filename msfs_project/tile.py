@@ -41,7 +41,6 @@ class MsfsTile(MsfsSceneObject):
     new_tiles: dict
     exclusion_osm_file: str
     bbox_osm_file: str
-    has_rocks: bool
     bbox_gdf: gpd.GeoDataFrame
     exclusion_mask_gdf: gpd.GeoDataFrame
     isolation_mask_gdf: gpd.GeoDataFrame
@@ -59,7 +58,6 @@ class MsfsTile(MsfsSceneObject):
         self.pos = MsfsPosition(pos[0], pos[1], altitude)
         self.new_tiles = {}
         self.height_map = None
-        self.has_rocks = False
 
     def create_optimization_folders(self, linked_tiles, dry_mode=False, pbar=None):
         other_tiles = [tile for tile in linked_tiles if tile.name != self.name]
@@ -144,11 +142,6 @@ class MsfsTile(MsfsSceneObject):
     def create_exclusion_mask_osm_file(self, dest_folder, b, exclusion_mask, building_mask, water_mask, construction_mask, road_mask, bridges_mask, hidden_roads, amenity_mask, residential_mask, industrial_mask, airport_mask, rocks_mask, keep_holes, file_prefix):
         bbox_gdf = resize_gdf(self.bbox_gdf, 10 if keep_holes else 200)
         exclusion_mask_gdf = exclusion_mask.clip(bbox_gdf)
-        tile_rocks = None
-
-        if rocks_mask is not None:
-            tile_rocks = clip_gdf(rocks_mask, self.bbox_gdf)
-            self.has_rocks = not tile_rocks.empty
 
         if not exclusion_mask_gdf.empty:
             if building_mask is not None:
@@ -156,10 +149,10 @@ class MsfsTile(MsfsSceneObject):
                     building_mask = clip_gdf(building_mask, bbox_gdf)
                     exclusion_mask_gdf = difference_gdf(exclusion_mask_gdf, building_mask)
 
-            if tile_rocks is not None:
-                if not tile_rocks.empty:
-                    tile_rocks = clip_gdf(rocks_mask, bbox_gdf)
-                    exclusion_mask_gdf = difference_gdf(exclusion_mask_gdf, tile_rocks)
+            if rocks_mask is not None:
+                if not rocks_mask.empty:
+                    rocks_mask = clip_gdf(rocks_mask, bbox_gdf)
+                    exclusion_mask_gdf = difference_gdf(exclusion_mask_gdf, rocks_mask)
 
             if construction_mask is not None:
                 if not construction_mask.empty:
