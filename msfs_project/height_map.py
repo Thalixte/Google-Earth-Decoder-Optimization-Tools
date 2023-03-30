@@ -73,6 +73,7 @@ class MsfsHeightMap:
         self.display_name = HEIGHT_MAP_DISPLAY_NAME
 
         if tile is not None and height_data is not None:
+            self.display_name = self.display_name + "_" + tile.name
             self.__init_from_height_data(tile, height_data, inverted_height_data, width, altitude, group_id)
 
         if xml is not None and elem is not None:

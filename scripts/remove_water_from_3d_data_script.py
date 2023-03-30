@@ -55,7 +55,7 @@ def remove_water_from_3d_data(script_settings):
         script_settings.exclude_parks = False
         script_settings.isolate_3d_data = False
         script_settings.keep_constructions = False
-        script_settings.keep_roads = False
+        script_settings.keep_roads = True
         script_settings.keep_residential_and_industrial = False
         script_settings.disable_terraform = False
         script_settings.save()

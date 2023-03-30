@@ -695,7 +695,7 @@ def generate_model_height_data(model_file_path, lat, lon, altitude, height_adjus
     hmatrix = calculate_height_map_from_coords_from_bottom(tile, grid_dimension, coords, depsgraph, lat, lon, altitude, height_adjustment, height_noise_reduction)
 
     if high_precision:
-        hmatrix = calculate_height_map_from_coords_from_top(tile, grid_dimension, coords, depsgraph, lat, lon, altitude, hmatrix, height_noise_reduction=height_noise_reduction)
+        hmatrix = calculate_height_map_from_coords_from_top(tile, coords, depsgraph, lat, lon, altitude, hmatrix, height_noise_reduction=height_noise_reduction)
 
     # fix wrong height data for ground tiles
     if os.path.exists(positioning_file_path) and os.path.exists(ground_mask_file_path):
@@ -794,8 +794,21 @@ def debug_height_data(new_collection, hmatrix, height_grid, height_grid_coords, 
 
     bpy.ops.object.select_all(action=DESELECT_ACTION)
     import_model_files([model_file_path], clean=False, objects_to_keep=debug_objects)
+    objs = bpy.context.selected_objects
+    bpy.ops.object.select_all(action=DESELECT_ACTION)
+
+    for obj in objs:
+        if BOUNDING_BOX_OSM_KEY in obj.name:
+            obj.select_set(True)
+            bpy.ops.object.delete()
+
+    bpy.ops.object.select_all(action=SELECT_ACTION)
+
+    for obj in debug_objects:
+        obj.select_set(False)
+
     bpy.ops.object.join()
-    obs = bpy.context.selected_objects
+    objs = bpy.context.selected_objects
 
     height_grid.select_set(True)
     bpy.context.view_layer.objects.active = height_grid
@@ -815,7 +828,7 @@ def debug_height_data(new_collection, hmatrix, height_grid, height_grid_coords, 
     for obj in new_collection.objects:
         obj.hide_set(True)
 
-    for obj in obs:
+    for obj in objs:
         obj.location[2] = obj.location[2] - 100.0
         apply_transform(obj, use_location=True)
 
@@ -1052,15 +1065,15 @@ def calculate_height_map_from_coords_from_bottom(tile, grid_dimension, coords, d
     return results
 
 
-def calculate_height_map_from_coords_from_top(tile, grid_dimension, coords, depsgraph, lat, lon, altitude, hmatrix_base, height_noise_reduction=35):
-    results = defaultdict(dict)
+def calculate_height_map_from_coords_from_top(tile, coords, depsgraph, lat, lon, altitude, hmatrix_base, height_noise_reduction=35):
+    results = hmatrix_base.copy()
     geoid_height = get_geoid_height(lat, lon)
     new_coords = []
 
     for co in coords:
         p = mathutils.Vector((co[0], co[1], 3000))
         ray_direction_inverted = [0, 0, -1]
-        result = tile.evaluated_get(depsgraph).ray_cast(p, ray_direction_inverted, distance=3000)
+        result = tile.evaluated_get(depsgraph).ray_cast(p, ray_direction_inverted, distance=6000)
         if result[0]:
             new_coords.append(result[1])
 
@@ -1078,19 +1091,18 @@ def calculate_height_map_from_coords_from_top(tile, grid_dimension, coords, deps
             y = round_decimals_down(p1[1], 1)
             h = p1[2]
 
-            if len(results[y]) <= grid_dimension:
-                h = h + altitude + geoid_height
-                # h = h if h >= geoid_height else geoid_height
+            h = h + altitude + geoid_height
+            # h = h if h >= geoid_height else geoid_height
 
-                if hmatrix_base is not None:
-                    if y in hmatrix_base:
-                        if x in hmatrix_base[y]:
-                            base_h = hmatrix_base[y][x]
-                            h = h + 1.0 if h >= base_h else base_h
-                            results[y][x] = h
-                else:
-                    h = h + altitude + geoid_height
-                    results[y][x] = h
+            if hmatrix_base is not None:
+                if y in hmatrix_base:
+                    if x in hmatrix_base[y]:
+                        base_h = hmatrix_base[y][x]
+                        h = h + 1.0 if h >= base_h else base_h
+                        results[y][x] = h
+            else:
+                h = h + altitude + geoid_height
+                results[y][x] = h
 
     return results
 
@@ -1120,10 +1132,10 @@ def adjust_height_data_on_exclusion_area(tile, depsgraph, lat, lon, altitude, ex
 
                 if exclusion_type == EXCLUSION_TYPE.WATER:
                     ray_direction = (0, 0, 1)
-                    result = tile.evaluated_get(depsgraph).ray_cast(p1, ray_direction, distance=3000)
+                    result = tile.evaluated_get(depsgraph).ray_cast(p1, ray_direction, distance=6000)
                 else:
                     ray_direction = (0, 0, -1)
-                    result = tile.evaluated_get(depsgraph).ray_cast(p2, ray_direction, distance=3000)
+                    result = tile.evaluated_get(depsgraph).ray_cast(p2, ray_direction, distance=6000)
 
                 if result[0]:
                     new_coords.append(result[1])
