@@ -221,8 +221,8 @@ class MsfsTile(MsfsSceneObject):
         min_lod_idx = len(self.lods) - 1
         lod = self.lods[min_lod_idx]
 
-        # if high_precision and len(self.lods) > 0:
-        #     lod = self.lods[0]
+        if high_precision and len(self.lods) > 0:
+            lod = self.lods[0]
 
         if os.path.isdir(lod.folder):
             height_data, inverted_height_data, width, altitude = lod.calculate_height_data(self.coords[0], self.coords[2], altitude, height_adjustment, height_noise_reduction, positioning_file_path=positioning_file_path, water_mask_file_path=water_mask_file_path, ground_mask_file_path=ground_mask_file_path, rocks_mask_file_path=rocks_mask_file_path, high_precision=high_precision, debug=debug)
