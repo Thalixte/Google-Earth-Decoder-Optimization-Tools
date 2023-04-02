@@ -1120,7 +1120,7 @@ class MsfsProject:
 
         if generate_height_data:
             if settings.isolate_3d_data:
-                self.__generate_isolated_height_data(b, construction, roads, bridges, hidden_roads, airport, building, water_without_bridges, orig_bbox.assign(building=BOUNDING_BOX_OSM_KEY), amenity, residential, industrial, rocks, keep_roads=settings.keep_roads, keep_residential_and_industrial=settings.keep_residential_and_industrial, keep_constructions=settings.keep_constructions, process_all=process_all)
+                self.__generate_isolated_height_data(b, construction, roads, bridges, hidden_roads, airport, building, water_without_bridges, orig_bbox.assign(building=BOUNDING_BOX_OSM_KEY), None, residential if settings.keep_residential_and_industrial else None, industrial if settings.keep_residential_and_industrial else None, rocks, keep_roads=settings.keep_roads, keep_residential_and_industrial=settings.keep_residential_and_industrial, keep_constructions=settings.keep_constructions, process_all=process_all)
             else:
                 self.__generate_excluded_height_data(b, construction, roads, bridges, hidden_roads, airport, building, water_without_bridges, orig_bbox.assign(building=BOUNDING_BOX_OSM_KEY), resize_gdf(exclusion, settings.building_margin), rocks, keep_roads=settings.keep_roads, keep_constructions=settings.keep_constructions, process_all=process_all)
 

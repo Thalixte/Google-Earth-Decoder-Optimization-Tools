@@ -176,6 +176,9 @@ def create_bounding_box(coords):
 
 
 def resize_gdf(gdf, resize_distance, single_sided=True, keep_points=False):
+    if gdf is None:
+        return None
+
     if gdf.empty:
         return gdf
 
