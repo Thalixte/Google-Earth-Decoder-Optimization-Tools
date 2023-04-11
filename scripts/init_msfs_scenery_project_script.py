@@ -18,12 +18,14 @@
 
 from utils import Settings, get_sources_path, reload_modules, print_title, isolated_print
 
-settings = Settings(get_sources_path())
+global_sources_path = get_sources_path()
+settings = Settings(global_sources_path)
 
 # reload modules if the option is enabled in the optimization_tools.ini file
 reload_modules(settings)
 
 import os
+import shutil
 
 from constants import *
 from utils import ScriptError, pr_bg_green, pr_bg_red
@@ -32,10 +34,15 @@ from msfs_project import MsfsProject
 
 def init_msfs_scenery_project(script_settings):
     try:
+        script_settings.save()
+
         print_title("INIT SCENERY PROJECT")
 
         # instantiate the msfsProject and create the necessary resources if it does not exist
-        MsfsProject(script_settings.projects_path, script_settings.project_name, script_settings.definition_file, script_settings.author_name, script_settings.sources_path, init_structure=True, fast_init=True)
+        msfs_project = MsfsProject(script_settings.projects_path, script_settings.project_name, script_settings.definition_file, script_settings.author_name, script_settings.sources_path, init_structure=True, fast_init=True)
+
+        if not os.path.exists(os.path.join(msfs_project.project_folder, INI_FILE)):
+            shutil.copyfile(os.path.join(global_sources_path, INI_FILE), os.path.join(msfs_project.project_folder, INI_FILE))
 
         pr_bg_green("Script correctly applied" + constants.CEND)
 
