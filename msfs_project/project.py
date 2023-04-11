@@ -382,14 +382,14 @@ class MsfsProject:
             self.objects_xml.save()
 
     def __initialize(self, sources_path, init_structure, fast_init):
-        self.__init_structure(sources_path, init_structure)
+        self.__init_structure(sources_path, init_structure, fast_init)
 
         if not fast_init:
             self.__init_components()
             self.__guess_min_lod_level()
             self.__calculate_coords()
 
-    def __init_structure(self, sources_path, init_structure):
+    def __init_structure(self, sources_path, init_structure, fast_init):
         if init_structure:
             self.project_definition_xml = self.project_name.capitalize() + XML_FILE_EXT
         if init_structure or not os.path.isfile(os.path.join(self.project_folder, self.project_definition_xml)):
@@ -425,6 +425,8 @@ class MsfsProject:
                 os.makedirs(self.content_info_folder, exist_ok=True)
             except WindowsError:
                 raise ScriptError("MSFS project folders creation is not possible")
+            except:
+                pass
 
         # rename project definition xml file folder if it exists
         old_project_definition_xml_path = os.path.join(self.project_folder, self.package_definitions_xml)
@@ -451,14 +453,20 @@ class MsfsProject:
 
         self.model_lib_output_folder = self.__get_model_lib_output_folder()
 
-        # create the osm folder if it does not exist
-        os.makedirs(self.osmfiles_folder, exist_ok=True)
+        if not fast_init:
+            try:
+                # create the osm folder if it does not exist
+                os.makedirs(self.osmfiles_folder, exist_ok=True)
 
-        # create the shp folder if it does not exist
-        os.makedirs(self.shpfiles_folder, exist_ok=True)
+                # create the shp folder if it does not exist
+                os.makedirs(self.shpfiles_folder, exist_ok=True)
 
-        # create the xml folder if it does not exist
-        os.makedirs(self.xmlfiles_folder, exist_ok=True)
+                # create the xml folder if it does not exist
+                os.makedirs(self.xmlfiles_folder, exist_ok=True)
+            except WindowsError:
+                raise ScriptError("MSFS project folders creation is not possible")
+            except:
+                pass
 
     def __init_components(self):
         self.__retrieve_objects()
