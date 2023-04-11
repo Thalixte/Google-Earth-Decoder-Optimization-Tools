@@ -57,9 +57,11 @@ except ModuleNotFoundError:
 
 try:
     import pandas as pd
+    from pandas.errors import SettingWithCopyWarning
 except ModuleNotFoundError:
     install_python_lib(PANDAS_LIB)
     import pandas as pd
+    from pandas.errors import SettingWithCopyWarning
 
 try:
     import geopandas as gpd
@@ -293,7 +295,6 @@ def load_gdf_from_geocode(geocode, geocode_margin=5.0, preserve_roads=True, pres
             pr_bg_orange(("Osmid" if geocode.isnumeric() else "Geocode") + " (" + geocode + ") not found in OSM data" + EOL + CEND)
         return create_empty_gdf()
 
-    from pd.core.commons import SettingWithCopyWarning
     warnings.simplefilter("ignore", SettingWithCopyWarning, append=True)
     result[LON_OSM_KEY] = result.centroid.iloc[0].x
     result[LAT_OSM_KEY] = result.centroid.iloc[0].y
