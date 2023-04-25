@@ -43,16 +43,10 @@ from msfs_project import MsfsProject
 
 def add_lights_to_geocode(script_settings):
     try:
-        script_settings.save()
-
         isolated_print(EOL)
 
         # instantiate the msfsProject and create the necessary resources if it does not exist
         msfs_project = MsfsProject(script_settings.projects_path, script_settings.project_name, script_settings.definition_file, script_settings.author_name, script_settings.sources_path)
-
-        if not os.path.exists(os.path.join(msfs_project.project_folder, INI_FILE)):
-            shutil.copyfile(os.path.join(global_sources_path, INI_FILE), os.path.join(msfs_project.project_folder, INI_FILE))
-        script_settings = Settings(msfs_project.project_folder)
 
         check_configuration(script_settings, msfs_project)
 

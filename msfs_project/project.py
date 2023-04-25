@@ -26,6 +26,8 @@ import os
 import subprocess
 
 from utils import install_python_lib
+from utils.GoogleMapDownloader import GoogleMapDownloader
+from utils.google_tile import retrieve_GE_tile
 from utils.string import remove_accents
 from utils.geo_pandas import prepare_wall_gdf, create_exclusion_building_gdf, prepare_water_gdf, prepare_amenity_gdf, prepare_hidden_roads_gdf, prepare_water_exclusion_gdf, prepare_residential_gdf, create_point_gdf
 from constants import *
@@ -1104,6 +1106,18 @@ class MsfsProject:
         pbar = ProgressBar(valid_tiles, title="CREATE BOUNDING BOX OSM FILES FOR EACH TILE")
         for i, tile in enumerate(valid_tiles):
             tile.create_bbox_osm_file(self.osmfiles_folder, self.min_lod_level)
+            gmd = GoogleMapDownloader(tile.coords[0], tile.pos.lon, 19)
+
+            isolated_print("The tile coordinates are {}".format(gmd.getXY()))
+            try:
+                # Get the high resolution image
+                img = gmd.generateImage()
+            except IOError:
+                print("Could not generate the image - try adjusting the zoom level and checking your coordinates")
+            else:
+                # Save the image to disk
+                img.save(tile.name + PNG_FILE_EXT)
+                print("The map has successfully been created")
             pbar.update("osm files created for %s tile" % tile.name)
 
     def __prepare_3d_data(self, settings, generate_height_data=False, process_3d_data=False, create_polygons=True, process_all=False):
