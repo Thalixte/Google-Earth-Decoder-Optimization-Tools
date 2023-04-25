@@ -27,7 +27,6 @@ import subprocess
 
 from utils import install_python_lib
 from utils.GoogleMapDownloader import GoogleMapDownloader
-from utils.google_tile import retrieve_GE_tile
 from utils.string import remove_accents
 from utils.geo_pandas import prepare_wall_gdf, create_exclusion_building_gdf, prepare_water_gdf, prepare_amenity_gdf, prepare_hidden_roads_gdf, prepare_water_exclusion_gdf, prepare_residential_gdf, create_point_gdf
 from constants import *
