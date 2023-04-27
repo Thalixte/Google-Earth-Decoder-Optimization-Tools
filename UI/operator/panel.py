@@ -168,7 +168,7 @@ class SettingsOperator(PanelOperator):
         # col.separator()
         # self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "exclude_parks", "Exclude parks 3d data")
         # col.separator()
-        if self.operator_name is "wm.generate_height_data" or self.operator_name is "wm.prepare_3d_data":
+        if self.operator_name == "wm.generate_height_data" or self.operator_name == "wm.prepare_3d_data":
             self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "height_adjustment", "Height data adjustment (in meters)")
             col.separator()
             self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "height_noise_reduction", "Height data noise_reduction factor for bottom ray-tracing")
@@ -176,7 +176,7 @@ class SettingsOperator(PanelOperator):
             self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "high_precision", "High precision height data generation")
             col.separator()
 
-        if self.operator_name is not "wm.generate_height_data" and self.operator_name is not "wm.prepare_3d_data":
+        if self.operator_name != "wm.generate_height_data" and self.operator_name != "wm.prepare_3d_data":
             self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "process_all", "Process all the tiles (if unticked, process only the tiles that has not been cleaned)")
             col.separator()
 
@@ -188,22 +188,22 @@ class SettingsOperator(PanelOperator):
         col.separator()
         self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "geocode", "Geocode")
         col.separator()
-        if self.operator_name is "wm.exclude_3d_data_from_geocode" or self.operator_name is "wm.isolate_3d_data_from_geocode":
+        if self.operator_name == "wm.exclude_3d_data_from_geocode" or self.operator_name == "wm.isolate_3d_data_from_geocode":
             self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "geocode_margin", "Geocode margin")
             col.separator()
-            if self.operator_name is not "wm.isolate_3d_data_from_geocode":
+            if self.operator_name != "wm.isolate_3d_data_from_geocode":
                 self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "preserve_roads", "Preserve roads")
                 col.separator()
                 self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "preserve_buildings", "Preserve buildings")
                 col.separator()
-        if self.operator_name is "wm.create_landmark_from_geocode":
+        if self.operator_name == "wm.create_landmark_from_geocode":
             self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "landmark_type", "Landmark type")
             col.separator()
             self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "landmark_offset", "Landmark offset")
             col.separator()
             self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "add_lights", "Add lights all around the landmark")
             col.separator()
-        if self.operator_name is "wm.create_landmark_from_geocode" or self.operator_name is "wm.add_lights_to_geocode":
+        if self.operator_name == "wm.create_landmark_from_geocode" or self.operator_name == "wm.add_lights_to_geocode":
             self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "light_guid", "Select the type of light")
             col.separator()
         self.draw_footer(context, self.layout, self.operator_name)

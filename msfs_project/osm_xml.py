@@ -88,8 +88,13 @@ class OsmXml(Xml):
                 if not is_point and not isinstance(row.geometry, Polygon) and not isinstance(row.geometry, MultiPolygon):
                     continue
 
+                geometries = []
+
                 if isinstance(row.geometry, Polygon):
                     geometries = [row.geometry]
+                elif isinstance(row.geometry, MultiPolygon):
+                    for polygon in row.geometry.geoms:
+                        geometries.append(polygon)
                 elif is_point and isinstance(row.geometry, Point):
                     geometries = [row.geometry]
                 else:

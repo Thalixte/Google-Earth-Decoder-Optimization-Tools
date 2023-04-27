@@ -57,11 +57,11 @@ except ModuleNotFoundError:
 
 try:
     import pandas as pd
-    from pandas.errors import SettingWithCopyWarning
+    # from pandas.errors import SettingWithCopyWarning
 except ModuleNotFoundError:
     install_python_lib(PANDAS_LIB)
     import pandas as pd
-    from pandas.errors import SettingWithCopyWarning
+    # from pandas.errors import SettingWithCopyWarning
 
 try:
     import geopandas as gpd
@@ -295,7 +295,7 @@ def load_gdf_from_geocode(geocode, geocode_margin=5.0, preserve_roads=True, pres
             pr_bg_orange(("Osmid" if geocode.isnumeric() else "Geocode") + " (" + geocode + ") not found in OSM data" + EOL + CEND)
         return create_empty_gdf()
 
-    warnings.simplefilter("ignore", SettingWithCopyWarning, append=True)
+    # warnings.simplefilter("ignore", SettingWithCopyWarning, append=True)
     result[LON_OSM_KEY] = result.centroid.iloc[0].x
     result[LAT_OSM_KEY] = result.centroid.iloc[0].y
 
@@ -445,7 +445,7 @@ def prepare_roads_gdf(gdf, railway_gdf, bridge_only=True, automatic_road_width_c
     roads = gdf.copy()
     railways = railway_gdf.copy()
     warnings.simplefilter("ignore", FutureWarning, append=True)
-    roads = roads.append(railways)
+    roads = roads._append(railways)
     has_bridge = False
     has_bridge_path = False
     has_seamark_bridge = False
@@ -487,18 +487,18 @@ def prepare_roads_gdf(gdf, railway_gdf, bridge_only=True, automatic_road_width_c
 
             if MAN_MADE_OSM_KEY in roads:
                 pier = roads[(roads[ROAD_OSM_KEY] == FOOTWAY_OSM_TAG) & (roads[MAN_MADE_OSM_KEY] == PIER_OSM_TAG)]
-                pier = pier.append(roads[(roads[ROAD_OSM_KEY] == FOOTWAY_OSM_TAG) & ~(roads[BRIDGE_OSM_TAG].isna())])
+                pier = pier._append(roads[(roads[ROAD_OSM_KEY] == FOOTWAY_OSM_TAG) & ~(roads[BRIDGE_OSM_TAG].isna())])
                 pier = resize_gdf(pier, 12, single_sided=False)
                 has_pier = not pier.empty
 
             if has_bridge:
-                result = result.append(bridge)
+                result = result._append(bridge)
 
             if has_bridge_path:
-                result = result.append(bridge_path)
+                result = result._append(bridge_path)
 
             if has_seamark_bridge:
-                result = result.append(seamark_bridge)
+                result = result._append(seamark_bridge)
         else:
             if TUNNEL_OSM_TAG in roads:
                 roads = roads[roads[TUNNEL_OSM_TAG].isna()]
@@ -521,10 +521,10 @@ def prepare_roads_gdf(gdf, railway_gdf, bridge_only=True, automatic_road_width_c
         result = result.to_crs(EPSG.key + str(EPSG.WGS84_degree_unit))
 
         if has_pier:
-            result = result.append(pier)
+            result = result._append(pier)
 
         if has_places and not bridge_only:
-            result = result.append(places)
+            result = result._append(places)
 
         result = result[(result.geom_type == SHAPELY_TYPE.polygon) | (result.geom_type == SHAPELY_TYPE.multiPolygon)]
         result[GEOMETRY_OSM_COLUMN] = result[GEOMETRY_OSM_COLUMN].buffer(0)
@@ -639,10 +639,10 @@ def prepare_building_gdf(gdf, wall, man_made):
         result = result[(result.geom_type == SHAPELY_TYPE.polygon) | (result.geom_type == SHAPELY_TYPE.multiPolygon)]
 
     if not wall.empty:
-        result = result.append(wall)
+        result = result._append(wall)
 
     if not man_made.empty:
-        result = result.append(man_made)
+        result = result._append(man_made)
 
     return result.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)
 
@@ -654,7 +654,7 @@ def prepare_water_gdf(gdf, waterway):
         result = result[(result.geom_type == SHAPELY_TYPE.polygon) | (result.geom_type == SHAPELY_TYPE.multiPolygon)]
 
     if not waterway.empty:
-        result = result.append(resize_gdf(waterway, 30))
+        result = result._append(resize_gdf(waterway, 30))
 
     return result.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)
 
@@ -682,7 +682,7 @@ def prepare_hidden_roads_gdf(landuse_gdf, natural_gdf):
                 filter = landuse_src[(landuse_src[LANDUSE_OSM_KEY] == tag)]
 
             if not filter.empty:
-                result = result.append(filter)
+                result = result._append(filter)
 
     if not natural_src.empty:
         for tag in OSM_TAGS[ROAD_REMOVAL_NATURAL_OSM_KEY]:
@@ -690,7 +690,7 @@ def prepare_hidden_roads_gdf(landuse_gdf, natural_gdf):
                 filter = natural_src[(natural_src[NATURAL_OSM_KEY] == tag)]
 
             if not filter.empty:
-                result = result.append(filter)
+                result = result._append(filter)
 
     if not result.empty:
         result = result[(result.geom_type == SHAPELY_TYPE.polygon) | (result.geom_type == SHAPELY_TYPE.multiPolygon)]
@@ -869,6 +869,7 @@ def copy_geometry(source, dest, start_index=-1):
 
 def preserve_holes(gdf, split_method=PRESERVE_HOLES_METHOD.centroid_split):
     keep_polys = []
+    result_lp = []
     result = gdf.copy()
     result = resize_gdf(result, 1)
     result = result[(result.geom_type == SHAPELY_TYPE.polygon) | (result.geom_type == SHAPELY_TYPE.multiPolygon)]
@@ -879,10 +880,13 @@ def preserve_holes(gdf, split_method=PRESERVE_HOLES_METHOD.centroid_split):
         return result
 
     if result_p.type == SHAPELY_TYPE.polygon:
-        result_p = [result_p]
+        result_lp = [result_p]
+    elif result_p.type == SHAPELY_TYPE.multiPolygon:
+        for polygon in result_p.geoms:
+            result_lp.append(polygon)
 
     warnings.simplefilter("ignore", ShapelyDeprecationWarning, append=True)
-    for input_p in result_p:
+    for input_p in result_lp:
         if input_p.interiors:
             if split_method == PRESERVE_HOLES_METHOD.centroid_split:
                 keep_polys = centroid_split_method(input_p, keep_polys)

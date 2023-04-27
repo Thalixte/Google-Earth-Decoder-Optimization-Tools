@@ -25,8 +25,7 @@ import shutil
 import os
 import subprocess
 
-from utils import install_python_lib
-from utils.GoogleMapDownloader import GoogleMapDownloader
+from utils import install_python_lib, MapBoxDownloader
 from utils.string import remove_accents
 from utils.geo_pandas import prepare_wall_gdf, create_exclusion_building_gdf, prepare_water_gdf, prepare_amenity_gdf, prepare_hidden_roads_gdf, prepare_water_exclusion_gdf, prepare_residential_gdf, create_point_gdf
 from constants import *
@@ -79,6 +78,7 @@ class MsfsProject:
     osmfiles_folder: str
     shpfiles_folder: str
     xmlfiles_folder: str
+    tilefiles_folder: str
     sources_folder: str
     project_definition_xml: str
     project_definition_xml_path: str
@@ -114,6 +114,7 @@ class MsfsProject:
     OSMFILES_FOLDER = "osm"
     SHPFILES_FOLDER = "shp"
     XMLFILES_FOLDER = "xml"
+    TILEFILES_FOLDER = "tiles"
     CONTENT_INFO_FOLDER = "ContentInfo"
     SCENE_OBJECTS_FILE = "objects" + XML_FILE_EXT
 
@@ -127,6 +128,7 @@ class MsfsProject:
         self.osmfiles_folder = os.path.join(self.project_folder, self.OSMFILES_FOLDER)
         self.shpfiles_folder = os.path.join(self.project_folder, self.SHPFILES_FOLDER)
         self.xmlfiles_folder = os.path.join(self.project_folder, self.XMLFILES_FOLDER)
+        self.tilefiles_folder = os.path.join(self.project_folder, self.TILEFILES_FOLDER)
         self.package_definitions_folder = os.path.join(self.project_folder, self.PACKAGE_DEFINITIONS_FOLDER)
         self.package_sources_folder = os.path.join(self.project_folder, self.PACKAGE_SOURCES_FOLDER)
         self.sources_folder = sources_path
@@ -464,6 +466,9 @@ class MsfsProject:
 
                 # create the xml folder if it does not exist
                 os.makedirs(self.xmlfiles_folder, exist_ok=True)
+
+                # create the tiles folder if it does not exist
+                os.makedirs(self.tilefiles_folder, exist_ok=True)
             except WindowsError:
                 raise ScriptError("MSFS project folders creation is not possible")
             except:
@@ -1105,19 +1110,16 @@ class MsfsProject:
         pbar = ProgressBar(valid_tiles, title="CREATE BOUNDING BOX OSM FILES FOR EACH TILE")
         for i, tile in enumerate(valid_tiles):
             tile.create_bbox_osm_file(self.osmfiles_folder, self.min_lod_level)
-            gmd = GoogleMapDownloader(tile.coords[0], tile.pos.lon, 19)
-
-            isolated_print("The tile coordinates are {}".format(gmd.getXY()))
-            try:
-                # Get the high resolution image
-                img = gmd.generateImage()
-            except IOError:
-                print("Could not generate the image - try adjusting the zoom level and checking your coordinates")
-            else:
-                # Save the image to disk
-                img.save(tile.name + PNG_FILE_EXT)
-                print("The map has successfully been created")
             pbar.update("osm files created for %s tile" % tile.name)
+            # gmd = MapBoxDownloader(tile.bbox_gdf.centroid.iloc[0].x, tile.bbox_gdf.centroid.iloc[0].y, self.min_lod_level)
+            #
+            # print("The tile coordinates are {}".format(gmd.get_xy()))
+            # # Get the high resolution image
+            # img = gmd.generate_image(target_folder=self.tilefiles_folder)
+            #
+            # # Save the image to disk
+            # img.save(os.path.join(self.tilefiles_folder, tile.name + PNG_FILE_EXT))
+            # print("The map has successfully been created")
 
     def __prepare_3d_data(self, settings, generate_height_data=False, process_3d_data=False, create_polygons=True, process_all=False):
         ox.config(use_cache=False, log_level=lg.DEBUG)
@@ -1743,8 +1745,8 @@ class MsfsProject:
                 input_fd, output_fd = os.pipe()
 
                 for obj in chunck:
-                    print("-------------------------------------------------------------------------------")
-                    print("\"" + str(bpy.app.binary_path) + "\" --background --python \"" + os.path.join(os.path.dirname(os.path.dirname(__file__)), script_name) + "\" -- " + str(" ").join(obj["params"]))
+                    isolated_print("-------------------------------------------------------------------------------")
+                    isolated_print("\"" + str(bpy.app.binary_path) + "\" --background --python \"" + os.path.join(os.path.dirname(os.path.dirname(__file__)), script_name) + "\" -- " + str(" ").join(obj["params"]))
 
                 si = subprocess.STARTUPINFO()
                 si.dwFlags = subprocess.STARTF_USESTDHANDLES | subprocess.HIGH_PRIORITY_CLASS
@@ -1757,7 +1759,7 @@ class MsfsProject:
                 # read output line by line as soon as it is available
                 with io.open(input_fd, "r", buffering=1) as file:
                     for line in file:
-                        print(line, end=str())
+                        isolated_print(line, end=str())
 
                 for p in processes:
                     p.wait()

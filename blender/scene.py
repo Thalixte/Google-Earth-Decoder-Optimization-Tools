@@ -19,8 +19,6 @@
 import os
 from math import floor
 
-from scipy.interpolate import griddata
-
 from mathutils.bvhtree import BVHTree
 from collections import defaultdict
 from pathlib import Path
@@ -50,6 +48,8 @@ try:
 except ModuleNotFoundError:
     install_python_lib('shapely')
     import shapely
+
+from scipy.interpolate import griddata
 
 from pygeodesy.ellipsoidalKarney import LatLon
 from scipy.spatial import cKDTree
@@ -1192,15 +1192,17 @@ def spatial_median(pointcloud, radius):
         # patch that lie inside the Point buffer
         isect = pbuff.intersection(patch)
 
+        points = []
+
         # initialise another list
         plist = []
 
         # f or every intersection set,
         # unpack it into a list and collect the median Z value
         if isect.geom_type == 'MultiPoint':
-            # isolated_print('point has neighbours')
-            for p in isect:
+            for p in isect.geoms:
                 plist.append(p.z)
+            # isolated_print('point has neighbours')
 
             new_p.append((point.x, point.y, np.median(plist)))
         else:

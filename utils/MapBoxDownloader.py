@@ -13,7 +13,7 @@ from urllib.request import urlretrieve
 from PIL import Image
 
 
-class GoogleMapDownloader:
+class MapBoxDownloader:
     """
         A class which generates high resolution google maps images given
         a longitude, latitude and zoom level
@@ -33,7 +33,7 @@ class GoogleMapDownloader:
         self._lng = lng
         self._zoom = zoom
 
-    def getXY(self):
+    def get_xy(self):
         """
             Generates an X,Y tile coordinate based on the latitude, longitude 
             and zoom level
@@ -58,7 +58,7 @@ class GoogleMapDownloader:
 
         return int(point_x), int(point_y)
 
-    def generateImage(self, **kwargs):
+    def generate_image(self, **kwargs):
         """
             Generates an image by stitching a number of google map tiles together.
             
@@ -66,21 +66,24 @@ class GoogleMapDownloader:
                 start_x:        The top-left x-tile coordinate
                 start_y:        The top-left y-tile coordinate
                 tile_width:     The number of tiles wide the image should be -
-                                defaults to 5
+                                defaults to 1
                 tile_height:    The number of tiles high the image should be -
-                                defaults to 5
+                                defaults to 1
+                target_folder:  The folder where temporary downloadable image is stored -
+                                defaults to None
             Returns:
                 A high-resolution Goole Map image.
         """
 
         start_x = kwargs.get('start_x', None)
         start_y = kwargs.get('start_y', None)
-        tile_width = kwargs.get('tile_width', 4)
-        tile_height = kwargs.get('tile_height', 6)
+        tile_width = kwargs.get('tile_width', 2)
+        tile_height = kwargs.get('tile_height', 3)
+        target_folder = kwargs.get('target_folder', None)
 
         # Check that we have x and y tile coordinates
         if start_x is None or start_y is None:
-            start_x, start_y = self.getXY()
+            start_x, start_y = self.get_xy()
 
         # Determine the size of the image
         width, height = 256 * tile_width, 256 * tile_height
@@ -88,16 +91,18 @@ class GoogleMapDownloader:
         # Create a new image of the required size
         map_img = Image.new('RGB', (width, height))
 
-        for x in range(0, tile_width):
-            for y in range(0, tile_height):
-                url = 'https://mt0.google.com/vt?lyrs=s&x=' + str(start_x + x) + '&y=' + str(start_y + y) + '&z=' + str(self._zoom)
+        url = 'https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/' + str(self._lat) + ',' + str(self._lng) + ',' + str(self._zoom) + '/' + str(256 * tile_width) + 'x' + str(256 * tile_height) + '?access_token=pk.eyJ1IjoiZ2Vkb3QiLCJhIjoiY2xneGN4dnp2MDBwcDNlcWZhcDI4cmZhYyJ9.0V0zSjQazVmBEnHLua8_WA&attribution=false&logo=false'
 
-                current_tile = str(x) + '-' + str(y)
-                urlretrieve(url, current_tile)
+        current_tile = '0-0'
 
-                im = Image.open(current_tile)
-                map_img.paste(im, (x * 256, y * 256))
+        if target_folder is not None:
+            current_tile = os.path.join(target_folder, current_tile)
 
-                os.remove(current_tile)
+        urlretrieve(url, current_tile)
+
+        im = Image.open(current_tile)
+        map_img.paste(im, (0, 0))
+
+        os.remove(current_tile)
 
         return map_img

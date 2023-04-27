@@ -246,8 +246,13 @@ class MsfsShapes:
             if not isinstance(row.geometry, Polygon) and not isinstance(row.geometry, MultiPolygon):
                 continue
 
+            polygons = []
+
             if isinstance(row.geometry, Polygon):
                 polygons = [row.geometry]
+            elif isinstance(row.geometry, MultiPolygon):
+                for polygon in row.geometry.geoms:
+                    polygons.append(polygon)
             else:
                 polygons = row.geometry
 
