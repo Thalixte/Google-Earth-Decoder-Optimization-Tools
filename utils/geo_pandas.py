@@ -161,6 +161,8 @@ def create_bounding_box_from_tiles(tiles):
             result = copy_geometry(tile.bbox_gdf, result, i)
 
     result = result.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)
+    result = result.explode()
+
     result[GEOMETRY_OSM_COLUMN] = result[GEOMETRY_OSM_COLUMN].apply(lambda p: close_holes(p))
     result = resize_gdf(result, 10)
     return result
@@ -932,7 +934,7 @@ def centroid_split_method(input_p, keep_polys):
         next_proj_centroid_pt = proj_pts[1]
 
         if next_proj_centroid_pt.x > next_centroid_pt.x:
-            for pt in other_centroid_pts:
+            for pt in other_centroid_pts.geoms:
                 if pt.x == next_proj_centroid_pt.x:
                     next_centroid_pt = pt
 
