@@ -1019,7 +1019,7 @@ def calculate_height_map_from_coords_from_bottom(tile, grid_dimension, coords, d
     for co in coords:
         p = co
         ray_direction = [0, 0, 1]
-        result = tile.evaluated_get(depsgraph).ray_cast(p, ray_direction, distance=3000)
+        result = tile.evaluated_get(depsgraph).ray_cast(p, ray_direction, distance=6000)
         if result[0]:
             new_coords.append(mathutils.Vector((p[0], p[1], result[1][2])))
         else:
@@ -1467,12 +1467,11 @@ def create_grid(obj, name, grid_dimension):
     bpy.ops.mesh.primitive_plane_add(location=[0.0, 0.0, 0.0], rotation=obj.rotation_euler, scale=obj.scale)
 
     new_obj = bpy.context.object
-    reduction_factor = 0.97
 
-    minx = obj.bound_box[0][0]*reduction_factor
-    maxx = obj.bound_box[4][0]*reduction_factor
-    miny = obj.bound_box[0][1]*reduction_factor
-    maxy = obj.bound_box[2][1]*reduction_factor
+    minx = obj.bound_box[0][0]
+    maxx = obj.bound_box[4][0]
+    miny = obj.bound_box[0][1]
+    maxy = obj.bound_box[2][1]
     dx = maxx - minx
     dy = maxy - miny
 
@@ -1505,12 +1504,10 @@ def create_grid(obj, name, grid_dimension):
 
 
 def create_and_align_grid(obj, grid_name, grid_collection, grid_factor, grid_dimensions, keep_faces=False):
-    reduction_factor = 0.97
-
-    minx = obj.bound_box[0][0] * reduction_factor
-    maxx = obj.bound_box[4][0] * reduction_factor
-    miny = obj.bound_box[0][1] * reduction_factor
-    maxy = obj.bound_box[2][1] * reduction_factor
+    minx = obj.bound_box[0][0]
+    maxx = obj.bound_box[4][0]
+    miny = obj.bound_box[0][1]
+    maxy = obj.bound_box[2][1]
     dx = maxx - minx
     dy = maxy - miny
 

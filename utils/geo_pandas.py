@@ -1046,16 +1046,21 @@ def create_latlon_gdf_from_meter_data(data, lat, lon, alt):
 
 def calculate_road_width(row):
     is_railway = False
+    is_oneway = False
+    lanes = 0
     road_type = row[ROAD_OSM_KEY]
-    lanes = row[LANES_OSM_KEY]
-    oneway = row[ONEWAY_OSM_KEY]
-    is_oneway = oneway == "yes"
+    if LANES_OSM_KEY in row:
+        lanes = row[LANES_OSM_KEY]
+    if ONEWAY_OSM_KEY in row:
+        oneway = row[ONEWAY_OSM_KEY]
+        is_oneway = oneway == "yes"
 
     if RAILWAY_OSM_KEY in row:
         is_railway = not pd.isna(row[RAILWAY_OSM_KEY])
 
-    if is_railway or pd.isna(row[LANES_OSM_KEY]) or row[LANES_OSM_KEY] is None:
-        lanes = 1 if is_oneway else 2
+    if LANES_OSM_KEY in row:
+        if is_railway or pd.isna(row[LANES_OSM_KEY]) or row[LANES_OSM_KEY] is None:
+            lanes = 1 if is_oneway else 2
 
     if ";" in str(lanes):
         lanes = lanes.split(";")[0]
