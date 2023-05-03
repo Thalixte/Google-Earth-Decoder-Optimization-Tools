@@ -1467,11 +1467,12 @@ def create_grid(obj, name, grid_dimension):
     bpy.ops.mesh.primitive_plane_add(location=[0.0, 0.0, 0.0], rotation=obj.rotation_euler, scale=obj.scale)
 
     new_obj = bpy.context.object
+    reduction_factor = 0.99
 
-    minx = obj.bound_box[0][0]
-    maxx = obj.bound_box[4][0]
-    miny = obj.bound_box[0][1]
-    maxy = obj.bound_box[2][1]
+    minx = obj.bound_box[0][0] * reduction_factor
+    maxx = obj.bound_box[4][0] * reduction_factor
+    miny = obj.bound_box[0][1] * reduction_factor
+    maxy = obj.bound_box[2][1] * reduction_factor
     dx = maxx - minx
     dy = maxy - miny
 
@@ -1504,10 +1505,12 @@ def create_grid(obj, name, grid_dimension):
 
 
 def create_and_align_grid(obj, grid_name, grid_collection, grid_factor, grid_dimensions, keep_faces=False):
-    minx = obj.bound_box[0][0]
-    maxx = obj.bound_box[4][0]
-    miny = obj.bound_box[0][1]
-    maxy = obj.bound_box[2][1]
+    reduction_factor = 0.99
+
+    minx = obj.bound_box[0][0] * reduction_factor
+    maxx = obj.bound_box[4][0] * reduction_factor
+    miny = obj.bound_box[0][1] * reduction_factor
+    maxy = obj.bound_box[2][1] * reduction_factor
     dx = maxx - minx
     dy = maxy - miny
 
