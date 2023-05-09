@@ -16,26 +16,24 @@
 #
 #  <pep8 compliant>
 
-from utils import Settings, get_sources_path, reload_modules, print_title, isolated_print
+from utils import GlobalSettings, get_global_path, reload_modules, print_title, isolated_print
 
-settings = Settings(get_sources_path())
+settings = GlobalSettings(get_global_path())
 
 # reload modules if the option is enabled in the optimization_tools.ini file
 reload_modules(settings)
-
-import os
 
 from constants import *
 from utils import ScriptError, pr_bg_green, pr_bg_red
 from msfs_project import MsfsProject
 
 
-def init_msfs_scenery_project(script_settings):
+def init_msfs_scenery_project(global_settings):
     try:
         print_title("INIT SCENERY PROJECT")
 
         # instantiate the msfsProject and create the necessary resources if it does not exist
-        MsfsProject(script_settings.projects_path, script_settings.project_name, script_settings.definition_file, script_settings.author_name, script_settings.sources_path, init_structure=True, fast_init=True)
+        MsfsProject(global_settings.projects_path, global_settings.project_name, global_settings.definition_file, global_settings.path, init_structure=True, fast_init=True)
 
         pr_bg_green("Script correctly applied" + constants.CEND)
 

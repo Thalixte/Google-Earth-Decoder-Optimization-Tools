@@ -16,32 +16,29 @@
 #
 #  <pep8 compliant>
 
-from utils import Settings, get_sources_path, reload_modules, print_title, isolated_print
+from utils import GlobalSettings, get_global_path, reload_modules, print_title, isolated_print
 
-settings = Settings(get_sources_path())
+settings = GlobalSettings(get_global_path())
 
 # reload modules if the option is enabled in the optimization_tools.ini file
 reload_modules(settings)
 
-import os
-
-from pathlib import Path
 from constants import *
 from utils import check_configuration, ScriptError, build_package, pr_bg_green, pr_bg_red
 from msfs_project import MsfsProject
 
 
-def compress_built_package(script_settings):
+def compress_built_package(global_settings):
     try:
         # instantiate the msfsProject and create the necessary resources if it does not exist
-        msfs_project = MsfsProject(script_settings.projects_path, script_settings.project_name, script_settings.definition_file, script_settings.author_name, script_settings.sources_path, fast_init=True)
+        msfs_project = MsfsProject(global_settings.projects_path, global_settings.project_name, global_settings.definition_file, global_settings.path, fast_init=True)
 
-        check_configuration(script_settings, msfs_project, check_built_package=True, check_compressonator=True)
+        check_configuration(global_settings, msfs_project, check_built_package=True, check_compressonator=True)
 
         isolated_print(EOL)
         print_title("COMPRESS BUILT PACKAGE")
 
-        msfs_project.compress_built_package(script_settings)
+        msfs_project.compress_built_package(global_settings)
 
         pr_bg_green("Script correctly applied" + constants.CEND)
 

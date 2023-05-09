@@ -16,9 +16,9 @@
 #
 #  <pep8 compliant>
 
-from utils import Settings, get_sources_path, reload_modules, print_title, isolated_print
+from utils import Settings, get_global_path, reload_modules, print_title, isolated_print
 
-settings = Settings(get_sources_path())
+settings = Settings(get_global_path())
 
 # reload modules if the option is enabled in the optimization_tools.ini file
 reload_modules(settings)
@@ -47,7 +47,7 @@ def update_min_size_values(script_settings):
         msfs_project.update_min_size_values(script_settings)
 
         if script_settings.build_package_enabled:
-            build_package(msfs_project, script_settings)
+            build_package(script_settings, msfs_project)
 
         pr_bg_green("Script correctly applied" + constants.CEND)
 

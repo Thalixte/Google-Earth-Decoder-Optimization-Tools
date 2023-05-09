@@ -16,14 +16,13 @@
 #
 #  <pep8 compliant>
 
-from utils import Settings, get_sources_path, reload_modules, print_title, isolated_print
+from utils import GlobalSettings, get_global_path, reload_modules, print_title, isolated_print
 
-settings = Settings(get_sources_path())
+settings = GlobalSettings(get_global_path())
 
 # reload modules if the option is enabled in the optimization_tools.ini file
 reload_modules(settings)
 
-import os
 import warnings
 from shapely.errors import ShapelyDeprecationWarning
 
@@ -32,38 +31,39 @@ warnings.simplefilter(action="ignore", category=FutureWarning, append=True)
 warnings.simplefilter(action="ignore", category=DeprecationWarning, append=True)
 warnings.simplefilter(action="ignore", category=ShapelyDeprecationWarning, append=True)
 
+import os
 from pathlib import Path
 from constants import *
 from utils import check_configuration, ScriptError, build_package, pr_bg_green, pr_bg_red
 from msfs_project import MsfsProject
 
 
-def create_terraform_and_exclusion_polygons(script_settings):
+def create_terraform_and_exclusion_polygons(global_settings):
     try:
         # instantiate the msfsProject and create the necessary resources if it does not exist
-        msfs_project = MsfsProject(script_settings.projects_path, script_settings.project_name, script_settings.definition_file, script_settings.author_name, script_settings.sources_path)
+        msfs_project = MsfsProject(global_settings.projects_path, global_settings.project_name, global_settings.definition_file, global_settings.path)
 
-        check_configuration(script_settings, msfs_project)
+        check_configuration(global_settings, msfs_project)
 
-        if script_settings.backup_enabled:
+        if msfs_project.settings.backup_enabled:
             msfs_project.backup(Path(os.path.abspath(__file__)).stem.replace(SCRIPT_PREFIX, str()), all_files=False)
 
         isolated_print(EOL)
         print_title("CREATE TERRAFORM AND EXCLUSION POLYGONS")
 
-        script_settings.exclude_ground = True
-        script_settings.exclude_nature_reserve = True
-        script_settings.exclude_parks = True
-        script_settings.isolate_3d_data = False
-        script_settings.keep_roads = False
-        script_settings.keep_residential_and_industrial = False
-        script_settings.disable_terraform = True
-        script_settings.ground_exclusion_margin = STANDARD_EXCLUSION_MARGIN
-        script_settings.save()
-        msfs_project.prepare_3d_data(script_settings, create_polygons=True)
+        msfs_project.settings.exclude_ground = True
+        msfs_project.settings.exclude_nature_reserve = True
+        msfs_project.settings.exclude_parks = True
+        msfs_project.settings.isolate_3d_data = False
+        msfs_project.settings.keep_roads = False
+        msfs_project.settings.keep_residential_and_industrial = False
+        msfs_project.settings.disable_terraform = True
+        msfs_project.settings.ground_exclusion_margin = STANDARD_EXCLUSION_MARGIN
+        msfs_project.settings.save()
+        msfs_project.prepare_3d_data(global_settings, create_polygons=True)
 
-        if script_settings.build_package_enabled:
-            build_package(msfs_project, script_settings)
+        if msfs_project.settings.build_package_enabled:
+            build_package(global_settings, msfs_project)
 
         pr_bg_green("Script correctly applied" + constants.CEND)
 

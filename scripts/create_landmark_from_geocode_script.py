@@ -15,19 +15,13 @@
 #  #
 #
 #  <pep8 compliant>
-from pathlib import Path
 
-import osmnx as ox
-import logging as lg
+from utils import GlobalSettings, get_global_path, reload_modules, print_title, isolated_print, load_gdf_from_geocode
 
-from utils import Settings, get_sources_path, reload_modules, print_title, isolated_print, load_gdf_from_geocode
-
-settings = Settings(get_sources_path())
+settings = GlobalSettings(get_global_path())
 
 # reload modules if the option is enabled in the optimization_tools.ini file
 reload_modules(settings)
-
-import os
 import warnings
 from shapely.errors import ShapelyDeprecationWarning
 
@@ -36,24 +30,30 @@ warnings.simplefilter(action="ignore", category=FutureWarning, append=True)
 warnings.simplefilter(action="ignore", category=DeprecationWarning, append=True)
 warnings.simplefilter(action="ignore", category=ShapelyDeprecationWarning, append=True)
 
+import os
+from pathlib import Path
 from constants import *
 from utils import check_configuration, ScriptError, build_package, pr_bg_green, pr_bg_red, pr_bg_orange
 from msfs_project import MsfsProject
 
 
-def create_landmark_from_geocode(script_settings):
+def create_landmark_from_geocode(global_settings):
     try:
         isolated_print(EOL)
-        geocode_gdf = load_gdf_from_geocode(script_settings.geocode, check_geocode=True)
+
+        # fast instantiate the msfsProject and create the necessary resources if it does not exist
+        msfs_project = MsfsProject(global_settings.projects_path, global_settings.project_name, global_settings.definition_file, global_settings.path, fast_init=True)
+
+        geocode_gdf = load_gdf_from_geocode(msfs_project.settings.geocode, check_geocode=True)
 
         if geocode_gdf.empty:
-            geocode_gdf = load_gdf_from_geocode(WAY_OSM_PREFIX + script_settings.geocode, by_osmid=True, check_geocode=True)
+            geocode_gdf = load_gdf_from_geocode(WAY_OSM_PREFIX + msfs_project.settings.geocode, by_osmid=True, check_geocode=True)
 
         if geocode_gdf.empty:
-            geocode_gdf = load_gdf_from_geocode(RELATION_OSM_PREFIX + script_settings.geocode, by_osmid=True, check_geocode=True)
+            geocode_gdf = load_gdf_from_geocode(RELATION_OSM_PREFIX + msfs_project.settings.geocode, by_osmid=True, check_geocode=True)
 
         if geocode_gdf.empty:
-            geocode_gdf = load_gdf_from_geocode(NODE_OSM_PREFIX + script_settings.geocode, by_osmid=True, check_geocode=True)
+            geocode_gdf = load_gdf_from_geocode(NODE_OSM_PREFIX + msfs_project.settings.geocode, by_osmid=True, check_geocode=True)
 
         if not geocode_gdf.empty:
             lat = [0, 0.0]
@@ -65,25 +65,25 @@ def create_landmark_from_geocode(script_settings):
                 lon = geocode_gdf[LON_OSM_KEY]
 
             # instantiate the msfsProject and create the necessary resources if it does not exist
-            msfs_project = MsfsProject(script_settings.projects_path, script_settings.project_name, script_settings.definition_file, script_settings.author_name, script_settings.sources_path)
+            msfs_project = MsfsProject(global_settings.projects_path, global_settings.project_name, global_settings.definition_file, global_settings.path)
 
-            check_configuration(script_settings, msfs_project)
+            check_configuration(global_settings, msfs_project)
 
-            if script_settings.backup_enabled:
+            if msfs_project.settings.backup_enabled:
                 msfs_project.backup(Path(os.path.abspath(__file__)).stem.replace(SCRIPT_PREFIX, str()), all_files=False)
 
             isolated_print(EOL)
             print_title("CREATE LANDMARK FROM GEOCODE")
-            msfs_project.create_landmark_from_geocode(script_settings, lat, lon)
+            msfs_project.create_landmark_from_geocode(global_settings, lat, lon)
 
-            if script_settings.add_lights:
+            if msfs_project.settings.add_lights:
                 print_title("ADD LIGHTS TO GEOCODE")
-                msfs_project.add_lights_to_geocode(script_settings)
+                msfs_project.add_lights_to_geocode(global_settings)
 
-            if script_settings.build_package_enabled:
-                build_package(msfs_project, script_settings)
+            if msfs_project.settings.build_package_enabled:
+                build_package(global_settings, msfs_project)
         else:
-            pr_bg_orange("Geocode (" + script_settings.geocode + ") not found in OSM data" + EOL + CEND)
+            pr_bg_orange("Geocode (" + global_settings.geocode + ") not found in OSM data" + EOL + CEND)
 
         pr_bg_green("Script correctly applied" + constants.CEND)
 

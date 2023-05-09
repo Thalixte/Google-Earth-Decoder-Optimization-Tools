@@ -20,7 +20,7 @@ import os
 import bpy
 
 
-def get_sources_path():
+def get_global_path():
     cwd = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
     # Check if script is executed in Blender and get absolute path of current folder

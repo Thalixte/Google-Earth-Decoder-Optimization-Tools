@@ -25,6 +25,7 @@ import shutil
 import os
 import subprocess
 
+from msfs_project import ProjectSettings
 from utils import install_python_lib, MapBoxDownloader
 from utils.string import remove_accents
 from utils.geo_pandas import prepare_wall_gdf, create_exclusion_building_gdf, prepare_water_gdf, prepare_amenity_gdf, prepare_hidden_roads_gdf, prepare_water_exclusion_gdf, prepare_residential_gdf, create_point_gdf
@@ -64,6 +65,7 @@ from utils.progress_bar import ProgressBar
 
 
 class MsfsProject:
+    settings: ProjectSettings
     parent_path: str
     project_name: str
     author_name: str
@@ -118,12 +120,13 @@ class MsfsProject:
     CONTENT_INFO_FOLDER = "ContentInfo"
     SCENE_OBJECTS_FILE = "objects" + XML_FILE_EXT
 
-    def __init__(self, projects_path, project_name, definition_file, author_name, sources_path, init_structure=False, fast_init=False):
+    def __init__(self, projects_path, project_name, definition_file, global_path, init_structure=False, fast_init=False):
         self.parent_path = projects_path
         self.project_name = project_name
         self.project_definition_xml = definition_file
-        self.author_name = author_name
+        self.author_name = self.AUTHOR_STRING
         self.project_folder = os.path.join(self.parent_path, self.project_name.capitalize())
+        self.settings = ProjectSettings(self.project_folder)
         self.backup_folder = os.path.join(self.project_folder, self.BACKUP_FOLDER)
         self.osmfiles_folder = os.path.join(self.project_folder, self.OSMFILES_FOLDER)
         self.shpfiles_folder = os.path.join(self.project_folder, self.SHPFILES_FOLDER)
@@ -131,7 +134,7 @@ class MsfsProject:
         self.tilefiles_folder = os.path.join(self.project_folder, self.TILEFILES_FOLDER)
         self.package_definitions_folder = os.path.join(self.project_folder, self.PACKAGE_DEFINITIONS_FOLDER)
         self.package_sources_folder = os.path.join(self.project_folder, self.PACKAGE_SOURCES_FOLDER)
-        self.sources_folder = sources_path
+        self.sources_folder = global_path
         self.objects_xml = None
 
         # Ensure to remove remaining cache folder
@@ -160,7 +163,7 @@ class MsfsProject:
             self.objects_xml = ObjectsXml(self.scene_folder, self.SCENE_OBJECTS_FILE)
         self.min_lod_level = 0
 
-        self.__initialize(sources_path, init_structure, fast_init)
+        self.__initialize(global_path, init_structure, fast_init)
 
     def update_objects_position(self, settings):
         isolated_print(EOL)

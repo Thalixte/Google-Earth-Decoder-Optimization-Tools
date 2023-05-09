@@ -19,11 +19,11 @@
 import bpy
 from bpy.types import Menu
 from constants import CLEAR_CONSOLE_CMD
-from utils import Settings, get_sources_path
+from utils import Settings, get_global_path
 
 updatedSettingsPropertyGroup = None
 
-bpy.types.Scene.settings = Settings(get_sources_path())
+bpy.types.Scene.settings = Settings(get_global_path())
 
 from .operator.tools import *
 from .operator import PanelPropertyGroup, OT_ProjectPathOperator, OT_ProjectsPathOperator, OT_MsfsBuildExePathOperator, \
@@ -226,7 +226,7 @@ def register():
         bpy.types.TOPBAR_MT_editor_menus.append(TOPBAR_MT_google_earth_optimization_menus.draw)
 
         if not hasattr(bpy.types.Scene, "settings"):
-            bpy.types.Scene.settings = Settings(get_sources_path())
+            bpy.types.Scene.settings = Settings(get_global_path())
 
 
 def unregister():

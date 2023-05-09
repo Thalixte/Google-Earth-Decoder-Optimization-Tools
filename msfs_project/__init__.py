@@ -17,6 +17,7 @@
 #  <pep8 compliant>
 
 from .project import *
+from .project_settings import *
 from .object import *
 from .scene_object import *
 from .collider import *

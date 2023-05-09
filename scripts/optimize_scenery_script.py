@@ -16,9 +16,9 @@
 #
 #  <pep8 compliant>
 
-from utils import Settings, get_sources_path, reload_modules, isolated_print, print_title
+from utils import Settings, get_global_path, reload_modules, isolated_print, print_title
 
-settings = Settings(get_sources_path())
+settings = Settings(get_global_path())
 
 # reload modules if the option is enabled in the optimization_tools.ini file
 reload_modules(settings)
@@ -52,7 +52,7 @@ def optimize_scenery(script_settings):
         msfs_project.clean()
 
         if script_settings.build_package_enabled:
-            build_package(msfs_project, script_settings)
+            build_package(script_settings, msfs_project)
 
         pr_bg_green("Script correctly applied" + CEND)
 

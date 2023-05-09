@@ -185,7 +185,7 @@ try:
 
     clean_scene()
 
-    settings = Settings(get_sources_path())
+    settings = Settings(get_global_path())
     high_precision = json.loads(args.high_precision.lower())
 
     if args.debug:

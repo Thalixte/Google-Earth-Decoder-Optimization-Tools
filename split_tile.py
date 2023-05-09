@@ -128,7 +128,7 @@ try:
 
     clean_scene()
 
-    settings = Settings(get_sources_path())
+    settings = Settings(get_global_path())
 
     tile = MsfsTile(args.folder, args.name, args.definition_file)
     tile.split(settings)

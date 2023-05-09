@@ -29,7 +29,7 @@ ERROR_MSG = "MSFS SDK tools not installed"
 ######################################################
 # build scenery into new MSFS package
 ######################################################
-def build_package(msfs_project, settings):
+def build_package(settings, msfs_project):
     msfs_build_exe_path = "\"" + settings.msfs_build_exe_path + "\""
 
     if settings.msfs_steam_version:
