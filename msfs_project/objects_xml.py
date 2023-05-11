@@ -393,7 +393,7 @@ class ObjectsXml(Xml):
             self.__update_scenery_object_pos(collider, self.find_scenery_objects(guid), settings, msfs_project.settings)
             self.__update_scenery_object_pos(collider, self.find_scenery_objects_in_group(guid), settings, msfs_project.settings)
 
-            pbar.update("%s" % collider.name + " : new lat: " + str(collider.pos.lat + float(settings.lat_correction)) + " : new lon: " + str(collider.pos.lon + float(settings.lon_correction)))
+            pbar.update("%s" % collider.name + " : new lat: " + str(collider.pos.lat + float(msfs_project.settings.lat_correction)) + " : new lon: " + str(collider.pos.lon + float(msfs_project.settings.lon_correction)))
 
     def __add_scenery_object(self, scenery_object, guid):
         scenery_object_elem = Et.SubElement(self.root, self.SCENERY_OBJECT_TAG, attrib={
