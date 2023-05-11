@@ -238,8 +238,9 @@ def reload_setting_props_property_group(context, reload_settings_file=True):
     if bpy.types.Scene.global_settings.projects_path is not str() and bpy.types.Scene.global_settings.project_name is not str():
         project_path = os.path.join(bpy.types.Scene.global_settings.projects_path, bpy.types.Scene.global_settings.project_name)
         if os.path.exists(project_path):
-            msfs_project = MsfsProject(bpy.types.Scene.global_settings.projects_path, bpy.types.Scene.global_settings.project_name, bpy.types.Scene.global_settings.definition_file, bpy.types.Scene.global_settings.path, bpy.types.Scene.global_settings.author_name, fast_init=True)
-            bpy.types.Scene.project_settings = msfs_project.settings
+            if reload_settings_file:
+                msfs_project = MsfsProject(bpy.types.Scene.global_settings.projects_path, bpy.types.Scene.global_settings.project_name, bpy.types.Scene.global_settings.definition_file, bpy.types.Scene.global_settings.path, bpy.types.Scene.global_settings.author_name, fast_init=True)
+                bpy.types.Scene.project_settings = msfs_project.settings
 
             for idx, min_size_value in enumerate(bpy.types.Scene.project_settings.target_min_size_values):
                 reverse_idx = (len(bpy.types.Scene.project_settings.target_min_size_values) - 1) - idx
