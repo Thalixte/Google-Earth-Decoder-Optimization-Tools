@@ -19,11 +19,12 @@
 import bpy
 from bpy.types import Menu
 from constants import CLEAR_CONSOLE_CMD
-from utils import Settings, get_global_path
+from utils import GlobalSettings, get_global_path
 
 updatedSettingsPropertyGroup = None
 
-bpy.types.Scene.settings = Settings(get_global_path())
+bpy.types.Scene.global_settings = GlobalSettings(get_global_path())
+bpy.types.Scene.project_settings = None
 
 from .operator.tools import *
 from .operator import PanelPropertyGroup, OT_ProjectPathOperator, OT_ProjectsPathOperator, OT_MsfsBuildExePathOperator, \
@@ -225,9 +226,14 @@ def register():
     finally:
         bpy.types.TOPBAR_MT_editor_menus.append(TOPBAR_MT_google_earth_optimization_menus.draw)
 
-        if not hasattr(bpy.types.Scene, "settings"):
-            bpy.types.Scene.settings = Settings(get_global_path())
+        if not hasattr(bpy.types.Scene, "global_settings"):
+            bpy.types.Scene.global_settings = GlobalSettings(get_global_path())
 
+            if bpy.types.Scene.global_settings.projects_path is not str() and bpy.types.Scene.global_settings.project_name is not str():
+                project_path = os.path.join(bpy.types.Scene.global_settings.projects_path, bpy.types.Scene.global_settings.project_name)
+                if os.path.exists(project_path) and not hasattr(bpy.types.Scene, "project_settings"):
+                    msfs_project = MsfsProject(bpy.types.Scene.global_settings.projects_path, bpy.types.Scene.global_settings.project_name, bpy.types.Scene.global_settings.definition_file, bpy.types.Scene.global_settings.path, bpy.types.Scene.global_settings.author_name, fast_init=True)
+                    bpy.types.Scene.project_settings = msfs_project.settings
 
 def unregister():
     bpy.types.TOPBAR_MT_editor_menus.remove(TOPBAR_MT_google_earth_optimization_menus.draw)
@@ -235,7 +241,8 @@ def unregister():
     try:
         del bpy.types.Scene.setting_props
         del bpy.types.Scene.panel_props
-        del bpy.types.Scene.settings
+        del bpy.types.Scene.project_settings
+        del bpy.types.Scene.global_settings
         for cls in classes:
             bpy.utils.unregister_class(cls)
     except AttributeError:

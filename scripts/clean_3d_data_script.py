@@ -40,7 +40,7 @@ from msfs_project import MsfsProject
 def clean_3d_data(global_settings):
     try:
         # instantiate the msfsProject and create the necessary resources if it does not exist
-        msfs_project = MsfsProject(global_settings.projects_path, global_settings.project_name, global_settings.definition_file, global_settings.path)
+        msfs_project = MsfsProject(global_settings.projects_path, global_settings.project_name, global_settings.definition_file, global_settings.path, global_settings.author_name)
 
         check_configuration(global_settings, msfs_project)
 
@@ -54,7 +54,7 @@ def clean_3d_data(global_settings):
         isolated_print(EOL)
         print_title("CLEAN PACKAGE FILES")
 
-        msfs_project = MsfsProject(global_settings.projects_path, global_settings.project_name, global_settings.definition_file, global_settings.path)
+        msfs_project = MsfsProject(global_settings.projects_path, global_settings.project_name, global_settings.definition_file, global_settings.path, global_settings.author_name, global_settings.author_name)
         msfs_project.clean()
 
         if msfs_project.settings.build_package_enabled:

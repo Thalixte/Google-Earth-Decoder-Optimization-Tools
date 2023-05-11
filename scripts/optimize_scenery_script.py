@@ -16,15 +16,14 @@
 #
 #  <pep8 compliant>
 
-from utils import Settings, get_global_path, reload_modules, isolated_print, print_title
+from utils import GlobalSettings, get_global_path, reload_modules, isolated_print, print_title
 
-settings = Settings(get_global_path())
+settings = GlobalSettings(get_global_path())
 
 # reload modules if the option is enabled in the optimization_tools.ini file
 reload_modules(settings)
 
 import os
-
 from pathlib import Path
 from constants import *
 from utils import check_configuration, ScriptError, build_package, pr_bg_green, pr_bg_red
@@ -32,27 +31,27 @@ from msfs_project import MsfsProject
 from blender import clean_scene
 
 
-def optimize_scenery(script_settings):
+def optimize_scenery(global_settings):
     try:
         # instantiate the msfsProject and create the necessary resources if it does not exist
-        msfs_project = MsfsProject(script_settings.projects_path, script_settings.project_name, script_settings.definition_file, script_settings.author_name, script_settings.sources_path)
+        msfs_project = MsfsProject(global_settings.projects_path, global_settings.project_name, global_settings.definition_file, global_settings.path, global_settings.author_name)
 
-        check_configuration(script_settings, msfs_project, check_optimisation=True, check_lily_texture_packer=script_settings.bake_textures_enabled)
+        check_configuration(global_settings, msfs_project, check_optimisation=True, check_lily_texture_packer=global_settings.bake_textures_enabled)
 
-        if script_settings.backup_enabled:
+        if msfs_project.settings.backup_enabled:
             msfs_project.backup(Path(os.path.abspath(__file__)).stem.replace(SCRIPT_PREFIX, str()))
 
         clean_scene()
-        msfs_project.optimize(script_settings)
+        msfs_project.optimize(global_settings)
 
         isolated_print(EOL)
         print_title("CLEAN PACKAGE FILES")
 
-        msfs_project = MsfsProject(script_settings.projects_path, script_settings.project_name, script_settings.definition_file, script_settings.author_name, script_settings.sources_path)
+        msfs_project = MsfsProject(global_settings.projects_path, global_settings.project_name, global_settings.definition_file, global_settings.path, global_settings.author_name)
         msfs_project.clean()
 
-        if script_settings.build_package_enabled:
-            build_package(script_settings, msfs_project)
+        if msfs_project.settings.build_package_enabled:
+            build_package(global_settings, msfs_project)
 
         pr_bg_green("Script correctly applied" + CEND)
 

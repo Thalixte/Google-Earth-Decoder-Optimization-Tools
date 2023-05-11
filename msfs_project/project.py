@@ -24,8 +24,6 @@ import io
 import shutil
 import os
 import subprocess
-
-from msfs_project import ProjectSettings
 from utils import install_python_lib, MapBoxDownloader
 from utils.string import remove_accents
 from utils.geo_pandas import prepare_wall_gdf, create_exclusion_building_gdf, prepare_water_gdf, prepare_amenity_gdf, prepare_hidden_roads_gdf, prepare_water_exclusion_gdf, prepare_residential_gdf, create_point_gdf
@@ -42,6 +40,7 @@ from osmnx.utils_geo import bbox_to_poly
 
 import bpy
 from blender import convert_obj_file_to_gltf_file
+from msfs_project.project_settings import ProjectSettings
 from msfs_project.landmark import MsfsLandmarks
 from msfs_project.height_map_xml import HeightMapXml
 from msfs_project.height_map import MsfsHeightMaps
@@ -120,13 +119,12 @@ class MsfsProject:
     CONTENT_INFO_FOLDER = "ContentInfo"
     SCENE_OBJECTS_FILE = "objects" + XML_FILE_EXT
 
-    def __init__(self, projects_path, project_name, definition_file, global_path, init_structure=False, fast_init=False):
+    def __init__(self, projects_path, project_name, definition_file, global_path, author_name, init_structure=False, fast_init=False):
         self.parent_path = projects_path
         self.project_name = project_name
         self.project_definition_xml = definition_file
-        self.author_name = self.AUTHOR_STRING
+        self.author_name = author_name
         self.project_folder = os.path.join(self.parent_path, self.project_name.capitalize())
-        self.settings = ProjectSettings(self.project_folder)
         self.backup_folder = os.path.join(self.project_folder, self.BACKUP_FOLDER)
         self.osmfiles_folder = os.path.join(self.project_folder, self.OSMFILES_FOLDER)
         self.shpfiles_folder = os.path.join(self.project_folder, self.SHPFILES_FOLDER)
@@ -150,7 +148,6 @@ class MsfsProject:
             # fix modellib folder name
             if not os.path.isdir(self.model_lib_folder) and os.path.isdir(os.path.join(self.package_sources_folder, self.MODEL_LIB_FOLDER)):
                 os.rename(os.path.join(self.package_sources_folder, self.MODEL_LIB_FOLDER), self.model_lib_folder)
-
         self.scene_folder = os.path.join(self.package_sources_folder, self.SCENE_FOLDER)
         self.texture_folder = os.path.join(self.model_lib_folder, TEXTURE_FOLDER)
         self.scene_folder = os.path.join(self.package_sources_folder, self.SCENE_FOLDER)
@@ -164,6 +161,7 @@ class MsfsProject:
         self.min_lod_level = 0
 
         self.__initialize(global_path, init_structure, fast_init)
+        self.settings = ProjectSettings(global_path, self.project_folder, self.project_name)
 
     def update_objects_position(self, settings):
         isolated_print(EOL)
@@ -193,10 +191,10 @@ class MsfsProject:
 
     def optimize(self, settings):
         isolated_print(EOL)
-        dest_format = settings.output_texture_format
+        dest_format = self.settings.output_texture_format
         src_format = JPG_TEXTURE_FORMAT if dest_format == PNG_TEXTURE_FORMAT else PNG_TEXTURE_FORMAT
         self.__convert_tiles_textures(src_format, dest_format)
-        self.update_min_size_values(settings)
+        self.update_min_size_values()
         self.objects_xml.update_objects_position(self, settings)
 
         # some tile lods are not optimized
@@ -231,14 +229,14 @@ class MsfsProject:
             pbar = ProgressBar([self.SCENE_OBJECTS_FILE], title="backup " + self.SCENE_OBJECTS_FILE)
             backup_file(backup_path, self.scene_folder, self.SCENE_OBJECTS_FILE, pbar=pbar, overwrite=True)
 
-    def update_min_size_values(self, settings):
+    def update_min_size_values(self):
         pbar = ProgressBar(list())
         pbar.range = len(self.tiles) + len(self.colliders)
         pbar.display_title("Update lod values")
         for tile in self.tiles.values():
-            tile.update_min_size_values(settings.target_min_size_values, pbar=pbar)
+            tile.update_min_size_values(self.settings.target_min_size_values, pbar=pbar)
         for collider in self.colliders.values():
-            collider.update_min_size_values(settings.target_min_size_values, pbar=pbar)
+            collider.update_min_size_values(self.settings.target_min_size_values, pbar=pbar)
 
     def compress_built_package(self, settings):
         compressonator = Compressonator(settings.compressonator_exe_path, self.model_lib_output_folder)
@@ -320,8 +318,8 @@ class MsfsProject:
             self.__process_lods_3d_data(settings.nb_parallel_blender_tasks, process_all=process_all)
 
     def exclude_3d_data_from_geocode(self, settings):
-        geocode = settings.geocode
-        geocode_gdf = self.__create_geocode_osm_files(geocode, settings, settings.preserve_roads, settings.preserve_buildings, self.coords, self.shpfiles_folder)
+        geocode = self.settings.geocode
+        geocode_gdf = self.__create_geocode_osm_files(geocode, settings, self.settings.preserve_roads, self.settings.preserve_buildings, self.coords, self.shpfiles_folder)
 
         if geocode_gdf is None:
             return geocode_gdf
@@ -336,7 +334,7 @@ class MsfsProject:
             # update_exclusion_building_polygons_gdf(exclusion_building, construction, amenity)
 
     def isolate_3d_data_from_geocode(self, settings):
-        geocode = settings.geocode
+        geocode = self.settings.geocode
         geocode_gdf = self.__create_geocode_osm_files(geocode, settings, False, False, self.coords, self.shpfiles_folder)
 
         if geocode_gdf is None:
@@ -350,11 +348,11 @@ class MsfsProject:
         self.__adjust_altitude(altitude_adjustment)
 
     def create_landmark_from_geocode(self, settings, lat, lon):
-        geocode = settings.geocode
+        geocode = self.settings.geocode
         self.__create_landmark_from_geocode(geocode, settings, self.coords)
 
     def add_lights_to_geocode(self, settings):
-        geocode = settings.geocode
+        geocode = self.settings.geocode
         geocode_gdf = self.__create_geocode_osm_files(geocode, settings, False, False, self.coords, self.shpfiles_folder)
 
         if geocode_gdf is None:
@@ -692,7 +690,7 @@ class MsfsProject:
                     continue
 
                 if lod.folder != self.model_lib_folder:
-                    data.append({"name": lod.name, "params": ["--folder", str(lod.folder), "--model_file", str(lod.model_file)]})
+                    data.append({"name": lod.name, "params": ["--folder", str(lod.folder), "--model_file", str(lod.model_file), "--output_texture_format", str(self.settings.output_texture_format)]})
 
         return chunks(data, nb_parallel_blender_tasks)
 
@@ -830,7 +828,7 @@ class MsfsProject:
             collider = self.__get_tile_collider(tile.name)
             has_collider = (collider is not None)
 
-            if settings.backup_enabled:
+            if self.settings.backup_enabled:
                 backup_path = os.path.join(os.path.join(self.backup_folder, backup_subfolder), geocode)
                 tile.backup_files(backup_path)
                 if has_collider:
@@ -879,7 +877,7 @@ class MsfsProject:
             if processed.empty:
                 continue
 
-            if settings.backup_enabled:
+            if self.settings.backup_enabled:
                 backup_path = os.path.join(os.path.join(self.backup_folder, backup_subfolder), geocode)
                 tile.backup_files(backup_path)
 
@@ -979,7 +977,7 @@ class MsfsProject:
         self.objects_xml.remove_lights(LIGHTS_DISPLAY_NAME + "_" + group_suffix, True)
         new_group_id = self.objects_xml.get_new_group_id()
 
-        params = ["--light_guid", settings.light_guid, "--positioning_files_paths", str('"') + "|".join(positioning_files_paths) + str('"'), "--model_files_paths", str('"') + "|".join(model_files_paths) + str('"'),
+        params = ["--light_guid", self.settings.light_guid, "--positioning_files_paths", str('"') + "|".join(positioning_files_paths) + str('"'), "--model_files_paths", str('"') + "|".join(model_files_paths) + str('"'),
                   "--landmark_location_file_path", str('"') + landmark_location_file_path + str('"'), "--mask_file_path", str('"') + mask_file_path + str('"'), "--lat", str(lat), "--lon", str(lon), "--alt", str(alt),
                   "--geocode_prefix", str('"') + prefix + str('"'), "--scene_definition_file", str('"') + self.objects_xml.file_path + str('"'), "--group_id", str(new_group_id)]
 
@@ -1081,7 +1079,7 @@ class MsfsProject:
         self.objects_xml.remove_height_maps(HEIGHT_MAPS_DISPLAY_NAME, True)
         new_group_id = self.objects_xml.get_new_group_id()
 
-        tiles_data = self.__retrieve_tiles_to_calculate_height_map(settings.nb_parallel_blender_tasks, new_group_id=new_group_id, parallel=True, height_adjustment=float(settings.height_adjustment), height_noise_reduction=float(settings.height_noise_reduction), high_precision=settings.high_precision)
+        tiles_data = self.__retrieve_tiles_to_calculate_height_map(settings.nb_parallel_blender_tasks, new_group_id=new_group_id, parallel=True, height_adjustment=float(self.settings.height_adjustment), height_noise_reduction=float(self.settings.height_noise_reduction), high_precision=self.settings.high_precision)
         self.__multithread_blender_process_data(tiles_data, "calculate_tile_height_data.py", "CALCULATE HEIGHT MAPS FOR EACH TILE", "height map calculated")
         self.__add_height_maps_to_objects_xml()
 
@@ -1136,19 +1134,19 @@ class MsfsProject:
         water_without_bridges, water, exclusion, rocks, amenity, residential, industrial = self.__retrieve_osm_data(b, orig_bbox, settings)
 
         if create_polygons:
-            self.__create_scenery_polygons(b, orig_bbox, orig_water, orig_natural_water, bbox, sea, pitch, amenity, construction, industrial, airport, exclusion, disable_terraform=settings.disable_terraform)
+            self.__create_scenery_polygons(b, orig_bbox, orig_water, orig_natural_water, bbox, sea, pitch, amenity, construction, industrial, airport, exclusion, disable_terraform=self.settings.disable_terraform)
 
         if process_3d_data:
-            if settings.isolate_3d_data:
-                self.__create_exclusion_masks_from_tiles(b, orig_bbox.assign(building=BOUNDING_BOX_OSM_KEY), building_mask=resize_gdf(building, settings.building_margin), water_mask=water, construction_mask=construction if settings.keep_constructions else None, road_mask=roads if settings.keep_roads else None, bridges_mask=bridges if settings.keep_roads else None, hidden_roads=hidden_roads if settings.keep_roads else None, amenity_mask=amenity if settings.keep_roads else None, residential_mask=residential if settings.keep_residential_and_industrial else None, industrial_mask=industrial if settings.keep_residential_and_industrial else None, airport_mask=airport, rocks_mask=resize_gdf(rocks, settings.building_margin), file_prefix=EXCLUSION_OSM_FILE_PREFIX, title="CREATE EXCLUSION MASKS OSM FILES", process_all=process_all)
+            if self.settings.isolate_3d_data:
+                self.__create_exclusion_masks_from_tiles(b, orig_bbox.assign(building=BOUNDING_BOX_OSM_KEY), building_mask=resize_gdf(building, self.settings.building_margin), water_mask=water, construction_mask=construction if self.settings.keep_constructions else None, road_mask=roads if self.settings.keep_roads else None, bridges_mask=bridges if self.settings.keep_roads else None, hidden_roads=hidden_roads if self.settings.keep_roads else None, amenity_mask=amenity if self.settings.keep_roads else None, residential_mask=residential if self.settings.keep_residential_and_industrial else None, industrial_mask=industrial if self.settings.keep_residential_and_industrial else None, airport_mask=airport, rocks_mask=resize_gdf(rocks, self.settings.building_margin), file_prefix=EXCLUSION_OSM_FILE_PREFIX, title="CREATE EXCLUSION MASKS OSM FILES", process_all=process_all)
             else:
-                self.__create_exclusion_masks_from_tiles(b, exclusion, building_mask=building, road_mask=roads if settings.keep_roads else None, bridges_mask=bridges if settings.keep_roads else None, hidden_roads=hidden_roads if settings.keep_roads else None, airport_mask=airport, rocks_mask=rocks, file_prefix=EXCLUSION_OSM_FILE_PREFIX, title="CREATE EXCLUSION MASKS OSM FILES", process_all=process_all)
+                self.__create_exclusion_masks_from_tiles(b, exclusion, building_mask=building, road_mask=roads if self.settings.keep_roads else None, bridges_mask=bridges if self.settings.keep_roads else None, hidden_roads=hidden_roads if self.settings.keep_roads else None, airport_mask=airport, rocks_mask=rocks, file_prefix=EXCLUSION_OSM_FILE_PREFIX, title="CREATE EXCLUSION MASKS OSM FILES", process_all=process_all)
 
         if generate_height_data:
-            if settings.isolate_3d_data:
-                self.__generate_isolated_height_data(b, construction, roads, bridges, hidden_roads, airport, building, water_without_bridges, orig_bbox.assign(building=BOUNDING_BOX_OSM_KEY), None, residential if settings.keep_residential_and_industrial else None, industrial if settings.keep_residential_and_industrial else None, rocks, keep_roads=settings.keep_roads, keep_residential_and_industrial=settings.keep_residential_and_industrial, keep_constructions=settings.keep_constructions, process_all=process_all)
+            if self.settings.isolate_3d_data:
+                self.__generate_isolated_height_data(b, construction, roads, bridges, hidden_roads, airport, building, water_without_bridges, orig_bbox.assign(building=BOUNDING_BOX_OSM_KEY), None, residential if self.settings.keep_residential_and_industrial else None, industrial if self.settings.keep_residential_and_industrial else None, rocks, keep_roads=self.settings.keep_roads, keep_residential_and_industrial=self.settings.keep_residential_and_industrial, keep_constructions=self.settings.keep_constructions, process_all=process_all)
             else:
-                self.__generate_excluded_height_data(b, construction, roads, bridges, hidden_roads, airport, building, water_without_bridges, orig_bbox.assign(building=BOUNDING_BOX_OSM_KEY), resize_gdf(exclusion, settings.building_margin), rocks, keep_roads=settings.keep_roads, keep_constructions=settings.keep_constructions, process_all=process_all)
+                self.__generate_excluded_height_data(b, construction, roads, bridges, hidden_roads, airport, building, water_without_bridges, orig_bbox.assign(building=BOUNDING_BOX_OSM_KEY), resize_gdf(exclusion, self.settings.building_margin), rocks, keep_roads=self.settings.keep_roads, keep_constructions=self.settings.keep_constructions, process_all=process_all)
 
         # remove tiles that are completely in the water
         self.__remove_full_water_tiles(water)
@@ -1371,7 +1369,7 @@ class MsfsProject:
         orig_industrial = load_gdf(self.coords, LANDUSE_OSM_KEY, OSM_TAGS[INDUSTRIAL_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, INDUSTRIAL_OSM_KEY + SHP_FILE_EXT))
         pbar.update("industrial geodataframe retrieved")
         pbar.update("retrieving airports geodataframe...", stall=True)
-        orig_airport = load_gdf_from_geocode(AIRPORT_GEOCODE + ", " + settings.airport_city.lower(), shpfiles_folder=self.shpfiles_folder, coords=self.coords, keep_data=True, display_warnings=False)
+        orig_airport = load_gdf_from_geocode(AIRPORT_GEOCODE + ", " + self.settings.airport_city.lower(), shpfiles_folder=self.shpfiles_folder, coords=self.coords, keep_data=True, display_warnings=False)
         pbar.update("airports geodataframe retrieved")
 
         return orig_land_mass, orig_boundary, orig_road, orig_railway, orig_sea, orig_landuse, orig_grass, orig_nature_reserve, \
@@ -1408,7 +1406,7 @@ class MsfsProject:
 
     def __create_geocode_osm_files(self, geocode, settings, preserve_roads, preserve_buildings, coords, shpfiles_folder):
         ox.config(use_cache=False, log_level=lg.DEBUG)
-        return self.__create_geocode_osm_exclusion_files(geocode, bbox_to_poly(self.coords[1], self.coords[0], self.coords[2], self.coords[3]), float(settings.geocode_margin), preserve_roads, preserve_buildings, coords, shpfiles_folder)
+        return self.__create_geocode_osm_exclusion_files(geocode, bbox_to_poly(self.coords[1], self.coords[0], self.coords[2], self.coords[3]), float(self.settings.geocode_margin), preserve_roads, preserve_buildings, coords, shpfiles_folder)
 
     def __reduce_number_of_vertices(self, nb_parallel_blender_tasks):
         lods_data = self.__retrieve_lods_to_decimate(nb_parallel_blender_tasks)
@@ -1488,7 +1486,7 @@ class MsfsProject:
         #             alt = tile.pos.alt
 
         print_title("WRITE LANDMARK TO SCENERY XML FILE")
-        landmarks = MsfsLandmarks(geocode_gdf=geocode_gdf, tiles=self.tiles, owner=settings.author_name, type=settings.landmark_type, alt=alt, offset=settings.landmark_offset)
+        landmarks = MsfsLandmarks(geocode_gdf=geocode_gdf, tiles=self.tiles, owner=settings.author_name, type=self.settings.landmark_type, alt=alt, offset=self.settings.landmark_offset)
 
         for landmark_location in landmarks.landmark_locations:
             # if a landmark has a correct altitude, it is valid
@@ -1548,7 +1546,7 @@ class MsfsProject:
                     lod.adjust_texture_colors(settings)
                     lod.fix_imported_texture_names()
 
-                tile.update_min_size_values(settings.target_min_size_values)
+                tile.update_min_size_values(self.settings.target_min_size_values)
                 data = load_json_file(os.path.join(settings.decoder_output_path, obj_file_name + POS_FILE_EXT))
                 if data:
                     alt = data[2] - EARTH_RADIUS
@@ -1590,20 +1588,19 @@ class MsfsProject:
         self.__multithread_process_data(processed_data, params, script_name, title, update_msg)
 
 
-    @staticmethod
-    def __prepare_geodataframes(orig_road, orig_railway, orig_sea, orig_bbox, orig_land_mass, orig_boundary, orig_landuse, orig_natural, orig_natural_water,
+    def __prepare_geodataframes(self, orig_road, orig_railway, orig_sea, orig_bbox, orig_land_mass, orig_boundary, orig_landuse, orig_natural, orig_natural_water,
                                 orig_water, orig_waterway, orig_aeroway, orig_pitch, orig_construction, orig_airport, orig_building, orig_wall, orig_man_made,
                                 orig_park, orig_nature_reserve, orig_rocks, orig_amenity, orig_residential, orig_industrial, settings):
         # prepare all the necessary GeoPandas Dataframes
         itasks = 23
 
-        if settings.keep_residential_and_industrial:
+        if self.settings.keep_residential_and_industrial:
             itasks = itasks+1
 
-        if settings.exclude_parks:
+        if self.settings.exclude_parks:
             itasks = itasks+1
 
-        if settings.exclude_nature_reserve:
+        if self.settings.exclude_nature_reserve:
             itasks = itasks+1
 
         prepare_gdf_list = [None] * itasks
@@ -1664,21 +1661,21 @@ class MsfsProject:
         rocks = prepare_gdf(orig_rocks)
         pbar.update("rock geodataframe prepared")
 
-        if settings.exclude_parks:
+        if self.settings.exclude_parks:
             pbar.update("preparing park geodataframe...", stall=True)
             park = clip_gdf(prepare_park_gdf(orig_park, bridges), bbox)
             pbar.update("park geodataframe prepared")
         else:
             park = create_empty_gdf()
 
-        if settings.exclude_nature_reserve:
+        if self.settings.exclude_nature_reserve:
             pbar.update("preparing nature_reserve geodataframe...", stall=True)
             nature_reserve = clip_gdf(prepare_gdf(orig_nature_reserve), bbox)
             pbar.update("nature reserve geodataframe prepared")
         else:
             nature_reserve = create_empty_gdf()
 
-        if settings.keep_residential_and_industrial:
+        if self.settings.keep_residential_and_industrial:
             pbar.update("preparing residential geodataframe...", stall=True)
             residential = prepare_residential_gdf(orig_residential, water, natural, natural_water, park, orig_airport)
             pbar.update("residential geodataframe prepared")
@@ -1698,10 +1695,10 @@ class MsfsProject:
         pbar.update("water exclusion geodataframe created")
         # create ground exclusion masks to cleanup 3d data tiles
         pbar.update("creating ground exclusion geodataframe...", stall=True)
-        ground_exclusion = create_ground_exclusion_gdf(landuse, nature_reserve, natural, aeroway, bridges, park, airport, settings)
+        ground_exclusion = create_ground_exclusion_gdf(landuse, nature_reserve, natural, aeroway, bridges, park, airport, self.settings)
         pbar.update("ground exclusion geodataframe created")
         pbar.update("creating exclusion geodataframe...", stall=True)
-        exclusion = union_gdf(water_exclusion, ground_exclusion if settings.exclude_ground else create_empty_gdf())
+        exclusion = union_gdf(water_exclusion, ground_exclusion if self.settings.exclude_ground else create_empty_gdf())
         pbar.update("exclusion geodataframe created")
 
         return bbox, roads, bridges, hidden_roads, sea, pitch, construction, airport, building, \

@@ -19,11 +19,12 @@
 import configparser as cp
 import os
 
-from constants import ENCODING, INI_FILE, MSFS_SDK_INI_SECTION, BUILD_INI_SECTION, \
+from constants import ENCODING, MSFS_SDK_INI_SECTION, BUILD_INI_SECTION, \
     COMPRESSONATOR_INI_SECTION, BACKUP_INI_SECTION, PYTHON_INI_SECTION
 
 
 class Settings:
+    file_name = str()
     path = str()
     sections = list
 
@@ -35,10 +36,10 @@ class Settings:
         self.sections = []
 
         config = cp.ConfigParser()
-        if os.path.isfile(INI_FILE):
-            config.read(INI_FILE, encoding=ENCODING)
+        if os.path.isfile(os.path.join(path, self.file_name)):
+            config.read(os.path.join(path, self.file_name), encoding=ENCODING)
         else:
-            config.read(os.path.join(path, INI_FILE), encoding=ENCODING)
+            return
 
         self.__rename_and_reorder_sections(config)
 
@@ -47,12 +48,13 @@ class Settings:
             for name, value in config.items(section_name):
                 setattr(self, name, value.replace('"', str()))
 
-    def set_config(self):
+    def set_config(self, path, file_name):
         config = cp.ConfigParser(comment_prefixes='# ', allow_no_value=True)
-        if os.path.isfile(INI_FILE):
-            config.read(INI_FILE, encoding=ENCODING)
+
+        if os.path.isfile(os.path.join(path, file_name)):
+            config.read(os.path.join(path, file_name), encoding=ENCODING)
         else:
-            config.read(os.path.join(self.path, INI_FILE), encoding=ENCODING)
+            return
 
         for section_name in config.sections():
             for name, value in config.items(section_name):
@@ -70,7 +72,7 @@ class Settings:
         config = self.rename_section(config, PYTHON_INI_SECTION, PYTHON_INI_SECTION)
 
         if config is not None:
-            with open(os.path.join(self.path, INI_FILE), "w", encoding=ENCODING) as configfile:
+            with open(os.path.join(self.path, self.file_name), "w", encoding=ENCODING) as configfile:
                 config.write(configfile)
 
     @staticmethod

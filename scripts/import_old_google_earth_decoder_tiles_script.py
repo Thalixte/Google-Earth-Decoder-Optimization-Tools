@@ -34,7 +34,7 @@ from blender import clean_scene
 def import_old_google_earth_decoder_tiles(global_settings):
     try:
         # instantiate the msfsProject and create the necessary resources if it does not exist
-        msfs_project = MsfsProject(global_settings.projects_path, global_settings.project_name, global_settings.definition_file, global_settings.path, fast_init=True)
+        msfs_project = MsfsProject(global_settings.projects_path, global_settings.project_name, global_settings.definition_file, global_settings.path, global_settings.author_name, fast_init=True)
 
         try: shutil.rmtree(msfs_project.model_lib_folder, ignore_errors=True)
         except: pass

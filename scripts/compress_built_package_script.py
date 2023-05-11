@@ -31,7 +31,7 @@ from msfs_project import MsfsProject
 def compress_built_package(global_settings):
     try:
         # instantiate the msfsProject and create the necessary resources if it does not exist
-        msfs_project = MsfsProject(global_settings.projects_path, global_settings.project_name, global_settings.definition_file, global_settings.path, fast_init=True)
+        msfs_project = MsfsProject(global_settings.projects_path, global_settings.project_name, global_settings.definition_file, global_settings.path, global_settings.author_name, fast_init=True)
 
         check_configuration(global_settings, msfs_project, check_built_package=True, check_compressonator=True)
 

@@ -106,8 +106,6 @@ if not args.model_file:
 
 clean_scene()
 
-settings = Settings(get_global_path())
-
 lod = MsfsLod(os.path.splitext(args.model_file)[0][-2:], 0, args.folder, args.model_file)
 lod.reduce_number_of_vertices()
 # except:

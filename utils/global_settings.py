@@ -16,18 +16,22 @@
 #
 #  <pep8 compliant>
 
-import configparser as cp
 import json
 import os
+import shutil
+
 from utils import Settings
 
-from constants import ENCODING, INI_FILE, XML_FILE_EXT
+from constants import ENCODING, INI_FILE, XML_FILE_EXT, CONFIG_TEMPLATES_FOLDER, GLOBAL_SETTINGS_TEMPLATE_FILE
+
 
 class GlobalSettings(Settings):
     sources_path: str
     projects_path: str
     project_name: str
+    author_name: str
     definition_file: str
+    bake_textures_enabled: str
     nb_parallel_blender_tasks: float
     msfs_build_exe_path: str
     msfs_steam_version: str
@@ -41,11 +45,12 @@ class GlobalSettings(Settings):
     TARGET_MIN_SIZE_VALUES_SETTING = "target_min_size_values"
 
     def __init__(self, path):
-        super().__init__(path)
-
+        self.file_name = INI_FILE
         self.projects_path = str()
         self.project_name = str()
+        self.author_name = str()
         self.definition_file = str()
+        self.bake_textures_enabled = "False"
         self.nb_parallel_blender_tasks = 4.0
         self.msfs_build_exe_path = str()
         self.msfs_steam_version = "False"
@@ -54,8 +59,17 @@ class GlobalSettings(Settings):
         self.sections = []
         self.decoder_output_path = str()
 
+        if not os.path.isfile(os.path.join(path, self.file_name)):
+            config_template_path = os.path.join(path, CONFIG_TEMPLATES_FOLDER)
+            shutil.copyfile(os.path.join(config_template_path, GLOBAL_SETTINGS_TEMPLATE_FILE), os.path.join(path, self.file_name))
+
+        super().__init__(path)
+
         if self.definition_file == str() and self.project_name != str():
             self.definition_file = self.project_name.capitalize() + XML_FILE_EXT
+
+        # reduce the number of texture files (Lily Texture Packer addon is necessary https://gumroad.com/l/DFExj)
+        self.bake_textures_enabled = json.loads(self.bake_textures_enabled.lower())
 
         # check if the package is built at the end of the script
         self.msfs_steam_version = json.loads(self.msfs_steam_version.lower())
@@ -67,7 +81,7 @@ class GlobalSettings(Settings):
         self.nb_parallel_blender_tasks = int(self.nb_parallel_blender_tasks)
 
     def save(self):
-        config = super().set_config()
+        config = super().set_config(self.path, self.file_name)
 
-        with open(os.path.join(self.sources_path, INI_FILE), "w", encoding=ENCODING) as configfile:
+        with open(os.path.join(self.path, self.file_name), "w", encoding=ENCODING) as configfile:
             config.write(configfile)

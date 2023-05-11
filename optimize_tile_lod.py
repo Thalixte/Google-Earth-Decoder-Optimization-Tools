@@ -91,6 +91,11 @@ try:
         help="name of the gltf model file",
     )
 
+    parser.add_argument(
+        "-otf", "--output_texture_format", dest="output_texture_format", type=str, required=True,
+        help="output texture format of the textures",
+    )
+
     args = parser.parse_args(argv)
 
     if not argv:
@@ -102,12 +107,15 @@ try:
     if not args.model_file:
         raise ScriptError("Error: --model_file=\"some string\" argument not given, aborting.")
 
+    if not args.output_texture_format:
+        raise ScriptError("Error: --output_texture_format=\"some string\" argument not given, aborting.")
+
     clean_scene()
 
-    settings = Settings(get_global_path())
-    check_lily_texture_packer_availability(settings)
+    global_settings = GlobalSettings(get_global_path())
+    check_lily_texture_packer_availability(global_settings)
 
     lod = MsfsLod(int(args.folder[-2:]), 0, args.folder, args.model_file)
-    lod.optimize(settings.bake_textures_enabled, settings.output_texture_format)
+    lod.optimize(global_settings.bake_textures_enabled, args.output_texture_format)
 except:
     pass

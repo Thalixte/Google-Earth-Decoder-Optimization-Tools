@@ -42,7 +42,7 @@ def create_landmark_from_geocode(global_settings):
         isolated_print(EOL)
 
         # fast instantiate the msfsProject and create the necessary resources if it does not exist
-        msfs_project = MsfsProject(global_settings.projects_path, global_settings.project_name, global_settings.definition_file, global_settings.path, fast_init=True)
+        msfs_project = MsfsProject(global_settings.projects_path, global_settings.project_name, global_settings.definition_file, global_settings.path, global_settings.author_name, fast_init=True)
 
         geocode_gdf = load_gdf_from_geocode(msfs_project.settings.geocode, check_geocode=True)
 
@@ -65,7 +65,7 @@ def create_landmark_from_geocode(global_settings):
                 lon = geocode_gdf[LON_OSM_KEY]
 
             # instantiate the msfsProject and create the necessary resources if it does not exist
-            msfs_project = MsfsProject(global_settings.projects_path, global_settings.project_name, global_settings.definition_file, global_settings.path)
+            msfs_project = MsfsProject(global_settings.projects_path, global_settings.project_name, global_settings.definition_file, global_settings.path, global_settings.author_name)
 
             check_configuration(global_settings, msfs_project)
 

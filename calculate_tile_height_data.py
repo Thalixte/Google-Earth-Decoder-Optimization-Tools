@@ -58,7 +58,7 @@ if cwd not in sys.path:
 
 from utils import *
 from blender import clean_scene
-from msfs_project import MsfsLod, MsfsTile, ObjectsXml, HeightMapXml
+from msfs_project import MsfsTile, HeightMapXml
 
 # clear and open the system console
 # open_console()
@@ -185,7 +185,6 @@ try:
 
     clean_scene()
 
-    settings = Settings(get_global_path())
     high_precision = json.loads(args.high_precision.lower())
 
     if args.debug:

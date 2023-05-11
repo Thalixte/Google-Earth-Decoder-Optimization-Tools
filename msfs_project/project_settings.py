@@ -34,19 +34,19 @@
 #
 #  <pep8 compliant>
 
-import configparser as cp
 import json
 import os
+import shutil
+
 from utils import Settings
 
-from constants import ENCODING, PNG_TEXTURE_FORMAT, INI_FILE, XML_FILE_EXT, LIGHT_COLD_GUID
+from constants import ENCODING, PNG_TEXTURE_FORMAT, XML_FILE_EXT, LIGHT_COLD_GUID, CONFIG_TEMPLATES_FOLDER, PROJECT_SETTINGS_TEMPLATE_FILE, INI_FILE_EXT
+
 
 class ProjectSettings(Settings):
     project_path_to_merge: str
     definition_file_to_merge: str
-    author_name: str
     backup_enabled: str
-    bake_textures_enabled: str
     build_package_enabled: str
     target_min_size_values: list
     output_texture_format: str
@@ -85,16 +85,13 @@ class ProjectSettings(Settings):
     LODS_SECTION = "LODS"
     TARGET_MIN_SIZE_VALUES_SETTING = "target_min_size_values"
 
-    def __init__(self, path):
-        super().__init__(path)
-
+    def __init__(self, global_path, path, project_name):
+        self.file_name = project_name + INI_FILE_EXT
         self.project_path_to_merge = str()
         self.definition_file_to_merge = str()
-        self.author_name = str()
         self.backup_enabled = "True"
-        self.bake_textures_enabled = "False"
         self.build_package_enabled = "True"
-        self.target_min_size_values = []
+        self.target_min_size_values = str()
         self.output_texture_format = PNG_TEXTURE_FORMAT
         self.lat_correction = 0.0
         self.lon_correction = 0.0
@@ -132,8 +129,11 @@ class ProjectSettings(Settings):
         self.light_guid = LIGHT_COLD_GUID
         self.collider_as_lower_lod = "False"
 
-        # reduce the number of texture files (Lily Texture Packer addon is necessary https://gumroad.com/l/DFExj)
-        self.bake_textures_enabled = json.loads(self.bake_textures_enabled.lower())
+        if not os.path.isfile(os.path.join(path, self.file_name)) and os.path.isdir(path):
+            config_template_path = os.path.join(global_path, CONFIG_TEMPLATES_FOLDER)
+            shutil.copyfile(os.path.join(config_template_path, PROJECT_SETTINGS_TEMPLATE_FILE), os.path.join(path, self.file_name))
+
+        super().__init__(path)
 
         # check if the backup of the project files is enabled
         self.backup_enabled = json.loads(self.backup_enabled.lower())
@@ -190,10 +190,10 @@ class ProjectSettings(Settings):
             self.definition_file_to_merge = os.path.basename(self.project_path_to_merge).capitalize() + XML_FILE_EXT
 
     def save(self):
-        config = super().set_config()
+        config = super().set_config(self.path, self.file_name)
         config.set(self.LODS_SECTION, self.TARGET_MIN_SIZE_VALUES_SETTING, ", ".join(self.target_min_size_values))
 
-        with open(os.path.join(self.path, INI_FILE), "w", encoding=ENCODING) as configfile:
+        with open(os.path.join(self.path, self.file_name), "w", encoding=ENCODING) as configfile:
             config.write(configfile)
 
     def add_lod(self):

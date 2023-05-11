@@ -379,10 +379,10 @@ class ObjectsXml(Xml):
 
         pbar = ProgressBar(msfs_project.tiles.items(), title="update tiles positions", sleep=0.000001)
         for guid, tile in pbar.iterable:
-            self.__update_scenery_object_pos(tile, self.find_scenery_objects(guid), settings)
-            self.__update_scenery_object_pos(tile, self.find_scenery_objects_in_group(guid), settings)
+            self.__update_scenery_object_pos(tile, self.find_scenery_objects(guid), settings, msfs_project.settings)
+            self.__update_scenery_object_pos(tile, self.find_scenery_objects_in_group(guid), settings, msfs_project.settings)
 
-            pbar.update("%s" % tile.name + " : new lat: " + str(tile.pos.lat + float(settings.lat_correction)) + " : new lon: " + str(tile.pos.lon + float(settings.lon_correction)))
+            pbar.update("%s" % tile.name + " : new lat: " + str(tile.pos.lat + float(msfs_project.settings.lat_correction)) + " : new lon: " + str(tile.pos.lon + float(msfs_project.settings.lon_correction)))
 
     def __update_colliders_pos(self, msfs_project, settings):
         if not msfs_project.colliders.items():
@@ -390,8 +390,8 @@ class ObjectsXml(Xml):
 
         pbar = ProgressBar(msfs_project.colliders.items(), title="update colliders positions", sleep=0.000001)
         for guid, collider in msfs_project.colliders.items():
-            self.__update_scenery_object_pos(collider, self.find_scenery_objects(guid), settings)
-            self.__update_scenery_object_pos(collider, self.find_scenery_objects_in_group(guid), settings)
+            self.__update_scenery_object_pos(collider, self.find_scenery_objects(guid), settings, msfs_project.settings)
+            self.__update_scenery_object_pos(collider, self.find_scenery_objects_in_group(guid), settings, msfs_project.settings)
 
             pbar.update("%s" % collider.name + " : new lat: " + str(collider.pos.lat + float(settings.lat_correction)) + " : new lon: " + str(collider.pos.lon + float(settings.lon_correction)))
 
@@ -514,10 +514,10 @@ class ObjectsXml(Xml):
 
         return light_elem
 
-    def __update_scenery_object_pos(self, tile, found_scenery_objects, settings):
+    def __update_scenery_object_pos(self, tile, found_scenery_objects, settings, project_settings):
         for scenery_object in found_scenery_objects:
-            new_lat = Decimal(tile.pos.lat) + Decimal(settings.lat_correction)
-            new_lon = Decimal(tile.pos.lon) + Decimal(settings.lon_correction)
+            new_lat = Decimal(tile.pos.lat) + Decimal(project_settings.lat_correction)
+            new_lon = Decimal(tile.pos.lon) + Decimal(project_settings.lon_correction)
             scenery_object.set(self.LAT_ATTR, str(new_lat))
             scenery_object.set(self.LON_ATTR, str(new_lon))
 

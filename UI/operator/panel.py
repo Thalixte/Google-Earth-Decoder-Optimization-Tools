@@ -131,8 +131,8 @@ class SettingsOperator(PanelOperator):
         lod_actions_col.operator(OT_removeLowerLodOperator.bl_idname, icon=REMOVE_ICON)
         col.separator()
 
-        for idx, min_size_value in enumerate(context.scene.settings.target_min_size_values):
-            reverse_idx = (len(context.scene.settings.target_min_size_values) - 1) - idx
+        for idx, min_size_value in enumerate(context.scene.project_settings.target_min_size_values):
+            reverse_idx = (len(context.scene.project_settings.target_min_size_values) - 1) - idx
             cur_lod = MAX_PHOTOGRAMMETRY_LOD - reverse_idx
             self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "target_min_size_value_" + str(cur_lod), "Min size values for the lod " + str(cur_lod), slider=True)
             col.separator()

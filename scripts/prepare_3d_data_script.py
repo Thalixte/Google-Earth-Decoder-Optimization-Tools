@@ -16,14 +16,13 @@
 #
 #  <pep8 compliant>
 
-from utils import Settings, get_global_path, reload_modules, print_title, isolated_print
+from utils import GlobalSettings, get_global_path, reload_modules, print_title, isolated_print
 
-settings = Settings(get_global_path())
+settings = GlobalSettings(get_global_path())
 
 # reload modules if the option is enabled in the optimization_tools.ini file
 reload_modules(settings)
 
-import os
 import warnings
 from shapely.errors import ShapelyDeprecationWarning
 
@@ -32,36 +31,37 @@ warnings.simplefilter(action="ignore", category=FutureWarning, append=True)
 warnings.simplefilter(action="ignore", category=DeprecationWarning, append=True)
 warnings.simplefilter(action="ignore", category=ShapelyDeprecationWarning, append=True)
 
+import os
 from constants import *
 from utils import check_configuration, ScriptError, build_package, pr_bg_green, pr_bg_red
 from msfs_project import MsfsProject
 
 
-def prepare_3d_data(script_settings):
+def prepare_3d_data(global_settings):
     try:
         # instantiate the msfsProject and create the necessary resources if it does not exist
-        msfs_project = MsfsProject(script_settings.projects_path, script_settings.project_name, script_settings.definition_file, script_settings.author_name, script_settings.sources_path)
+        msfs_project = MsfsProject(global_settings.projects_path, global_settings.project_name, global_settings.definition_file, global_settings.path, global_settings.author_name)
 
-        check_configuration(script_settings, msfs_project)
+        check_configuration(global_settings, msfs_project)
 
         msfs_project.backup(os.path.join(msfs_project.backup_folder, CLEANUP_3D_DATA_BACKUP_FOLDER))
 
         isolated_print(EOL)
         print_title("PREPARE 3D DATA")
 
-        script_settings.ground_exclusion_margin = 10.0
-        script_settings.save()
+        msfs_project.settings.ground_exclusion_margin = 10.0
+        global_settings.save()
 
-        msfs_project.prepare_3d_data(script_settings, generate_height_data=True, clean_3d_data=True, create_polygons=True, process_all=True)
+        msfs_project.prepare_3d_data(global_settings, generate_height_data=True, clean_3d_data=True, create_polygons=True, process_all=True)
 
         isolated_print(EOL)
         print_title("CLEAN PACKAGE FILES")
 
-        msfs_project = MsfsProject(script_settings.projects_path, script_settings.project_name, script_settings.definition_file, script_settings.author_name, script_settings.sources_path)
+        msfs_project = MsfsProject(global_settings.projects_path, global_settings.project_name, global_settings.definition_file, global_settings.path, global_settings.author_name)
         msfs_project.clean()
 
-        if script_settings.build_package_enabled:
-            build_package(script_settings, msfs_project)
+        if msfs_project.settings.build_package_enabled:
+            build_package(global_settings, msfs_project)
 
         pr_bg_green("Script correctly applied" + constants.CEND)
 

@@ -24,9 +24,13 @@ from .panel import *
 def retrieve_section_items(self, context):
     items = []
     displayed_sections = eval(self.current_operator_class_name + ".displayed_sections")
-    for item in bpy.types.Scene.settings.sections:
+    for item in bpy.types.Scene.global_settings.sections:
         if item[0] in displayed_sections:
             items.append((item[0], item[1], item[2]))
+    if bpy.types.Scene.project_settings is not None:
+        for item in bpy.types.Scene.project_settings.sections:
+            if item[0] in displayed_sections and item not in items:
+                items.append((item[0], item[1], item[2]))
     return items
 
 

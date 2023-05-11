@@ -16,9 +16,9 @@
 #
 #  <pep8 compliant>
 
-from utils import Settings, get_global_path, reload_modules, print_title, isolated_print, load_gdf_from_geocode
+from utils import GlobalSettings, get_global_path, reload_modules, print_title, isolated_print
 
-settings = Settings(get_global_path())
+settings = GlobalSettings(get_global_path())
 
 # reload modules if the option is enabled in the optimization_tools.ini file
 reload_modules(settings)
@@ -36,22 +36,22 @@ from utils import check_configuration, ScriptError, build_package, pr_bg_green, 
 from msfs_project import MsfsProject
 
 
-def isolate_3d_data_from_geocode(script_settings):
+def isolate_3d_data_from_geocode(global_settings):
     try:
         isolated_print(EOL)
 
         # instantiate the msfsProject and create the necessary resources if it does not exist
-        msfs_project = MsfsProject(script_settings.projects_path, script_settings.project_name, script_settings.definition_file, script_settings.author_name, script_settings.sources_path)
+        msfs_project = MsfsProject(global_settings.projects_path, global_settings.project_name, global_settings.definition_file, global_settings.path, global_settings.author_name)
 
-        check_configuration(script_settings, msfs_project)
+        check_configuration(global_settings, msfs_project)
 
         isolated_print(EOL)
         print_title("ISOLATE 3D DATA FROM GEOCODE")
 
-        msfs_project.isolate_3d_data_from_geocode(script_settings)
+        msfs_project.isolate_3d_data_from_geocode(global_settings)
 
-        if script_settings.build_package_enabled:
-            build_package(script_settings, msfs_project)
+        if msfs_project.settings.build_package_enabled:
+            build_package(global_settings, msfs_project)
 
         pr_bg_green("Script correctly applied" + constants.CEND)
 
