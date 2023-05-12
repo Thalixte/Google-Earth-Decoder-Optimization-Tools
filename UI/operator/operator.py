@@ -261,8 +261,12 @@ class OT_MergeSceneriesOperator(ActionOperator):
         msfs_project = super().poll(context)
         global_settings = context.scene.global_settings
         project_settings = msfs_project.settings
-        project_folder_to_merge = os.path.dirname(project_settings.project_path_to_merge) + os.path.sep
-        project_name_to_merge = os.path.relpath(project_settings.project_path_to_merge, start=project_folder_to_merge)
+        project_name_to_merge = str()
+
+        if os.path.isdir(project_settings.project_path_to_merge):
+            project_folder_to_merge = os.path.dirname(project_settings.project_path_to_merge) + os.path.sep
+            project_name_to_merge = os.path.relpath(project_settings.project_path_to_merge, start=project_folder_to_merge)
+
         definition_file_to_merge = project_settings.definition_file_to_merge
         msfs_project_to_merge = MsfsProject(global_settings.projects_path, project_name_to_merge, definition_file_to_merge, global_settings.path, global_settings.author_name, fast_init=True)
         return (os.path.isdir(msfs_project.scene_folder) and os.path.isdir(msfs_project_to_merge.scene_folder)) and msfs_project.project_folder != msfs_project_to_merge.project_folder

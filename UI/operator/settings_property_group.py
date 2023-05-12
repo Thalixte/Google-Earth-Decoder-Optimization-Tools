@@ -31,10 +31,19 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         context.scene.global_settings.projects_path = self.projects_path_readonly = self.projects_path
 
     def project_path_updated(self, context):
-        context.scene.global_settings.projects_path = self.projects_path = self.projects_path_readonly = os.path.dirname(os.path.dirname(self.project_path)) + os.sep
-        context.scene.global_settings.project_path = self.project_path
-        context.scene.global_settings.project_name = self.project_name = os.path.relpath(self.project_path, start=self.projects_path)
-        context.scene.global_settings.definition_file = self.definition_file
+        context.scene.global_settings.projects_path = str()
+        context.scene.global_settings.project_path = str()
+        context.scene.global_settings.project_name = str()
+        context.scene.global_settings.definition_file = str()
+
+        if os.path.isdir(self.project_path):
+            context.scene.global_settings.projects_path = self.projects_path = self.projects_path_readonly = os.path.dirname(os.path.dirname(self.project_path)) + os.sep
+            context.scene.global_settings.project_path = self.project_path
+            context.scene.global_settings.project_name = self.project_name = os.path.relpath(self.project_path, start=self.projects_path)
+
+        if os.path.isfile(os.path.join(self.project_path, self.definition_file)):
+            context.scene.global_settings.definition_file = self.definition_file
+
         self.project_path_readonly = self.project_path
 
     def project_name_updated(self, context):
@@ -42,8 +51,18 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         context.scene.global_settings.project_path = os.path.join(context.scene.global_settings.projects_path, context.scene.global_settings.project_name)
 
     def project_path_to_merge_updated(self, context):
-        context.scene.project_settings.project_path_to_merge = os.path.dirname(self.project_path_to_merge)
-        context.scene.project_settings.definition_file_to_merge = self.definition_file_to_merge
+        if context.scene.project_settings is None:
+            return
+
+        context.scene.project_settings.project_path_to_merge = str()
+        context.scene.project_settings.definition_file_to_merge = str()
+
+        if os.path.isdir(self.project_path_to_merge):
+            context.scene.project_settings.project_path_to_merge = os.path.dirname(self.project_path_to_merge)
+
+        if os.path.isfile(os.path.join(self.project_path_to_merge, self.definition_file_to_merge)):
+            context.scene.project_settings.definition_file_to_merge = self.definition_file_to_merge
+
         self.project_path_to_merge_readonly = self.project_path_to_merge
 
     def author_name_updated(self, context):

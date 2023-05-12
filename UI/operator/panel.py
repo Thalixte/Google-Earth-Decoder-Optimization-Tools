@@ -176,7 +176,7 @@ class SettingsOperator(PanelOperator):
             self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "high_precision", "High precision height data generation")
             col.separator()
 
-        if self.operator_name != "wm.generate_height_data" and self.operator_name != "wm.prepare_3d_data":
+        if self.operator_name != "wm.generate_height_data" and self.operator_name != "wm.prepare_3d_data" and self.operator_name != "wm.create_terraform_and_exclusion_polygons":
             self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "process_all", "Process all the tiles (if unticked, process only the tiles that has not been cleaned)")
             col.separator()
 

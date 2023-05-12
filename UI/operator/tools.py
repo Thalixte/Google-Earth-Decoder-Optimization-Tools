@@ -47,11 +47,17 @@ def invoke_current_operator(context, invocation_type):
 
 
 def reload_project_path(context):
-    context.scene.setting_props.project_path = os.path.join(context.scene.global_settings.projects_path, context.scene.global_settings.project_name) + os.path.sep
+    if os.path.isdir(context.scene.global_settings.projects_path):
+        context.scene.setting_props.project_path = os.path.join(context.scene.global_settings.projects_path, context.scene.global_settings.project_name) + os.path.sep
+    else:
+        context.scene.setting_props.project_path = str()
 
 
 def reload_project_name(context):
-    context.scene.setting_props.project_name = context.scene.global_settings.project_name
+    if os.path.isdir(os.path.join(context.scene.global_settings.projects_path, context.scene.global_settings.project_name)):
+        context.scene.setting_props.project_name = context.scene.global_settings.project_name
+    else:
+        context.scene.setting_props.project_name = str()
 
 
 def reload_definition_file(context):
@@ -63,9 +69,10 @@ def reload_nb_parallel_blender_tasks(context):
 
 
 def reload_project_path_to_merge(context):
-    if context.scene.project_settings is not None:
+    if context.scene.project_settings is not None and os.path.isdir(context.scene.setting_props.project_path_to_merge):
         context.scene.setting_props.project_path_to_merge = context.scene.project_settings.project_path_to_merge + os.path.sep
-
+    else:
+        context.scene.setting_props.project_path_to_merge = str()
 
 def reload_definition_file_to_merge(context):
     if context.scene.project_settings is not None:
