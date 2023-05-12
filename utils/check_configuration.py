@@ -58,7 +58,8 @@ def check_configuration(settings, msfs_project, check_optimisation=False, check_
     # check if the fspackagetool.exe file is reachable
     if not os.path.isfile(settings.msfs_build_exe_path):
         pr_ko_orange(str("msfs_build_exe_path value").ljust(RESULT_MSG_LENGTH))
-        settings.build_package_enabled = False
+        msfs_project.settings.build_package_enabled = False
+        msfs_project.settings.save()
         isolated_print(CORANGE + warning_msg + settings.msfs_build_exe_path + " bin file not found. Automatic package building is disabled" + CEND + EOL)
     else:
         pr_ok_green(str("msfs_build_exe_path value").ljust(RESULT_MSG_LENGTH))
