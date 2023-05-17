@@ -31,7 +31,7 @@ RESULT_MSG_LENGTH = 40
 ######################################################
 # check configuration methods
 ######################################################
-def check_configuration(settings, msfs_project, check_optimisation=False, check_lily_texture_packer=False, check_built_package=False, check_compressonator=False, check_description_file=True):
+def check_configuration(settings, msfs_project, check_optimisation=False, check_lily_texture_packer=False, check_built_package=False, check_compressonator=False, check_description_file=True, check_blendergis_addon=False):
     error_msg = "Configuration error found ! "
     warning_msg = "Configuration warning ! "
 
@@ -87,6 +87,16 @@ def check_configuration(settings, msfs_project, check_optimisation=False, check_
         pr_ko_red(str("scene_folder value").ljust(RESULT_MSG_LENGTH))
         raise ScriptError(error_msg + "The folder containing the description files of the scene (" + msfs_project.scene_folder + ") was not found. Please check the scene_folder value")
     pr_ok_green(str("scene_folder value").ljust(RESULT_MSG_LENGTH))
+
+    # check if the necessary blender addons exist
+    if check_blendergis_addon:
+        from blender.addons import install_blender_addon
+        if not install_blender_addon(BLENDERGIS_ADDON, BLENDERGIS_GITHUB_DOWNLOAD_REPO, BLENDERGIS_ADDON_RELEASE):
+            pr_ko_red(str("Blender GIS addon installation").ljust(RESULT_MSG_LENGTH))
+            raise ScriptError(error_msg + "Blender GIS addon is not correctly installed. Try to install it manually instead")
+        pr_ok_green(str("Blender GIS addon installation").ljust(RESULT_MSG_LENGTH))
+        bpy.context.preferences.addons[BLENDERGIS_ADDON].preferences.logLevel = CRITICAL_LOG_LEVEL
+        bpy.context.preferences.addons[BLENDERGIS_ADDON].preferences.predefCrs = EPSG_WGS84
 
     if check_description_file:
         # check if the description file of the scene is reachable

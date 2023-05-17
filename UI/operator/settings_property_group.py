@@ -64,6 +64,7 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
             context.scene.project_settings.definition_file_to_merge = self.definition_file_to_merge
 
         self.project_path_to_merge_readonly = self.project_path_to_merge
+        context.scene.project_settings.save()
 
     def author_name_updated(self, context):
         context.scene.global_settings.author_name = self.author_name
@@ -76,21 +77,27 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
 
     def output_texture_format_updated(self, context):
         context.scene.project_settings.output_texture_format = self.output_texture_format
+        context.scene.project_settings.save()
 
     def collider_as_lower_lod_updated(self, context):
         context.scene.project_settings.collider_as_lower_lod = self.collider_as_lower_lod
+        context.scene.project_settings.save()
 
     def backup_enabled_updated(self, context):
         context.scene.project_settings.backup_enabled = self.backup_enabled
+        context.scene.project_settings.save()
 
     def lat_correction_updated(self, context):
         context.scene.project_settings.lat_correction = "{:.9f}".format(float(str(self.lat_correction))).rstrip("0").rstrip(".")
+        context.scene.project_settings.save()
 
     def lon_correction_updated(self, context):
         context.scene.project_settings.lon_correction = "{:.9f}".format(float(str(self.lon_correction))).rstrip("0").rstrip(".")
+        context.scene.project_settings.save()
 
     def target_min_size_value_updated(self, context):
         prev_value = -1
+
         for idx, min_size_value in enumerate(bpy.types.Scene.project_settings.target_min_size_values):
             reverse_idx = (len(bpy.types.Scene.project_settings.target_min_size_values) - 1) - idx
             cur_lod = MAX_PHOTOGRAMMETRY_LOD - reverse_idx
@@ -101,62 +108,83 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
             context.scene.project_settings.target_min_size_values[idx] = str(cur_value)
             prev_value = int(context.scene.project_settings.target_min_size_values[idx])
 
+        context.scene.project_settings.save()
+
     def airport_city_updated(self, context):
         context.scene.project_settings.airport_city = self.airport_city
+        context.scene.project_settings.save()
 
     def exclude_ground_updated(self, context):
         context.scene.project_settings.exclude_ground = self.exclude_ground
+        context.scene.project_settings.save()
 
     def exclude_nature_reserve_updated(self, context):
         context.scene.project_settings.exclude_nature_reserve = self.exclude_nature_reserve
+        context.scene.project_settings.save()
 
     def exclude_parks_updated(self, context):
         context.scene.project_settings.exclude_parks = self.exclude_parks
+        context.scene.project_settings.save()
 
     def keep_residential_and_industrial_updated(self, context):
         context.scene.project_settings.keep_residential_and_industrial = self.keep_residential_and_industrial
+        context.scene.project_settings.save()
 
     def process_all_updated(self, context):
         context.scene.project_settings.process_all = self.process_all
+        context.scene.project_settings.save()
 
     def high_precision_updated(self, context):
         context.scene.project_settings.high_precision = self.high_precision
+        context.scene.project_settings.save()
 
     def height_adjustment_updated(self, context):
         context.scene.project_settings.height_adjustment = "{:.1f}".format(float(str(self.height_adjustment))).rstrip("0").rstrip(".")
+        context.scene.project_settings.save()
 
     def height_noise_reduction_updated(self, context):
         context.scene.project_settings.height_noise_reduction = "{:.1f}".format(float(str(self.height_noise_reduction))).rstrip("0").rstrip(".")
+        context.scene.project_settings.save()
 
     def geocode_updated(self, context):
         context.scene.project_settings.geocode = self.geocode
+        context.scene.project_settings.save()
 
     def geocode_margin_updated(self, context):
         context.scene.project_settings.geocode_margin = self.geocode_margin
+        context.scene.project_settings.save()
 
     def preserve_roads_updated(self, context):
         context.scene.project_settings.preserve_roads = self.preserve_roads
+        context.scene.project_settings.save()
 
     def preserve_buildings_updated(self, context):
         context.scene.project_settings.preserve_buildings = self.preserve_buildings
+        context.scene.project_settings.save()
 
     def landmark_type_updated(self, context):
         context.scene.project_settings.landmark_type = self.landmark_type
+        context.scene.project_settings.save()
 
     def landmark_offset_updated(self, context):
         context.scene.project_settings.landmark_offset = "{:.1f}".format(float(str(self.landmark_offset))).rstrip("0").rstrip(".")
+        context.scene.project_settings.save()
 
     def add_lights_updated(self, context):
         context.scene.project_settings.add_lights = self.add_lights
+        context.scene.project_settings.save()
 
     def light_guid_updated(self, context):
         context.scene.project_settings.light_guid = self.light_guid
+        context.scene.project_settings.save()
 
     def altitude_adjustment_updated(self, context):
         context.scene.project_settings.altitude_adjustment = "{:.2f}".format(float(str(self.altitude_adjustment))).rstrip("0").rstrip(".")
+        context.scene.project_settings.save()
 
     def build_package_enabled_updated(self, context):
         context.scene.project_settings.build_package_enabled = self.build_package_enabled
+        context.scene.project_settings.save()
 
     def msfs_build_exe_path_updated(self, context):
         context.scene.global_settings.msfs_build_exe_path = self.msfs_build_exe_path_readonly = self.msfs_build_exe_path

@@ -1,4 +1,4 @@
-from utils import install_python_lib
+from utils.install_lib import install_python_lib
 
 try:
     from fontTools import unicodedata

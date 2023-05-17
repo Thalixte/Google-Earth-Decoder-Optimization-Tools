@@ -144,15 +144,20 @@ def download_file(url, dest):
     # use a context manager to make an HTTP request and file
     with requests.get(url, stream=True) as r:
         with open(dest, 'wb') as file:
-            # Get the total size, in bytes, from the response header
-            total_size = int(r.headers.get('Content-Length'))
+            total_size = 0
+            if r.headers.get('Content-Length') is not None:
+                # Get the total size, in bytes, from the response header
+                total_size = int(r.headers.get('Content-Length'))
             # Define the size of the chunk to iterate over (Mb)
             # iterate over every chunk and calculate % of total
             pbar = ProgressBar(list())
             pbar.length = 100
             for i, chunk in enumerate(r.iter_content(chunk_size=CHUNK_SIZE)):
                 # calculate current percentage
-                c = i * CHUNK_SIZE / total_size * 100
+                if total_size == 0:
+                    c = 1
+                else:
+                    c = i * CHUNK_SIZE / total_size * 100
                 file.write(chunk)
                 pbar.update("downloading %s" % url, progress=round(c, 4))
 

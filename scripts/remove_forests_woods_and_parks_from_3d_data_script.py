@@ -42,7 +42,7 @@ def remove_forests_woods_and_parks_from_3d_data(global_settings):
         # instantiate the msfsProject and create the necessary resources if it does not exist
         msfs_project = MsfsProject(global_settings.projects_path, global_settings.project_name, global_settings.definition_file, global_settings.path, global_settings.author_name)
 
-        check_configuration(global_settings, msfs_project)
+        check_configuration(global_settings, msfs_project, check_blendergis_addon=True)
 
         msfs_project.backup(os.path.join(msfs_project.backup_folder, CLEANUP_3D_DATA_BACKUP_FOLDER))
 

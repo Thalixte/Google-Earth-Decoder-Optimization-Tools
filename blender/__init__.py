@@ -21,3 +21,4 @@ from .memory import *
 from .material import *
 from .image import *
 from .blender_gis import *
+from .addons import *

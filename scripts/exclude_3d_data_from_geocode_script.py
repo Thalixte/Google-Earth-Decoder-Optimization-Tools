@@ -43,7 +43,7 @@ def exclude_3d_data_from_geocode(global_settings):
         # instantiate the msfsProject and create the necessary resources if it does not exist
         msfs_project = MsfsProject(global_settings.projects_path, global_settings.project_name, global_settings.definition_file, global_settings.path, global_settings.author_name)
 
-        check_configuration(global_settings, msfs_project)
+        check_configuration(global_settings, msfs_project, check_blendergis_addon=True)
 
         isolated_print(EOL)
         print_title("EXCLUDE 3D DATA FROM GEOCODE")

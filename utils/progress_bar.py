@@ -24,7 +24,8 @@ import warnings
 from types import GeneratorType
 
 from constants import EOL, CRED, CORANGE, CGREEN, CEND
-from utils import print_title, isolated_print
+from utils.console import print_title
+from utils.isolated_print import isolated_print
 
 MSG_LENGTH = 160
 PROGRESS_BAR_LENGTH = 50

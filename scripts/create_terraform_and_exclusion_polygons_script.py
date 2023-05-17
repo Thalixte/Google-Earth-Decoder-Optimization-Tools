@@ -43,7 +43,7 @@ def create_terraform_and_exclusion_polygons(global_settings):
         # instantiate the msfsProject and create the necessary resources if it does not exist
         msfs_project = MsfsProject(global_settings.projects_path, global_settings.project_name, global_settings.definition_file, global_settings.path, global_settings.author_name)
 
-        check_configuration(global_settings, msfs_project)
+        check_configuration(global_settings, msfs_project, check_blendergis_addon=True)
 
         if msfs_project.settings.backup_enabled:
             msfs_project.backup(Path(os.path.abspath(__file__)).stem.replace(SCRIPT_PREFIX, str()), all_files=False)

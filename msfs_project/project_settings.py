@@ -38,7 +38,7 @@ import json
 import os
 import shutil
 
-from utils import Settings
+from utils.settings import Settings
 
 from constants import ENCODING, PNG_TEXTURE_FORMAT, XML_FILE_EXT, LIGHT_COLD_GUID, CONFIG_TEMPLATES_FOLDER, PROJECT_SETTINGS_TEMPLATE_FILE, INI_FILE_EXT
 

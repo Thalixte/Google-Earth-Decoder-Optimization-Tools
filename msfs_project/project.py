@@ -24,7 +24,8 @@ import io
 import shutil
 import os
 import subprocess
-from utils import install_python_lib, MapBoxDownloader
+from utils.install_lib import install_python_lib
+from utils.MapBoxDownloader import MapBoxDownloader
 from utils.string import remove_accents
 from utils.geo_pandas import prepare_wall_gdf, create_exclusion_building_gdf, prepare_water_gdf, prepare_amenity_gdf, prepare_hidden_roads_gdf, prepare_water_exclusion_gdf, prepare_residential_gdf, create_point_gdf
 from constants import *
@@ -39,7 +40,6 @@ import logging as lg
 from osmnx.utils_geo import bbox_to_poly
 
 import bpy
-from blender import convert_obj_file_to_gltf_file
 from msfs_project.project_settings import ProjectSettings
 from msfs_project.landmark import MsfsLandmarks
 from msfs_project.height_map_xml import HeightMapXml
@@ -1530,6 +1530,7 @@ class MsfsProject:
 
             if len(obj_file_name) == min_lod:
                 alt = 0.0
+                from blender.scene import convert_obj_file_to_gltf_file
                 convert_obj_file_to_gltf_file(obj_file, self.model_lib_folder, TEXTURE_FOLDER, depth)
                 create_new_definition_file(os.path.join(self.model_lib_folder, obj_file_name + XML_FILE_EXT))
                 xml = MsfsObjectXml(self.model_lib_folder, obj_file_name + XML_FILE_EXT)
