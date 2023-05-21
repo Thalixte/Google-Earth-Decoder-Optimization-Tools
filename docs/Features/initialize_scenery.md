@@ -2,7 +2,7 @@
 
 The first task when creating a new photogrammetry scenery project for [MSFS][2]{:target="_blank"} is to create the folder structure of the project.
 This can be done very easily with GEDOT.
-All you have to do is to select ==Google Earth Decoder Optimization Tools > 1. Initialize a new [MSFS][2]{:target="_blank"} scenery project== in the GEDOT menu.
+All you have to do is to select [`Google Earth Decoder Optimization Tools`](#) > [`1. Initialize a new MSFS scenery project`](#) in the GEDOT menu.
 
 ![type:video](video.mp4){: src='../assets/videos/initialize_scenery.mp4'}
 

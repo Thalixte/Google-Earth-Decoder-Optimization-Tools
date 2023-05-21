@@ -53,6 +53,7 @@ def keep_only_buildings_3d_data(global_settings):
         msfs_project.settings.exclude_nature_reserve = True
         msfs_project.settings.exclude_parks = True
         msfs_project.settings.isolate_3d_data = True
+        msfs_project.settings.keep_buildings = True
         msfs_project.settings.keep_constructions = True
         msfs_project.settings.keep_roads = False
         msfs_project.settings.disable_terraform = True

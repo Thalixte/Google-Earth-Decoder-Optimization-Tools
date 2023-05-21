@@ -28,6 +28,7 @@ class PanelOperator(Operator):
     starting_section = str()
 
     SPLIT_LABEL_FACTOR = 0.4
+    ALTERNATE_SPLIT_LABEL_FACTOR = 0.975
 
     def check(self, context):
         return True
@@ -85,14 +86,14 @@ class SettingsOperator(PanelOperator):
         col.separator(factor=2.0)
         self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "author_name", "Author of the project")
         col.separator(factor=2.0)
-        self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "bake_textures_enabled", "Bake textures enabled")
+        self.draw_splitted_prop(context, col, self.ALTERNATE_SPLIT_LABEL_FACTOR, "bake_textures_enabled", "Bake textures enabled")
         col.separator()
         self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "output_texture_format", "Output texture format")
         col.separator()
         self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "nb_parallel_blender_tasks", "Number of parallel Blender tasks")
         col.separator()
         if self.operator_name in ["wm.add_tile_colliders"]:
-            self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "collider_as_lower_lod", "Add the collider as the lower LOD for each tile")
+            self.draw_splitted_prop(context, col, self.ALTERNATE_SPLIT_LABEL_FACTOR, "collider_as_lower_lod", "Add the collider as the lower LOD for each tile")
             col.separator()
         self.draw_footer(context, self.layout, self.operator_name)
 
@@ -147,9 +148,9 @@ class SettingsOperator(PanelOperator):
         col.separator()
         self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "msfs_build_exe_path_readonly", "MSFS build exe path", enabled=False)
         col.separator()
-        self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "build_package_enabled", "Build package enabled")
+        self.draw_splitted_prop(context, col, self.ALTERNATE_SPLIT_LABEL_FACTOR, "build_package_enabled", "Build package enabled")
         col.separator()
-        self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "msfs_steam_version", "Msfs Steam version")
+        self.draw_splitted_prop(context, col, self.ALTERNATE_SPLIT_LABEL_FACTOR, "msfs_steam_version", "Msfs Steam version")
         self.draw_footer(context, self.layout, self.operator_name)
 
     def draw_openstreetmap_panel(self, context):
@@ -160,7 +161,9 @@ class SettingsOperator(PanelOperator):
         col.separator()
         if self.operator_name in ["wm.generate_height_data", "wm.keep_only_buildings_3d_data", "wm.keep_only_buildings_and_roads_3d_data"]:
             if context.scene.project_settings.isolate_3d_data:
-                self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "keep_residential_and_industrial", "Keep residential and industrial area 3d data")
+                self.draw_splitted_prop(context, col, self.ALTERNATE_SPLIT_LABEL_FACTOR, "keep_buildings", "Keep buildings 3d data", enabled=False)
+                col.separator()
+                self.draw_splitted_prop(context, col, self.ALTERNATE_SPLIT_LABEL_FACTOR, "keep_residential_and_industrial", "Keep residential and industrial area 3d data")
                 col.separator()
             col.separator()
 
@@ -175,11 +178,11 @@ class SettingsOperator(PanelOperator):
             col.separator()
             self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "height_noise_reduction", "Height data noise_reduction factor for bottom ray-tracing")
             col.separator()
-            self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "high_precision", "High precision height data generation")
+            self.draw_splitted_prop(context, col, self.ALTERNATE_SPLIT_LABEL_FACTOR, "high_precision", "High precision height data generation")
             col.separator()
 
         if self.operator_name != "wm.generate_height_data" and self.operator_name != "wm.prepare_3d_data" and self.operator_name != "wm.create_terraform_and_exclusion_polygons":
-            self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "process_all", "Process all the tiles (if unticked, process only the tiles that has not been cleaned)")
+            self.draw_splitted_prop(context, col, self.ALTERNATE_SPLIT_LABEL_FACTOR, "process_all", "Process all the tiles (if unticked, process only the tiles that has not been cleaned)")
             col.separator()
 
         self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "airport_city", "Airport city")
@@ -197,16 +200,16 @@ class SettingsOperator(PanelOperator):
             self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "geocode_margin", "Geocode margin")
             col.separator()
             if self.operator_name != "wm.isolate_3d_data_from_geocode":
-                self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "preserve_roads", "Preserve roads")
+                self.draw_splitted_prop(context, col, self.ALTERNATE_SPLIT_LABEL_FACTOR, "preserve_roads", "Preserve roads")
                 col.separator()
-                self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "preserve_buildings", "Preserve buildings")
+                self.draw_splitted_prop(context, col, self.ALTERNATE_SPLIT_LABEL_FACTOR, "preserve_buildings", "Preserve buildings")
                 col.separator()
         if self.operator_name == "wm.create_landmark_from_geocode":
             self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "landmark_type", "Landmark type")
             col.separator()
             self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "landmark_offset", "Landmark offset")
             col.separator()
-            self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "add_lights", "Add lights all around the landmark")
+            self.draw_splitted_prop(context, col, self.ALTERNATE_SPLIT_LABEL_FACTOR, "add_lights", "Add lights all around the landmark")
             col.separator()
         if self.operator_name == "wm.create_landmark_from_geocode" or self.operator_name == "wm.add_lights_to_geocode":
             self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "light_guid", "Select the type of light")
@@ -225,7 +228,7 @@ class SettingsOperator(PanelOperator):
         split = self.draw_setting_sections_panel(context)
         col = self.draw_header(split)
         col.separator()
-        self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "python_reload_modules", "Reload python modules (for dev purpose)")
+        self.draw_splitted_prop(context, col, self.ALTERNATE_SPLIT_LABEL_FACTOR, "python_reload_modules", "Reload python modules (for dev purpose)")
         col.separator()
         self.draw_footer(context, self.layout, self.operator_name)
 
@@ -242,7 +245,7 @@ class SettingsOperator(PanelOperator):
         split = self.draw_setting_sections_panel(context)
         col = self.draw_header(split)
         col.separator()
-        self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "backup_enabled", "Backup enabled")
+        self.draw_splitted_prop(context, col, self.ALTERNATE_SPLIT_LABEL_FACTOR, "backup_enabled", "Backup enabled")
         col.separator()
         self.draw_footer(context, self.layout, self.operator_name)
 
@@ -529,7 +532,7 @@ class OT_KeepOnlyBuildingsAndRoads3dDataPanel(SettingsOperator):
     operator_name = "wm.keep_only_buildings_and_roads_3d_data"
     id_name = "wm.keep_only_buildings_and_roads_3d_data_panel"
     bl_idname = id_name
-    bl_label = "4. Keep only buildings and roads from Google Earth tiles"
+    bl_label = "4. Cleanup 3d data from Google Earth tiles"
     operator_description = """Automatically removes everything, except buildings and roads from the Google Earth tiles, based on the OpenStreetMap data.
         Optionally, in the OPENSTREETMAP section, set the city of the airport, in case you want to remove an airport.
         Notice: this method can produce some visual artifacts, and buildings that are not included in OpenStreetMap data can be removed"""

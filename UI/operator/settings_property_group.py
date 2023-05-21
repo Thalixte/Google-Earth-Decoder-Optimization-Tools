@@ -348,6 +348,11 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         default=bpy.types.Scene.project_settings.exclude_parks if bpy.types.Scene.project_settings is not None else False,
         update=exclude_parks_updated
     )
+    keep_buildings: BoolProperty(
+        name="Keep buildings 3d data",
+        description="Keep buildings 3d data",
+        default=True,
+    )
     keep_residential_and_industrial: BoolProperty(
         name="Keep residential and industrial area 3d data",
         description="Keep residential and industrial area 3d data",
