@@ -156,10 +156,12 @@ class SettingsOperator(PanelOperator):
         split = self.draw_setting_sections_panel(context)
         col = self.draw_header(split)
         col.separator()
-        self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "airport_city", "Airport city")
+        self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "isolate_3d_data", "OpenStreetMap accuracy")
         col.separator()
         if self.operator_name in ["wm.generate_height_data", "wm.keep_only_buildings_3d_data", "wm.keep_only_buildings_and_roads_3d_data"]:
-            self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "keep_residential_and_industrial", "Keep residential and industrial area 3d data")
+            if context.scene.project_settings.isolate_3d_data:
+                self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "keep_residential_and_industrial", "Keep residential and industrial area 3d data")
+                col.separator()
             col.separator()
 
         # self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "exclude_ground", "Exclude ground 3d data")
@@ -179,6 +181,9 @@ class SettingsOperator(PanelOperator):
         if self.operator_name != "wm.generate_height_data" and self.operator_name != "wm.prepare_3d_data" and self.operator_name != "wm.create_terraform_and_exclusion_polygons":
             self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "process_all", "Process all the tiles (if unticked, process only the tiles that has not been cleaned)")
             col.separator()
+
+        self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "airport_city", "Airport city")
+        col.separator()
 
         self.draw_footer(context, self.layout, self.operator_name)
 
@@ -257,13 +262,13 @@ class SettingsOperator(PanelOperator):
         return box.column(align=True)
 
     @staticmethod
-    def draw_splitted_prop(context, layout, split_factor, property_key, property_name, slider=False, enabled=True, icon=NONE_ICON):
+    def draw_splitted_prop(context, layout, split_factor, property_key, property_name, slider=False, enabled=True, expand=False, toggle=False, icon_only=False, emboss=True, icon=NONE_ICON):
         split = layout.split(factor=split_factor, align=True)
         split.label(text=property_name)
         col = split.column(align=True)
         if not enabled:
             col.enabled = False
-        col.prop(context.scene.setting_props, property_key, slider=slider, text=str(), icon=icon)
+        col.prop(context.scene.setting_props, property_key, slider=slider, expand=expand, toggle=toggle, icon_only=icon_only, emboss=emboss, text=str(), icon=icon)
 
     @staticmethod
     def display_config_sections(context, layout):
@@ -455,24 +460,6 @@ class OT_CreateTerraformAndExclusionPolygonsPanel(SettingsOperator):
     ]
 
 
-class OT_GenerateHeightDataPanel(SettingsOperator):
-    operator_name = "wm.generate_height_data"
-    id_name = "wm.generate_height_data_panel"
-    bl_idname = id_name
-    bl_label = "4. Generate height data based on Google Earth tiles"
-    operator_description = """Generate height data based on the profile of the Google Earth tiles.
-        In the OPENSTREETMAP section, you can enable high precision, by ticking the "high precision" checkbox if you want to generate 
-        height data based on the highest google Earth tile lods. This can help calculating the data 
-        for mountain areas but it is not suitable for city area, as it will produce noise due to building height"""
-    starting_section = OSM_INI_SECTION
-    displayed_sections = [
-        PROJECT_INI_SECTION,
-        OSM_INI_SECTION,
-        BUILD_INI_SECTION,
-        BACKUP_INI_SECTION,
-    ]
-
-
 class OT_RemoveWaterFrom3dDataPanel(SettingsOperator):
     operator_name = "wm.remove_water_from_3d_data"
     id_name = "wm.remove_water_from_3d_data_panel"
@@ -542,7 +529,7 @@ class OT_KeepOnlyBuildingsAndRoads3dDataPanel(SettingsOperator):
     operator_name = "wm.keep_only_buildings_and_roads_3d_data"
     id_name = "wm.keep_only_buildings_and_roads_3d_data_panel"
     bl_idname = id_name
-    bl_label = "5. Keep only buildings and roads from Google Earth tiles"
+    bl_label = "4. Keep only buildings and roads from Google Earth tiles"
     operator_description = """Automatically removes everything, except buildings and roads from the Google Earth tiles, based on the OpenStreetMap data.
         Optionally, in the OPENSTREETMAP section, set the city of the airport, in case you want to remove an airport.
         Notice: this method can produce some visual artifacts, and buildings that are not included in OpenStreetMap data can be removed"""
@@ -551,6 +538,24 @@ class OT_KeepOnlyBuildingsAndRoads3dDataPanel(SettingsOperator):
         PROJECT_INI_SECTION,
         OSM_INI_SECTION,
         BUILD_INI_SECTION,
+    ]
+
+
+class OT_GenerateHeightDataPanel(SettingsOperator):
+    operator_name = "wm.generate_height_data"
+    id_name = "wm.generate_height_data_panel"
+    bl_idname = id_name
+    bl_label = "5. Generate height data based on Google Earth tiles"
+    operator_description = """Generate height data based on the profile of the Google Earth tiles.
+        In the OPENSTREETMAP section, you can enable high precision, by ticking the "high precision" checkbox if you want to generate 
+        height data based on the highest google Earth tile lods. This can help calculating the data 
+        for mountain areas but it is not suitable for city area, as it will produce noise due to building height"""
+    starting_section = OSM_INI_SECTION
+    displayed_sections = [
+        PROJECT_INI_SECTION,
+        OSM_INI_SECTION,
+        BUILD_INI_SECTION,
+        BACKUP_INI_SECTION,
     ]
 
 

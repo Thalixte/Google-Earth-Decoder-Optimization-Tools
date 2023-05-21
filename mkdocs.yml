@@ -7,33 +7,37 @@ copyright: Copyright &copy; 2023 Thalixte
 repo_name: Thalixte/Google-Earth-Decoder-optimisation-tools
 repo_url: https://github.com/Thalixte/Google-Earth-Decoder-optimisation-tools
 
+extra_css:
+  - stylesheets/extra.css
+
 # Configuration
 theme:
   name: material
+  logo: assets/images/logo.png
   features:
     - announce.dismiss
-    - content.action.edit
+    # - content.action.edit
     - content.action.view
-    - content.code.annotate
+    # - content.code.annotate
     - content.code.copy
     # - content.tabs.link
     - content.tooltips
     # - header.autohide
-    # - navigation.expand
+    - navigation.expand
     - navigation.footer
     - navigation.indexes
-    # - navigation.instant
+    - navigation.instant
     # - navigation.prune
     - navigation.sections
-    - navigation.tabs
+    # - navigation.tabs
     # - navigation.tabs.sticky
     - navigation.top
-    - navigation.tracking
+    # - navigation.tracking
     - search.highlight
     - search.share
     - search.suggest
     - toc.follow
-    # - toc.integrate
+    - toc.integrate
   palette:
     - scheme: default
       primary: indigo
@@ -42,7 +46,7 @@ theme:
         icon: material/brightness-7
         name: Switch to dark mode
     - scheme: slate
-      primary: indigo
+      primary: blue
       accent: indigo
       toggle:
         icon: material/brightness-4
@@ -95,3 +99,14 @@ markdown_extensions:
   - pymdownx.tasklist:
       custom_checkbox: true
   - pymdownx.tilde
+
+plugins:
+  - search
+  - glightbox
+  - mkdocs-video:
+      is_video: True
+      video_autoplay: True
+      video_muted: True
+      video_controls: True
+      css_style:
+        width: "100%"

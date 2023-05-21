@@ -15,7 +15,6 @@
 #  #
 #
 #  <pep8 compliant>
-
 import os
 
 import bpy
@@ -112,6 +111,10 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
 
     def airport_city_updated(self, context):
         context.scene.project_settings.airport_city = self.airport_city
+        context.scene.project_settings.save()
+
+    def isolate_3d_data_updated(self, context):
+        context.scene.project_settings.isolate_3d_data = (self.isolate_3d_data == "GOOD")
         context.scene.project_settings.save()
 
     def exclude_ground_updated(self, context):
@@ -423,6 +426,18 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         update=landmark_type_updated
 
     )
+    isolate_3d_data: EnumProperty(
+        name="OpenStreetMap accuracy",
+        description="Accuracy of the OpenStreetMap data",
+        items=[
+            ("GOOD", "Accurate", str()),
+            ("BAD", "Not accurate", str()),
+        ],
+        default="BAD" if bpy.types.Scene.project_settings is None else ("GOOD" if bpy.types.Scene.project_settings.isolate_3d_data else "BAD"),
+        update=isolate_3d_data_updated
+    )
+    enum_items = (('0', 'Cube', ''), ('1', 'Pyramid', ''))
+    bpy.types.Scene.obj_type = bpy.props.EnumProperty(items=enum_items)
     landmark_offset: FloatProperty(
         name="Landmark offset",
         description="Height offset of the landmark",

@@ -1,0 +1,29 @@
+.md-header__button.md-logo img,.md-header__button.md-logo svg {
+    height: 3rem !important;
+}
+
+.md-header__title {
+    font-size: 1.2rem;
+}
+
+.md-header__source {
+    display: block;
+    max-width: 18rem;
+    width: 18rem;
+}
+
+p {
+    text-align:  justify;
+}
+
+figure {
+    margin-top: 0px;
+}
+
+h1#initialize-a-new-msfs-scenery-project {
+    margin-bottom: 0px;
+}
+
+.md-button.gedot {
+    padding: 0.20em 0.75em !important;
+}

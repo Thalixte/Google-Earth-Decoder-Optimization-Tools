@@ -127,6 +127,11 @@ def reload_airport_city(context):
         context.scene.setting_props.airport_city = context.scene.project_settings.airport_city
 
 
+def reload_isolate_3d_data(context):
+    if context.scene.project_settings is not None:
+        context.scene.setting_props.isolate_3d_data = "GOOD" if context.scene.project_settings.isolate_3d_data else "BAD"
+
+
 def reload_exclude_ground(context):
     if context.scene.project_settings is not None:
         context.scene.setting_props.exclude_ground = context.scene.project_settings.exclude_ground
@@ -300,6 +305,7 @@ def reload_setting_props(context, reload_settings_file=True):
     reload_lon_correction(context)
     reload_target_min_size_value(context)
     reload_airport_city(context)
+    reload_isolate_3d_data(context)
     reload_exclude_ground(context)
     reload_exclude_nature_reserve(context)
     reload_exclude_parks(context)
