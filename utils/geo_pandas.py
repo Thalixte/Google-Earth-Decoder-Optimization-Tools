@@ -21,7 +21,7 @@ import warnings
 
 from constants import GEOMETRY_OSM_COLUMN, BOUNDING_BOX_OSM_KEY, SHAPE_TEMPLATES_FOLDER, OSM_LAND_SHAPEFILE, ROAD_OSM_KEY, BRIDGE_OSM_TAG, SERVICE_OSM_KEY, NOT_SHORE_WATER_OSM_KEY, WATER_OSM_KEY, NATURAL_OSM_KEY, OSM_TAGS, FOOTWAY_OSM_TAG, PATH_OSM_TAG, MAN_MADE_OSM_KEY, PIER_OSM_TAG, GOLF_OSM_KEY, FAIRWAY_OSM_TAG, EOL, CEND, TUNNEL_OSM_TAG, SEAMARK_TYPE_OSM_TAG, BUILDING_OSM_KEY, SHP_FILE_EXT, ELEMENT_TY_OSM_KEY, OSMID_OSM_KEY, RAILWAY_OSM_KEY, LANES_OSM_KEY, ONEWAY_OSM_KEY, ROAD_WITH_BORDERS, \
     ROAD_LANE_WIDTH, GEOCODE_OSM_FILE_PREFIX, PEDESTRIAN_ROAD_TYPE, FOOTWAY_ROAD_TYPE, SERVICE_ROAD_TYPE, LANDUSE_OSM_KEY, CONSTRUCTION_OSM_KEY, GDAL_LIB_PREFIX, FIONA_LIB_PREFIX, LAND_MASS_REPO, LAND_MASS_ARCHIVE, LEISURE_OSM_KEY, NETWORKX_LIB, RTREE_LIB, MATPLOTLIB_LIB, PANDAS_LIB, GEOPANDAS_LIB, OSMNX_LIB, SHAPELY_LIB, PATH_ROAD_TYPE, TRACK_ROAD_TYPE, AREA_OSM_TAG, NOT_EXCLUSION_BUILDING_OSM_KEY, WALL_OSM_KEY, WALL_OSM_TAG, CASTLE_WALL_OSM_TAG, CYCLEWAY_ROAD_TYPE, FULL_PREFIX, \
-    ROAD_REMOVAL_LANDUSE_OSM_KEY, ROAD_REMOVAL_NATURAL_OSM_KEY, PROPOSED_OSM_TAG, LANDMARK_PREFIX, LON_OSM_KEY, LAT_OSM_KEY
+    ROAD_REMOVAL_LANDUSE_OSM_KEY, ROAD_REMOVAL_NATURAL_OSM_KEY, PROPOSED_OSM_TAG, LANDMARK_PREFIX, LON_OSM_KEY, LAT_OSM_KEY, FOREST_OSM_TAG, WOOD_OSM_TAG
 from utils.colored_print import pr_bg_orange
 from utils.install_lib import install_python_lib, install_alternate_python_lib, install_shapefile_resource
 
@@ -574,6 +574,45 @@ def prepare_golf_gdf(gdf):
     return result[[GEOMETRY_OSM_COLUMN]].dissolve()
 
 
+def prepare_forest_gdf(landuse_gdf, natural_gdf):
+    result = create_empty_gdf()
+    natural_forests = create_empty_gdf()
+
+    if landuse_gdf is None and natural_gdf is None:
+        return result
+
+    if landuse_gdf is not None:
+        landuse = landuse_gdf.copy()
+        if LANDUSE_OSM_KEY in landuse_gdf:
+            result = landuse[(landuse[LANDUSE_OSM_KEY] == FOREST_OSM_TAG)]
+
+    if natural_gdf is not None:
+        natural = natural_gdf.copy()
+        if NATURAL_OSM_KEY in landuse_gdf:
+            natural_forests = natural[(natural[NATURAL_OSM_KEY] == FOREST_OSM_TAG)]
+
+    if not result.empty:
+        if not natural_forests.empty:
+            result = result._append(natural_forests)
+        result = result[(result.geom_type == SHAPELY_TYPE.polygon) | (result.geom_type == SHAPELY_TYPE.multiPolygon)]
+
+    return result
+
+
+def prepare_wood_gdf(gdf):
+    if gdf is None:
+        return create_empty_gdf()
+
+    result = gdf.copy()
+
+    if not result.empty:
+        if NATURAL_OSM_KEY in result:
+            result = result[(result[NATURAL_OSM_KEY] == WOOD_OSM_TAG)]
+        result = result[(result.geom_type == SHAPELY_TYPE.polygon) | (result.geom_type == SHAPELY_TYPE.multiPolygon)]
+
+    return result
+
+
 def prepare_park_gdf(gdf, bridges):
     if gdf is None:
         return create_empty_gdf()
@@ -606,7 +645,7 @@ def prepare_amenity_gdf(gdf, water, natural_water, airport):
     return result
 
 
-def prepare_residential_gdf(gdf, water, natural, natural_water, park, airport):
+def prepare_residential_gdf(gdf, water, natural, natural_water, forests, woods, park, airport):
     if gdf is None:
         return create_empty_gdf()
 
@@ -617,6 +656,10 @@ def prepare_residential_gdf(gdf, water, natural, natural_water, park, airport):
             result = difference_gdf(result, water)
         if not natural.empty:
             result = difference_gdf(result, natural)
+        if not forests.empty:
+            result = difference_gdf(result, forests)
+        if not woods.empty:
+            result = difference_gdf(result, woods)
         if not natural_water.empty:
             result = difference_gdf(result, natural_water)
         if not park.empty:
@@ -752,14 +795,16 @@ def create_water_exclusion_gdf(natural_water, water, sea, roads):
     return result.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)
 
 
-def create_ground_exclusion_gdf(landuse, nature_reserve, natural, aeroway, bridges, park, airport, settings):
+def create_ground_exclusion_gdf(landuse, forests, woods, nature_reserves, natural, aeroway, bridges, parks, airport, settings):
     result = create_empty_gdf()
     result = union_gdf(result, landuse)
-    result = union_gdf(result, nature_reserve)
+    result = union_gdf(result, forests)
+    result = union_gdf(result, woods)
+    result = union_gdf(result, nature_reserves)
     result = union_gdf(result, natural)
     result = union_gdf(result, aeroway)
     result = union_gdf(result, airport)
-    result = union_gdf(result, park)
+    result = union_gdf(result, parks)
     result = resize_gdf(result, float(settings.ground_exclusion_margin))
 
     if not bridges.empty and BRIDGE_OSM_TAG in bridges:

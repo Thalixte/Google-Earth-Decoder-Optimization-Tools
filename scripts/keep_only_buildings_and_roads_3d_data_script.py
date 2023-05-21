@@ -49,9 +49,8 @@ def keep_only_buildings_and_roads_3d_data(global_settings):
         isolated_print(EOL)
         print_title("CLEANUP 3D DATA")
 
+        msfs_project.settings.exclude_water = True
         msfs_project.settings.exclude_ground = True
-        msfs_project.settings.exclude_nature_reserve = True
-        msfs_project.settings.exclude_parks = True
         msfs_project.settings.isolate_3d_data = True
         msfs_project.settings.keep_constructions = True
         msfs_project.settings.keep_roads = True

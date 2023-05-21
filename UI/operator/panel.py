@@ -86,12 +86,14 @@ class SettingsOperator(PanelOperator):
         col.separator(factor=2.0)
         self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "author_name", "Author of the project")
         col.separator(factor=2.0)
-        self.draw_splitted_prop(context, col, self.ALTERNATE_SPLIT_LABEL_FACTOR, "bake_textures_enabled", "Bake textures enabled")
-        col.separator()
-        self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "output_texture_format", "Output texture format")
-        col.separator()
         self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "nb_parallel_blender_tasks", "Number of parallel Blender tasks")
         col.separator()
+        col.separator()
+        if self.operator_name in ["wm.optimize_msfs_scenery"]:
+            self.draw_splitted_prop(context, col, self.ALTERNATE_SPLIT_LABEL_FACTOR, "bake_textures_enabled", "Bake textures enabled")
+            col.separator()
+            self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "output_texture_format", "Output texture format")
+            col.separator()
         if self.operator_name in ["wm.add_tile_colliders"]:
             self.draw_splitted_prop(context, col, self.ALTERNATE_SPLIT_LABEL_FACTOR, "collider_as_lower_lod", "Add the collider as the lower LOD for each tile")
             col.separator()
@@ -99,7 +101,7 @@ class SettingsOperator(PanelOperator):
 
     def draw_merge_panel(self, context):
         split = self.draw_setting_sections_panel(context)
-        col = self.draw_header(split)
+        col = self.draw_header(split, display_save=False)
         col.separator()
         self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "project_path_readonly", "Path of the final msfs scenery project", enabled=False)
         col.separator()
@@ -114,7 +116,7 @@ class SettingsOperator(PanelOperator):
 
     def draw_tile_panel(self, context):
         split = self.draw_setting_sections_panel(context)
-        col = self.draw_header(split)
+        col = self.draw_header(split, display_save=False)
         col.separator()
         self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "lat_correction", "Latitude correction", slider=True)
         col.separator()
@@ -155,7 +157,7 @@ class SettingsOperator(PanelOperator):
 
     def draw_openstreetmap_panel(self, context):
         split = self.draw_setting_sections_panel(context)
-        col = self.draw_header(split)
+        col = self.draw_header(split, display_save=False)
         col.separator()
         self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "isolate_3d_data", "OpenStreetMap accuracy")
         col.separator()
@@ -163,16 +165,23 @@ class SettingsOperator(PanelOperator):
             if context.scene.project_settings.isolate_3d_data:
                 self.draw_splitted_prop(context, col, self.ALTERNATE_SPLIT_LABEL_FACTOR, "keep_buildings", "Keep buildings 3d data", enabled=False)
                 col.separator()
+                self.draw_splitted_prop(context, col, self.ALTERNATE_SPLIT_LABEL_FACTOR, "keep_roads", "Keep roads 3d data")
+                col.separator()
+                self.draw_splitted_prop(context, col, self.ALTERNATE_SPLIT_LABEL_FACTOR, "keep_constructions", "Keep construction area 3d data")
+                col.separator()
                 self.draw_splitted_prop(context, col, self.ALTERNATE_SPLIT_LABEL_FACTOR, "keep_residential_and_industrial", "Keep residential and industrial area 3d data")
+                col.separator()
+            else:
+                self.draw_splitted_prop(context, col, self.ALTERNATE_SPLIT_LABEL_FACTOR, "exclude_water", "Exclude water 3d data", enabled=False)
+                col.separator()
+                self.draw_splitted_prop(context, col, self.ALTERNATE_SPLIT_LABEL_FACTOR, "exclude_ground", "Exclude other ground 3d data (farmlands, vineyards, allotments, meadows, orchards)")
+                col.separator()
+                self.draw_splitted_prop(context, col, self.ALTERNATE_SPLIT_LABEL_FACTOR, "exclude_nature_reserves", "Exclude nature reserves 3d data")
+                col.separator()
+                self.draw_splitted_prop(context, col, self.ALTERNATE_SPLIT_LABEL_FACTOR, "exclude_parks", "Exclude parks 3d data")
                 col.separator()
             col.separator()
 
-        # self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "exclude_ground", "Exclude ground 3d data")
-        # col.separator()
-        # self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "exclude_nature_reserve", "Exclude nature reserves 3d data")
-        # col.separator()
-        # self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "exclude_parks", "Exclude parks 3d data")
-        # col.separator()
         if self.operator_name == "wm.generate_height_data" or self.operator_name == "wm.prepare_3d_data":
             self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "height_adjustment", "Height data adjustment (in meters)")
             col.separator()
@@ -192,7 +201,7 @@ class SettingsOperator(PanelOperator):
 
     def draw_geocode_panel(self, context):
         split = self.draw_setting_sections_panel(context)
-        col = self.draw_header(split)
+        col = self.draw_header(split, display_save=False)
         col.separator()
         self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "geocode", "Geocode")
         col.separator()
@@ -218,7 +227,7 @@ class SettingsOperator(PanelOperator):
 
     def draw_altitude_adjustment_panel(self, context):
         split = self.draw_setting_sections_panel(context)
-        col = self.draw_header(split)
+        col = self.draw_header(split, display_save=False)
         col.separator()
         self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "altitude_adjustment", "Adjustment to apply to the altitude of the while scenery (tiles, objects, colliders, landmarks, height maps)")
         col.separator()
@@ -243,23 +252,29 @@ class SettingsOperator(PanelOperator):
 
     def draw_backup_panel(self, context):
         split = self.draw_setting_sections_panel(context)
-        col = self.draw_header(split)
+        col = self.draw_header(split, display_save=False)
         col.separator()
         self.draw_splitted_prop(context, col, self.ALTERNATE_SPLIT_LABEL_FACTOR, "backup_enabled", "Backup enabled")
         col.separator()
         self.draw_footer(context, self.layout, self.operator_name)
 
     @staticmethod
-    def draw_header(layout):
+    def draw_header(layout, display_save=True):
         col = layout.column()
         header_box = col.box()
-        header_split = header_box.split(factor=0.18)
+        header_split = header_box.split(factor=0.2)
         header_split.operator(OT_ReloadSettingsOperator.bl_idname, icon=FILE_REFRESH_ICON)
         header_col = header_split.split(factor=0.25, align=True)
         header_col.separator()
-        header_col.operator(OT_openSettingsFileOperator.bl_idname, icon=FILE_FOLDER_ICON)
+        if display_save:
+            header_col.operator(OT_openSettingsFileOperator.bl_idname, icon=FILE_FOLDER_ICON)
+        else:
+            header_col.separator()
         header_col.separator()
-        header_col.operator(OT_SaveSettingsOperator.bl_idname, icon=FILE_TICK_ICON)
+        if display_save:
+            header_col.operator(OT_SaveSettingsOperator.bl_idname, icon=FILE_TICK_ICON)
+        else:
+            header_col.operator(OT_openSettingsFileOperator.bl_idname, icon=FILE_FOLDER_ICON)
         col.separator()
         box = col.box()
         return box.column(align=True)

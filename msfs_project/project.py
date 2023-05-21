@@ -27,7 +27,7 @@ import subprocess
 from utils.install_lib import install_python_lib
 from utils.MapBoxDownloader import MapBoxDownloader
 from utils.string import remove_accents
-from utils.geo_pandas import prepare_wall_gdf, create_exclusion_building_gdf, prepare_water_gdf, prepare_amenity_gdf, prepare_hidden_roads_gdf, prepare_water_exclusion_gdf, prepare_residential_gdf, create_point_gdf
+from utils.geo_pandas import prepare_wall_gdf, create_exclusion_building_gdf, prepare_water_gdf, prepare_amenity_gdf, prepare_hidden_roads_gdf, prepare_water_exclusion_gdf, prepare_residential_gdf, create_point_gdf, prepare_forest_gdf, prepare_wood_gdf
 from constants import *
 
 try:
@@ -1163,23 +1163,23 @@ class MsfsProject:
         orig_natural, orig_natural_water, orig_water, orig_waterway, orig_aeroway, orig_pitch, orig_construction, orig_park, orig_building, \
         orig_wall, orig_man_made, orig_rocks, orig_amenity, orig_residential, orig_industrial, orig_airport = self.__load_geodataframes(orig_bbox, b, settings)
 
-        bbox, roads, bridges, hidden_roads, sea, pitch, construction, airport, building, \
-        water_without_bridges, water, exclusion, rocks, amenity, residential, industrial = self.__prepare_geodataframes(orig_road, orig_railway, orig_sea, orig_bbox, orig_land_mass, orig_boundary,
+        bbox, roads, bridges, hidden_roads, sea, pitches, construction, airport, buildings, \
+        water_without_bridges, water, exclusion, rocks, amenities, residentials, industrials = self.__prepare_geodataframes(orig_road, orig_railway, orig_sea, orig_bbox, orig_land_mass, orig_boundary,
                                                                                                orig_landuse, orig_natural, orig_natural_water, orig_water, orig_waterway, orig_aeroway,
                                                                                                orig_pitch, orig_construction, orig_airport, orig_building, orig_wall, orig_man_made,
                                                                                                orig_park, orig_nature_reserve, orig_rocks, orig_amenity, orig_residential, orig_industrial, settings)
 
-        if not residential.empty:
+        if not residentials.empty:
             print_title("CREATE RESIDENTIAL OSM FILE")
-            # for debugging purpose, generate the residential osm file
+            # for debugging purpose, generate the residentials osm file
             osm_xml = OsmXml(self.osmfiles_folder, RESIDENTIAL_OSM_KEY + OSM_FILE_EXT)
-            osm_xml.create_from_geodataframes([preserve_holes(residential.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore'))], b)
+            osm_xml.create_from_geodataframes([preserve_holes(residentials.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore'))], b)
 
-        if not industrial.empty:
+        if not industrials.empty:
             print_title("CREATE INDUSTRIAL OSM FILE")
-            # for debugging purpose, generate the industrial osm file
+            # for debugging purpose, generate the industrials osm file
             osm_xml = OsmXml(self.osmfiles_folder, INDUSTRIAL_OSM_KEY + OSM_FILE_EXT)
-            osm_xml.create_from_geodataframes([preserve_holes(industrial.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore'))], b)
+            osm_xml.create_from_geodataframes([preserve_holes(industrials.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore'))], b)
 
         if not exclusion.empty:
             print_title("CREATE GLOBAL EXCLUSION OSM FILE")
@@ -1187,8 +1187,8 @@ class MsfsProject:
             osm_xml = OsmXml(self.osmfiles_folder, EXCLUSION_OSM_FILE_PREFIX + OSM_FILE_EXT)
             osm_xml.create_from_geodataframes([preserve_holes(exclusion.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore'))], b, extrude=True, additional_tags=[(HEIGHT_OSM_TAG, 1000)])
 
-        return orig_water, orig_natural_water, bbox, roads, bridges, hidden_roads, sea, pitch, construction, airport, building, \
-               water_without_bridges, water, exclusion, rocks, amenity, residential, industrial
+        return orig_water, orig_natural_water, bbox, roads, bridges, hidden_roads, sea, pitches, construction, airport, buildings, \
+               water_without_bridges, water, exclusion, rocks, amenities, residentials, industrials
 
     def __create_scenery_polygons(self, b, orig_bbox, orig_water, orig_natural_water, bbox, sea, pitch, amenity, construction, industrial, airport, exclusion, disable_terraform=False):
         print_title("CREATE PITCH TERRAFORM POLYGONS GEO DATAFRAMES...")
@@ -1598,10 +1598,16 @@ class MsfsProject:
         if self.settings.keep_residential_and_industrial:
             itasks = itasks+1
 
+        if self.settings.exclude_forests:
+            itasks = itasks+1
+
+        if self.settings.exclude_woods:
+            itasks = itasks+1
+
         if self.settings.exclude_parks:
             itasks = itasks+1
 
-        if self.settings.exclude_nature_reserve:
+        if self.settings.exclude_nature_reserves:
             itasks = itasks+1
 
         prepare_gdf_list = [None] * itasks
@@ -1637,73 +1643,87 @@ class MsfsProject:
         pbar.update("preparing aeroway geodataframe...", stall=True)
         aeroway = clip_gdf(prepare_gdf(orig_aeroway), bbox)
         pbar.update("aeroway geodataframe prepared")
-        pbar.update("preparing pitch geodataframe...", stall=True)
-        pitch = clip_gdf(prepare_gdf(orig_pitch), bbox)
-        pbar.update("pitch geodataframe prepared")
-        pbar.update("preparing construction geodataframe...", stall=True)
-        construction = clip_gdf(prepare_gdf(orig_construction), bbox)
-        pbar.update("construction geodataframe prepared")
-        pbar.update("preparing amenity geodataframe...", stall=True)
-        amenity = prepare_amenity_gdf(orig_amenity, water, natural_water, orig_airport)
-        pbar.update("amenity geodataframe prepared")
+        pbar.update("preparing pitches geodataframe...", stall=True)
+        pitches = clip_gdf(prepare_gdf(orig_pitch), bbox)
+        pbar.update("pitches geodataframe prepared")
+        pbar.update("preparing constructions geodataframe...", stall=True)
+        constructions = clip_gdf(prepare_gdf(orig_construction), bbox)
+        pbar.update("constructions geodataframe prepared")
+        pbar.update("preparing amenities geodataframe...", stall=True)
+        amenities = prepare_amenity_gdf(orig_amenity, water, natural_water, orig_airport)
+        pbar.update("amenities geodataframe prepared")
         pbar.update("preparing airport geodataframe...", stall=True)
         airport = prepare_gdf(orig_airport)
         pbar.update("airport geodataframe prepared")
-        pbar.update("preparing wall geodataframe...", stall=True)
-        wall = clip_gdf(prepare_wall_gdf(orig_wall), bbox)
-        pbar.update("wall geodataframe prepared")
+        pbar.update("preparing walls geodataframe...", stall=True)
+        walls = clip_gdf(prepare_wall_gdf(orig_wall), bbox)
+        pbar.update("walls geodataframe prepared")
         pbar.update("preparing man mades geodataframe...", stall=True)
         man_made = clip_gdf(prepare_wall_gdf(orig_man_made), bbox)
         pbar.update("man mades geodataframe prepared")
-        pbar.update("preparing building geodataframe...", stall=True)
-        building = clip_gdf(prepare_building_gdf(orig_building, wall, man_made), bbox)
-        pbar.update("building geodataframe prepared")
+        pbar.update("preparing buildings geodataframe...", stall=True)
+        buildings = clip_gdf(prepare_building_gdf(orig_building, walls, man_made), bbox)
+        pbar.update("buildings geodataframe prepared")
         pbar.update("preparing rocks geodataframe...", stall=True)
         rocks = prepare_gdf(orig_rocks)
         pbar.update("rock geodataframe prepared")
 
-        if self.settings.exclude_parks:
-            pbar.update("preparing park geodataframe...", stall=True)
-            park = clip_gdf(prepare_park_gdf(orig_park, bridges), bbox)
-            pbar.update("park geodataframe prepared")
+        if self.settings.exclude_forests:
+            pbar.update("preparing forests geodataframe...", stall=True)
+            forests = clip_gdf(prepare_forest_gdf(orig_landuse, orig_natural), bbox)
+            pbar.update("forests geodataframe prepared")
         else:
-            park = create_empty_gdf()
+            forests = create_empty_gdf()
 
-        if self.settings.exclude_nature_reserve:
-            pbar.update("preparing nature_reserve geodataframe...", stall=True)
-            nature_reserve = clip_gdf(prepare_gdf(orig_nature_reserve), bbox)
+        if self.settings.exclude_woods:
+            pbar.update("preparing woods geodataframe...", stall=True)
+            woods = clip_gdf(prepare_wood_gdf(orig_natural), bbox)
+            pbar.update("woods geodataframe prepared")
+        else:
+            woods = create_empty_gdf()
+
+        if self.settings.exclude_parks:
+            pbar.update("preparing parks geodataframe...", stall=True)
+            parks = clip_gdf(prepare_park_gdf(orig_park, bridges), bbox)
+            pbar.update("parks geodataframe prepared")
+        else:
+            parks = create_empty_gdf()
+
+        if self.settings.exclude_nature_reserves:
+            pbar.update("preparing nature_reserves geodataframe...", stall=True)
+            nature_reserves = clip_gdf(prepare_gdf(orig_nature_reserve), bbox)
             pbar.update("nature reserve geodataframe prepared")
         else:
-            nature_reserve = create_empty_gdf()
+            nature_reserves = create_empty_gdf()
 
         if self.settings.keep_residential_and_industrial:
-            pbar.update("preparing residential geodataframe...", stall=True)
-            residential = prepare_residential_gdf(orig_residential, water, natural, natural_water, park, orig_airport)
-            pbar.update("residential geodataframe prepared")
+            pbar.update("preparing residentials geodataframe...", stall=True)
+            residentials = prepare_residential_gdf(orig_residential, water, natural, natural_water, forests, woods, parks, orig_airport)
+            pbar.update("residentials geodataframe prepared")
         else:
-            residential = create_empty_gdf()
+            residentials = create_empty_gdf()
 
-        pbar.update("preparing industrial geodataframe...", stall=True)
-        industrial = clip_gdf(prepare_gdf(orig_industrial), bbox)
-        pbar.update("industrial geodataframe prepared")
+        pbar.update("preparing industrials geodataframe...", stall=True)
+        industrials = clip_gdf(prepare_gdf(orig_industrial), bbox)
+        pbar.update("industrials geodataframe prepared")
 
         pbar.update("creating whole water geodataframe...", stall=True)
         whole_water = create_whole_water_gdf(natural_water, water, sea)
         pbar.update("whole water geodataframe created")
         # create water exclusion masks to cleanup 3d data tiles
         pbar.update("creating water exclusion geodataframe...", stall=True)
-        water_exclusion = prepare_water_exclusion_gdf(whole_water, building, bridges)
+        water_exclusion = prepare_water_exclusion_gdf(whole_water, buildings, bridges)
         pbar.update("water exclusion geodataframe created")
         # create ground exclusion masks to cleanup 3d data tiles
         pbar.update("creating ground exclusion geodataframe...", stall=True)
-        ground_exclusion = create_ground_exclusion_gdf(landuse, nature_reserve, natural, aeroway, bridges, park, airport, self.settings)
+        ground_exclusion = create_ground_exclusion_gdf(landuse, forests, woods, nature_reserves, natural, aeroway, bridges, parks, airport, self.settings)
         pbar.update("ground exclusion geodataframe created")
         pbar.update("creating exclusion geodataframe...", stall=True)
         exclusion = union_gdf(water_exclusion, ground_exclusion if self.settings.exclude_ground else create_empty_gdf())
         pbar.update("exclusion geodataframe created")
 
-        return bbox, roads, bridges, hidden_roads, sea, pitch, construction, airport, building, \
-               whole_water, water_exclusion, exclusion, rocks, amenity, residential, industrial
+        return bbox, roads, bridges, hidden_roads, sea, pitches, constructions, airport, buildings, \
+               whole_water, water_exclusion, exclusion, rocks, amenities, residentials, industrials
 
     @staticmethod
     def __backup_objects(objects: dict, backup_path, pbar_title="backup files"):

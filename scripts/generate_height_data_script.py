@@ -52,7 +52,7 @@ def generate_height_data(global_settings):
         print_title("GENERATE HEIGHT DATA")
 
         msfs_project.settings.exclude_ground = True
-        msfs_project.settings.exclude_nature_reserve = True
+        msfs_project.settings.exclude_nature_reserves = True
         msfs_project.settings.exclude_parks = True
         msfs_project.settings.keep_constructions = True
         msfs_project.settings.keep_roads = True

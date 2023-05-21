@@ -49,13 +49,14 @@ def remove_water_from_3d_data(global_settings):
         isolated_print(EOL)
         print_title("CLEANUP 3D DATA")
 
+        msfs_project.settings.exclude_water = True
         msfs_project.settings.exclude_ground = False
-        msfs_project.settings.exclude_nature_reserve = False
+        msfs_project.settings.exclude_forests = False
+        msfs_project.settings.exclude_woods = False
+        msfs_project.settings.exclude_parks = False
+        msfs_project.settings.exclude_nature_reserves = False
         msfs_project.settings.exclude_parks = False
         msfs_project.settings.isolate_3d_data = False
-        msfs_project.settings.keep_constructions = False
-        msfs_project.settings.keep_roads = True
-        msfs_project.settings.keep_residential_and_industrial = False
         msfs_project.settings.disable_terraform = False
         msfs_project.settings.save()
         msfs_project.prepare_3d_data(global_settings, generate_height_data=False, process_3d_data=True, create_polygons=False, process_all=msfs_project.settings.process_all)

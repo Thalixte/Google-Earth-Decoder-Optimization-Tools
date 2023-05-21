@@ -137,14 +137,34 @@ def reload_exclude_ground(context):
         context.scene.setting_props.exclude_ground = context.scene.project_settings.exclude_ground
 
 
-def reload_exclude_nature_reserve(context):
+def reload_exclude_forests(context):
     if context.scene.project_settings is not None:
-        context.scene.setting_props.exclude_nature_reserve = context.scene.project_settings.exclude_nature_reserve
+        context.scene.setting_props.exclude_forests = context.scene.project_settings.exclude_forests
+
+
+def reload_exclude_woods(context):
+    if context.scene.project_settings is not None:
+        context.scene.setting_props.exclude_woods = context.scene.project_settings.exclude_woods
+
+
+def reload_exclude_nature_reserves(context):
+    if context.scene.project_settings is not None:
+        context.scene.setting_props.exclude_nature_reserves = context.scene.project_settings.exclude_nature_reserves
 
 
 def reload_exclude_parks(context):
     if context.scene.project_settings is not None:
         context.scene.setting_props.exclude_parks = context.scene.project_settings.exclude_parks
+
+
+def reload_keep_roads(context):
+    if context.scene.project_settings is not None:
+        context.scene.setting_props.keep_roads = context.scene.project_settings.keep_roads
+
+
+def reload_keep_constructions(context):
+    if context.scene.project_settings is not None:
+        context.scene.setting_props.keep_constructions = context.scene.project_settings.keep_constructions
 
 
 def reload_keep_residential_and_industrial(context):
@@ -307,8 +327,12 @@ def reload_setting_props(context, reload_settings_file=True):
     reload_airport_city(context)
     reload_isolate_3d_data(context)
     reload_exclude_ground(context)
-    reload_exclude_nature_reserve(context)
+    reload_exclude_forests(context)
+    reload_exclude_woods(context)
+    reload_exclude_nature_reserves(context)
     reload_exclude_parks(context)
+    reload_keep_roads(context)
+    reload_keep_constructions(context)
     reload_keep_residential_and_industrial(context)
     reload_process_all(context)
     reload_high_precision(context)

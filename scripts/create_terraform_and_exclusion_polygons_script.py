@@ -52,7 +52,7 @@ def create_terraform_and_exclusion_polygons(global_settings):
         print_title("CREATE TERRAFORM AND EXCLUSION POLYGONS")
 
         msfs_project.settings.exclude_ground = True
-        msfs_project.settings.exclude_nature_reserve = True
+        msfs_project.settings.exclude_nature_reserves = True
         msfs_project.settings.exclude_parks = True
         msfs_project.settings.isolate_3d_data = False
         msfs_project.settings.keep_roads = False

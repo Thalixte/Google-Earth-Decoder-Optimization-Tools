@@ -413,7 +413,6 @@ OSM_TAGS = {
     ],
     LANDUSE_OSM_KEY: [
         FOREST_OSM_TAG,
-        NATURE_RESERVE_OSM_TAG,
         FARMLAND_OSM_TAG,
         VINEYARD_OSM_TAG,
         ALLOTMENTS_OSM_TAG,

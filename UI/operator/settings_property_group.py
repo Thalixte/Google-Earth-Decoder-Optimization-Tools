@@ -121,12 +121,28 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         context.scene.project_settings.exclude_ground = self.exclude_ground
         context.scene.project_settings.save()
 
-    def exclude_nature_reserve_updated(self, context):
-        context.scene.project_settings.exclude_nature_reserve = self.exclude_nature_reserve
+    def exclude_forests_updated(self, context):
+        context.scene.project_settings.exclude_forests = self.exclude_forests
+        context.scene.project_settings.save()
+
+    def exclude_woods_updated(self, context):
+        context.scene.project_settings.exclude_forests = self.exclude_woods
+        context.scene.project_settings.save()
+
+    def exclude_nature_reserves_updated(self, context):
+        context.scene.project_settings.exclude_nature_reserves = self.exclude_nature_reserves
         context.scene.project_settings.save()
 
     def exclude_parks_updated(self, context):
         context.scene.project_settings.exclude_parks = self.exclude_parks
+        context.scene.project_settings.save()
+
+    def keep_roads_updated(self, context):
+        context.scene.project_settings.keep_roads = self.keep_roads
+        context.scene.project_settings.save()
+
+    def keep_constructions_updated(self, context):
+        context.scene.project_settings.keep_constructions = self.keep_constructions
         context.scene.project_settings.save()
 
     def keep_residential_and_industrial_updated(self, context):
@@ -330,17 +346,34 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         maxlen=256,
         update=airport_city_updated
     )
+    exclude_water: BoolProperty(
+        name="Exclude water 3d data",
+        description="Exclude water 3d data",
+        default=True,
+    )
+    exclude_forests: BoolProperty(
+        name="Exclude forests 3d data",
+        description="Exclude forests 3d data",
+        default=bpy.types.Scene.project_settings.exclude_forests if bpy.types.Scene.project_settings is not None else False,
+        update=exclude_forests_updated
+    )
+    exclude_woods: BoolProperty(
+        name="Exclude woods 3d data",
+        description="Exclude woods 3d data",
+        default=bpy.types.Scene.project_settings.exclude_parks if bpy.types.Scene.project_settings is not None else False,
+        update=exclude_woods_updated
+    )
     exclude_ground: BoolProperty(
         name="Exclude ground 3d data",
-        description="Exclude ground 3d data (forests, woods)",
+        description="Exclude other ground 3d data (farmlands, vineyards, allotments, meadows, orchards)",
         default=bpy.types.Scene.project_settings.exclude_ground if bpy.types.Scene.project_settings is not None else False,
         update=exclude_ground_updated
     )
-    exclude_nature_reserve: BoolProperty(
+    exclude_nature_reserves: BoolProperty(
         name="Exclude nature reserves 3d data",
         description="Exclude nature reserves 3d data",
-        default=bpy.types.Scene.project_settings.exclude_nature_reserve if bpy.types.Scene.project_settings is not None else False,
-        update=exclude_nature_reserve_updated
+        default=bpy.types.Scene.project_settings.exclude_nature_reserves if bpy.types.Scene.project_settings is not None else False,
+        update=exclude_nature_reserves_updated
     )
     exclude_parks: BoolProperty(
         name="Exclude parks 3d data",
@@ -352,6 +385,18 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         name="Keep buildings 3d data",
         description="Keep buildings 3d data",
         default=True,
+    )
+    keep_roads: BoolProperty(
+        name="Keep roads 3d data",
+        description="Keep roads 3d data",
+        default=bpy.types.Scene.project_settings.keep_roads if bpy.types.Scene.project_settings is not None else True,
+        update=keep_roads_updated
+    )
+    keep_constructions: BoolProperty(
+        name="Keep construction area 3d data",
+        description="Keep construction area 3d data",
+        default=bpy.types.Scene.project_settings.keep_constructions if bpy.types.Scene.project_settings is not None else True,
+        update=keep_constructions_updated
     )
     keep_residential_and_industrial: BoolProperty(
         name="Keep residential and industrial area 3d data",
