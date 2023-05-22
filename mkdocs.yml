@@ -1,7 +1,7 @@
 site_name: GEDOT
 
 # Copyright
-copyright: Copyright &copy; 2023 Thalixte
+copyright: Copyright &copy; 2022 - 2023 Thalixte
 
 # Repository
 repo_name: Google-Earth-Decoder-optimisation-tools
@@ -13,6 +13,7 @@ extra_css:
 # Configuration
 theme:
   name: material
+  language: en
   logo: assets/images/logo.png
   features:
     - announce.dismiss
@@ -57,6 +58,7 @@ theme:
   favicon: assets/favicon.png
   icon:
     logo: logo
+    repo: fontawesome/brands/github
 
 # Extensions
 markdown_extensions:
