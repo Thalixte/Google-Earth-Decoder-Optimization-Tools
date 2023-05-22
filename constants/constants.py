@@ -16,6 +16,15 @@
 #
 #  <pep8 compliant>
 
+class SHAPELY_TYPE:
+    point = "Point"
+    multiPoint = "MultiPoint"
+    lineString = "LineString"
+    multiLineString = "MultiLineString"
+    polygon = "Polygon"
+    multiPolygon = "MultiPolygon"
+    none = "None"
+
 # constants
 CEND = "\033[0m"
 BOLD = "\033[01m"

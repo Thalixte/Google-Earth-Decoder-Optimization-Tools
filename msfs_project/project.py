@@ -27,7 +27,7 @@ import subprocess
 from utils.install_lib import install_python_lib
 from utils.MapBoxDownloader import MapBoxDownloader
 from utils.string import remove_accents
-from utils.geo_pandas import prepare_wall_gdf, create_exclusion_building_gdf, prepare_water_gdf, prepare_amenity_gdf, prepare_hidden_roads_gdf, prepare_water_exclusion_gdf, prepare_residential_gdf, create_point_gdf, prepare_forest_gdf, prepare_wood_gdf
+from utils.geo_pandas import prepare_wall_gdf, create_exclusion_building_gdf, prepare_water_gdf, prepare_amenity_gdf, prepare_hidden_roads_gdf, prepare_water_exclusion_gdf, prepare_residential_gdf, create_point_gdf, prepare_forest_gdf, prepare_wood_gdf, prepare_natural_gdf, prepare_landuse_gdf
 from constants import *
 
 try:
@@ -1620,13 +1620,13 @@ class MsfsProject:
         bbox = prepare_bbox_gdf(orig_bbox, orig_land_mass, orig_boundary)
         pbar.update("bounding box geodataframe prepared")
         pbar.update("preparing landuse geodataframe...", stall=True)
-        landuse = clip_gdf(prepare_gdf(orig_landuse), bbox)
+        landuse = clip_gdf(prepare_landuse_gdf(orig_landuse), bbox)
         pbar.update("landuse geodataframe prepared")
         pbar.update("preparing hidden_roads geodataframe...", stall=True)
         hidden_roads = clip_gdf(prepare_hidden_roads_gdf(orig_landuse, orig_natural), bbox)
         pbar.update("hidden_roads landuse geodataframe prepared")
         pbar.update("preparing natural geodataframe...", stall=True)
-        natural = clip_gdf(prepare_gdf(orig_natural), bbox)
+        natural = clip_gdf(prepare_natural_gdf(orig_natural), bbox)
         pbar.update("natural geodataframe prepared")
         pbar.update("preparing natural water geodataframe...", stall=True)
         natural_water = clip_gdf(prepare_gdf(orig_natural_water), bbox)

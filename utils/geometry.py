@@ -15,7 +15,7 @@
 #  #
 #
 #  <pep8 compliant>
-
+from constants import SHAPELY_TYPE
 from utils.install_lib import install_python_lib
 
 try:
@@ -42,7 +42,10 @@ def pop_largest(gs):
 
 def close_holes(geom):
     if isinstance(geom, MultiPolygon):
-        ser = gpd.GeoSeries([remove_interiors(g) for g in geom])
+        if geom.type == SHAPELY_TYPE.polygon:
+            ser = gpd.GeoSeries([remove_interiors(g) for g in geom])
+        elif geom.type == SHAPELY_TYPE.multiPolygon:
+            ser = gpd.GeoSeries([remove_interiors(g) for g in geom.geoms])
         big = pop_largest(ser)
         outers = ser.loc[~ser.within(big)].tolist()
         if outers:
@@ -54,7 +57,7 @@ def close_holes(geom):
 
 def cut_polygon_by_line(polygon, line):
     lines_to_merge = [line]
-    if polygon.boundary.geom_type == "MultiLineString":
+    if polygon.boundary.geom_type == SHAPELY_TYPE.multiLineString:
         for l in polygon.boundary:
             lines_to_merge.append(l)
     else:
@@ -69,11 +72,11 @@ def convert_3D_2D(geometry):
     new_geo = []
     for p in geometry:
         if p.has_z:
-            if p.geom_type == 'Polygon':
+            if p.geom_type == SHAPELY_TYPE.polygon:
                 lines = [xy[:2] for xy in list(p.exterior.coords)]
                 new_p = Polygon(lines)
                 new_geo.append(new_p)
-            elif p.geom_type == 'MultiPolygon':
+            elif p.geom_type == SHAPELY_TYPE.multiPolygon:
                 new_multi_p = []
                 for ap in p:
                     lines = [xy[:2] for xy in list(ap.exterior.coords)]

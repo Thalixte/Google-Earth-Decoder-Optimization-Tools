@@ -174,6 +174,10 @@ class SettingsOperator(PanelOperator):
             else:
                 self.draw_splitted_prop(context, col, self.ALTERNATE_SPLIT_LABEL_FACTOR, "exclude_water", "Exclude water 3d data", enabled=False)
                 col.separator()
+                self.draw_splitted_prop(context, col, self.ALTERNATE_SPLIT_LABEL_FACTOR, "exclude_forests", "Exclude forests 3d data")
+                col.separator()
+                self.draw_splitted_prop(context, col, self.ALTERNATE_SPLIT_LABEL_FACTOR, "exclude_woods", "Exclude woods 3d data")
+                col.separator()
                 self.draw_splitted_prop(context, col, self.ALTERNATE_SPLIT_LABEL_FACTOR, "exclude_ground", "Exclude other ground 3d data (farmlands, vineyards, allotments, meadows, orchards)")
                 col.separator()
                 self.draw_splitted_prop(context, col, self.ALTERNATE_SPLIT_LABEL_FACTOR, "exclude_nature_reserves", "Exclude nature reserves 3d data")
