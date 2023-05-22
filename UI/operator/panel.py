@@ -161,7 +161,7 @@ class SettingsOperator(PanelOperator):
         col.separator()
         self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "isolate_3d_data", "OpenStreetMap accuracy")
         col.separator()
-        if self.operator_name in ["wm.generate_height_data", "wm.keep_only_buildings_3d_data", "wm.keep_only_buildings_and_roads_3d_data"]:
+        if self.operator_name in ["wm.generate_height_data", "wm.cleanup_3d_data", "wm.keep_only_buildings_3d_data", "wm.keep_only_buildings_and_roads_3d_data"]:
             if context.scene.project_settings.isolate_3d_data:
                 self.draw_splitted_prop(context, col, self.ALTERNATE_SPLIT_LABEL_FACTOR, "keep_buildings", "Keep buildings 3d data", enabled=False)
                 col.separator()
@@ -482,6 +482,22 @@ class OT_CreateTerraformAndExclusionPolygonsPanel(SettingsOperator):
     ]
 
 
+class OT_Cleanup3dDataPanel(SettingsOperator):
+    operator_name = "wm.cleanup_3d_data"
+    id_name = "wm.cleanup_3d_data_panel"
+    bl_idname = id_name
+    bl_label = "4. Cleanup 3d data from Google Earth tiles"
+    operator_description = """Automatically cleans 3d data from the Google Earth tiles, based on the OpenStreetMap data.
+        Optionally, in the OPENSTREETMAP section, set the city of the airport, in case you want to remove an airport.
+        Notice: this method can produce some visual artifacts, and buildings that are not included in OpenStreetMap data can be removed"""
+    starting_section = OSM_INI_SECTION
+    displayed_sections = [
+        PROJECT_INI_SECTION,
+        OSM_INI_SECTION,
+        BUILD_INI_SECTION,
+    ]
+
+
 class OT_RemoveWaterFrom3dDataPanel(SettingsOperator):
     operator_name = "wm.remove_water_from_3d_data"
     id_name = "wm.remove_water_from_3d_data_panel"
@@ -551,7 +567,7 @@ class OT_KeepOnlyBuildingsAndRoads3dDataPanel(SettingsOperator):
     operator_name = "wm.keep_only_buildings_and_roads_3d_data"
     id_name = "wm.keep_only_buildings_and_roads_3d_data_panel"
     bl_idname = id_name
-    bl_label = "4. Cleanup 3d data from Google Earth tiles"
+    bl_label = "Keep only buildings and roads from Google Earth tiles"
     operator_description = """Automatically removes everything, except buildings and roads from the Google Earth tiles, based on the OpenStreetMap data.
         Optionally, in the OPENSTREETMAP section, set the city of the airport, in case you want to remove an airport.
         Notice: this method can produce some visual artifacts, and buildings that are not included in OpenStreetMap data can be removed"""

@@ -22,6 +22,7 @@ import bpy
 from bpy.props import StringProperty
 from constants import MAX_PHOTOGRAMMETRY_LOD, INI_FILE
 from msfs_project.project import MsfsProject
+from scripts.cleanup_3d_data_script import cleanup_3d_data
 from scripts.add_tile_colliders_script import add_tile_colliders
 from scripts.clean_package_files_script import clean_package_files
 from scripts.fix_tiles_lightning_issues_script import fix_tiles_lightning_issues
@@ -44,7 +45,7 @@ from scripts.add_lights_to_geocode_script import add_lights_to_geocode
 from scripts.exclude_3d_data_from_geocode_script import exclude_3d_data_from_geocode
 from scripts.isolate_3d_data_from_geocode_script import isolate_3d_data_from_geocode
 from scripts.adjust_scenery_altitude_script import adjust_scenery_altitude
-from utils import open_console, isolated_print
+from utils import open_console
 from .tools import reload_current_operator, reload_setting_props, reload_project_settings
 from bpy_extras.io_utils import ImportHelper
 from bpy_types import Operator
@@ -349,6 +350,21 @@ class OT_GenerateHeightDataOperator(ActionOperator):
     def execute(self, context):
         super().execute(context)
         generate_height_data(context.scene.global_settings)
+        return {'FINISHED'}
+
+
+class OT_Cleanup3dDataOperator(ActionOperator):
+    bl_idname = "wm.cleanup_3d_data"
+    bl_label = "Cleanup 3d data from Google Earth tiles"
+
+    @classmethod
+    def poll(cls, context):
+        msfs_project = super().poll(context)
+        return os.path.isdir(msfs_project.scene_folder)
+
+    def execute(self, context):
+        super().execute(context)
+        cleanup_3d_data(context.scene.global_settings)
         return {'FINISHED'}
 
 

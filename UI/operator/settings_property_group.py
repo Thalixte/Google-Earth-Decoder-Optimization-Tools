@@ -126,7 +126,7 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         context.scene.project_settings.save()
 
     def exclude_woods_updated(self, context):
-        context.scene.project_settings.exclude_forests = self.exclude_woods
+        context.scene.project_settings.exclude_woods = self.exclude_woods
         context.scene.project_settings.save()
 
     def exclude_nature_reserves_updated(self, context):
@@ -360,7 +360,7 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
     exclude_woods: BoolProperty(
         name="Exclude woods 3d data",
         description="Exclude woods 3d data",
-        default=bpy.types.Scene.project_settings.exclude_parks if bpy.types.Scene.project_settings is not None else False,
+        default=bpy.types.Scene.project_settings.exclude_woods if bpy.types.Scene.project_settings is not None else False,
         update=exclude_woods_updated
     )
     exclude_ground: BoolProperty(

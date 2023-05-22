@@ -37,7 +37,7 @@ from .operator import PanelPropertyGroup, OT_ProjectPathOperator, OT_ProjectsPat
     OT_RemoveForestsAndWoodsFrom3dDataPanel, OT_RemoveForestsAndWoodsFrom3dDataOperator, OT_RemoveForestsWoodsAndParksFrom3dDataPanel, OT_KeepOnlyBuildings3dDataOperator, OT_KeepOnlyBuildings3dDataPanel, \
     OT_KeepOnlyBuildingsAndRoads3dDataOperator, OT_KeepOnlyBuildingsAndRoads3dDataPanel, OT_RemoveForestsWoodsAndParksFrom3dDataOperator, OT_CreateLandmarkFromGeocodeOperator, OT_CreateLandmarkFromGeocodePanel, \
     OT_Exclude3dDataFromGeocodeOperator, OT_Isolate3dDataFromGeocodeOperator, OT_Exclude3dDataFromGeocodePanel, OT_Isolate3dDataFromGeocodePanel, OT_AddTileCollidersPanel, OT_RemoveTileCollidersPanel, \
-    OT_AddTileCollidersOperator, OT_RemoveTileCollidersOperator, OT_AdjustSceneryAltitudePanel, OT_AdjustSceneryAltitudeOperator, OT_AddLightsToGeocodeOperator, OT_AddLightsToGeocodePanel
+    OT_AddTileCollidersOperator, OT_RemoveTileCollidersOperator, OT_AdjustSceneryAltitudePanel, OT_AdjustSceneryAltitudeOperator, OT_AddLightsToGeocodeOperator, OT_AddLightsToGeocodePanel, OT_Cleanup3dDataPanel, OT_Cleanup3dDataOperator
 
 
 class TOPBAR_MT_google_earth_optimization_menus(Menu):
@@ -64,7 +64,7 @@ class TOPBAR_MT_google_earth_optimization_menu(Menu):
         layout.separator()
         layout.operator(OT_CreateTerraformAndExclusionPolygonsPanel.bl_idname)
         layout.separator()
-        layout.operator(OT_KeepOnlyBuildingsAndRoads3dDataPanel.bl_idname)
+        layout.operator(OT_Cleanup3dDataPanel.bl_idname)
         layout.separator()
         layout.operator(OT_GenerateHeightDataPanel.bl_idname)
         layout.separator()
@@ -105,6 +105,8 @@ class TOPBAR_MT_edit_tiles_menu(Menu):
         layout.operator(OT_RemoveForestsWoodsAndParksFrom3dDataPanel.bl_idname)
         layout.separator()
         layout.operator(OT_KeepOnlyBuildings3dDataPanel.bl_idname)
+        layout.separator()
+        layout.operator(OT_KeepOnlyBuildingsAndRoads3dDataPanel.bl_idname)
 
 
 class TOPBAR_MT_geocode_tools_menu(Menu):
@@ -167,6 +169,7 @@ classes = (
     OT_FixTilesLightningIssuesOperator,
     OT_CreateTerraformAndExclusionPolygonsOperator,
     OT_GenerateHeightDataOperator,
+    OT_Cleanup3dDataOperator,
     OT_RemoveWaterFrom3dDataOperator,
     OT_RemoveForestsAndWoodsFrom3dDataOperator,
     OT_RemoveForestsWoodsAndParksFrom3dDataOperator,
@@ -194,6 +197,7 @@ classes = (
     OT_FixTilesLightningIssuesPanel,
     OT_CreateTerraformAndExclusionPolygonsPanel,
     OT_GenerateHeightDataPanel,
+    OT_Cleanup3dDataPanel,
     OT_RemoveWaterFrom3dDataPanel,
     OT_RemoveForestsAndWoodsFrom3dDataPanel,
     OT_RemoveForestsWoodsAndParksFrom3dDataPanel,

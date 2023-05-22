@@ -28,7 +28,7 @@ from .split_tiles_script import *
 from .add_tile_colliders_script import *
 from .remove_tile_colliders_script import *
 from .prepare_3d_data_script import *
-from .clean_3d_data_script import *
+from .cleanup_3d_data_script import *
 from .generate_height_data_script import *
 from .create_terraform_and_exclusion_polygons_script import *
 from .exclude_3d_data_from_geocode_script import *

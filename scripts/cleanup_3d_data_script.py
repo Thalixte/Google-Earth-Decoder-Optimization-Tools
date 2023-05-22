@@ -37,24 +37,26 @@ from utils import check_configuration, ScriptError, build_package, pr_bg_green, 
 from msfs_project import MsfsProject
 
 
-def clean_3d_data(global_settings):
+def cleanup_3d_data(global_settings):
     try:
         # instantiate the msfsProject and create the necessary resources if it does not exist
         msfs_project = MsfsProject(global_settings.projects_path, global_settings.project_name, global_settings.definition_file, global_settings.path, global_settings.author_name)
 
-        check_configuration(global_settings, msfs_project)
+        check_configuration(global_settings, msfs_project, check_blendergis_addon=True)
 
         msfs_project.backup(os.path.join(msfs_project.backup_folder, CLEANUP_3D_DATA_BACKUP_FOLDER))
 
         isolated_print(EOL)
         print_title("CLEANUP 3D DATA")
 
-        msfs_project.prepare_3d_data(global_settings, generate_height_data=False, process_3d_data=True, create_polygons=True)
+        msfs_project.settings.building_margin = 8.0
+        msfs_project.settings.save()
+        msfs_project.prepare_3d_data(global_settings, generate_height_data=False, process_3d_data=True, create_polygons=False, process_all=msfs_project.settings.process_all)
 
         isolated_print(EOL)
         print_title("CLEAN PACKAGE FILES")
 
-        msfs_project = MsfsProject(global_settings.projects_path, global_settings.project_name, global_settings.definition_file, global_settings.path, global_settings.author_name, global_settings.author_name)
+        msfs_project = MsfsProject(global_settings.projects_path, global_settings.project_name, global_settings.definition_file, global_settings.path, global_settings.author_name)
         msfs_project.clean()
 
         if msfs_project.settings.build_package_enabled:
@@ -77,4 +79,4 @@ def clean_3d_data(global_settings):
 
 
 if __name__ == "__main__":
-    clean_3d_data(settings)
+    cleanup_3d_data(settings)
