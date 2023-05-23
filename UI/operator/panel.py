@@ -18,17 +18,15 @@
 
 from bpy_types import Operator
 from constants import MAX_PHOTOGRAMMETRY_LOD, PROJECT_INI_SECTION, TILE_INI_SECTION, LODS_INI_SECTION, OSM_INI_SECTION, GEOCODE_INI_SECTION, ALTITUDE_ADJUSTMENT_INI_SECTION, COMPRESSONATOR_INI_SECTION, BUILD_INI_SECTION, MERGE_INI_SECTION, BACKUP_INI_SECTION, NONE_ICON, FILE_FOLDER_ICON, FILE_REFRESH_ICON, FILE_TICK_ICON, INFO_ICON, ADD_ICON, REMOVE_ICON
-from .operator import OT_ProjectPathOperator, OT_MsfsBuildExePathOperator, OT_CompressonatorExePathOperator, OT_ReloadSettingsOperator, \
+from .operator import OT_ProjectPathOperator, OT_ReloadSettingsOperator, \
     OT_SaveSettingsOperator, OT_ProjectsPathOperator, OT_ProjectPathToMergeOperator, OT_addLodOperator, OT_removeLowerLodOperator, OT_openSettingsFileOperator
 from .tools import reload_setting_props
+from ..common import draw_splitted_prop, SPLIT_LABEL_FACTOR, ALTERNATE_SPLIT_LABEL_FACTOR
 
 
 class PanelOperator(Operator):
     id_name = str()
     starting_section = str()
-
-    SPLIT_LABEL_FACTOR = 0.4
-    ALTERNATE_SPLIT_LABEL_FACTOR = 0.975
 
     def check(self, context):
         return True
@@ -68,7 +66,7 @@ class SettingsOperator(PanelOperator):
     def draw_setting_sections_panel(self, context):
         layout = self.layout
         box = layout.box()
-        split = box.split(factor=self.SPLIT_LABEL_FACTOR, align=True)
+        split = box.split(factor=SPLIT_LABEL_FACTOR, align=True)
         self.display_config_sections(context, split)
         return split
 
@@ -78,24 +76,24 @@ class SettingsOperator(PanelOperator):
         col.separator()
         col.operator(OT_ProjectPathOperator.bl_idname, icon=FILE_FOLDER_ICON)
         col.separator()
-        self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "projects_path_readonly", "Path of the project", enabled=False)
+        draw_splitted_prop(context.scene.setting_props, col, SPLIT_LABEL_FACTOR, "projects_path_readonly", "Path of the project", enabled=False)
         col.separator(factor=2.0)
-        self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "project_name", "Project name", enabled=False)
+        draw_splitted_prop(context.scene.setting_props, col, SPLIT_LABEL_FACTOR, "project_name", "Project name", enabled=False)
         col.separator(factor=2.0)
-        self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "definition_file", "Xml definition file", enabled=False)
+        draw_splitted_prop(context.scene.setting_props, col, SPLIT_LABEL_FACTOR, "definition_file", "Xml definition file", enabled=False)
         col.separator(factor=2.0)
-        self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "author_name", "Author of the project")
+        draw_splitted_prop(context.scene.setting_props, col, SPLIT_LABEL_FACTOR, "author_name", "Author of the project")
         col.separator(factor=2.0)
-        self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "nb_parallel_blender_tasks", "Number of parallel Blender tasks")
+        draw_splitted_prop(context.scene.setting_props, col, SPLIT_LABEL_FACTOR, "nb_parallel_blender_tasks", "Number of parallel Blender tasks")
         col.separator()
         col.separator()
         if self.operator_name in ["wm.optimize_msfs_scenery"]:
-            self.draw_splitted_prop(context, col, self.ALTERNATE_SPLIT_LABEL_FACTOR, "bake_textures_enabled", "Bake textures enabled")
+            draw_splitted_prop(context.scene.setting_props, col, ALTERNATE_SPLIT_LABEL_FACTOR, "bake_textures_enabled", "Bake textures enabled")
             col.separator()
-            self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "output_texture_format", "Output texture format")
+            draw_splitted_prop(context.scene.setting_props, col, SPLIT_LABEL_FACTOR, "output_texture_format", "Output texture format")
             col.separator()
         if self.operator_name in ["wm.add_tile_colliders"]:
-            self.draw_splitted_prop(context, col, self.ALTERNATE_SPLIT_LABEL_FACTOR, "collider_as_lower_lod", "Add the collider as the lower LOD for each tile")
+            draw_splitted_prop(context.scene.setting_props, col, ALTERNATE_SPLIT_LABEL_FACTOR, "collider_as_lower_lod", "Add the collider as the lower LOD for each tile")
             col.separator()
         self.draw_footer(context, self.layout, self.operator_name)
 
@@ -103,14 +101,14 @@ class SettingsOperator(PanelOperator):
         split = self.draw_setting_sections_panel(context)
         col = self.draw_header(split, display_save=False)
         col.separator()
-        self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "project_path_readonly", "Path of the final msfs scenery project", enabled=False)
+        draw_splitted_prop(context.scene.setting_props, col, SPLIT_LABEL_FACTOR, "project_path_readonly", "Path of the final msfs scenery project", enabled=False)
         col.separator()
         col.separator(factor=3.0)
         col.operator(OT_ProjectPathToMergeOperator.bl_idname, icon=FILE_FOLDER_ICON)
         col.separator()
-        self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "project_path_to_merge_readonly", "Path of the project to merge into the final one", enabled=False)
+        draw_splitted_prop(context.scene.setting_props, col, SPLIT_LABEL_FACTOR, "project_path_to_merge_readonly", "Path of the project to merge into the final one", enabled=False)
         col.separator()
-        self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "definition_file_to_merge", "Xml definition file of the project to merge into the final one", enabled=False)
+        draw_splitted_prop(context.scene.setting_props, col, SPLIT_LABEL_FACTOR, "definition_file_to_merge", "Xml definition file of the project to merge into the final one", enabled=False)
         col.separator()
         self.draw_footer(context, self.layout, self.operator_name)
 
@@ -118,9 +116,9 @@ class SettingsOperator(PanelOperator):
         split = self.draw_setting_sections_panel(context)
         col = self.draw_header(split, display_save=False)
         col.separator()
-        self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "lat_correction", "Latitude correction", slider=True)
+        draw_splitted_prop(context.scene.setting_props, col, SPLIT_LABEL_FACTOR, "lat_correction", "Latitude correction", slider=True)
         col.separator()
-        self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "lon_correction", "Longitude correction", slider=True)
+        draw_splitted_prop(context.scene.setting_props, col, SPLIT_LABEL_FACTOR, "lon_correction", "Longitude correction", slider=True)
         self.draw_footer(context, self.layout, self.operator_name)
 
     def draw_lods_panel(self, context):
@@ -137,7 +135,7 @@ class SettingsOperator(PanelOperator):
         for idx, min_size_value in enumerate(context.scene.project_settings.target_min_size_values):
             reverse_idx = (len(context.scene.project_settings.target_min_size_values) - 1) - idx
             cur_lod = MAX_PHOTOGRAMMETRY_LOD - reverse_idx
-            self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "target_min_size_value_" + str(cur_lod), "Min size values for the lod " + str(cur_lod), slider=True)
+            draw_splitted_prop(context.scene.setting_props, col, SPLIT_LABEL_FACTOR, "target_min_size_value_" + str(cur_lod), "Min size values for the lod " + str(cur_lod), slider=True)
             col.separator()
 
         self.draw_footer(context, self.layout, self.operator_name)
@@ -146,59 +144,56 @@ class SettingsOperator(PanelOperator):
         split = self.draw_setting_sections_panel(context)
         col = self.draw_header(split)
         col.separator()
-        col.operator(OT_MsfsBuildExePathOperator.bl_idname, icon=FILE_FOLDER_ICON)
+        draw_splitted_prop(context.scene.setting_props, col, SPLIT_LABEL_FACTOR, "msfs_build_exe_path_readonly", "MSFS build exe path", enabled=False)
         col.separator()
-        self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "msfs_build_exe_path_readonly", "MSFS build exe path", enabled=False)
+        draw_splitted_prop(context.scene.setting_props, col, ALTERNATE_SPLIT_LABEL_FACTOR, "build_package_enabled", "Build package enabled")
         col.separator()
-        self.draw_splitted_prop(context, col, self.ALTERNATE_SPLIT_LABEL_FACTOR, "build_package_enabled", "Build package enabled")
-        col.separator()
-        self.draw_splitted_prop(context, col, self.ALTERNATE_SPLIT_LABEL_FACTOR, "msfs_steam_version", "Msfs Steam version")
         self.draw_footer(context, self.layout, self.operator_name)
 
     def draw_openstreetmap_panel(self, context):
         split = self.draw_setting_sections_panel(context)
         col = self.draw_header(split, display_save=False)
         col.separator()
-        self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "isolate_3d_data", "OpenStreetMap accuracy")
+        draw_splitted_prop(context.scene.setting_props, col, SPLIT_LABEL_FACTOR, "isolate_3d_data", "OpenStreetMap accuracy")
         col.separator()
         if self.operator_name in ["wm.generate_height_data", "wm.cleanup_3d_data", "wm.keep_only_buildings_3d_data", "wm.keep_only_buildings_and_roads_3d_data"]:
             if context.scene.project_settings.isolate_3d_data:
-                self.draw_splitted_prop(context, col, self.ALTERNATE_SPLIT_LABEL_FACTOR, "keep_buildings", "Keep buildings 3d data", enabled=False)
+                draw_splitted_prop(context.scene.setting_props, col, ALTERNATE_SPLIT_LABEL_FACTOR, "keep_buildings", "Keep buildings 3d data", enabled=False)
                 col.separator()
-                self.draw_splitted_prop(context, col, self.ALTERNATE_SPLIT_LABEL_FACTOR, "keep_roads", "Keep roads 3d data")
+                draw_splitted_prop(context.scene.setting_props, col, ALTERNATE_SPLIT_LABEL_FACTOR, "keep_roads", "Keep roads 3d data")
                 col.separator()
-                self.draw_splitted_prop(context, col, self.ALTERNATE_SPLIT_LABEL_FACTOR, "keep_constructions", "Keep construction area 3d data")
+                draw_splitted_prop(context.scene.setting_props, col, ALTERNATE_SPLIT_LABEL_FACTOR, "keep_constructions", "Keep construction area 3d data")
                 col.separator()
-                self.draw_splitted_prop(context, col, self.ALTERNATE_SPLIT_LABEL_FACTOR, "keep_residential_and_industrial", "Keep residential and industrial area 3d data")
+                draw_splitted_prop(context.scene.setting_props, col, ALTERNATE_SPLIT_LABEL_FACTOR, "keep_residential_and_industrial", "Keep residential and industrial area 3d data")
                 col.separator()
             else:
-                self.draw_splitted_prop(context, col, self.ALTERNATE_SPLIT_LABEL_FACTOR, "exclude_water", "Exclude water 3d data", enabled=False)
+                draw_splitted_prop(context.scene.setting_props, col, ALTERNATE_SPLIT_LABEL_FACTOR, "exclude_water", "Exclude water 3d data", enabled=False)
                 col.separator()
-                self.draw_splitted_prop(context, col, self.ALTERNATE_SPLIT_LABEL_FACTOR, "exclude_forests", "Exclude forests 3d data")
+                draw_splitted_prop(context.scene.setting_props, col, ALTERNATE_SPLIT_LABEL_FACTOR, "exclude_forests", "Exclude forests 3d data")
                 col.separator()
-                self.draw_splitted_prop(context, col, self.ALTERNATE_SPLIT_LABEL_FACTOR, "exclude_woods", "Exclude woods 3d data")
+                draw_splitted_prop(context.scene.setting_props, col, ALTERNATE_SPLIT_LABEL_FACTOR, "exclude_woods", "Exclude woods 3d data")
                 col.separator()
-                self.draw_splitted_prop(context, col, self.ALTERNATE_SPLIT_LABEL_FACTOR, "exclude_ground", "Exclude other ground 3d data (farmlands, vineyards, allotments, meadows, orchards)")
+                draw_splitted_prop(context.scene.setting_props, col, ALTERNATE_SPLIT_LABEL_FACTOR, "exclude_ground", "Exclude other ground 3d data (farmlands, vineyards, allotments, meadows, orchards)")
                 col.separator()
-                self.draw_splitted_prop(context, col, self.ALTERNATE_SPLIT_LABEL_FACTOR, "exclude_nature_reserves", "Exclude nature reserves 3d data")
+                draw_splitted_prop(context.scene.setting_props, col, ALTERNATE_SPLIT_LABEL_FACTOR, "exclude_nature_reserves", "Exclude nature reserves 3d data")
                 col.separator()
-                self.draw_splitted_prop(context, col, self.ALTERNATE_SPLIT_LABEL_FACTOR, "exclude_parks", "Exclude parks 3d data")
+                draw_splitted_prop(context.scene.setting_props, col, ALTERNATE_SPLIT_LABEL_FACTOR, "exclude_parks", "Exclude parks 3d data")
                 col.separator()
             col.separator()
 
         if self.operator_name == "wm.generate_height_data" or self.operator_name == "wm.prepare_3d_data":
-            self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "height_adjustment", "Height data adjustment (in meters)")
+            draw_splitted_prop(context.scene.setting_props, col, SPLIT_LABEL_FACTOR, "height_adjustment", "Height data adjustment (in meters)")
             col.separator()
-            self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "height_noise_reduction", "Height data noise_reduction factor for bottom ray-tracing")
+            draw_splitted_prop(context.scene.setting_props, col, SPLIT_LABEL_FACTOR, "height_noise_reduction", "Height data noise_reduction factor for bottom ray-tracing")
             col.separator()
-            self.draw_splitted_prop(context, col, self.ALTERNATE_SPLIT_LABEL_FACTOR, "high_precision", "High precision height data generation")
+            draw_splitted_prop(context.scene.setting_props, col, ALTERNATE_SPLIT_LABEL_FACTOR, "high_precision", "High precision height data generation")
             col.separator()
 
         if self.operator_name != "wm.generate_height_data" and self.operator_name != "wm.prepare_3d_data" and self.operator_name != "wm.create_terraform_and_exclusion_polygons":
-            self.draw_splitted_prop(context, col, self.ALTERNATE_SPLIT_LABEL_FACTOR, "process_all", "Process all the tiles (if unticked, process only the tiles that has not been cleaned)")
+            draw_splitted_prop(context.scene.setting_props, col, ALTERNATE_SPLIT_LABEL_FACTOR, "process_all", "Process all the tiles (if unticked, process only the tiles that has not been cleaned)")
             col.separator()
 
-        self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "airport_city", "Airport city")
+        draw_splitted_prop(context.scene.setting_props, col, SPLIT_LABEL_FACTOR, "airport_city", "Airport city")
         col.separator()
 
         self.draw_footer(context, self.layout, self.operator_name)
@@ -207,25 +202,25 @@ class SettingsOperator(PanelOperator):
         split = self.draw_setting_sections_panel(context)
         col = self.draw_header(split, display_save=False)
         col.separator()
-        self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "geocode", "Geocode")
+        draw_splitted_prop(context.scene.setting_props, col, SPLIT_LABEL_FACTOR, "geocode", "Geocode")
         col.separator()
         if self.operator_name == "wm.exclude_3d_data_from_geocode" or self.operator_name == "wm.isolate_3d_data_from_geocode":
-            self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "geocode_margin", "Geocode margin")
+            draw_splitted_prop(context.scene.setting_props, col, SPLIT_LABEL_FACTOR, "geocode_margin", "Geocode margin")
             col.separator()
             if self.operator_name != "wm.isolate_3d_data_from_geocode":
-                self.draw_splitted_prop(context, col, self.ALTERNATE_SPLIT_LABEL_FACTOR, "preserve_roads", "Preserve roads")
+                draw_splitted_prop(context.scene.setting_props, col, ALTERNATE_SPLIT_LABEL_FACTOR, "preserve_roads", "Preserve roads")
                 col.separator()
-                self.draw_splitted_prop(context, col, self.ALTERNATE_SPLIT_LABEL_FACTOR, "preserve_buildings", "Preserve buildings")
+                draw_splitted_prop(context.scene.setting_props, col, ALTERNATE_SPLIT_LABEL_FACTOR, "preserve_buildings", "Preserve buildings")
                 col.separator()
         if self.operator_name == "wm.create_landmark_from_geocode":
-            self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "landmark_type", "Landmark type")
+            draw_splitted_prop(context.scene.setting_props, col, SPLIT_LABEL_FACTOR, "landmark_type", "Landmark type")
             col.separator()
-            self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "landmark_offset", "Landmark offset")
+            draw_splitted_prop(context.scene.setting_props, col, SPLIT_LABEL_FACTOR, "landmark_offset", "Landmark offset")
             col.separator()
-            self.draw_splitted_prop(context, col, self.ALTERNATE_SPLIT_LABEL_FACTOR, "add_lights", "Add lights all around the landmark")
+            draw_splitted_prop(context.scene.setting_props, col, ALTERNATE_SPLIT_LABEL_FACTOR, "add_lights", "Add lights all around the landmark")
             col.separator()
         if self.operator_name == "wm.create_landmark_from_geocode" or self.operator_name == "wm.add_lights_to_geocode":
-            self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "light_guid", "Select the type of light")
+            draw_splitted_prop(context.scene.setting_props, col, SPLIT_LABEL_FACTOR, "light_guid", "Select the type of light")
             col.separator()
         self.draw_footer(context, self.layout, self.operator_name)
 
@@ -233,7 +228,7 @@ class SettingsOperator(PanelOperator):
         split = self.draw_setting_sections_panel(context)
         col = self.draw_header(split, display_save=False)
         col.separator()
-        self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "altitude_adjustment", "Adjustment to apply to the altitude of the while scenery (tiles, objects, colliders, landmarks, height maps)")
+        draw_splitted_prop(context.scene.setting_props, col, SPLIT_LABEL_FACTOR, "altitude_adjustment", "Adjustment to apply to the altitude of the while scenery (tiles, objects, colliders, landmarks, height maps)")
         col.separator()
         self.draw_footer(context, self.layout, self.operator_name)
 
@@ -241,7 +236,7 @@ class SettingsOperator(PanelOperator):
         split = self.draw_setting_sections_panel(context)
         col = self.draw_header(split)
         col.separator()
-        self.draw_splitted_prop(context, col, self.ALTERNATE_SPLIT_LABEL_FACTOR, "python_reload_modules", "Reload python modules (for dev purpose)")
+        draw_splitted_prop(context.scene.setting_props, col, ALTERNATE_SPLIT_LABEL_FACTOR, "python_reload_modules", "Reload python modules (for dev purpose)")
         col.separator()
         self.draw_footer(context, self.layout, self.operator_name)
 
@@ -249,16 +244,15 @@ class SettingsOperator(PanelOperator):
         split = self.draw_setting_sections_panel(context)
         col = self.draw_header(split)
         col.separator()
-        col.operator(OT_CompressonatorExePathOperator.bl_idname, icon=FILE_FOLDER_ICON)
+        draw_splitted_prop(context.scene.setting_props, col, SPLIT_LABEL_FACTOR, "compressonator_exe_path_readonly", "Compressonator bin exe path", enabled=False)
         col.separator()
-        self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "compressonator_exe_path_readonly", "Compressonator bin exe path", enabled=False)
         self.draw_footer(context, self.layout, self.operator_name)
 
     def draw_backup_panel(self, context):
         split = self.draw_setting_sections_panel(context)
         col = self.draw_header(split, display_save=False)
         col.separator()
-        self.draw_splitted_prop(context, col, self.ALTERNATE_SPLIT_LABEL_FACTOR, "backup_enabled", "Backup enabled")
+        draw_splitted_prop(context.scene.setting_props, col, ALTERNATE_SPLIT_LABEL_FACTOR, "backup_enabled", "Backup enabled")
         col.separator()
         self.draw_footer(context, self.layout, self.operator_name)
 
@@ -282,15 +276,6 @@ class SettingsOperator(PanelOperator):
         col.separator()
         box = col.box()
         return box.column(align=True)
-
-    @staticmethod
-    def draw_splitted_prop(context, layout, split_factor, property_key, property_name, slider=False, enabled=True, expand=False, toggle=False, icon_only=False, emboss=True, icon=NONE_ICON):
-        split = layout.split(factor=split_factor, align=True)
-        split.label(text=property_name)
-        col = split.column(align=True)
-        if not enabled:
-            col.enabled = False
-        col.prop(context.scene.setting_props, property_key, slider=slider, expand=expand, toggle=toggle, icon_only=icon_only, emboss=emboss, text=str(), icon=icon)
 
     @staticmethod
     def display_config_sections(context, layout):
@@ -352,11 +337,11 @@ class OT_InitMsfsSceneryPanel(SettingsOperator):
         col = box.column()
         col.operator(OT_ProjectsPathOperator.bl_idname, icon=FILE_FOLDER_ICON)
         col.separator()
-        self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "projects_path_readonly", "Path of the project", enabled=False)
+        draw_splitted_prop(context.scene.setting_props, col, SPLIT_LABEL_FACTOR, "projects_path_readonly", "Path of the project", enabled=False)
         col.separator()
-        self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "project_name", "Name of the project to initialize")
+        draw_splitted_prop(context.scene.setting_props, col, SPLIT_LABEL_FACTOR, "project_name", "Name of the project to initialize")
         col.separator()
-        self.draw_splitted_prop(context, col, self.SPLIT_LABEL_FACTOR, "author_name", "Author of the project")
+        draw_splitted_prop(context.scene.setting_props, col, SPLIT_LABEL_FACTOR, "author_name", "Author of the project")
         col.separator()
         col.separator()
         col.separator()

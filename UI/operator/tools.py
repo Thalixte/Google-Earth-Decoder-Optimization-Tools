@@ -242,18 +242,6 @@ def reload_build_package_enabled(context):
         context.scene.setting_props.build_package_enabled = context.scene.project_settings.build_package_enabled
 
 
-def reload_msfs_build_exe_path(context):
-    context.scene.setting_props.msfs_build_exe_path = context.scene.setting_props.msfs_build_exe_path_readonly = context.scene.global_settings.msfs_build_exe_path
-
-
-def reload_msfs_steam_version(context):
-    context.scene.setting_props.msfs_steam_version = context.scene.global_settings.msfs_steam_version
-
-
-def reload_compressonator_exe_path(context):
-    context.scene.setting_props.compressonator_exe_path = context.scene.setting_props.compressonator_exe_path_readonly = context.scene.global_settings.compressonator_exe_path
-
-
 def reload_python_reload_modules(context):
     context.scene.setting_props.python_reload_modules = context.scene.global_settings.reload_modules
 
@@ -348,8 +336,5 @@ def reload_setting_props(context, reload_settings_file=True):
     reload_light_guid(context)
     reload_altitude_adjustment(context)
     reload_build_package_enabled(context)
-    reload_msfs_build_exe_path(context)
-    reload_msfs_steam_version(context)
-    reload_compressonator_exe_path(context)
     reload_python_reload_modules(context)
     reload_project_settings(context)

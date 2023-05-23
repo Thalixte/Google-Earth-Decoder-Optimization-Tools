@@ -47,7 +47,7 @@ def merge_sceneries(global_settings):
         msfs_project.merge(msfs_project_to_merge)
 
         if msfs_project.settings.build_package_enabled:
-            build_package(global_settings, msfs_project)
+            build_package(msfs_project)
 
         pr_bg_green("Script correctly applied" + CEND)
 

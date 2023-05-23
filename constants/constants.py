@@ -26,6 +26,8 @@ class SHAPELY_TYPE:
     none = "None"
 
 # constants
+ADDON_NAME = "Google-Earth-Decoder-Optimization-Tools"
+
 CEND = "\033[0m"
 BOLD = "\033[01m"
 CRED = "\033[31m"
@@ -40,7 +42,6 @@ EOL = "\n"
 GLOBAL_SETTINGS_TEMPLATE_FILE = "global_settings.ini"
 PROJECT_SETTINGS_TEMPLATE_FILE = "project_settings.ini"
 INI_FILE = "GEDOT.ini"
-MSFS_BUILD_EXE = "fspackagetool.exe"
 EARTH_RADIUS = 6371010
 
 ROAD_LANE_WIDTH = 3.0
@@ -95,7 +96,7 @@ PYGEODESY_LIB = "pygeodesy"
 ALTERNATE_PYTHON_LIB_REPO = "http://www.xavierdupre.fr/enseignement/setup/"
 BLENDERGIS_ADDON = "BlenderGIS-228"
 BLENDERGIS_GITHUB_DOWNLOAD_REPO = "https://github.com/domlysz/BlenderGIS/archive/refs/tags/"
-BLENDERGIS_ADDON_RELEASE = "228.zip"
+BLENDERGIS_ADDON_RELEASE = "228"
 GDAL_LIB_PREFIX = "GDAL-3.4.3"
 FIONA_LIB_PREFIX = "Fiona-1.8.21"
 WIN32_SUFFIX = "win32"

@@ -32,9 +32,9 @@ import sys
 
 import site
 
-import bpy
-
+ADDON_NAME = __package__.split('.')[0]
 UI_FOLDER = "UI"
+
 
 # Check if script is executed in Blender and get absolute path of current folder
 files_dir = os.path.dirname(os.path.abspath(__file__))
@@ -50,13 +50,15 @@ if cwd not in sys.path:
     sys.path.append(cwd)
 
 from .UI import menu
-
+from .UI import prefs
 
 def register():
     menu.register()
+    prefs.register()
 
 
 def unregister():
+    prefs.unregister()
     menu.unregister()
 
 

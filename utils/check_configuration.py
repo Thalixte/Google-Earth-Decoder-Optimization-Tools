@@ -31,9 +31,11 @@ RESULT_MSG_LENGTH = 40
 ######################################################
 # check configuration methods
 ######################################################
-def check_configuration(settings, msfs_project, check_optimisation=False, check_lily_texture_packer=False, check_built_package=False, check_compressonator=False, check_description_file=True, check_blendergis_addon=False):
+def check_configuration(settings, msfs_project, check_optimization=False, check_lily_texture_packer=False, check_built_package=False, check_compressonator=False, check_description_file=True, check_blendergis_addon=False):
     error_msg = "Configuration error found ! "
     warning_msg = "Configuration warning ! "
+    from UI.prefs import get_prefs
+    prefs = get_prefs()
 
     print_title("CHECK CONFIGURATION FOR " + msfs_project.project_name + " PROJECT")
 
@@ -56,11 +58,11 @@ def check_configuration(settings, msfs_project, check_optimisation=False, check_
     pr_ok_green(str("project_file_name value").ljust(RESULT_MSG_LENGTH))
 
     # check if the fspackagetool.exe file is reachable
-    if not os.path.isfile(settings.msfs_build_exe_path):
+    if not os.path.isfile(prefs.msfs_build_exe_path):
         pr_ko_orange(str("msfs_build_exe_path value").ljust(RESULT_MSG_LENGTH))
         msfs_project.settings.build_package_enabled = False
         msfs_project.settings.save()
-        isolated_print(CORANGE + warning_msg + settings.msfs_build_exe_path + " bin file not found. Automatic package building is disabled" + CEND + EOL)
+        isolated_print(CORANGE + warning_msg + prefs.msfs_build_exe_path + " bin file not found. Automatic package building is disabled" + CEND + EOL)
     else:
         pr_ok_green(str("msfs_build_exe_path value").ljust(RESULT_MSG_LENGTH))
 
@@ -91,7 +93,7 @@ def check_configuration(settings, msfs_project, check_optimisation=False, check_
     # check if the necessary blender addons exist
     if check_blendergis_addon:
         from blender.addons import install_blender_addon
-        if not install_blender_addon(BLENDERGIS_ADDON, BLENDERGIS_GITHUB_DOWNLOAD_REPO, BLENDERGIS_ADDON_RELEASE):
+        if not install_blender_addon(BLENDERGIS_ADDON, BLENDERGIS_GITHUB_DOWNLOAD_REPO, BLENDERGIS_ADDON_RELEASE + ZIP_FILE_EXT):
             pr_ko_red(str("Blender GIS addon installation").ljust(RESULT_MSG_LENGTH))
             raise ScriptError(error_msg + "Blender GIS addon is not correctly installed. Try to install it manually instead")
         pr_ok_green(str("Blender GIS addon installation").ljust(RESULT_MSG_LENGTH))
@@ -111,67 +113,67 @@ def check_configuration(settings, msfs_project, check_optimisation=False, check_
         raise ScriptError(error_msg + "The folder containing the textures of the scene (" + msfs_project.texture_folder + ") was not found. Please check the textures_folder value")
     pr_ok_green(str("textures_folder value").ljust(RESULT_MSG_LENGTH))
 
-    if check_optimisation:
+    if check_optimization:
         if not install_python_lib(PILLOW_LIB):
             pr_ko_red(str("Pillow lib installation").ljust(RESULT_MSG_LENGTH))
             raise ScriptError(error_msg + "Pillow python lib is not correctly installed. Please check what can prevent this library to be installed correctly")
     pr_ok_green(str("Pillow lib installation").ljust(RESULT_MSG_LENGTH))
 
-    if check_optimisation:
+    if check_optimization:
         if not install_alternate_python_lib(GDAL_LIB_PREFIX):
             pr_ko_red(str("Gdal lib installation").ljust(RESULT_MSG_LENGTH))
             raise ScriptError(error_msg + "Gdal python lib is not correctly installed. Please check what can prevent this library to be installed correctly")
     pr_ok_green(str("Gdal lib installation").ljust(RESULT_MSG_LENGTH))
 
-    if check_optimisation:
+    if check_optimization:
         if not install_python_lib(NETWORKX_LIB):
             pr_ko_red(str("Networkx lib installation").ljust(RESULT_MSG_LENGTH))
             raise ScriptError(error_msg + "Networkx python lib is not correctly installed. Please check what can prevent this library to be installed correctly")
     pr_ok_green(str("Networkx lib installation").ljust(RESULT_MSG_LENGTH))
 
-    if check_optimisation:
+    if check_optimization:
         if not install_python_lib(RTREE_LIB):
             pr_ko_red(str("Rtree lib installation").ljust(RESULT_MSG_LENGTH))
             raise ScriptError(error_msg + "Rtree python lib is not correctly installed. Please check what can prevent this library to be installed correctly")
     pr_ok_green(str("Rtree lib installation").ljust(RESULT_MSG_LENGTH))
 
-    if check_optimisation:
+    if check_optimization:
         if not install_python_lib(MATPLOTLIB_LIB):
             pr_ko_red(str("MatplotLib lib installation").ljust(RESULT_MSG_LENGTH))
             raise ScriptError(error_msg + "MatplotLib python lib is not correctly installed. Please check what can prevent this library to be installed correctly")
     pr_ok_green(str("MatplotLib lib installation").ljust(RESULT_MSG_LENGTH))
 
-    if check_optimisation:
+    if check_optimization:
         if not install_alternate_python_lib(FIONA_LIB_PREFIX):
             pr_ko_red(str("Fiona lib installation").ljust(RESULT_MSG_LENGTH))
             raise ScriptError(error_msg + "Fiona python lib is not correctly installed. Please check what can prevent this library to be installed correctly")
     pr_ok_green(str("Fiona lib installation").ljust(RESULT_MSG_LENGTH))
 
-    if check_optimisation:
+    if check_optimization:
         if not install_python_lib(SHAPELY_LIB):
             pr_ko_red(str("Shapely lib installation").ljust(RESULT_MSG_LENGTH))
             raise ScriptError(error_msg + "Shapely python lib is not correctly installed. Please check what can prevent this library to be installed correctly")
     pr_ok_green(str("Shapely lib installation").ljust(RESULT_MSG_LENGTH))
 
-    if check_optimisation:
+    if check_optimization:
         if not install_python_lib(PANDAS_LIB):
             pr_ko_red(str("Pandas lib installation").ljust(RESULT_MSG_LENGTH))
             raise ScriptError(error_msg + "Pandas python lib is not correctly installed. Please check what can prevent this library to be installed correctly")
     pr_ok_green(str("Pandas lib installation").ljust(RESULT_MSG_LENGTH))
 
-    if check_optimisation:
+    if check_optimization:
         if not install_python_lib(GEOPANDAS_LIB):
             pr_ko_red(str("GeoPandas lib installation").ljust(RESULT_MSG_LENGTH))
             raise ScriptError(error_msg + "GeoPandas python lib is not correctly installed. Please check what can prevent this library to be installed correctly")
     pr_ok_green(str("GeoPandas lib installation").ljust(RESULT_MSG_LENGTH))
 
-    if check_optimisation:
+    if check_optimization:
         if not install_python_lib(OSMNX_LIB):
             pr_ko_red(str("Osmnx lib installation").ljust(RESULT_MSG_LENGTH))
             raise ScriptError(error_msg + "Osmnx python lib is not correctly installed. Please check what can prevent this library to be installed correctly")
     pr_ok_green(str("Osmnx lib installation").ljust(RESULT_MSG_LENGTH))
 
-    if check_optimisation:
+    if check_optimization:
         if not install_python_lib(PYGEODESY_LIB):
             pr_ko_red(str("Pygeodesy lib installation").ljust(RESULT_MSG_LENGTH))
             raise ScriptError(error_msg + "Pygeodesy python lib is not correctly installed. Please check what can prevent this library to be installed correctly")
@@ -190,9 +192,9 @@ def check_configuration(settings, msfs_project, check_optimisation=False, check_
 
     if check_compressonator:
         # check if the compressonatorcli.exe file is reachable
-        if not os.path.isfile(settings.compressonator_exe_path):
+        if not os.path.isfile(prefs.compressonator_exe_path):
             pr_ko_red(str("compressonator_exe_path value").ljust(RESULT_MSG_LENGTH))
-            raise ScriptError(error_msg + settings.compressonator_exe_path + "file was not found. Please check the compressonator_exe_path value or install compressonator")
+            raise ScriptError(error_msg + prefs.compressonator_exe_path + "file was not found. Please check the compressonator_exe_path value or install compressonator")
         else:
             pr_ok_green(str("compressonator_exe_path value").ljust(RESULT_MSG_LENGTH))
 

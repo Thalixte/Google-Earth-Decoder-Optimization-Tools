@@ -4,8 +4,8 @@ site_name: GEDOT
 copyright: Copyright &copy; 2022 - 2023 Thalixte
 
 # Repository
-repo_name: Google-Earth-Decoder-optimisation-tools
-repo_url: https://github.com/Thalixte/Google-Earth-Decoder-optimisation-tools
+repo_name: Google-Earth-Decoder-Optimization-Tools
+repo_url: https://github.com/Thalixte/Google-Earth-Decoder-Optimization-Tools
 
 extra_css:
   - stylesheets/extra.css
@@ -85,7 +85,7 @@ markdown_extensions:
   - pymdownx.magiclink:
       repo_url_shorthand: true
       user: thalixte
-      repo: Google-Earth-Decoder-optimisation-tools
+      repo: Google-Earth-Decoder-Optimization-Tools
   - pymdownx.mark
   - pymdownx.smartsymbols
   - pymdownx.superfences:
@@ -101,6 +101,7 @@ markdown_extensions:
 
 plugins:
   - search
+  - open-in-new-tab
   - glightbox
   - mkdocs-video:
       is_video: True

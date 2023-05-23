@@ -51,7 +51,7 @@ def isolate_3d_data_from_geocode(global_settings):
         msfs_project.isolate_3d_data_from_geocode(global_settings)
 
         if msfs_project.settings.build_package_enabled:
-            build_package(global_settings, msfs_project)
+            build_package(msfs_project)
 
         pr_bg_green("Script correctly applied" + constants.CEND)
 

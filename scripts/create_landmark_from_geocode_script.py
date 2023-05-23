@@ -81,7 +81,7 @@ def create_landmark_from_geocode(global_settings):
                 msfs_project.add_lights_to_geocode(global_settings)
 
             if msfs_project.settings.build_package_enabled:
-                build_package(global_settings, msfs_project)
+                build_package(msfs_project)
         else:
             pr_bg_orange("Geocode (" + global_settings.geocode + ") not found in OSM data" + EOL + CEND)
 

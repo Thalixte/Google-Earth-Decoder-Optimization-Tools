@@ -24,6 +24,7 @@ import io
 import shutil
 import os
 import subprocess
+
 from utils.install_lib import install_python_lib
 from utils.MapBoxDownloader import MapBoxDownloader
 from utils.string import remove_accents
@@ -135,6 +136,9 @@ class MsfsProject:
         self.sources_folder = global_path
         self.objects_xml = None
 
+        from UI.prefs import get_prefs
+        prefs = get_prefs()
+
         # Ensure to remove remaining cache folder
         try:
             shutil.rmtree(os.path.join(self.project_folder, self.CACHE_FOLDER))
@@ -238,8 +242,10 @@ class MsfsProject:
         for collider in self.colliders.values():
             collider.update_min_size_values(self.settings.target_min_size_values, pbar=pbar)
 
-    def compress_built_package(self, settings):
-        compressonator = Compressonator(settings.compressonator_exe_path, self.model_lib_output_folder)
+    def compress_built_package(self):
+        from UI.prefs import get_prefs
+        prefs = get_prefs()
+        compressonator = Compressonator(prefs.compressonator_exe_path, self.model_lib_output_folder)
         compressonator.compress_texture_files()
 
     def merge(self, project_to_merge):

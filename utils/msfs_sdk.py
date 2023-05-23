@@ -29,10 +29,12 @@ ERROR_MSG = "MSFS SDK tools not installed"
 ######################################################
 # build scenery into new MSFS package
 ######################################################
-def build_package(settings, msfs_project):
-    msfs_build_exe_path = "\"" + settings.msfs_build_exe_path + "\""
+def build_package(msfs_project):
+    from UI.prefs import get_prefs
+    prefs = get_prefs()
+    msfs_build_exe_path = "\"" + prefs.msfs_build_exe_path + "\""
 
-    if settings.msfs_steam_version:
+    if prefs.msfs_steam_version:
         msfs_build_exe_path += " " + MSFS_BUILD_EXE_FORCE_STEAM_OPTION
 
     try:

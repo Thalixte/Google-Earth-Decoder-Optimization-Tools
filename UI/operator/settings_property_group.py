@@ -22,7 +22,7 @@ from bpy.props import StringProperty, BoolProperty, EnumProperty, FloatProperty,
 from constants import TARGET_MIN_SIZE_VALUE_PROPERTY_PREFIX, PNG_TEXTURE_FORMAT, JPG_TEXTURE_FORMAT, MAX_PHOTOGRAMMETRY_LOD, POI_LANDMARK_FORMAT_TYPE, CITY_LANDMARK_FORMAT_TYPE, LIGHT_WARM_DISPLAY_NAME, LIGHT_COLD_DISPLAY_NAME, LIGHT_WARM_GUID, LIGHT_COLD_GUID, LIGHT_100_BLUE_GUID, LIGHT_500_BLUE_GUID, LIGHT_1000_BLUE_GUID, LIGHT_100_BLUE_DISPLAY_NAME, LIGHT_500_BLUE_DISPLAY_NAME, LIGHT_1000_BLUE_DISPLAY_NAME, LIGHT_100_GREEN_GUID, LIGHT_100_GREEN_DISPLAY_NAME, LIGHT_500_GREEN_GUID, \
     LIGHT_500_GREEN_DISPLAY_NAME, LIGHT_1000_GREEN_GUID, LIGHT_1000_GREEN_DISPLAY_NAME, LIGHT_100_SOFT_GREEN_GUID, LIGHT_100_SOFT_GREEN_DISPLAY_NAME, LIGHT_500_SOFT_GREEN_GUID, LIGHT_500_SOFT_GREEN_DISPLAY_NAME, LIGHT_1000_SOFT_GREEN_GUID, LIGHT_1000_SOFT_GREEN_DISPLAY_NAME, LIGHT_100_WHITE_GUID, LIGHT_100_WHITE_DISPLAY_NAME, LIGHT_500_WHITE_GUID, LIGHT_500_WHITE_DISPLAY_NAME, LIGHT_1000_WHITE_GUID, LIGHT_1000_WHITE_DISPLAY_NAME, LIGHT_100_MINT_GREEN_GUID, LIGHT_100_MINT_GREEN_DISPLAY_NAME, \
     LIGHT_500_MINT_GREEN_GUID, LIGHT_500_MINT_GREEN_DISPLAY_NAME, LIGHT_1000_MINT_GREEN_GUID, LIGHT_1000_MINT_GREEN_DISPLAY_NAME, LIGHT_100_PINK_GUID, LIGHT_100_PINK_DISPLAY_NAME, LIGHT_500_PINK_GUID, LIGHT_500_PINK_DISPLAY_NAME, LIGHT_1000_PINK_GUID, LIGHT_1000_PINK_DISPLAY_NAME, LIGHT_100_RED_GUID, LIGHT_100_RED_DISPLAY_NAME, LIGHT_500_RED_GUID, LIGHT_500_RED_DISPLAY_NAME, LIGHT_1000_RED_GUID, LIGHT_1000_RED_DISPLAY_NAME, LIGHT_100_SKY_BLUE_GUID, LIGHT_100_SKY_BLUE_DISPLAY_NAME, \
-    LIGHT_500_SKY_BLUE_GUID, LIGHT_500_SKY_BLUE_DISPLAY_NAME, LIGHT_1000_SKY_BLUE_GUID, LIGHT_1000_SKY_BLUE_DISPLAY_NAME, LIGHT_100_PURPLE_GUID, LIGHT_100_PURPLE_DISPLAY_NAME, LIGHT_500_PURPLE_GUID, LIGHT_500_PURPLE_DISPLAY_NAME, LIGHT_1000_PURPLE_GUID, LIGHT_1000_PURPLE_DISPLAY_NAME, LIGHT_100_YELLOW_GUID, LIGHT_100_YELLOW_DISPLAY_NAME, LIGHT_500_YELLOW_GUID, LIGHT_500_YELLOW_DISPLAY_NAME, LIGHT_1000_YELLOW_GUID, LIGHT_1000_YELLOW_DISPLAY_NAME
+    LIGHT_500_SKY_BLUE_GUID, LIGHT_500_SKY_BLUE_DISPLAY_NAME, LIGHT_1000_SKY_BLUE_GUID, LIGHT_1000_SKY_BLUE_DISPLAY_NAME, LIGHT_100_PURPLE_GUID, LIGHT_100_PURPLE_DISPLAY_NAME, LIGHT_500_PURPLE_GUID, LIGHT_500_PURPLE_DISPLAY_NAME, LIGHT_1000_PURPLE_GUID, LIGHT_1000_PURPLE_DISPLAY_NAME, LIGHT_100_YELLOW_GUID, LIGHT_100_YELLOW_DISPLAY_NAME, LIGHT_500_YELLOW_GUID, LIGHT_500_YELLOW_DISPLAY_NAME, LIGHT_1000_YELLOW_GUID, LIGHT_1000_YELLOW_DISPLAY_NAME, ADDON_NAME
 
 
 class SettingsPropertyGroup(bpy.types.PropertyGroup):
@@ -205,17 +205,26 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         context.scene.project_settings.build_package_enabled = self.build_package_enabled
         context.scene.project_settings.save()
 
-    def msfs_build_exe_path_updated(self, context):
-        context.scene.global_settings.msfs_build_exe_path = self.msfs_build_exe_path_readonly = self.msfs_build_exe_path
-
-    def msfs_steam_version_updated(self, context):
-        context.scene.global_settings.msfs_steam_version = self.msfs_steam_version
-
-    def compressonator_exe_path_updated(self, context):
-        context.scene.global_settings.compressonator_exe_path = self.compressonator_exe_path_readonly = self.compressonator_exe_path
-
     def python_reload_modules_updated(self, context):
         context.scene.global_settings.reload_modules = self.python_reload_modules
+
+    def get_msfs_build_path(self):
+        from UI.prefs import get_prefs
+        prefs = get_prefs()
+
+        if prefs is not None:
+            return prefs.msfs_build_exe_path
+
+        return str()
+
+    def get_compressonator_exe_path(self):
+        from UI.prefs import get_prefs
+        prefs = get_prefs()
+
+        if prefs is not None:
+            return prefs.compressonator_exe_path
+
+        return str()
 
     projects_path: bpy.props.StringProperty(
         subtype="DIR_PATH",
@@ -554,43 +563,21 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         default=bpy.types.Scene.project_settings.light_guid if bpy.types.Scene.project_settings is not None else LIGHT_WARM_GUID,
         update=light_guid_updated
     )
+    msfs_build_exe_path_readonly: StringProperty(
+        name="Path to the MSFS bin exe that builds the MSFS packages",
+        description="Select the path to the MSFS bin exe that builds the MSFS packages",
+        get=get_msfs_build_path
+    )
     build_package_enabled: BoolProperty(
         name="Build package enabled",
         description="Enable the package compilation when the script has finished",
         default=bpy.types.Scene.project_settings.build_package_enabled if bpy.types.Scene.project_settings is not None else True,
         update=build_package_enabled_updated
     )
-    msfs_build_exe_path: StringProperty(
-        subtype="FILE_PATH",
-        name="Path to the MSFS bin exe that builds the MSFS packages",
-        description="Select the path to the MSFS bin exe that builds the MSFS packages",
-        maxlen=1024,
-        default=bpy.types.Scene.global_settings.msfs_build_exe_path,
-        update=msfs_build_exe_path_updated
-    )
-    msfs_build_exe_path_readonly: StringProperty(
-        name="Path to the MSFS bin exe that builds the MSFS packages",
-        description="Select the path to the MSFS bin exe that builds the MSFS packages",
-        default=bpy.types.Scene.global_settings.msfs_build_exe_path
-    )
-    msfs_steam_version: BoolProperty(
-        name="Msfs Steam version",
-        description="Set this to true if you have the MSFS 2020 Steam version",
-        default=bpy.types.Scene.global_settings.msfs_steam_version,
-        update=msfs_steam_version_updated
-    )
-    compressonator_exe_path: StringProperty(
-        subtype="FILE_PATH",
-        name="Path to the compressonator bin exe that compresses the package texture files",
-        description="Select the path to the compressonator bin exe that compresses the package texture file",
-        maxlen=1024,
-        default=bpy.types.Scene.global_settings.compressonator_exe_path,
-        update=compressonator_exe_path_updated
-    )
     compressonator_exe_path_readonly: StringProperty(
         name="Path to the compressonator bin exe that compresses the package texture files",
         description="Select the path to the compressonator bin exe that compresses the package texture file",
-        default=bpy.types.Scene.global_settings.compressonator_exe_path,
+        get=get_compressonator_exe_path
     )
     python_reload_modules: BoolProperty(
         name="Reload python modules (for dev purpose)",

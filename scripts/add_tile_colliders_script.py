@@ -44,7 +44,7 @@ def add_tile_colliders(global_settings):
         msfs_project.add_tile_colliders(msfs_project.settings.collider_as_lower_lod)
 
         if msfs_project.settings.build_package_enabled:
-            build_package(global_settings, msfs_project)
+            build_package(msfs_project)
 
         pr_bg_green("Script correctly applied" + constants.CEND)
 

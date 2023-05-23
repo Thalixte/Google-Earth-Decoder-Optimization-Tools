@@ -46,7 +46,7 @@ def clean_package_files(global_settings):
         msfs_project.clean()
 
         if msfs_project.settings.build_package_enabled:
-            build_package(global_settings, msfs_project)
+            build_package(msfs_project)
 
         pr_bg_green("Script correctly applied" + constants.CEND)
 

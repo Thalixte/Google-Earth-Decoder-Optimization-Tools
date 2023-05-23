@@ -8196,8 +8196,8 @@
 
 
     // Output folder
-	var decoderFolder = 'C:\\MSFS SDK\\Google-Earth-Decoder-optimisation-tools\\decoder';
-	var projectFolder = 'C:\\MSFS SDK\\Google-Earth-Decoder-optimisation-tools\\decoder\\Perpignan';
+	var decoderFolder = 'C:\\MSFS SDK\\Google-Earth-Decoder-Optimization-Tools\\decoder';
+	var projectFolder = 'C:\\MSFS SDK\\Google-Earth-Decoder-Optimization-Tools\\decoder\\Perpignan';
     var outputFolder = projectFolder + '\\decoder_export';
 
     deleteFolderRecursive(outputFolder);

@@ -47,7 +47,7 @@ def update_tiles_position(global_settings):
         msfs_project.update_objects_position(global_settings)
 
         if msfs_project.settings.build_package_enabled:
-            build_package(global_settings, msfs_project)
+            build_package(msfs_project)
 
         pr_bg_green("Script correctly applied" + constants.CEND)
 

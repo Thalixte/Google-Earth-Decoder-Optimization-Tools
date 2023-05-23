@@ -56,7 +56,7 @@ def add_lights_to_geocode(global_settings):
         msfs_project.add_lights_to_geocode(global_settings)
 
         if msfs_project.settings.build_package_enabled:
-            build_package(global_settings, msfs_project)
+            build_package(msfs_project)
 
         pr_bg_green("Script correctly applied" + constants.CEND)
 

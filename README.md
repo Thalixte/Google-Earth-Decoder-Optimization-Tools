@@ -1,11 +1,11 @@
-# Google-Earth-Decoder-optimisation-tools
+# Google-Earth-Decoder-Optimization-Tools
 Python blender addon designed to be used with Google Earth Decoder Tool sceneries
 
 **1) Presentation:**
 
 This blender addon is designed to provide tools to help optimizing city sceneries, retrieved via the Google Earth Decoder Tool, made by u/Jonahex111.
 
-This addon is coded in Python, and sources are available here: https://github.com/Thalixte/Google-Earth-Decoder-optimisation-tools.
+This addon is coded in Python, and sources are available here: https://github.com/Thalixte/Google-Earth-Decoder-Optimization-Tools.
 
 **2) Prerequisites:**
 
@@ -17,7 +17,7 @@ This addon is coded in Python, and sources are available here: https://github.co
 
 **3) Installation:**
 
-Download the Google-Earth-Decoder-optimisation-tools.zip archive. In Blender, open the preferences window: Edit > Preferences..., then select the Add-ons tab. Click on the Install... button, then browse to the archive you have just downloaded. Once installed, enable the addon.
+Download the Google-Earth-Decoder-Optimization-Tools.zip archive. In Blender, open the preferences window: Edit > Preferences..., then select the Add-ons tab. Click on the Install... button, then browse to the archive you have just downloaded. Once installed, enable the addon.
 If everything worked correctly, you should see a new menu in Blender, called "Google Earth Decoder Optimization Tools".
 
 **4) Usage:**

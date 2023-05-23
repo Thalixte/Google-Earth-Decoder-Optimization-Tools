@@ -38,7 +38,7 @@ def compress_built_package(global_settings):
         isolated_print(EOL)
         print_title("COMPRESS BUILT PACKAGE")
 
-        msfs_project.compress_built_package(global_settings)
+        msfs_project.compress_built_package()
 
         pr_bg_green("Script correctly applied" + constants.CEND)
 

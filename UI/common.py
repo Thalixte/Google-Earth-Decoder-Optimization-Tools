@@ -15,8 +15,16 @@
 #  #
 #
 #  <pep8 compliant>
+from constants import NONE_ICON
 
-from .menu import *
-from .prefs import *
-from .common import *
-from UI.operator.tools import *
+SPLIT_LABEL_FACTOR = 0.4
+ALTERNATE_SPLIT_LABEL_FACTOR = 0.975
+PREFS_SPLIT_LABEL_FACTOR = 0.245
+
+def draw_splitted_prop(props, layout, split_factor, property_key, property_name, slider=False, enabled=True, expand=False, toggle=False, icon_only=False, emboss=True, icon=NONE_ICON):
+    split = layout.split(factor=split_factor, align=True)
+    split.label(text=property_name)
+    col = split.column(align=True)
+    if not enabled:
+        col.enabled = False
+    col.prop(props, property_key, slider=slider, expand=expand, toggle=toggle, icon_only=icon_only, emboss=emboss, text=str(), icon=icon)

@@ -143,58 +143,6 @@ class OT_ProjectPathToMergeOperator(DirectoryBrowserOperator):
         return {'RUNNING_MODAL'}
 
 
-class OT_MsfsBuildExePathOperator(FileBrowserOperator):
-    bl_idname = "wm.msfs_build_exe_path_operator"
-    bl_label = "Path to the MSFS bin exe that builds the MSFS packages..."
-
-    filter_glob: StringProperty(
-        default="*.exe",
-        options={"HIDDEN"},
-    )
-    filepath: bpy.props.StringProperty(
-        subtype="FILE_PATH"
-    )
-
-    def draw(self, context):
-        super().draw(context)
-
-    def execute(self, context):
-        context.scene.setting_props.msfs_build_exe_path = self.filepath
-        reload_current_operator(context)
-        return {'FINISHED'}
-
-    def invoke(self, context, event):
-        self.filepath = context.scene.setting_props.msfs_build_exe_path
-        context.window_manager.fileselect_add(self)
-        return {'RUNNING_MODAL'}
-
-
-class OT_CompressonatorExePathOperator(FileBrowserOperator):
-    bl_idname = "wm.compressonator_exe_path_operator"
-    bl_label = "Path to the compressonator bin exe that compresses the package texture files..."
-
-    filter_glob: StringProperty(
-        default="*.exe",
-        options={"HIDDEN"},
-    )
-    filepath: bpy.props.StringProperty(
-        subtype="FILE_PATH"
-    )
-
-    def draw(self, context):
-        super().draw(context)
-
-    def execute(self, context):
-        context.scene.setting_props.compressonator_exe_path = self.filepath
-        reload_current_operator(context)
-        return {'FINISHED'}
-
-    def invoke(self, context, event):
-        self.filepath = context.scene.setting_props.compressonator_exe_path
-        context.window_manager.fileselect_add(self)
-        return {'RUNNING_MODAL'}
-
-
 class ActionOperator(Operator):
     @classmethod
     def poll(cls, context):

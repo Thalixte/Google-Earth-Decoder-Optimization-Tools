@@ -63,7 +63,7 @@ def create_terraform_and_exclusion_polygons(global_settings):
         msfs_project.prepare_3d_data(global_settings, create_polygons=True)
 
         if msfs_project.settings.build_package_enabled:
-            build_package(global_settings, msfs_project)
+            build_package(msfs_project)
 
         pr_bg_green("Script correctly applied" + constants.CEND)
 

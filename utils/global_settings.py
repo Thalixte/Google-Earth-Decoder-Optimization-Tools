@@ -33,11 +33,8 @@ class GlobalSettings(Settings):
     definition_file: str
     bake_textures_enabled: str
     nb_parallel_blender_tasks: float
-    msfs_build_exe_path: str
-    msfs_steam_version: str
     reload_modules = str
     sources_path: str
-    compressonator_exe_path = str
     sections = list
     decoder_output_path = str
 
@@ -52,10 +49,7 @@ class GlobalSettings(Settings):
         self.definition_file = str()
         self.bake_textures_enabled = "False"
         self.nb_parallel_blender_tasks = 4.0
-        self.msfs_build_exe_path = str()
-        self.msfs_steam_version = "False"
         self.reload_modules = "False"
-        self.compressonator_exe_path = str()
         self.sections = []
         self.decoder_output_path = str()
 
@@ -70,9 +64,6 @@ class GlobalSettings(Settings):
 
         # reduce the number of texture files (Lily Texture Packer addon is necessary https://gumroad.com/l/DFExj)
         self.bake_textures_enabled = json.loads(self.bake_textures_enabled.lower())
-
-        # check if the package is built at the end of the script
-        self.msfs_steam_version = json.loads(self.msfs_steam_version.lower())
 
         # check if modules have to be reloaded (mostly for blender dev purpose)
         self.reload_modules = json.loads(self.reload_modules.lower())

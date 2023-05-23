@@ -16,6 +16,7 @@
 #
 #  <pep8 compliant>
 
+import addon_utils
 import bpy
 from bpy.types import Menu
 from constants import CLEAR_CONSOLE_CMD
@@ -27,8 +28,8 @@ bpy.types.Scene.global_settings = GlobalSettings(get_global_path())
 bpy.types.Scene.project_settings = None
 
 from .operator.tools import *
-from .operator import PanelPropertyGroup, OT_ProjectPathOperator, OT_ProjectsPathOperator, OT_MsfsBuildExePathOperator, \
-    OT_CompressonatorExePathOperator, OT_InitMsfsSceneryProjectOperator, OT_OptimizeMsfsSceneryOperator, OT_UpdateTilesPositionOperator, \
+from .operator import PanelPropertyGroup, OT_ProjectPathOperator, OT_ProjectsPathOperator, \
+    OT_InitMsfsSceneryProjectOperator, OT_OptimizeMsfsSceneryOperator, OT_UpdateTilesPositionOperator, \
     OT_UpdateMinSizeValuesOperator, OT_CompressBuiltPackageOperator, OT_SaveSettingsOperator, OT_ReloadSettingsOperator, OT_InitMsfsSceneryPanel, \
     OT_OptimizeSceneryPanel, OT_UpdateTilesPositionPanel, OT_UpdateMinSizeValuesPanel, OT_CompressBuiltPackagePanel, OT_ProjectPathToMergeOperator, \
     OT_MergeSceneriesPanel, OT_MergeSceneriesOperator, OT_CleanPackageFilesOperator, OT_CleanPackageFilesPanel, OT_FixTilesLightningIssuesPanel, \
@@ -38,7 +39,6 @@ from .operator import PanelPropertyGroup, OT_ProjectPathOperator, OT_ProjectsPat
     OT_KeepOnlyBuildingsAndRoads3dDataOperator, OT_KeepOnlyBuildingsAndRoads3dDataPanel, OT_RemoveForestsWoodsAndParksFrom3dDataOperator, OT_CreateLandmarkFromGeocodeOperator, OT_CreateLandmarkFromGeocodePanel, \
     OT_Exclude3dDataFromGeocodeOperator, OT_Isolate3dDataFromGeocodeOperator, OT_Exclude3dDataFromGeocodePanel, OT_Isolate3dDataFromGeocodePanel, OT_AddTileCollidersPanel, OT_RemoveTileCollidersPanel, \
     OT_AddTileCollidersOperator, OT_RemoveTileCollidersOperator, OT_AdjustSceneryAltitudePanel, OT_AdjustSceneryAltitudeOperator, OT_AddLightsToGeocodeOperator, OT_AddLightsToGeocodePanel, OT_Cleanup3dDataPanel, OT_Cleanup3dDataOperator
-
 
 class TOPBAR_MT_google_earth_optimization_menus(Menu):
     os.system(CLEAR_CONSOLE_CMD)
@@ -141,11 +141,6 @@ class TOPBAR_MT_other_tools_menu(Menu):
         layout.operator(OT_FixTilesLightningIssuesPanel.bl_idname)
 
 
-bl_info = {
-    "name": "Ui test addon",
-    "category": "tests"
-}
-
 classes = (
     TOPBAR_MT_google_earth_optimization_menus,
     TOPBAR_MT_google_earth_optimization_menu,
@@ -158,8 +153,6 @@ classes = (
     OT_ProjectPathOperator,
     OT_ProjectsPathOperator,
     OT_ProjectPathToMergeOperator,
-    OT_MsfsBuildExePathOperator,
-    OT_CompressonatorExePathOperator,
     OT_InitMsfsSceneryProjectOperator,
     OT_OptimizeMsfsSceneryOperator,
     OT_CleanPackageFilesOperator,
