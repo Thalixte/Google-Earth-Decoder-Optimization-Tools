@@ -102,7 +102,9 @@ markdown_extensions:
 plugins:
   - search
   - open-in-new-tab
-  - glightbox
+  - glightbox:
+      skip_classes:
+        - md-video
   - mkdocs-video:
       is_video: True
       video_autoplay: True
