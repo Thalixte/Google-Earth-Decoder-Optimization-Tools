@@ -6,6 +6,7 @@ copyright: Copyright &copy; 2022 - 2023 Thalixte
 # Repository
 repo_name: Google-Earth-Decoder-Optimization-Tools
 repo_url: https://github.com/Thalixte/Google-Earth-Decoder-Optimization-Tools
+edit_uri: edit/main/docs/
 
 extra_javascript:
   - js/open_in_new_tab.js
@@ -20,7 +21,7 @@ theme:
   logo: assets/images/logo.png
   features:
     - announce.dismiss
-    # - content.action.edit
+#    - content.action.edit
     - content.action.view
     # - content.code.annotate
     - content.code.copy
