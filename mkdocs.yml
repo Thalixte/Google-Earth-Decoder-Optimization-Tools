@@ -116,3 +116,12 @@ plugins:
       video_controls: True
       css_style:
         width: "100%"
+
+# Page tree
+nav:
+  - Presentation: index.md
+  - Getting started:
+    - Prerequisites: installation/prerequisites.md
+    - Installation: installation/installation.md
+  - Features:
+    - Initialize a new MSFS scenery project: features/initialize_scenery.md
