@@ -9,8 +9,8 @@ All you have to do is to select [`Google Earth Decoder Optimization Tools`](java
 ## Setting up the project initialization
 
 * If the path to the folder containing your [MSFS][2] projects is not defined, click on the [path to the MSFS projects...](javascript:void(0)){ .md-button .gedot } button.
-* Indicate the name of the project in the field "Name of the project to initialize".
-* Indicate the author of the project in the field "Author of the project".
+* Indicate the name of the project in the field [`Name of the project to initialize`](javascript:void(0)).
+* Indicate the author of the project in the field [`Author of the project`](javascript:void(0)).
 
 !!! note annotate "Persistence of the project settings"
 

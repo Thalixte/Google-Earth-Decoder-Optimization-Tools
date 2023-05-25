@@ -74,7 +74,7 @@ class GEDOT_PREFS(AddonPreferences):
 
     compressonator_exe_path: StringProperty(
         subtype="FILE_PATH",
-        name="Path to the compressonator bin exe that compresses the package texture files",
+        name="Path to the compressonator bin exe",
         description="Select the path to the compressonator bin exe that compresses the package texture file",
         maxlen=1024,
     )
