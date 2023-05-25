@@ -19,13 +19,25 @@ Select the Google-Earth-Decoder-Optimization-Tools.zip archive you just retrieve
 
 ![type:video](javascript:void(0)){: src='../assets/videos/warmup.mp4' .md-video}
 
-In [Blender][4], go to [`Edit`](javascript:void(0)) > [`Preferences...`](javascript:void(0)), and select the [`Addons`](javascript:void(0)) section.
+In [Blender][4], go to `Edit` > `Preferences...`, and select the `Addons` section.
 
-* In the [`MSFS building package tools`](javascript:void(0)) section, click on the ![blender_folder_button.png](..%2Fassets%2Fimages%2Fblender_folder_button.png) button and find the __packagetools.exe__ bin in your __MSFS SDK__ folders (under the \Tools\bin subfolder).
+* In the `MSFS building package tools` section, click on the ![blender_folder_button.png](..%2Fassets%2Fimages%2Fblender_folder_button.png) button and find the __packagetools.exe__ bin in your __MSFS SDK__ folders:
+```
+MSFS SDK folder
+└───Tools    
+    └───bin
+            fspackagetool.exe
+``` 
 
-* *(Optional)* In the [`MSFS building package tools`](javascript:void(0)) section, if have the Steam version of [Microsoft Flight Simulator&copy; 2020][5], you encounter some problems when building the MSFS scenery packages produced by GEDOT, you can tick the [`Msfs Steam version`](javascript:void(0)) checkbox.
+* *(Optional)* In the `MSFS building package tools` section, if have the Steam version of [Microsoft Flight Simulator&copy; 2020][5], you encounter some problems when building the MSFS scenery packages produced by GEDOT, you can tick the `Msfs Steam version` checkbox.
 
-* *(Optional)* In the [`Compressonator`](javascript:void(0)) section, click on the ![blender_folder_button.png](..%2Fassets%2Fimages%2Fblender_folder_button.png) button and find the __Compressonator CLI tool__ in the [Compressonator][6] installation folders (under the \bin\CLI subfolder).
+* *(Optional)* In the `Compressonator` section, click on the ![blender_folder_button.png](..%2Fassets%2Fimages%2Fblender_folder_button.png) button and find the __Compressonator CLI tool__ in the [Compressonator][6] installation folders:
+```
+Compressonator folder
+└───bin
+    └───CLI
+            compressonatorcli.exe
+```
 
 [1]:https://flightsim.to
 [1]:https://flightsim.to/file/26245/google-earth-decoder-optimization-tools-gedot-blender-addon 
