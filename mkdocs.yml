@@ -9,7 +9,7 @@ repo_url: https://github.com/Thalixte/Google-Earth-Decoder-Optimization-Tools
 edit_uri: edit/main/docs/
 
 extra_javascript:
-  - js/open_in_new_tab.js
+  - javascripts/open_in_new_tab.js
 
 extra_css:
   - stylesheets/extra.css
@@ -17,8 +17,8 @@ extra_css:
 # Configuration
 theme:
   name: material
-  language: en
   logo: assets/images/logo.png
+  language: en
   features:
     - announce.dismiss
 #    - content.action.edit

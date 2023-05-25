@@ -18,16 +18,16 @@ function pdf_new_window ()
     var links = document.getElementsByTagName("a");
     for (var eleLink=0; eleLink < links.length; eleLink ++) {
     if ((links[eleLink].href.indexOf('.pdf') !== -1)||(links[eleLink].href.indexOf('.doc') !== -1)||(links[eleLink].href.indexOf('.docx') !== -1)) {
-        links[eleLink].onclick =
-        function() {
-            window.open(this.href);
-            return false;
+            links[eleLink].onclick =
+            function() {
+                window.open(this.href);
+                return false;
+            }
         }
-    }
     }
 }
 
-window.addEventListener("DOMContentLoaded", function() {
+document$.subscribe(() => {
     external_new_window();
     pdf_new_window();
-});
+})
