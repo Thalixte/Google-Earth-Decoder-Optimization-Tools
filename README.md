@@ -1,6 +1,17 @@
 # Google-Earth-Decoder-Optimization-Tools
 Python blender addon designed to be used with Google Earth Decoder Tool sceneries
 
+<p class="md-badges">
+<a href="https://hits.seeyoufarm.com" target="_blank"><img src="https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2FThalixte%2FGoogle-Earth-Decoder-Optimization-Tools&count_bg=%2379C83D&title_bg=%23555555&icon=&icon_color=%23E7E7E7&title=hits&edge_flat=true" class="md-badge"/></a>
+<img src="https://img.shields.io/github/license/Thalixte/Google-Earth-Decoder-Optimization-Tools?style=flat-square" class="md-badge">
+<img src="https://img.shields.io/github/v/release/Thalixte/Google-Earth-Decoder-Optimization-Tools?style=flat-square" class="md-badge">
+<img src="https://img.shields.io/github/stars/Thalixte/Google-Earth-Decoder-Optimization-Tools?style=flat-square" class="md-badge">
+<img src="https://img.shields.io/github/forks/Thalixte/Google-Earth-Decoder-Optimization-Tools?style=flat-square" class="md-badge">
+<img src="https://img.shields.io/github/issues/Thalixte/Google-Earth-Decoder-Optimization-Tools?style=flat-square" class="md-badge">
+
+
+</p>
+
 **1) Presentation:**
 
 This blender addon is designed to provide tools to help optimizing city sceneries, retrieved via the Google Earth Decoder Tool, made by u/Jonahex111.
