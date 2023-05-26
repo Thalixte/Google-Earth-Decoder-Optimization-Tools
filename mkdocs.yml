@@ -72,6 +72,7 @@ markdown_extensions:
   - def_list
   - footnotes
   - md_in_html
+  - tables
   - toc:
       permalink: true
   - pymdownx.arithmatex:
@@ -102,6 +103,9 @@ markdown_extensions:
   - pymdownx.tasklist:
       custom_checkbox: true
   - pymdownx.tilde
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
 
 plugins:
   - search
@@ -125,3 +129,7 @@ nav:
     - Installation: installation/installation.md
   - Features:
     - Initialize a new MSFS scenery project: features/initialize_scenery.md
+  - Step by step tutorials:
+      - Arcachon:
+          - 1. Initialize the Arcachon MSFS scenery project: tutorials/Arcachon/initialize_scenery.md
+          - 2. Retrieve the MSFS scenery photogrammetry tiles: tutorials/Arcachon/retrieve_tiles.md

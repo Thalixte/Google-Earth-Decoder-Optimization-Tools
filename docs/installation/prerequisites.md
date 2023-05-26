@@ -19,3 +19,11 @@
 [5]:https://drive.google.com/u/0/uc?id=18zdIjLbRgM5Ce1PtFPKYn-bCfOZcpPAO&export=download
 [6]:https://www.reddit.com/user/Jonahex111/
 [7]:https://flightsim.to/file/39900/gogole-earth-decoder-update
+
+## Install the Google Earth Decoder Tool:
+
+![type:video](video.mp4){: src='../assets/videos/google_earth_decoder_installation.mp4' .md-video}
+
+* once __[Google Earth Decoder][5]__ has been downloaded, extract the content of the archive to the folder of your choice (for instance c:\\google-earth-decoder).
+
+* once __[Google Earth Decoder update][7]__ has been downloaded, overwrite the **GoogleMapsTools.dll** in the Google Earth Decoder Tool folder with the one in the update archive.

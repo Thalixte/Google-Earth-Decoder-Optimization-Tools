@@ -27,7 +27,4 @@ function pdf_new_window ()
     }
 }
 
-document$.subscribe(() => {
-    external_new_window();
-    pdf_new_window();
-})
+document$.subscribe(() => { external_new_window(); pdf_new_window(); })

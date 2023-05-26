@@ -33,15 +33,6 @@ Because it is a [Blender][1] addon, this tool is written in [python](https://www
 * remove automatically a specific location from the tiles, using [OSM][2]  geocode, or [OSM][2] id
 * isolate automatically a specific location from the tiles, using [OSM][2]  geocode, or [OSM][2] id
 * ... and some extra specific features  
-      
-
-!!! warning "Theme extension prerequisites"
-
-    As the [`custom_dir`][custom_dir] setting is used for the theme extension
-    process, Material for MkDocs needs to be installed via `pip` and referenced
-    with the [`name`][name] setting in `mkdocs.yml`. It will not work when
-    cloning from `git`.
-
 
 [1]:https://www.blender.org/
 [2]:https://www.openstreetmap.org/
