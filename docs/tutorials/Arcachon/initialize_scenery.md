@@ -1,5 +1,5 @@
 # 1. Initialize the Arcachon MSFS scenery project
-![type:video](video.mp4){: src='../../../assets/videos/initialize_scenery.mp4' .md-video}
+![type:video](video.mp4){: src='../../../assets/videos/arcachon/initialize_scenery.mp4' .md-video}
 
 Open [Blender][1], then select `Google Earth Decoder Optimization Tools` > `1. Initialize a new MSFS scenery project` in the top menu.
 
@@ -18,10 +18,9 @@ When all the settings are set, click on the [Initialize a new MSFS project scene
 The [Blender][1] window console will appear on the screen. Once finished, you should see this on the console:   
 ![Image title](../../../assets/images/initialize_scenery.png){ align=center }   
 
-
 A new Arcachon folder is created in the folder containing all the [MSFS][2] projects.    
 
-The resulting folder structure of the Arcachon project is presented below:
+The resulting file tree of the Arcachon project is presented below:
 ```
 Arcachon
 │   Arcachon.ini

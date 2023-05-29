@@ -4,7 +4,7 @@ The first task when creating a new photogrammetry scenery project for [MSFS][2] 
 This can be done very easily with GEDOT.
 All you have to do is to select `Google Earth Decoder Optimization Tools` > `1. Initialize a new MSFS scenery project` in the top menu.
 
-![type:video](video.mp4){: src='../assets/videos/initialize_scenery.mp4' .md-video}
+![type:video](video.mp4){: src='../assets/videos/arcachon/initialize_scenery.mp4' .md-video}
 
 ## Set up the project initialization
 

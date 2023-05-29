@@ -27,3 +27,7 @@ h1#initialize-a-new-msfs-scenery-project {
 .md-button.gedot {
     padding: 0.20em 0.75em !important;
 }
+
+div.no-bottom-margin {
+    margin-bottom: -1.5em;
+}
