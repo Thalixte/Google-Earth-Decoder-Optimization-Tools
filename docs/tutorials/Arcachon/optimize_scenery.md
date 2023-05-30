@@ -19,7 +19,7 @@ Open [Blender][1], then select `Google Earth Decoder Optimization Tools` > `2. O
 
 ## Run the optimization process
 
-When all the settings are set, the [Optimize an existing MSFS project scenery...](javascript:void(0)){ .md-button .gedot } button will be enabled (except if the [MSFS][2] project folder already exists).
+If all the settings are correctly set, the [Optimize an existing MSFS project scenery...](javascript:void(0)){ .md-button .gedot } button should be enabled.  
 Just click on this button, and a [Blender][1] window console will appear on the screen.
 
 The [Blender][1] window console will appear on the screen. Once finished, you should see this on the console:   
