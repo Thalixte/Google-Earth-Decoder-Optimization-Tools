@@ -25,6 +25,17 @@ All you have to do is to select `Google Earth Decoder Optimization Tools` > `3. 
 
     A [OSM][3] Geocode is a litteral designation of a [OSM][3] object or a [OSM][3] relation (a geocode ID). It can be a specific location (for instance: Buckingham Palace, London), or a city (for instance Arcachon, France). It relies on the [Nominatim][2] (from the Latin, 'by name') tool for [OpenStreetMap][3].
 
+## Run the polygons generation process
+
+If all the settings are correctly set, the [Create the terraform and exclusion polygons for the scenery...](javascript:void(0)){ .md-button .gedot } button should be  enabled (except if the [MSFS][2] project folder does not exist, has been renamed or removed).  
+Just click on this button, and a [Blender][1] window console will appear on the screen.
+
+Once finished, you should see this on the console:   
+![create_terraform_and_excludion_polygons.png](..%2Fassets%2Fimages%2Fcreate_terraform_and_excludion_polygons.png){ align=center }   
+
+By default, the building process is executed by the MSFS fspackagetool exe. At the end of the process, you shoud see this window:
+
+![fspackagetools_build_completed_after_polygons_generation.png](..%2Fassets%2Fimages%2Ffspackagetools_build_completed_after_polygons_generation.png)
 
 ## Generated files
 

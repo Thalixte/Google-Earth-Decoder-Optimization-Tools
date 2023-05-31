@@ -34,7 +34,7 @@ Just click on this button, and a [Blender][1] window console will appear on the 
 Once finished, you should see this on the console:   
 ![Image title](../assets/images/optimize_scenery.png){ align=center }   
 
-By default, the building process is executed by the MFS fspackagetool exe. At the end of the process, you shoud see this window:
+By default, the building process is executed by the MSFS fspackagetool exe. At the end of the process, you shoud see this window:
 
 ![fspackagetools_build_competed.png](..%2Fassets%2Fimages%2Ffspackagetools_build_completed.png)
 
