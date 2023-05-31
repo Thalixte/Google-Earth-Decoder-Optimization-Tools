@@ -23,7 +23,7 @@ All you have to do is to select `Google Earth Decoder Optimization Tools` > `3. 
 
 !!! question "What is an [OSM][3] Geocode ?"
 
-    An [OSM][3] Geocode is a litteral designation of a [OSM][3] object or a [OSM][3] relation (a geocode ID). It can be a specific location (for instance: Buckingham Palace, London), or a city (for instance Arcachon, France). It relies on the [Nominatim][2] (from the Latin, 'by name') tool for [OpenStreetMap][3].
+    An [OSM][3] Geocode is a litteral designation of an [OSM][3] object or an [OSM][3] relation (a geocode ID). It can be a specific location (for instance: Buckingham Palace, London), or a city (for instance Arcachon, France). It relies on the [Nominatim][2] (from the Latin, 'by name') tool for [OpenStreetMap][3].
 
 ## Run the polygons generation process
 
