@@ -21,7 +21,7 @@ All you have to do is to select `Google Earth Decoder Optimization Tools` > `3. 
  
 * (optional) indicate the name of the city where the airport is located in the field `Airport city` (ex.: ==**Arcachon**==). You can also use a [OSM][3] Geocode definition for the airport: (ex.: ==**Santos Dumont Airport, Rio de Janeiro**==). This information is necessary to exclude the airport area from the polygons.
 
-!!! question "What is a [OSM][3] Geocode ?"
+!!! question "What is an [OSM][3] Geocode ?"
 
     A [OSM][3] Geocode is a litteral designation of a [OSM][3] object or a [OSM][3] relation (a geocode ID). It can be a specific location (for instance: Buckingham Palace, London), or a city (for instance Arcachon, France). It relies on the [Nominatim][2] (from the Latin, 'by name') tool for [OpenStreetMap][3].
 
@@ -194,7 +194,7 @@ Those polygons can be opened in [Blender][8], by using the [BlenderGIS addon][9]
 
 Open MSFS, go to the scenery location, start a new flight, then enter the dev mode, and open the MSFS scenery project (by selecting the scenery xml file).
 
-In the scenery Editor window, you wan see that new groups have been created:  
+In the scenery Editor window, you can see that new groups have been created:  
 
 * **GEDOT_generated_amenity_terraform_polygon:** contain all the [amenity][4] terraform polygons:  
 
