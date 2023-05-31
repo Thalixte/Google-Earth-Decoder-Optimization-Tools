@@ -1,6 +1,6 @@
 # Optimize an existing MSFS scenery project
 
-Once the photogrammetry tiles has been retrieved, you can optimize them for MSFS using the optimization feature.
+Once the photogrammetry tiles have been retrieved, you can optimize them for MSFS using the optimization feature.
 
 * this script optimizes an existing Google Earth Decoder scenery project (textures, Lods, CTD fix).
 * if you installed and enabled the Lily Texture Packer Blender addon, and you ticked the "Bake textures enabled" checkbox in the tool menu (section PROJECT), the textures of the project are merged per tile lods, which significantly reduce the number of the project files.
@@ -143,6 +143,6 @@ Arcachon
         ...
 ```
 
-[1]:https://www.[Blender][1].org/
+[1]:https://www.blender.org/
 [2]:https://www.flightsimulator.com/
-[3]: https://eliemichel.gumroad.com/l/DFExj
+[3]:https://eliemichel.gumroad.com/l/DFExj

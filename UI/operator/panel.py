@@ -154,8 +154,9 @@ class SettingsOperator(PanelOperator):
         split = self.draw_setting_sections_panel(context)
         col = self.draw_header(split, display_save=False)
         col.separator()
-        draw_splitted_prop(context.scene.setting_props, col, SPLIT_LABEL_FACTOR, "isolate_3d_data", "OpenStreetMap accuracy")
-        col.separator()
+        if self.operator_name != "wm.create_terraform_and_exclusion_polygons":
+            draw_splitted_prop(context.scene.setting_props, col, SPLIT_LABEL_FACTOR, "isolate_3d_data", "OpenStreetMap accuracy")
+            col.separator()
         if self.operator_name in ["wm.generate_height_data", "wm.cleanup_3d_data", "wm.keep_only_buildings_3d_data", "wm.keep_only_buildings_and_roads_3d_data"]:
             if context.scene.project_settings.isolate_3d_data:
                 draw_splitted_prop(context.scene.setting_props, col, ALTERNATE_SPLIT_LABEL_FACTOR, "keep_buildings", "Keep buildings 3d data", enabled=False)

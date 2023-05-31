@@ -1167,7 +1167,7 @@ class MsfsProject:
 
         orig_land_mass, orig_boundary, orig_road, orig_railway, orig_sea, orig_landuse, orig_grass, orig_nature_reserve, \
         orig_natural, orig_natural_water, orig_water, orig_waterway, orig_aeroway, orig_pitch, orig_construction, orig_park, orig_building, \
-        orig_wall, orig_man_made, orig_rocks, orig_amenity, orig_residential, orig_industrial, orig_airport = self.__load_geodataframes(orig_bbox, b, settings)
+        orig_wall, orig_man_made, orig_rocks, orig_amenity, orig_residential, orig_industrial, orig_airport = self.__load_geodataframes(orig_bbox, b)
 
         bbox, roads, bridges, hidden_roads, sea, pitches, construction, airport, buildings, \
         water_without_bridges, water, exclusion, rocks, amenities, residentials, industrials = self.__prepare_geodataframes(orig_road, orig_railway, orig_sea, orig_bbox, orig_land_mass, orig_boundary,
@@ -1301,10 +1301,10 @@ class MsfsProject:
             tile.create_exclusion_mask_osm_file(self.osmfiles_folder, b, exclusion, building_mask, water_mask, construction_mask, road_mask, bridges_mask, hidden_roads, amenity_mask, residential_mask, industrial_mask, airport_mask, rocks_mask, keep_holes, file_prefix)
             pbar.update("exclusion mask created for %s tile" % tile.name)
 
-    def __load_geodataframes(self, orig_bbox, b, settings):
+    def __load_geodataframes(self, orig_bbox, b):
         # load all necessary GeoPandas Dataframes
         load_gdf_list = [None] * 24
-        pbar = ProgressBar(load_gdf_list, title="RETRIEVE GEODATAFRAMES (THE FIRST TIME, MAY TAKE SOME TIME TO COMPLETE, BE PATIENT...)")
+        pbar = ProgressBar(load_gdf_list, title="RETRIEVE GEODATAFRAMES (THE FIRST TIME, MAY TAKE SOME TIME TO COMPLETE, BE PATIENT...)", sleep=0.0)
         pbar.update("retrieving land mass geodataframe...", stall=True)
         orig_land_mass = create_land_mass_gdf(self.sources_folder, orig_bbox, b)
         pbar.update("land mass geodataframe retrieved")
@@ -1617,7 +1617,7 @@ class MsfsProject:
             itasks = itasks+1
 
         prepare_gdf_list = [None] * itasks
-        pbar = ProgressBar(prepare_gdf_list, title="PREPARE GEODATAFRAMES")
+        pbar = ProgressBar(prepare_gdf_list, title="PREPARE GEODATAFRAMES", sleep=0.0)
 
         pbar.update("preparing sea geodataframe...", stall=True)
         sea = prepare_sea_gdf(orig_sea)

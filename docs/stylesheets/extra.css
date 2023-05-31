@@ -31,3 +31,7 @@ h1#initialize-a-new-msfs-scenery-project {
 div.no-bottom-margin {
     margin-bottom: -1.5em;
 }
+
+.md-typeset figure.md-blender {
+    display: inline!important;
+}
