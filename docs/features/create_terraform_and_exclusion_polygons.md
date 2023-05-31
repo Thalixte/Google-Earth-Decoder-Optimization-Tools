@@ -19,11 +19,11 @@ All you have to do is to select `Google Earth Decoder Optimization Tools` > `3. 
 
 ## Set up the creation of terraform and exclusion polygons for the project
  
-* (optional) indicate the name of the city where the airport is located in the field `Airport city` (ex.: ==**Arcachon**==). You can also use a [OSM][3] Geocode definition for the airport: (ex.: ==**Santos Dumont Airport, Rio de Janeiro**==). This information is necessary to exclude the airport area from the polygons.
+* (optional) indicate the name of the city where the airport is located in the field `Airport city` (ex.: ==**Arcachon**==). You can also use an [OSM][3] Geocode definition for the airport: (ex.: ==**Santos Dumont Airport, Rio de Janeiro**==). This information is necessary to exclude the airport area from the polygons.
 
 !!! question "What is an [OSM][3] Geocode ?"
 
-    A [OSM][3] Geocode is a litteral designation of a [OSM][3] object or a [OSM][3] relation (a geocode ID). It can be a specific location (for instance: Buckingham Palace, London), or a city (for instance Arcachon, France). It relies on the [Nominatim][2] (from the Latin, 'by name') tool for [OpenStreetMap][3].
+    An [OSM][3] Geocode is a litteral designation of a [OSM][3] object or a [OSM][3] relation (a geocode ID). It can be a specific location (for instance: Buckingham Palace, London), or a city (for instance Arcachon, France). It relies on the [Nominatim][2] (from the Latin, 'by name') tool for [OpenStreetMap][3].
 
 ## Run the polygons generation process
 
