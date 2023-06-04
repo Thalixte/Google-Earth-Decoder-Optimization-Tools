@@ -38,7 +38,16 @@ By default, the building process is executed by the MSFS fspackagetool exe. At t
 
 ![fspackagetools_build_competed.png](..%2Fassets%2Fimages%2Ffspackagetools_build_completed.png)
 
+In MSFS, the resulting tiles after the optimization process are presented here (to ease the comprehension, the tiles have been moved over the sea):
 
+![arcachon_devmode_overall_insight.png](..%2Fassets%2Fimages%2Farcachon_devmode_overall_insight.png)
+
+Note that the tiles that are entirely in the water have bee removed.
+
+!!! warning annotate "Unknown tiles"
+
+    As some tiles are removed by the optimization process (for instance, tiles that are entirely in the water), 
+    this can result in "unknown" tiles in the Scenery Editor window (in dev mode). Those "unknown" tiles can be safely removed from the scenery.
 
 In your MSFS scenery folder, if you open a gltf file corresponding to a tile (which is in a json format), you should see this as the first line of the gltf:
 ```json
