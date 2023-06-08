@@ -35,3 +35,95 @@ div.no-bottom-margin {
 .md-typeset figure.md-blender {
     display: inline!important;
 }
+
+.img-container {
+  position: relative;
+  width: 1024px;
+  height: 600px;
+  border: 2px solid white;
+}
+.img-container > .img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-size: 900px 100%;
+ }
+
+ .img-container > .background-img {
+    background-image: url('../assets/images/arcachon_original_21537373625050707_LOD00.png');
+ }
+
+ .img-container > .foreground-img {
+    background-image: url('../assets/images/arcachon_cleaned_21537373625050707_LOD00.png');
+    width: 50%;
+ }
+
+.img-slider {
+    position: absolute;
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 100%;
+    background: #f2f2f2;
+    opacity: 0.1;  /* Opacity for Modern Browsers */
+    filter: alpha(opacity=10);  /* Opacity for IE8 and lower */
+    zoom: 1;  /* Fix for IE7 */
+    outline: none;
+    margin: 0;
+    transition: all .2s;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.img-slider:hover {
+    background: #f2f2f2;
+    opacity: 0.1;  /* Opacity for Modern Browsers */
+    filter: alpha(opacity=10);  /* Opacity for IE8 and lower */
+    zoom: 1;  /* Fix for IE7 */
+}
+
+.img-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 6px;
+  height: 600px;
+  background: white;
+  cursor: pointer;
+}
+
+.img-slider-button {
+    height: 30px;
+    width: 30px;
+    pointer-events: none;
+    position: absolute;
+    width: $size;
+    height: $size;
+    border-radius: 50%;
+    background-color: white;
+    left: calc(50% - 18px);
+    top: calc(50% - 18px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.img-slider-button:after {
+  content: '';
+  padding: 3px;
+  display: inline-block;
+  border: solid #5D5D5D;
+  border-width: 0 2px 2px 0;
+  transform: rotate(-45deg);
+}
+
+.img-slider-button:before {
+  content: '';
+  padding: 3px;
+  display: inline-block;
+  border: solid #5D5D5D;
+  border-width: 0 2px 2px 0;
+  transform: rotate(135deg);
+}

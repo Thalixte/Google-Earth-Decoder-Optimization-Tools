@@ -414,8 +414,8 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         update=keep_residential_and_industrial_updated
     )
     process_all: BoolProperty(
-        name="Process all the tiles (if unticked, process only the tiles that has not been cleaned)",
-        description="Process all the tiles (if unticked, process only the tiles that has not been cleaned)",
+        name="Process all the tiles (if unticked, process only the tiles that have not been cleaned)",
+        description="Process all the tiles (if unticked, process only the tiles that have not been cleaned)",
         default=bpy.types.Scene.project_settings.process_all if bpy.types.Scene.project_settings is not None else False,
         update=process_all_updated
     )

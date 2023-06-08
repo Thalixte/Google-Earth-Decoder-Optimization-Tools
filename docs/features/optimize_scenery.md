@@ -14,7 +14,7 @@ All you have to do is to select `Google Earth Decoder Optimization Tools` > `2. 
 
 * if necessary, select the path to the folder containing your [MSFS][2] scenery project, by clicking on the [path to the MSFS projects...](javascript:void(0)){ .md-button .gedot } button.     
 * (optional) indicate the author of the project in the field `Author of the project`.
-* (optional) indicate the number of parallel [Blender][1] tasks in the in the field `Number of parallel Blender tasks` (by default, 4).
+* (optional) indicate the number of parallel [Blender][1] tasks in the field `Number of parallel Blender tasks` (by default, 4).
 !!! warning annotate "Number of parallel Blender tasks"
 
     The more the number of parallel [Blender][1] tasks, the more CPU, GPU and memory resources needed.   
@@ -45,7 +45,7 @@ In MSFS, the resulting tiles after the optimization process are presented here (
 Note that the tiles that are entirely in the water have bee removed.
 
 !!! warning annotate "Unknown tiles"
-
+zz
     As some tiles are removed by the optimization process (for instance, tiles that are entirely in the water), 
     this can result in "unknown" tiles in the Scenery Editor window (in dev mode). Those "unknown" tiles can be safely removed from the scenery.
 

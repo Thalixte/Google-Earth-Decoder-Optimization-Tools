@@ -10,6 +10,8 @@ edit_uri: edit/main/docs/
 
 extra_javascript:
   - javascripts/open_in_new_tab.js
+  - javascripts/jquery.min.js
+  - javascripts/img-slider.js
 
 extra_css:
   - stylesheets/bootstrap.min.css
@@ -131,6 +133,7 @@ nav:
     - Initialize a new MSFS scenery project: features/initialize_scenery.md
     - Optimize an existing MSFS scenery project: features/optimize_scenery.md
     - Create terraform and exclusion polygons: features/create_terraform_and_exclusion_polygons.md
+    - Cleanup the 3d data from the photogrammetry tiles: features/cleanup_3d_data_from_the_photogrammetry_tiles.md
   - Step by step tutorials:
       - Arcachon:
           - 1. Initialize the Arcachon MSFS scenery project: tutorials/Arcachon/initialize_scenery.md

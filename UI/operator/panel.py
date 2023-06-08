@@ -191,7 +191,7 @@ class SettingsOperator(PanelOperator):
             col.separator()
 
         if self.operator_name != "wm.generate_height_data" and self.operator_name != "wm.prepare_3d_data" and self.operator_name != "wm.create_terraform_and_exclusion_polygons":
-            draw_splitted_prop(context.scene.setting_props, col, ALTERNATE_SPLIT_LABEL_FACTOR, "process_all", "Process all the tiles (if unticked, process only the tiles that has not been cleaned)")
+            draw_splitted_prop(context.scene.setting_props, col, ALTERNATE_SPLIT_LABEL_FACTOR, "process_all", "Process all the tiles (if unticked, process only the tiles that have not been cleaned)")
             col.separator()
 
         draw_splitted_prop(context.scene.setting_props, col, SPLIT_LABEL_FACTOR, "airport_city", "Airport city")
