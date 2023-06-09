@@ -107,15 +107,41 @@ By default, the building process is executed by the MSFS fspackagetool exe. At t
     This folder must be kept in order to run the process again, as it contains all the entire photogrammetry tiles (before the cleanup).  
     The cleanup process will always rely on those entire tiles. If the folder is deleted, and the process is executed again, it will take the already cleaned tiles, which can produce undesired results.
 
-## Result
+## Cleanup results
 
-<div class="img-container" markdown="1">
-  <div class="img background-img"></div>
-  <div class="img foreground-img"></div>
-  <input type="range" min="1" max="100" value="50" class="img-slider" name="img-slider" id="img-slider">
-  <div class='img-slider-button'></div>
+Some cleanup results are presented below.  
+### Cleanup result for a photogrammetry tile with vegetation 3d data
+(Move the slider to display before/after comparison)
+{: .md-slider-title }
+<div class="slider-container">
+    <div class="img background-img" data="arcachon_original_21537373625051507_LOD00.png"></div>
+    <div class="img foreground-img" data="arcachon_cleaned_21537373625051507_LOD00.png"></div>
+    <input type="range" min="1" max="100" value="1" class="img-slider">
+    <div class="slider-button"></div>
+    <div class="slider-bar"></div>
+</div>
+  
+  
+### Cleanup result for a photogrammetry tile with water 3d data
+(Move the slider to display before/after comparison)
+{: .md-slider-title }
+<div class="slider-container">
+    <div class="img background-img" data="arcachon_original_21537373625050707_LOD00.png"></div>
+    <div class="img foreground-img" data="arcachon_cleaned_21537373625050707_LOD00.png"></div>
+    <input type="range" min="1" max="100" value="1" class="img-slider">
+    <div class="slider-button"></div>
+    <div class="slider-bar"></div>
 </div>
 
+!!! Warning "bounding box creation"
+
+    The cleaning process creates automatically a bounding box around the cleaned tile in order to preserve the dimensions of the original tile.  
+    This ensures that the MSFS engine keeps the correct lod levels, even if the size of the tile has been reduced.
+
+
+!!! Warning "Cleanup margins"
+
+    Because there can be some slight differences between the position of the OpenStreetMap buildings and roads and the corresponding photogrammetry 3d data, a margin is defined around each object to clean (moslty 8 meters).    That's why it can remain some little vegetation 3d data around a road or a building.
 
 [1]:https://www.openstreetmap.org/
 [2]:https://www.openstreetmap.org/relation/324431#map=15/51.9025/4.4649

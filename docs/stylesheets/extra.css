@@ -36,29 +36,37 @@ div.no-bottom-margin {
     display: inline!important;
 }
 
-.img-container {
+.md-slider-title {
+    margin-bottom: 0px !important;
+}
+
+.md-typeset figcaption {
+    margin: 0em auto;
+}
+
+.slider-container {
   position: relative;
   width: 1024px;
   height: 600px;
   border: 2px solid white;
 }
-.img-container > .img {
+
+.slider-container > .img {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background-size: 900px 100%;
- }
+    background-size: 1024px 100%;
+}
 
- .img-container > .background-img {
-    background-image: url('../assets/images/arcachon_original_21537373625050707_LOD00.png');
- }
+.slider-container > .background-img {
+}
 
- .img-container > .foreground-img {
-    background-image: url('../assets/images/arcachon_cleaned_21537373625050707_LOD00.png');
-    width: 50%;
- }
+
+.slider-container > .foreground-img {
+    width: 1%;
+}
 
 .img-slider {
     position: absolute;
@@ -78,39 +86,55 @@ div.no-bottom-margin {
     align-items: center;
 }
 
-.img-slider:hover {
-    background: #f2f2f2;
-    opacity: 0.1;  /* Opacity for Modern Browsers */
-    filter: alpha(opacity=10);  /* Opacity for IE8 and lower */
-    zoom: 1;  /* Fix for IE7 */
-}
-
 .img-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 6px;
-  height: 600px;
-  background: white;
-  cursor: pointer;
+    -webkit-appearance: none;
+    appearance: none;
+    width: 6px;
+    height: 600px;
+    background: white;
+    cursor: pointer;
 }
 
-.img-slider-button {
-    height: 30px;
-    width: 30px;
+.img-slider:hover {
+  background: #f2f2f2;
+  opacity: 0.1;  /* Opacity for Modern Browsers */
+  filter: alpha(opacity=10);  /* Opacity for IE8 and lower */
+  zoom: 1;  /* Fix for IE7 */
+}
+
+.slider-bar {
+    width: 2px;
+    height: 100%;
     pointer-events: none;
     position: absolute;
-    width: $size;
-    height: $size;
-    border-radius: 50%;
     background-color: white;
-    left: calc(50% - 18px);
-    top: calc(50% - 18px);
+    left: calc(1% - 4px);
     display: flex;
     justify-content: center;
     align-items: center;
+    opacity: 0.3;  /* Opacity for Modern Browsers */
+    filter: alpha(opacity=30);  /* Opacity for IE8 and lower */
+    zoom: 1;  /* Fix for IE7 */
 }
 
-.img-slider-button:after {
+.slider-button {
+    width: 26px;
+    height: 26px;
+    pointer-events: none;
+    position: absolute;
+    border-radius: 50%;
+    background-color: white;
+    left: calc(1% - 16px);
+    top: calc(50% - 16px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0.8;  /* Opacity for Modern Browsers */
+    filter: alpha(opacity=80);  /* Opacity for IE8 and lower */
+    zoom: 1;  /* Fix for IE7 */
+}
+
+.slider-button:after {
   content: '';
   padding: 3px;
   display: inline-block;
@@ -119,7 +143,7 @@ div.no-bottom-margin {
   transform: rotate(-45deg);
 }
 
-.img-slider-button:before {
+.slider-button:before {
   content: '';
   padding: 3px;
   display: inline-block;
