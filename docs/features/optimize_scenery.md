@@ -45,7 +45,7 @@ In MSFS, the resulting tiles after the optimization process are presented here (
 Note that the tiles that are entirely in the water have bee removed.
 
 !!! warning annotate "Unknown tiles"
-zz
+
     As some tiles are removed by the optimization process (for instance, tiles that are entirely in the water), 
     this can result in "unknown" tiles in the Scenery Editor window (in dev mode). Those "unknown" tiles can be safely removed from the scenery.
 

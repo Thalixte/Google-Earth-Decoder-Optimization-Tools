@@ -91,7 +91,6 @@ By default, the building process is executed by the MSFS fspackagetool exe. At t
 
 ![fspackagetools_build_completed_after_polygons_generation.png](..%2Fassets%2Fimages%2Ffspackagetools_build_completed_after_3d_data_cleanup.png)
 
-
 !!! warning "cleanup 3d data backup folder"
 
     The first time the cleanup process is launched on a MSFS project, a new backup folder, named "cleanup_3d_data" is created:  
@@ -141,7 +140,33 @@ Some cleanup results are presented below.
 
 !!! Warning "Cleanup margins"
 
-    Because there can be some slight differences between the position of the OpenStreetMap buildings and roads and the corresponding photogrammetry 3d data, a margin is defined around each object to clean (moslty 8 meters).    That's why it can remain some little vegetation 3d data around a road or a building.
+    Because there can be some slight differences between the position of the OpenStreetMap buildings and roads and the corresponding photogrammetry 3d data, a margin is defined around each object to clean (moslty 8 meters).    That's why it can remain some little vegetation 3d data around a road or a building.  
+
+### Overall cleanup result for a photogrammetry scenery
+In MSFS, the resulting tiles after the cleanup process are presented here (to ease the comprehension, the tiles have been moved over the sea):  
+
+![arcachon_cleaned_devmode_overall_insight.png](..%2Fassets%2Fimages%2Farcachon_cleaned_devmode_overall_insight.png)
+
+### Fitz-Roy elevation data
+(Move the slider to display before/after comparison)
+{: .md-slider-title }
+<div class="slider-container">
+    <div class="img background-img" data="fitz-roy_near_original_elevation_data.png"></div>
+    <div class="img foreground-img" data="fitz-roy_near_gedot_generated_elevation_data.png"></div>
+    <input type="range" min="1" max="100" value="1" class="img-slider">
+    <div class="slider-button"></div>
+    <div class="slider-bar"></div>
+</div>
+
+(Move the slider to display before/after comparison)
+{: .md-slider-title }
+<div class="slider-container">
+    <div class="img background-img" data="fitz-roy_original_elevation_data.png"></div>
+    <div class="img foreground-img" data="fitz-roy_gedot_generated_elevation_data.png"></div>
+    <input type="range" min="1" max="100" value="1" class="img-slider">
+    <div class="slider-button"></div>
+    <div class="slider-bar"></div>
+</div>
 
 [1]:https://www.openstreetmap.org/
 [2]:https://www.openstreetmap.org/relation/324431#map=15/51.9025/4.4649
