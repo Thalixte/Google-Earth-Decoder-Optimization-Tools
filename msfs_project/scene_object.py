@@ -29,6 +29,7 @@ class MsfsSceneObject(MsfsObject):
     pos: MsfsPosition
     coords: tuple
     lods: list
+    optimized: bool
     valid: bool
     cleaned: bool
 
@@ -40,6 +41,7 @@ class MsfsSceneObject(MsfsObject):
         self.coords = ([0, 0, 0, 0])
         self.lods = self.__retrieve_lods(is_collider)
         self.valid = self.__is_valid()
+        self.optimized = self.__is_optimized()
         self.cleaned = self.__is_cleaned()
 
     def backup_files(self, backup_path, dry_mode=False, pbar=None):
@@ -107,6 +109,13 @@ class MsfsSceneObject(MsfsObject):
     def __is_valid(self):
         for lod in self.lods:
             if lod.valid:
+                return True
+
+        return False
+
+    def __is_optimized(self):
+        for lod in self.lods:
+            if lod.optimized:
                 return True
 
         return False
