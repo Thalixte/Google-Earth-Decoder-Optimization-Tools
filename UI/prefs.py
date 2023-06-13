@@ -31,6 +31,7 @@ updatedSettingsPropertyGroup = None
 bpy.types.Scene.global_settings = GlobalSettings(get_global_path())
 bpy.types.Scene.project_settings = None
 
+
 class GEDOT_OT_pref_show(Operator):
     bl_idname = "gedot.pref_show"
     bl_description = 'Display GEDOT addons preferences'
@@ -48,6 +49,7 @@ class GEDOT_OT_pref_show(Operator):
         bpy.ops.preferences.addon_expand(module=ADDON_NAME)
         bpy.ops.preferences.addon_show(module=ADDON_NAME)
         return {'FINISHED'}
+
 
 class GEDOT_PREFS(AddonPreferences):
     bl_idname = ADDON_NAME
@@ -129,45 +131,44 @@ class GEDOT_PREFS(AddonPreferences):
         description="Define the archive name containing the landmass shapefile"
     )
 
-
     def draw(self, context):
-            layout = self.layout
+        layout = self.layout
 
-            box = layout.box()
-            box.label(text="MSFS building package tools")
-            box.prop(self, "msfs_build_exe_path")
-            row = box.row()
-            col = row.column()
-            draw_splitted_prop(self, col, PREFS_SPLIT_LABEL_FACTOR, "msfs_steam_version", "Msfs Steam version")
-            row = box.row()
+        box = layout.box()
+        box.label(text="MSFS building package tools")
+        box.prop(self, "msfs_build_exe_path")
+        row = box.row()
+        col = row.column()
+        draw_splitted_prop(self, col, PREFS_SPLIT_LABEL_FACTOR, "msfs_steam_version", "Msfs Steam version")
+        row = box.row()
 
-            box = layout.box()
-            box.label(text="Compressonator")
-            box.prop(self, "compressonator_exe_path")
-            row = box.row()
+        box = layout.box()
+        box.label(text="Compressonator")
+        box.prop(self, "compressonator_exe_path")
+        row = box.row()
 
-            box = layout.box()
-            box.label(text="GDAL and FIONA libraries")
-            box.prop(self, "alternate_python_libs_repo_url")
-            row = box.row()
-            box.prop(self, "gdal_library")
-            row = box.row()
-            box.prop(self, "fiona_library")
-            row = box.row()
+        box = layout.box()
+        box.label(text="GDAL and FIONA libraries")
+        box.prop(self, "alternate_python_libs_repo_url")
+        row = box.row()
+        box.prop(self, "gdal_library")
+        row = box.row()
+        box.prop(self, "fiona_library")
+        row = box.row()
 
-            box = layout.box()
-            box.label(text="BLENDER GIS addon")
-            box.prop(self, "blendergis_repo_url")
-            row = box.row()
-            box.prop(self, "blendergis_release")
-            row = box.row()
+        box = layout.box()
+        box.label(text="BLENDER GIS addon")
+        box.prop(self, "blendergis_repo_url")
+        row = box.row()
+        box.prop(self, "blendergis_release")
+        row = box.row()
 
-            box = layout.box()
-            box.label(text="Landmass shapefile")
-            box.prop(self, "landmass_repo_url")
-            row = box.row()
-            box.prop(self, "landmass_archive")
-            row = box.row()
+        box = layout.box()
+        box.label(text="Landmass shapefile")
+        box.prop(self, "landmass_repo_url")
+        row = box.row()
+        box.prop(self, "landmass_archive")
+        row = box.row()
 
 
 classes = (
@@ -175,14 +176,18 @@ classes = (
     GEDOT_PREFS
 )
 
+
 def get_prefs():
-    return bpy.context.preferences.addons[ADDON_NAME].preferences
+    if ADDON_NAME in bpy.context.preferences.addons:
+        return bpy.context.preferences.addons[ADDON_NAME].preferences
+
+    return None
 
 
 def register():
     preferences = get_prefs()
 
-    #update core settings according to addon prefs
+    # update core settings according to addon prefs
     # bpy.types.Scene.global_settings.proj_engine = preferences.projEngine
     # bpy.types.Scene.global_settings.img_engine = preferences.imgEngine
 
@@ -191,6 +196,7 @@ def register():
             bpy.utils.register_class(cls)
         except ValueError:
             pass
+
 
 def unregister():
     try:

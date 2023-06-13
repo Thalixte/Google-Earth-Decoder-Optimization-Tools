@@ -23,6 +23,7 @@ from constants import TARGET_MIN_SIZE_VALUE_PROPERTY_PREFIX, PNG_TEXTURE_FORMAT,
     LIGHT_500_GREEN_DISPLAY_NAME, LIGHT_1000_GREEN_GUID, LIGHT_1000_GREEN_DISPLAY_NAME, LIGHT_100_SOFT_GREEN_GUID, LIGHT_100_SOFT_GREEN_DISPLAY_NAME, LIGHT_500_SOFT_GREEN_GUID, LIGHT_500_SOFT_GREEN_DISPLAY_NAME, LIGHT_1000_SOFT_GREEN_GUID, LIGHT_1000_SOFT_GREEN_DISPLAY_NAME, LIGHT_100_WHITE_GUID, LIGHT_100_WHITE_DISPLAY_NAME, LIGHT_500_WHITE_GUID, LIGHT_500_WHITE_DISPLAY_NAME, LIGHT_1000_WHITE_GUID, LIGHT_1000_WHITE_DISPLAY_NAME, LIGHT_100_MINT_GREEN_GUID, LIGHT_100_MINT_GREEN_DISPLAY_NAME, \
     LIGHT_500_MINT_GREEN_GUID, LIGHT_500_MINT_GREEN_DISPLAY_NAME, LIGHT_1000_MINT_GREEN_GUID, LIGHT_1000_MINT_GREEN_DISPLAY_NAME, LIGHT_100_PINK_GUID, LIGHT_100_PINK_DISPLAY_NAME, LIGHT_500_PINK_GUID, LIGHT_500_PINK_DISPLAY_NAME, LIGHT_1000_PINK_GUID, LIGHT_1000_PINK_DISPLAY_NAME, LIGHT_100_RED_GUID, LIGHT_100_RED_DISPLAY_NAME, LIGHT_500_RED_GUID, LIGHT_500_RED_DISPLAY_NAME, LIGHT_1000_RED_GUID, LIGHT_1000_RED_DISPLAY_NAME, LIGHT_100_SKY_BLUE_GUID, LIGHT_100_SKY_BLUE_DISPLAY_NAME, \
     LIGHT_500_SKY_BLUE_GUID, LIGHT_500_SKY_BLUE_DISPLAY_NAME, LIGHT_1000_SKY_BLUE_GUID, LIGHT_1000_SKY_BLUE_DISPLAY_NAME, LIGHT_100_PURPLE_GUID, LIGHT_100_PURPLE_DISPLAY_NAME, LIGHT_500_PURPLE_GUID, LIGHT_500_PURPLE_DISPLAY_NAME, LIGHT_1000_PURPLE_GUID, LIGHT_1000_PURPLE_DISPLAY_NAME, LIGHT_100_YELLOW_GUID, LIGHT_100_YELLOW_DISPLAY_NAME, LIGHT_500_YELLOW_GUID, LIGHT_500_YELLOW_DISPLAY_NAME, LIGHT_1000_YELLOW_GUID, LIGHT_1000_YELLOW_DISPLAY_NAME, ADDON_NAME
+from utils import isolated_print
 
 
 class SettingsPropertyGroup(bpy.types.PropertyGroup):
@@ -30,10 +31,14 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         context.scene.global_settings.projects_path = self.projects_path_readonly = self.projects_path
 
     def project_path_updated(self, context):
-        context.scene.global_settings.projects_path = str()
-        context.scene.global_settings.project_path = str()
-        context.scene.global_settings.project_name = str()
-        context.scene.global_settings.definition_file = str()
+        if not os.path.isdir(context.scene.global_settings.projects_path):
+            context.scene.global_settings.projects_path = str()
+        if not os.path.isdir(context.scene.global_settings.project_path):
+            context.scene.global_settings.project_path = str()
+        if not os.path.isdir(os.path.join(context.scene.global_settings.projects_path, context.scene.global_settings.project_name)):
+            context.scene.global_settings.project_name = str()
+        if not os.path.isfile(os.path.join(context.scene.global_settings.project_path, context.scene.global_settings.definition_file)):
+            context.scene.global_settings.definition_file = str()
 
         if os.path.isdir(self.project_path):
             context.scene.global_settings.projects_path = self.projects_path = self.projects_path_readonly = os.path.dirname(os.path.dirname(self.project_path)) + os.sep
@@ -43,7 +48,7 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         if os.path.isfile(os.path.join(self.project_path, self.definition_file)):
             context.scene.global_settings.definition_file = self.definition_file
 
-        self.project_path_readonly = self.project_path
+        self.project_path_readonly = context.scene.global_settings.project_path
 
     def project_name_updated(self, context):
         context.scene.global_settings.project_name = self.project_name
@@ -53,8 +58,11 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         if context.scene.project_settings is None:
             return
 
-        context.scene.project_settings.project_path_to_merge = str()
-        context.scene.project_settings.definition_file_to_merge = str()
+        if not os.path.isdir(context.scene.project_settings.project_path_to_merge):
+            context.scene.project_settings.project_path_to_merge = str()
+
+        if not os.path.isfile(os.path.join(context.scene.project_settings.project_path_to_merge, context.scene.project_settings.definition_file_to_merge)):
+            context.scene.project_settings.definition_file_to_merge = str()
 
         if os.path.isdir(self.project_path_to_merge):
             context.scene.project_settings.project_path_to_merge = os.path.dirname(self.project_path_to_merge)
@@ -62,7 +70,7 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         if os.path.isfile(os.path.join(self.project_path_to_merge, self.definition_file_to_merge)):
             context.scene.project_settings.definition_file_to_merge = self.definition_file_to_merge
 
-        self.project_path_to_merge_readonly = self.project_path_to_merge
+        self.project_path_to_merge_readonly = context.scene.project_settings.project_path_to_merge
         context.scene.project_settings.save()
 
     def author_name_updated(self, context):

@@ -248,8 +248,8 @@ class MsfsProject:
     def merge(self, project_to_merge):
         if self.objects_xml and project_to_merge.objects_xml:
             self.__merge_tiles(self.tiles, project_to_merge.project_name, project_to_merge.tiles, project_to_merge.objects_xml, project_to_merge)
-            self.__merge_colliders(self.colliders, project_to_merge.project_name, project_to_merge.colliders, project_to_merge.objects_xml)
-            self.__merge_scene_objects(self.objects, project_to_merge.project_name, project_to_merge.objects, project_to_merge.objects_xml)
+            self.__merge_colliders(self.colliders, project_to_merge.project_name, project_to_merge.colliders, project_to_merge.objects_xml, project_to_merge)
+            self.__merge_scene_objects(self.objects, project_to_merge.project_name, project_to_merge.objects, project_to_merge.objects_xml, project_to_merge)
             self.objects_xml.save()
 
     def remove_colliders(self):
@@ -995,63 +995,39 @@ class MsfsProject:
         pbar = ProgressBar(tiles_to_merge.items(), title="MERGE THE TILES")
         self.__merge_objects(tiles, project_to_merge_name, objects_xml_to_merge, project_to_merge, pbar)
 
-    def __merge_colliders(self, colliders, project_to_merge_name, colliders_to_merge, objects_xml_to_merge):
+    def __merge_colliders(self, colliders, project_to_merge_name, colliders_to_merge, objects_xml_to_merge, project_to_merge):
         pbar = ProgressBar(colliders_to_merge.items(), title="MERGE THE COLLIDERS")
-        self.__merge_objects(colliders, project_to_merge_name, objects_xml_to_merge, pbar)
+        self.__merge_objects(colliders, project_to_merge_name, objects_xml_to_merge, project_to_merge, pbar)
 
-    def __merge_scene_objects(self, scene_objects, project_to_merge_name, scene_objects_to_merge, objects_xml_to_merge):
+    def __merge_scene_objects(self, scene_objects, project_to_merge_name, scene_objects_to_merge, objects_xml_to_merge, project_to_merge):
         pbar = ProgressBar(scene_objects_to_merge.items(), title="MERGE THE OBJECTS")
-        self.__merge_objects(scene_objects, project_to_merge_name, objects_xml_to_merge, pbar)
+        self.__merge_objects(scene_objects, project_to_merge_name, objects_xml_to_merge, project_to_merge, pbar)
 
     def __merge_objects(self, objects, project_to_merge_name, objects_xml_to_merge, project_to_merge, pbar):
         backup_objects_to_cleanup = False
         project_to_merge_backup_path = None
+        project_to_merge_backup_texture_path = None
         backup_path = self.__find_backup_path()
+        backup_texture_path = os.path.join(backup_path, TEXTURE_FOLDER)
 
-        if os.path.isdir(backup_path):
+        if os.path.isdir(backup_path) and project_to_merge is not None:
             backup_objects_to_cleanup = True
             project_to_merge_backup_path = project_to_merge.__find_backup_path()
+            project_to_merge_backup_texture_path = os.path.join(project_to_merge_backup_path, TEXTURE_FOLDER)
 
         for guid, object in pbar.iterable:
             # copy or overwrite files
             add_guid = not os.path.isfile(os.path.join(self.model_lib_folder, object.definition_file))
-            shutil.copyfile(os.path.join(object.folder, object.definition_file), os.path.join(self.model_lib_folder, object.definition_file))
-
-            if backup_objects_to_cleanup:
-                if object.cleaned:
-                    shutil.copyfile(os.path.join(project_to_merge_backup_path, object.definition_file), os.path.join(backup_path, object.definition_file))
-                elif object.optimized:
-                    shutil.copyfile(os.path.join(object.folder, object.definition_file), os.path.join(backup_path, object.definition_file))
+            self.__copy_and_backup(object, object.definition_file, self.model_lib_folder, project_to_merge_backup_path, backup_path, backup_objects_to_cleanup, object.optimized, object.cleaned)
 
             for lod in object.lods:
-                shutil.copyfile(os.path.join(lod.folder, lod.model_file), os.path.join(self.model_lib_folder, lod.model_file))
-
-                if backup_objects_to_cleanup:
-                    if object.cleaned:
-                        shutil.copyfile(os.path.join(project_to_merge_backup_path, lod.model_file), os.path.join(backup_path, lod.model_file))
-                    elif object.optimized:
-                        shutil.copyfile(os.path.join(lod.folder, lod.model_file), os.path.join(backup_path, lod.model_file))
+                self.__copy_and_backup(lod, lod.model_file, self.model_lib_folder, project_to_merge_backup_path, backup_path, backup_objects_to_cleanup, object.optimized, object.cleaned)
 
                 for binary in lod.binaries:
-                    shutil.copyfile(os.path.join(binary.folder, binary.file), os.path.join(self.model_lib_folder, binary.file))
-
-                    if backup_objects_to_cleanup:
-                        if object.cleaned:
-                            shutil.copyfile(os.path.join(project_to_merge_backup_path, binary.file), os.path.join(backup_path, binary.file))
-                        elif object.optimized:
-                            shutil.copyfile(os.path.join(binary.folder, binary.file), os.path.join(backup_path, binary.file))
-
+                    self.__copy_and_backup(binary, binary.file, self.model_lib_folder, project_to_merge_backup_path, backup_path, backup_objects_to_cleanup, object.optimized, object.cleaned)
 
                 for texture in lod.textures:
-                    shutil.copyfile(os.path.join(texture.folder, texture.file), os.path.join(self.texture_folder, texture.file))
-
-                    if backup_objects_to_cleanup:
-                        backup_texture_path = os.path.join(backup_path, TEXTURE_FOLDER)
-                        project_to_merge_backup_texture_path = os.path.join(project_to_merge_backup_path, TEXTURE_FOLDER)
-                        if object.cleaned:
-                            shutil.copyfile(os.path.join(project_to_merge_backup_texture_path, texture.file), os.path.join(backup_texture_path, texture.file))
-                        elif object.optimized:
-                            shutil.copyfile(os.path.join(texture.folder, texture.file), os.path.join(backup_texture_path, texture.file))
+                    self.__copy_and_backup(texture, texture.file, self.texture_folder, project_to_merge_backup_texture_path, backup_texture_path, backup_objects_to_cleanup, object.optimized, object.cleaned)
 
             # update objects.xml file
             if not add_guid:
@@ -1862,3 +1838,13 @@ class MsfsProject:
 
         res = remove_accents("_".join(filter(str.isalnum, res.split(" "))))
         return res
+
+    @staticmethod
+    def __copy_and_backup(obj, file, dest_folder, src_backup_folder, dest_backup_folder, backup_objects_to_cleanup=False, optimized=False, cleaned=False):
+        shutil.copyfile(os.path.join(obj.folder, file), os.path.join(dest_folder, file))
+
+        if backup_objects_to_cleanup:
+            if cleaned and os.path.isdir(src_backup_folder) and os.path.isdir(dest_backup_folder):
+                shutil.copyfile(os.path.join(src_backup_folder, file), os.path.join(dest_backup_folder, file))
+            elif optimized and os.path.isdir(dest_backup_folder):
+                shutil.copyfile(os.path.join(obj.folder, file), os.path.join(dest_backup_folder, file))

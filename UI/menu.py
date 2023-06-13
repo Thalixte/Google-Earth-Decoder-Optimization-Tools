@@ -40,6 +40,7 @@ from .operator import PanelPropertyGroup, OT_ProjectPathOperator, OT_ProjectsPat
     OT_Exclude3dDataFromGeocodeOperator, OT_Isolate3dDataFromGeocodeOperator, OT_Exclude3dDataFromGeocodePanel, OT_Isolate3dDataFromGeocodePanel, OT_AddTileCollidersPanel, OT_RemoveTileCollidersPanel, \
     OT_AddTileCollidersOperator, OT_RemoveTileCollidersOperator, OT_AdjustSceneryAltitudePanel, OT_AdjustSceneryAltitudeOperator, OT_AddLightsToGeocodeOperator, OT_AddLightsToGeocodePanel, OT_Cleanup3dDataPanel, OT_Cleanup3dDataOperator
 
+
 class TOPBAR_MT_google_earth_optimization_menus(Menu):
     os.system(CLEAR_CONSOLE_CMD)
     bl_idname = "TOPBAR_MT_google_earth_optimization_menus"
@@ -231,6 +232,7 @@ def register():
                 if os.path.exists(project_path) and not hasattr(bpy.types.Scene, "project_settings"):
                     msfs_project = MsfsProject(bpy.types.Scene.global_settings.projects_path, bpy.types.Scene.global_settings.project_name, bpy.types.Scene.global_settings.definition_file, bpy.types.Scene.global_settings.path, bpy.types.Scene.global_settings.author_name, fast_init=True)
                     bpy.types.Scene.project_settings = msfs_project.settings
+
 
 def unregister():
     bpy.types.TOPBAR_MT_editor_menus.remove(TOPBAR_MT_google_earth_optimization_menus.draw)
