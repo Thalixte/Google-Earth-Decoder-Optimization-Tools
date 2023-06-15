@@ -172,6 +172,11 @@ def reload_keep_residential_and_industrial(context):
         context.scene.setting_props.keep_residential_and_industrial = context.scene.project_settings.keep_residential_and_industrial
 
 
+def reload_force_osm_data_download(context):
+    if context.scene.project_settings is not None:
+        context.scene.setting_props.force_osm_data_download = context.scene.project_settings.force_osm_data_download
+
+
 def reload_process_all(context):
     if context.scene.project_settings is not None:
         context.scene.setting_props.process_all = context.scene.project_settings.process_all
@@ -322,6 +327,7 @@ def reload_setting_props(context, reload_settings_file=True):
     reload_keep_roads(context)
     reload_keep_constructions(context)
     reload_keep_residential_and_industrial(context)
+    reload_force_osm_data_download(context)
     reload_process_all(context)
     reload_high_precision(context)
     reload_height_adjustment(context)

@@ -80,6 +80,7 @@ class ProjectSettings(Settings):
     keep_roads: str
     keep_constructions: str
     keep_residential_and_industrial: str
+    force_osm_data_download: str
     process_all: str
     add_lights: str
     light_guid: str
@@ -129,6 +130,7 @@ class ProjectSettings(Settings):
         self.keep_roads = "True"
         self.keep_constructions = "True"
         self.keep_residential_and_industrial = "False"
+        self.force_osm_data_download = "False"
         self.process_all = "False"
         self.isolate_3d_data = "False"
         self.disable_terraform = "False"
@@ -187,6 +189,7 @@ class ProjectSettings(Settings):
         self.keep_roads = json.loads(self.keep_roads.lower())
         self.keep_constructions = json.loads(self.keep_constructions.lower())
         self.keep_residential_and_industrial = json.loads(self.keep_residential_and_industrial.lower())
+        self.force_osm_data_download = json.loads(self.force_osm_data_download.lower())
         self.process_all = json.loads(self.process_all.lower())
         self.isolate_3d_data = json.loads(self.isolate_3d_data.lower())
         self.disable_terraform = json.loads(self.disable_terraform.lower())

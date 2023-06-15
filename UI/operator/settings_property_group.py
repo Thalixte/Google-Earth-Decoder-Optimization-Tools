@@ -157,6 +157,10 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         context.scene.project_settings.keep_residential_and_industrial = self.keep_residential_and_industrial
         context.scene.project_settings.save()
 
+    def force_osm_data_download_updated(self, context):
+        context.scene.project_settings.force_osm_data_download = self.force_osm_data_download
+        context.scene.project_settings.save()
+
     def process_all_updated(self, context):
         context.scene.project_settings.process_all = self.process_all
         context.scene.project_settings.save()
@@ -420,6 +424,12 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         description="Keep residential and industrial area 3d data",
         default=bpy.types.Scene.project_settings.keep_residential_and_industrial if bpy.types.Scene.project_settings is not None else False,
         update=keep_residential_and_industrial_updated
+    )
+    force_osm_data_download: BoolProperty(
+        name="Force openStreetMap data download",
+        description="Force openStreetMap data download",
+        default=bpy.types.Scene.project_settings.force_osm_data_download if bpy.types.Scene.project_settings is not None else True,
+        update=force_osm_data_download_updated
     )
     process_all: BoolProperty(
         name="Process all the tiles (if unticked, process only the tiles that have not been cleaned)",
