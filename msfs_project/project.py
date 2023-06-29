@@ -301,6 +301,17 @@ class MsfsProject:
             pbar.update("splitted tiles added, replacing the previous %s tile" % previous_tile.name)
 
     def prepare_3d_data(self, settings, generate_height_data=False, process_3d_data=False, create_polygons=True, process_all=False):
+
+        if self.settings.force_osm_data_download:
+            # ensure to clean the xml folder containing the shapefile data by removing it
+            try:
+                shutil.rmtree(self.shpfiles_folder)
+            except:
+                pass
+
+            # create the xml folder if it does not exist
+            os.makedirs(self.shpfiles_folder, exist_ok=True)
+
         self.__create_tiles_bounding_boxes(init_osm_folder=True)
         self.__prepare_3d_data(settings, generate_height_data=generate_height_data, process_3d_data=process_3d_data, create_polygons=create_polygons, process_all=process_all)
 

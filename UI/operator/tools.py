@@ -174,6 +174,8 @@ def reload_keep_residential_and_industrial(context):
 
 def reload_force_osm_data_download(context):
     if context.scene.project_settings is not None:
+        context.scene.project_settings.force_osm_data_download = False
+        context.scene.project_settings.save()
         context.scene.setting_props.force_osm_data_download = context.scene.project_settings.force_osm_data_download
 
 

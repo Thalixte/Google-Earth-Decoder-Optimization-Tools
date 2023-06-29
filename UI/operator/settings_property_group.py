@@ -33,12 +33,14 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
     def project_path_updated(self, context):
         if not os.path.isdir(context.scene.global_settings.projects_path):
             context.scene.global_settings.projects_path = str()
-        if not os.path.isdir(context.scene.global_settings.project_path):
-            context.scene.global_settings.project_path = str()
+        if hasattr(context.scene.global_settings, "project_path"):
+            if not os.path.isdir(context.scene.global_settings.project_path):
+                context.scene.global_settings.project_path = str()
         if not os.path.isdir(os.path.join(context.scene.global_settings.projects_path, context.scene.global_settings.project_name)):
             context.scene.global_settings.project_name = str()
-        if not os.path.isfile(os.path.join(context.scene.global_settings.project_path, context.scene.global_settings.definition_file)):
-            context.scene.global_settings.definition_file = str()
+        if hasattr(context.scene.global_settings, "project_path"):
+            if not os.path.isfile(os.path.join(context.scene.global_settings.project_path, context.scene.global_settings.definition_file)):
+                context.scene.global_settings.definition_file = str()
 
         if os.path.isdir(self.project_path):
             context.scene.global_settings.projects_path = self.projects_path = self.projects_path_readonly = os.path.dirname(os.path.dirname(self.project_path)) + os.sep

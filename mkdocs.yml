@@ -132,6 +132,7 @@ nav:
   - Features:
     - Initialize a new MSFS scenery project: features/initialize_scenery.md
     - Optimize an existing MSFS scenery project: features/optimize_scenery.md
+    - Merge an existing MSFS scenery project into another one: features/merge_sceneries.md
     - Create terraform and exclusion polygons: features/create_terraform_and_exclusion_polygons.md
     - Cleanup the 3d data from the photogrammetry tiles: features/cleanup_3d_data_from_the_photogrammetry_tiles.md
   - Step by step tutorials:

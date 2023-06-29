@@ -60,8 +60,6 @@ def create_terraform_and_exclusion_polygons(global_settings):
         msfs_project.settings.disable_terraform = True
         msfs_project.settings.ground_exclusion_margin = STANDARD_EXCLUSION_MARGIN
         msfs_project.settings.save()
-        isolated_print(msfs_project.settings.force_osm_data_download)
-        stop
         msfs_project.prepare_3d_data(global_settings, create_polygons=True)
 
         if msfs_project.settings.build_package_enabled:
