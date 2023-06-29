@@ -140,4 +140,5 @@ nav:
           - 1. Initialize the Arcachon MSFS scenery project: tutorials/Arcachon/initialize_scenery.md
           - 2. Retrieve the MSFS scenery photogrammetry tiles: tutorials/Arcachon/retrieve_tiles.md
           - 3. Optimize the MSFS scenery photogrammetry tiles: tutorials/Arcachon/optimize_scenery.md
-          - 4. Create terraform and exclusion polygons: tutorials/Arcachon/create_terraform_and_exclusion_polygons.md
+          - 4. Add more details to the Arcachon MSFS scenery: tutorials/Arcachon/add_more_details_to_the_scenery.md
+          - 5. Create terraform and exclusion polygons: tutorials/Arcachon/create_terraform_and_exclusion_polygons.md
