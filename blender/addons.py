@@ -28,6 +28,9 @@ DEFAULT_TARGET = "DEFAULT"
 FILTER_GLOB = "*.py;*.zip"
 
 def is_blender_addon_installed(name):
+    if bpy.context.preferences is None:
+        return True
+
     return name in bpy.context.preferences.addons.keys()
 
 def install_blender_addon(name, repo, archive, overwrite=False):

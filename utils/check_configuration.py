@@ -58,11 +58,17 @@ def check_configuration(settings, msfs_project, check_optimization=False, check_
     pr_ok_green(str("project_file_name value").ljust(RESULT_MSG_LENGTH))
 
     # check if the fspackagetool.exe file is reachable
-    if not os.path.isfile(prefs.msfs_build_exe_path):
+    msfs_build_exe_path_check = False
+    msfs_build_exe_path = "msfs build exe path"
+    if prefs is not None:
+        msfs_build_exe_path_check = os.path.isfile(prefs.msfs_build_exe_path)
+        msfs_build_exe_path = prefs.msfs_build_exe_path
+
+    if not msfs_build_exe_path_check:
         pr_ko_orange(str("msfs_build_exe_path value").ljust(RESULT_MSG_LENGTH))
         msfs_project.settings.build_package_enabled = False
         msfs_project.settings.save()
-        isolated_print(CORANGE + warning_msg + prefs.msfs_build_exe_path + " bin file not found. Automatic package building is disabled" + CEND + EOL)
+        isolated_print(CORANGE + warning_msg + msfs_build_exe_path + " bin file not found. Automatic package building is disabled" + CEND + EOL)
     else:
         pr_ok_green(str("msfs_build_exe_path value").ljust(RESULT_MSG_LENGTH))
 
@@ -97,8 +103,9 @@ def check_configuration(settings, msfs_project, check_optimization=False, check_
             pr_ko_red(str("Blender GIS addon installation").ljust(RESULT_MSG_LENGTH))
             raise ScriptError(error_msg + "Blender GIS addon is not correctly installed. Try to install it manually instead")
         pr_ok_green(str("Blender GIS addon installation").ljust(RESULT_MSG_LENGTH))
-        bpy.context.preferences.addons[BLENDERGIS_ADDON].preferences.logLevel = CRITICAL_LOG_LEVEL
-        bpy.context.preferences.addons[BLENDERGIS_ADDON].preferences.predefCrs = EPSG_WGS84
+        if bpy.context.preferences is not None:
+            bpy.context.preferences.addons[BLENDERGIS_ADDON].preferences.logLevel = CRITICAL_LOG_LEVEL
+            bpy.context.preferences.addons[BLENDERGIS_ADDON].preferences.predefCrs = EPSG_WGS84
 
     if check_description_file:
         # check if the description file of the scene is reachable
@@ -191,10 +198,16 @@ def check_configuration(settings, msfs_project, check_optimization=False, check_
         pr_ok_green(str("built_project_package_folder value").ljust(RESULT_MSG_LENGTH))
 
     if check_compressonator:
+        compressonator_exe_path_check = False
+        compressonator_exe_path = "compressonator exe path"
+        if prefs is not None:
+            compressonator_exe_path_check = os.path.isfile(prefs.compressonator_exe_path)
+            compressonator_exe_path = prefs.compressonator_exe_path
+
         # check if the compressonatorcli.exe file is reachable
-        if not os.path.isfile(prefs.compressonator_exe_path):
+        if not compressonator_exe_path_check:
             pr_ko_red(str("compressonator_exe_path value").ljust(RESULT_MSG_LENGTH))
-            raise ScriptError(error_msg + prefs.compressonator_exe_path + "file was not found. Please check the compressonator_exe_path value or install compressonator")
+            raise ScriptError(error_msg + compressonator_exe_path + "file was not found. Please check the compressonator_exe_path value or install compressonator")
         else:
             pr_ok_green(str("compressonator_exe_path value").ljust(RESULT_MSG_LENGTH))
 

@@ -51,12 +51,6 @@ def generate_height_data(global_settings):
         isolated_print(EOL)
         print_title("GENERATE HEIGHT DATA")
 
-        msfs_project.settings.exclude_ground = True
-        msfs_project.settings.exclude_nature_reserves = True
-        msfs_project.settings.exclude_parks = True
-        msfs_project.settings.keep_constructions = True
-        msfs_project.settings.keep_roads = True
-        msfs_project.settings.keep_residential_and_industrial = False
         msfs_project.settings.disable_terraform = True
         if not msfs_project.settings.isolate_3d_data:
             msfs_project.settings.building_margin = 8.0

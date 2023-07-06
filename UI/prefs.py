@@ -178,8 +178,9 @@ classes = (
 
 
 def get_prefs():
-    if ADDON_NAME in bpy.context.preferences.addons:
-        return bpy.context.preferences.addons[ADDON_NAME].preferences
+    if bpy.context.preferences:
+        if ADDON_NAME in bpy.context.preferences.addons:
+            return bpy.context.preferences.addons[ADDON_NAME].preferences
 
     return None
 
