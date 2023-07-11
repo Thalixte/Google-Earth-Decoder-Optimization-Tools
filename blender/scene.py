@@ -111,6 +111,7 @@ class EXCLUSION_TYPE:
     GROUND = "GROUND"
     ROCKS = "ROCKS"
     WATER = "WATER"
+    BUILDING = "BUILDING"
 
 
 def keep_objects(objects_to_keep):
@@ -679,7 +680,7 @@ def process_3d_data(model_file_path=None, intersect=False, no_bounding_box=False
     bpy.ops.object.select_all(action=SELECT_ACTION)
 
 
-def generate_model_height_data(model_file_path, lat, lon, altitude, height_adjustment, height_noise_reduction, positioning_file_path=str(), water_mask_file_path=str(), ground_mask_file_path=str(), rocks_mask_file_path=str(), high_precision=False, debug=False):
+def generate_model_height_data(model_file_path, lat, lon, altitude, height_adjustment, height_noise_reduction, positioning_file_path=str(), water_mask_file_path=str(), ground_mask_file_path=str(), rocks_mask_file_path=str(), building_mask_file_path=str(), high_precision=False, debug=False):
     if not bpy.context.scene:
         return False
 
@@ -696,6 +697,13 @@ def generate_model_height_data(model_file_path, lat, lon, altitude, height_adjus
 
     if high_precision:
         hmatrix = calculate_height_map_from_coords_from_top(tile, coords, depsgraph, lat, lon, altitude, hmatrix, height_noise_reduction=height_noise_reduction)
+
+    # fix wrong height data for buildings
+    if os.path.exists(positioning_file_path) and os.path.exists(building_mask_file_path):
+        align_model_with_mask(model_file_path, positioning_file_path, building_mask_file_path, objects_to_keep=[grid, height_grid])
+        process_3d_data(model_file_path=model_file_path, intersect=True, no_bounding_box=True)
+        tile = get_tile_for_ray_cast(model_file_path, imported=False, objects_to_keep=[grid, height_grid])
+        hmatrix = fix_height_data_on_buildings(tile, depsgraph, lat, lon, altitude, hmatrix)
 
     # fix wrong height data for ground tiles
     if os.path.exists(positioning_file_path) and os.path.exists(ground_mask_file_path):
@@ -1111,6 +1119,10 @@ def fix_bridge_height_data_on_water(tile, depsgraph, lat, lon, altitude, hmatrix
     return adjust_height_data_on_exclusion_area(tile, depsgraph, lat, lon, altitude, EXCLUSION_TYPE.WATER, hmatrix_base)
 
 
+def fix_height_data_on_buildings(tile, depsgraph, lat, lon, altitude, hmatrix_base):
+    return adjust_height_data_on_exclusion_area(tile, depsgraph, lat, lon, altitude, EXCLUSION_TYPE.BUILDING, hmatrix_base)
+
+
 def adjust_height_data_on_ground_exclusion(tile, depsgraph, lat, lon, altitude, hmatrix_base):
     return adjust_height_data_on_exclusion_area(tile, depsgraph, lat, lon, altitude, EXCLUSION_TYPE.GROUND, hmatrix_base)
 
@@ -1130,10 +1142,12 @@ def adjust_height_data_on_exclusion_area(tile, depsgraph, lat, lon, altitude, ex
                 p1 = mathutils.Vector((x, y, 0))
                 p2 = mathutils.Vector((x, y, 3000))
 
-                if exclusion_type == EXCLUSION_TYPE.WATER:
+                if exclusion_type == EXCLUSION_TYPE.WATER or exclusion_type == EXCLUSION_TYPE.BUILDING:
+                    # from bottom
                     ray_direction = (0, 0, 1)
                     result = tile.evaluated_get(depsgraph).ray_cast(p1, ray_direction, distance=6000)
                 else:
+                    # from top
                     ray_direction = (0, 0, -1)
                     result = tile.evaluated_get(depsgraph).ray_cast(p2, ray_direction, distance=6000)
 
@@ -1145,21 +1159,24 @@ def adjust_height_data_on_exclusion_area(tile, depsgraph, lat, lon, altitude, ex
             # fix noise in the height map data
             tree = cKDTree(new_coords, leafsize=60)
             new_coords = spatial_median_kdtree(tree, np.array(new_coords), 100)
+        if exclusion_type == EXCLUSION_TYPE.BUILDING:
+            tree = cKDTree(new_coords, leafsize=60)
+            new_coords = spatial_median_kdtree(tree, np.array(new_coords), 100)
         elif exclusion_type == EXCLUSION_TYPE.GROUND:
             new_coords = spatial_median(np.array(new_coords), 20)
 
-    for i, co in enumerate(new_coords):
-        p1 = co
-        x = round(p1[0], 1)
-        y = round(p1[1], 1)
-        h = p1[2]
-        h = h + altitude + geoid_height
-        if exclusion_type == EXCLUSION_TYPE.ROCKS:
-            h = h - 5.0
-        else:
-            h = h + 1.0
+    if hmatrix_base is not None:
+        for i, co in enumerate(new_coords):
+            p1 = co
+            x = round(p1[0], 1)
+            y = round(p1[1], 1)
+            h = p1[2]
+            h = h + altitude + geoid_height
+            if exclusion_type == EXCLUSION_TYPE.ROCKS:
+                h = h - 5.0
+            elif exclusion_type != EXCLUSION_TYPE.BUILDING:
+                h = h + 1.0
 
-        if hmatrix_base is not None:
             if y in hmatrix_base:
                 if x in hmatrix_base[y]:
                     results[y][x] = h

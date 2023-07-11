@@ -151,3 +151,7 @@ div.no-bottom-margin {
   border-width: 0 2px 2px 0;
   transform: rotate(135deg);
 }
+
+.content-box {
+  box-sizing: content-box!important;
+}

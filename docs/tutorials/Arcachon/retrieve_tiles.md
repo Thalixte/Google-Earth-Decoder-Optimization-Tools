@@ -11,7 +11,7 @@
     I also strongly recommend not to select **a max Lod value higher than 20**.
 * deploy the `COLOR CORRECTION` section, and select the level for the Color Correction values. I personally recommend those settings, by [OjO][2]:  
 
-<div class="row no-bottom-margin" markdown="1">
+<div class="row no-bottom-margin content-box" markdown="1">
   <div class="col-sm-4 text-center" markdown="1">
   
   | Color Correction |     Value     |

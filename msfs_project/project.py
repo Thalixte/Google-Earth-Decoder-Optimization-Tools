@@ -722,6 +722,7 @@ class MsfsProject:
             #     continue
 
             ground_mask_file_path = os.path.join(self.osmfiles_folder, GROUND_OSM_KEY + "_" + EXCLUSION_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)
+            building_mask_file_path = os.path.join(self.osmfiles_folder, BUILDING_OSM_KEY + "_" + EXCLUSION_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)
             rocks_mask_file_path = os.path.join(self.osmfiles_folder, ROCKS_OSM_KEY + "_" + EXCLUSION_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)
             water_mask_file_path = os.path.join(self.osmfiles_folder, WATER_OSM_KEY + "_" + EXCLUSION_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)
             has_mask_file = os.path.isfile(ground_mask_file_path) or os.path.isfile(rocks_mask_file_path) or os.path.isfile(water_mask_file_path)
@@ -741,6 +742,9 @@ class MsfsProject:
 
             if os.path.isfile(ground_mask_file_path):
                 params.extend(["--ground_mask_file_path", str(ground_mask_file_path)])
+
+            if os.path.isfile(building_mask_file_path):
+                params.extend(["--building_mask_file_path", str(building_mask_file_path)])
 
             if os.path.isfile(rocks_mask_file_path):
                 params.extend(["--rocks_mask_file_path", str(rocks_mask_file_path)])
@@ -1279,11 +1283,13 @@ class MsfsProject:
 
     def __generate_isolated_height_data(self, b, construction, roads, bridges, hidden_roads, airport, building, water, exclusion, amenity, residential, industrial, rocks, keep_roads=False, keep_residential_and_industrial=False, keep_constructions=False, process_all=False):
         self.__create_exclusion_masks_from_tiles(b, exclusion, building_mask=building, construction_mask=construction if keep_constructions else None, road_mask=roads if keep_roads else None, bridges_mask=bridges if keep_roads else None, hidden_roads=hidden_roads if keep_roads else None, amenity_mask=resize_gdf(amenity, -4) if keep_roads else None, residential_mask=residential if keep_residential_and_industrial else None, industrial_mask=industrial if keep_residential_and_industrial else None, airport_mask=airport, file_prefix=GROUND_OSM_KEY + "_" + EXCLUSION_OSM_FILE_PREFIX, title="CREATE GROUND EXCLUSION MASKS OSM FILES", process_all=process_all)
+        self.__create_exclusion_masks_from_tiles(b, resize_gdf(building, -10), construction_mask=construction if keep_constructions else None, residential_mask=residential if keep_residential_and_industrial else None, industrial_mask=industrial if keep_residential_and_industrial else None, airport_mask=airport, file_prefix=BUILDING_OSM_KEY + "_" + EXCLUSION_OSM_FILE_PREFIX, title="CREATE BUILDING EXCLUSION MASKS OSM FILES", process_all=process_all)
         self.__create_exclusion_masks_from_tiles(b, exclusion, rocks_mask=resize_gdf(rocks, -5), file_prefix=ROCKS_OSM_KEY + "_" + EXCLUSION_OSM_FILE_PREFIX, title="CREATE ROCKS EXCLUSION MASKS OSM FILES", process_all=process_all)
         self.__create_exclusion_masks_from_tiles(b, resize_gdf(water, 10), keep_holes=False, file_prefix=WATER_OSM_KEY + "_" + EXCLUSION_OSM_FILE_PREFIX, title="CREATE WATER EXCLUSION MASKS OSM FILES", process_all=process_all)
 
     def __generate_excluded_height_data(self, b, construction, roads, bridges, hidden_roads, airport, building, water, bbox, exclusion, rocks, keep_roads=False, keep_constructions=False, process_all=False):
         self.__create_exclusion_masks_from_tiles(b, exclusion, building_mask=building, construction_mask=construction if keep_constructions else None, road_mask=roads if keep_roads else None, bridges_mask=bridges if keep_roads else None, hidden_roads=hidden_roads if keep_roads else None, airport_mask=airport, file_prefix=GROUND_OSM_KEY + "_" + EXCLUSION_OSM_FILE_PREFIX, title="CREATE GROUND EXCLUSION MASKS OSM FILES", process_all=process_all)
+        self.__create_exclusion_masks_from_tiles(b, resize_gdf(building, -10), construction_mask=construction if keep_constructions else None, airport_mask=airport, file_prefix=BUILDING_OSM_KEY + "_" + EXCLUSION_OSM_FILE_PREFIX, title="CREATE BUILDING EXCLUSION MASKS OSM FILES", process_all=process_all)
         self.__create_exclusion_masks_from_tiles(b, bbox, rocks_mask=resize_gdf(rocks, -5), file_prefix=ROCKS_OSM_KEY + "_" + EXCLUSION_OSM_FILE_PREFIX, title="CREATE ROCKS EXCLUSION MASKS OSM FILES", process_all=process_all)
         self.__create_exclusion_masks_from_tiles(b, resize_gdf(water, 10), keep_holes=False, file_prefix=WATER_OSM_KEY + "_" + EXCLUSION_OSM_FILE_PREFIX, title="CREATE WATER EXCLUSION MASKS OSM FILES", process_all=process_all)
 
