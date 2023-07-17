@@ -58,7 +58,7 @@ from msfs_project.tile import MsfsTile
 from msfs_project.shape import MsfsShapes
 from utils import replace_in_file, is_octant, backup_file, ScriptError, print_title, \
     get_backup_file_path, isolated_print, chunks, create_bounding_box_from_tiles, clip_gdf, create_terraform_polygons_gdf, create_land_mass_gdf, preserve_holes, create_exclusion_building_polygons_gdf, create_whole_water_gdf, create_ground_exclusion_gdf, load_gdf, \
-    prepare_sea_gdf, prepare_bbox_gdf, prepare_gdf, create_exclusion_vegetation_polygons_gdf, load_gdf_from_geocode, difference_gdf, create_shore_water_gdf, resize_gdf, pr_bg_orange, load_json_file, prepare_park_gdf, prepare_building_gdf, create_empty_gdf, union_gdf, prepare_roads_gdf
+    prepare_sea_gdf, prepare_bbox_gdf, prepare_gdf, create_exclusion_vegetation_polygons_gdf, load_gdf_from_geocode, difference_gdf, create_shore_water_gdf, resize_gdf, pr_bg_orange, load_json_file, prepare_park_gdf, prepare_building_gdf, create_empty_gdf, union_gdf, prepare_roads_gdf, samgeo_sandbox
 from pathlib import Path
 
 from utils.compressonator import Compressonator
@@ -439,6 +439,9 @@ class MsfsProject:
             for tile in tiles_to_remove:
                 tile.remove_files()
             self.objects_xml.save()
+
+    def samgeo_sandbox(self, output_path, source_image=None):
+        samgeo_sandbox(output_path, bbox=self.coords, source_image=source_image)
 
     def __initialize(self, sources_path, init_structure, fast_init):
         self.__init_structure(sources_path, init_structure, fast_init)
