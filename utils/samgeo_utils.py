@@ -17,9 +17,9 @@
 #  <pep8 compliant>
 
 import os
+import shutil
 
-import torch
-from samgeo import tms_to_geotiff, SamGeo
+import numpy as np
 
 from constants import TORCH_LIB, SAMGEO_LIB
 from utils import isolated_print
@@ -37,29 +37,97 @@ except ModuleNotFoundError:
     install_python_lib("pycocotools-win")
     install_python_lib(SAMGEO_LIB)
 
+from samgeo import tms_to_geotiff, split_raster, merge_rasters, get_basemaps, SamGeo
+from samgeo.text_sam import LangSAM
+
 import samgeo
 
 def samgeo_sandbox(output_path, bbox=None, source_image=None):
-    isolated_print(bbox)
-    if source_image is None:
-        image = 'satellite.tif'
-        tms_to_geotiff(output=image, bbox=bbox, zoom=20, source='Satellite')
-    else:
-        image = source_image
+    lbbox= [bbox[2], bbox[1], bbox[3], bbox[0]]
+    zoom = 18
+    isolated_print(get_basemaps().keys())
 
-    checkpoint = os.path.join(output_path, 'sam_vit_h_4b8939.pth')
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
     sam = SamGeo(
-        checkpoint=checkpoint,
-        model_type='vit_h',
-        device=device,
-        erosion_kernel=(3, 3),
-        mask_multiplier=255,
+        model_type="vit_h",
         sam_kwargs=None,
     )
 
-    mask = 'segment.tif'
-    sam.generate(image, mask)
+    lbboxes = createZoneTable(2, westlimit=lbbox[0], southlimit=lbbox[1], eastlimit=lbbox[2], northlimit=lbbox[3])
 
-    vector = 'segment.gpkg'
-    sam.tiff_to_gpkg(mask, vector, simplify_tolerance=None)
+    tiles_dir = os.path.join(output_path, "tiles")
+    masks_dir = os.path.join(output_path, "masks")
+
+    try:
+        shutil.rmtree(tiles_dir)
+    except:
+        pass
+
+    os.makedirs(tiles_dir, exist_ok=True)
+
+    for i, lbb in enumerate(lbboxes):
+        image = 'satellite' + str(i) + '.tif'
+        tms_to_geotiff(output=os.path.join(tiles_dir, image), bbox=lbb, zoom=zoom, source='Satellite', overwrite=True)
+
+    if source_image is None:
+        image = 'satellite.tif'
+        merge_rasters(tiles_dir, os.path.join(output_path, image))
+    else:
+        image = source_image
+
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    isolated_print(device, "selected")
+
+    mask = "segments.tif"
+    sam.generate(
+        os.path.join(output_path, image),
+        os.path.join(output_path, mask),
+        batch=True,
+        foreground=True,
+        erosion_kernel=(3, 3),
+        mask_multiplier=255,
+        device=device
+    )
+
+    # Ensure to remove remaining cache folder
+    try:
+        shutil.rmtree(tiles_dir)
+        shutil.rmtree(masks_dir)
+    except:
+        pass
+
+    os.makedirs(masks_dir, exist_ok=True)
+
+    # split_raster(os.path.join(output_path, image), out_dir=tiles_dir, tile_size=(1000, 1000), overlap=0)
+
+    sam = LangSAM()
+
+    text_prompt = "tree"
+
+    # sam.predict_batch(
+    #     images=tiles_dir,
+    #     out_dir=masks_dir,
+    #     text_prompt=text_prompt,
+    #     box_threshold=0.26,
+    #     text_threshold=0.26,
+    #     mask_multiplier=255,
+    #     device=device,
+    #     dtype='uint8',
+    #     merge=True,
+    #     verbose=True,
+    # )
+
+    # merge_rasters(masks_dir, os.path.join(output_path, "segment.tif"))
+
+    shapefile = "segment.shp"
+    sam.raster_to_vector(os.path.join(output_path, "segment.tif"), os.path.join(output_path, shapefile))
+
+
+def createZoneTable(zone_factor, westlimit, southlimit, eastlimit, northlimit):
+    zone_table = list()
+    longs = np.linspace(westlimit, eastlimit, zone_factor + 1)
+    lats = np.linspace(southlimit, northlimit, zone_factor + 1)
+
+    for i in range(0, len(longs)-1):
+        for j in range(0, len(lats)-1):
+            zone_table.append([longs[i], lats[j+1], longs[i+1], lats[j]])
+    return zone_table
