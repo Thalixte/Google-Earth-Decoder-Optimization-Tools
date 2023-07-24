@@ -100,6 +100,7 @@ SHARP_REMESH_MODE = "SHARP"
 VOXEL_REMESH_MODE = "VOXEL"
 SIMPLE_SUBSURFACE_DIVISION_TYPE = "SIMPLE"
 EXACT_BOOLEAN_SOLVER = "EXACT"
+GRID_FACTOR = 5
 
 
 class BOOLEAN_MODIFIER_OPERATION:
@@ -903,7 +904,7 @@ def get_tile_for_ray_cast(model_file_path, imported=True, objects_to_keep=[]):
     return tile
 
 
-def prepare_ray_cast(obj, grid_factor=5.0):
+def prepare_ray_cast(obj, grid_factor=GRID_FACTOR):
     grid_dimensions = []
     width = 0.0
 
@@ -1027,7 +1028,7 @@ def calculate_height_map_from_coords_from_bottom(tile, grid_dimension, coords, d
     for co in coords:
         p = co
         ray_direction = [0, 0, 1]
-        result = tile.evaluated_get(depsgraph).ray_cast(p, ray_direction, distance=6000)
+        result = multi_ray_cast(tile, depsgraph, p, p[0], p[1], ray_direction, ray_bias=(GRID_FACTOR-1))
         if result[0]:
             new_coords.append(mathutils.Vector((p[0], p[1], result[1][2])))
         else:
@@ -1145,14 +1146,14 @@ def adjust_height_data_on_exclusion_area(tile, depsgraph, lat, lon, altitude, ex
                 if exclusion_type == EXCLUSION_TYPE.WATER or exclusion_type == EXCLUSION_TYPE.BUILDING:
                     # from bottom
                     ray_direction = (0, 0, 1)
-                    result = tile.evaluated_get(depsgraph).ray_cast(p1, ray_direction, distance=6000)
+                    result = multi_ray_cast(tile, depsgraph, p1, x, y, ray_direction, ray_bias=(GRID_FACTOR-1))
                 else:
                     # from top
                     ray_direction = (0, 0, -1)
-                    result = tile.evaluated_get(depsgraph).ray_cast(p2, ray_direction, distance=6000)
+                    result = multi_ray_cast(tile, depsgraph, p2, x, y, ray_direction, ray_bias=(GRID_FACTOR-1))
 
                 if result[0]:
-                    new_coords.append(result[1])
+                    new_coords.append(mathutils.Vector((x, y, result[1].z)))
 
     if new_coords:
         if exclusion_type == EXCLUSION_TYPE.WATER:
@@ -1174,6 +1175,8 @@ def adjust_height_data_on_exclusion_area(tile, depsgraph, lat, lon, altitude, ex
             h = h + altitude + geoid_height
             if exclusion_type == EXCLUSION_TYPE.ROCKS:
                 h = h - 5.0
+            elif exclusion_type == EXCLUSION_TYPE.BUILDING:
+                h = h - 2.0
             elif exclusion_type != EXCLUSION_TYPE.BUILDING:
                 h = h + 1.0
 
@@ -1789,3 +1792,36 @@ def create_geocode_bounding_box(lat, lon, alt, landmark_location_file_path, new_
         gdf = create_latlon_gdf_from_meter_data(data, lat, lon, 0.0)
 
         return gdf
+
+def multi_ray_cast(tile, depsgraph, source, x, y, ray_direction, ray_bias = 0):
+    result = tile.evaluated_get(depsgraph).ray_cast(source, ray_direction, distance=6000)
+
+    if not result[0]:
+        p = mathutils.Vector((x, y + ray_bias, 0))
+        result = tile.evaluated_get(depsgraph).ray_cast(p, ray_direction, distance=6000)
+
+    if not result[0]:
+        p = mathutils.Vector((x, y - ray_bias, 0))
+        result = tile.evaluated_get(depsgraph).ray_cast(p, ray_direction, distance=6000)
+
+    if not result[0]:
+        p = mathutils.Vector((x + ray_bias, y, 0))
+        result = tile.evaluated_get(depsgraph).ray_cast(p, ray_direction, distance=6000)
+
+    if not result[0]:
+        p = mathutils.Vector((x - ray_bias, y, 0))
+        result = tile.evaluated_get(depsgraph).ray_cast(p, ray_direction, distance=6000)
+
+    if not result[0]:
+        p = mathutils.Vector((x - ray_bias, y + ray_bias, 0))
+        result = tile.evaluated_get(depsgraph).ray_cast(p, ray_direction, distance=6000)
+
+    if not result[0]:
+        p = mathutils.Vector((x + ray_bias, y + ray_bias, 0))
+        result = tile.evaluated_get(depsgraph).ray_cast(p, ray_direction, distance=6000)
+
+    if not result[0]:
+        p = mathutils.Vector((x + ray_bias, y - ray_bias, 0))
+        result = tile.evaluated_get(depsgraph).ray_cast(p, ray_direction, distance=6000)
+
+    return result

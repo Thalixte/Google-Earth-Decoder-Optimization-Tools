@@ -7,16 +7,31 @@
 #   This program is distributed in the hope that it will be useful,
 #   but WITHOUT ANY WARRANTY; without even the implied warranty of
 #   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#   GNU General Public License for more dEtails.
+#   GNU General Public License for more details.
 #  #
 #   You should have received a copy of the GNU General Public License
 #   along with this program; if not, write to the Free Software Foundation,
-#   Inc., 51 Franklin StreEt, Fifth Floor, Boston, MA 02110-1301, USA.
+#   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 #  #
 #
 #  <pep8 compliant>
 
 from utils import install_python_lib
+import warnings
+from shapely.errors import ShapelyDeprecationWarning
+
+warnings.simplefilter(action="ignore", category=UserWarning, append=True)
+warnings.simplefilter(action="ignore", category=FutureWarning, append=True)
+warnings.simplefilter(action="ignore", category=DeprecationWarning, append=True)
+warnings.simplefilter(action="ignore", category=RuntimeWarning, append=True)
+warnings.simplefilter(action="ignore", category=ShapelyDeprecationWarning, append=True)
+
+with warnings.catch_warnings():
+    warnings.simplefilter(action="ignore", category=UserWarning, append=True)
+    warnings.simplefilter(action="ignore", category=FutureWarning, append=True)
+    warnings.simplefilter(action="ignore", category=DeprecationWarning, append=True)
+    warnings.simplefilter(action="ignore", category=RuntimeWarning, append=True)
+    warnings.simplefilter(action="ignore", category=ShapelyDeprecationWarning, append=True)
 
 try:
     import pandas as pd

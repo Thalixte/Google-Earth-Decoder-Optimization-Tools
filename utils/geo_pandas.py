@@ -18,6 +18,20 @@
 import logging
 import os
 import warnings
+from shapely.errors import ShapelyDeprecationWarning
+
+warnings.simplefilter(action="ignore", category=UserWarning, append=True)
+warnings.simplefilter(action="ignore", category=FutureWarning, append=True)
+warnings.simplefilter(action="ignore", category=DeprecationWarning, append=True)
+warnings.simplefilter(action="ignore", category=RuntimeWarning, append=True)
+warnings.simplefilter(action="ignore", category=ShapelyDeprecationWarning, append=True)
+
+with warnings.catch_warnings():
+    warnings.simplefilter(action="ignore", category=UserWarning, append=True)
+    warnings.simplefilter(action="ignore", category=FutureWarning, append=True)
+    warnings.simplefilter(action="ignore", category=DeprecationWarning, append=True)
+    warnings.simplefilter(action="ignore", category=RuntimeWarning, append=True)
+    warnings.simplefilter(action="ignore", category=ShapelyDeprecationWarning, append=True)
 
 from constants import GEOMETRY_OSM_COLUMN, BOUNDING_BOX_OSM_KEY, SHAPE_TEMPLATES_FOLDER, OSM_LAND_SHAPEFILE, ROAD_OSM_KEY, BRIDGE_OSM_TAG, SERVICE_OSM_KEY, NOT_SHORE_WATER_OSM_KEY, WATER_OSM_KEY, NATURAL_OSM_KEY, OSM_TAGS, FOOTWAY_OSM_TAG, PATH_OSM_TAG, MAN_MADE_OSM_KEY, PIER_OSM_TAG, GOLF_OSM_KEY, FAIRWAY_OSM_TAG, EOL, CEND, TUNNEL_OSM_TAG, SEAMARK_TYPE_OSM_TAG, BUILDING_OSM_KEY, SHP_FILE_EXT, ELEMENT_TY_OSM_KEY, OSMID_OSM_KEY, RAILWAY_OSM_KEY, LANES_OSM_KEY, ONEWAY_OSM_KEY, ROAD_WITH_BORDERS, \
     ROAD_LANE_WIDTH, GEOCODE_OSM_FILE_PREFIX, PEDESTRIAN_ROAD_TYPE, FOOTWAY_ROAD_TYPE, SERVICE_ROAD_TYPE, LANDUSE_OSM_KEY, CONSTRUCTION_OSM_KEY, GDAL_LIB_PREFIX, FIONA_LIB_PREFIX, LAND_MASS_REPO, LAND_MASS_ARCHIVE, LEISURE_OSM_KEY, NETWORKX_LIB, RTREE_LIB, MATPLOTLIB_LIB, PANDAS_LIB, GEOPANDAS_LIB, OSMNX_LIB, SHAPELY_LIB, PATH_ROAD_TYPE, TRACK_ROAD_TYPE, AREA_OSM_TAG, NOT_EXCLUSION_BUILDING_OSM_KEY, WALL_OSM_KEY, WALL_OSM_TAG, CASTLE_WALL_OSM_TAG, CYCLEWAY_ROAD_TYPE, FULL_PREFIX, \

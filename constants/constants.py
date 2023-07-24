@@ -85,7 +85,7 @@ CLEAR_CONSOLE_CMD = "cls"
 PYTHON_COMPIL_OPTION = "exec"
 
 PILLOW_LIB = "Pillow"
-OSMNX_LIB = "osmnx"
+OSMNX_LIB = "osmnx==1.3.0"
 NETWORKX_LIB = "networkx"
 RTREE_LIB = "rtree"
 MATPLOTLIB_LIB = "matplotLib"
