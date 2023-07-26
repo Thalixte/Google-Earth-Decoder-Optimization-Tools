@@ -214,7 +214,7 @@ class MsfsTile(MsfsSceneObject):
 
         return self.name
 
-    def generate_height_data(self, height_map_xml, group_id, altitude, height_adjustment, height_noise_reduction, high_precision=False, positioning_file_path=str(), water_mask_file_path=str(), rocks_mask_file_path=str(), ground_mask_file_path=str(), building_mask_file_path=str(), debug=False):
+    def generate_height_data(self, height_map_xml, group_id, altitude, height_adjustment, high_precision=False, positioning_file_path=str(), water_mask_file_path=str(), rocks_mask_file_path=str(), ground_mask_file_path=str(), building_mask_file_path=str(), debug=False):
         if not self.lods:
             return
 
@@ -225,7 +225,7 @@ class MsfsTile(MsfsSceneObject):
             lod = self.lods[0]
 
         if os.path.isdir(lod.folder):
-            height_data, inverted_height_data, width, altitude = lod.calculate_height_data(self.coords[0], self.coords[2], altitude, height_adjustment, height_noise_reduction, positioning_file_path=positioning_file_path, water_mask_file_path=water_mask_file_path, ground_mask_file_path=ground_mask_file_path, rocks_mask_file_path=rocks_mask_file_path, building_mask_file_path=building_mask_file_path, high_precision=high_precision, debug=debug)
+            height_data, inverted_height_data, width, altitude = lod.calculate_height_data(self.coords[0], self.coords[2], altitude, height_adjustment, positioning_file_path=positioning_file_path, water_mask_file_path=water_mask_file_path, ground_mask_file_path=ground_mask_file_path, rocks_mask_file_path=rocks_mask_file_path, building_mask_file_path=building_mask_file_path, high_precision=high_precision, debug=debug)
             self.height_map = MsfsHeightMap(tile=self, height_data=height_data, inverted_height_data=inverted_height_data, width=width, altitude=altitude, group_id=group_id)
 
             if debug:

@@ -693,7 +693,7 @@ def process_3d_data(model_file_path=None, intersect=False, no_bounding_box=False
     bpy.ops.object.select_all(action=SELECT_ACTION)
 
 
-def generate_model_height_data(model_file_path, lat, lon, altitude, height_adjustment, height_noise_reduction, positioning_file_path=str(), water_mask_file_path=str(), ground_mask_file_path=str(), rocks_mask_file_path=str(), building_mask_file_path=str(), high_precision=False, debug=False):
+def generate_model_height_data(model_file_path, lat, lon, altitude, height_adjustment, positioning_file_path=str(), water_mask_file_path=str(), ground_mask_file_path=str(), rocks_mask_file_path=str(), building_mask_file_path=str(), high_precision=False, debug=False):
     if not bpy.context.scene:
         return False
 
@@ -706,10 +706,10 @@ def generate_model_height_data(model_file_path, lat, lon, altitude, height_adjus
 
     depsgraph = bpy.context.evaluated_depsgraph_get()
     depsgraph.update()
-    hmatrix = calculate_height_map_from_coords_from_bottom(tile, grid_dimension, coords, depsgraph, lat, lon, altitude, height_adjustment, height_noise_reduction)
+    hmatrix = calculate_height_map_from_coords_from_bottom(tile, grid_dimension, coords, depsgraph, lat, lon, altitude, height_adjustment)
 
     if high_precision:
-        hmatrix = calculate_height_map_from_coords_from_top(tile, coords, depsgraph, lat, lon, altitude, hmatrix, height_noise_reduction=height_noise_reduction)
+        hmatrix = calculate_height_map_from_coords_from_top(tile, coords, depsgraph, lat, lon, altitude, hmatrix)
 
     # fix wrong height data for buildings
     if os.path.exists(positioning_file_path) and os.path.exists(building_mask_file_path):
@@ -1029,7 +1029,7 @@ def apply_transform(ob, use_location=False, use_rotation=False, use_scale=False)
     ob.matrix_basis = basis[0] @ basis[1] @ basis[2]
 
 
-def calculate_height_map_from_coords_from_bottom(tile, grid_dimension, coords, depsgraph, lat, lon, altitude, height_adjustment, height_noise_reduction):
+def calculate_height_map_from_coords_from_bottom(tile, grid_dimension, coords, depsgraph, lat, lon, altitude, height_adjustment):
     results = defaultdict(dict)
     geoid_height = get_geoid_height(lat, lon)
     new_coords = []
@@ -1066,11 +1066,6 @@ def calculate_height_map_from_coords_from_bottom(tile, grid_dimension, coords, d
             new_coords[i] = (co[0], co[1], interpolated[i])
 
     if new_coords:
-        # fix noise in the height map data
-        tree = cKDTree(new_coords, leafsize=60)
-        new_coords = spatial_median_kdtree(tree, np.array(new_coords), height_noise_reduction)
-        # new_coords = spatial_median(np.array(new_coords), 20)
-
         new_coords = [co for i, co in enumerate(new_coords)]
 
         for i, p in enumerate(new_coords):
@@ -1086,7 +1081,7 @@ def calculate_height_map_from_coords_from_bottom(tile, grid_dimension, coords, d
     return results
 
 
-def calculate_height_map_from_coords_from_top(tile, coords, depsgraph, lat, lon, altitude, hmatrix_base, height_noise_reduction=35):
+def calculate_height_map_from_coords_from_top(tile, coords, depsgraph, lat, lon, altitude, hmatrix_base):
     results = hmatrix_base.copy()
     geoid_height = get_geoid_height(lat, lon)
     new_coords = []
@@ -1099,11 +1094,6 @@ def calculate_height_map_from_coords_from_top(tile, coords, depsgraph, lat, lon,
             new_coords.append(result[1])
 
     if new_coords:
-        # fix noise in the height map data
-        tree = cKDTree(new_coords, leafsize=60)
-        new_coords = spatial_median_kdtree(tree, np.array(new_coords), height_noise_reduction)
-        # new_coords = spatial_median(np.array(new_coords), 20)
-
         new_coords = [co for i, co in enumerate(new_coords)]
 
         for i, co in enumerate(new_coords):

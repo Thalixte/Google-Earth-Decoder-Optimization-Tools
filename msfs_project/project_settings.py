@@ -59,7 +59,6 @@ class ProjectSettings(Settings):
     ground_exclusion_margin: float
     landmark_type: str
     height_adjustment: float
-    height_noise_reduction: float
     landmark_offset: float
     altitude_adjustment: float
     sections = list
@@ -108,7 +107,6 @@ class ProjectSettings(Settings):
         self.preserve_buildings = "True"
         self.landmark_type = str()
         self.height_adjustment = 0.0
-        self.height_noise_reduction = 0.0
         self.landmark_offset = 0.0
         self.altitude_adjustment = 0.0
         self.sections = []
@@ -157,8 +155,6 @@ class ProjectSettings(Settings):
         self.lon_correction = "{:.9f}".format(float(str(self.lon_correction))).rstrip("0").rstrip(".")
 
         self.height_adjustment = "{:.9f}".format(float(str(self.height_adjustment))).rstrip("0").rstrip(".")
-
-        self.height_noise_reduction = "{:.9f}".format(float(str(self.height_noise_reduction))).rstrip("0").rstrip(".")
 
         self.landmark_offset = "{:.9f}".format(float(str(self.landmark_offset))).rstrip("0").rstrip(".")
 

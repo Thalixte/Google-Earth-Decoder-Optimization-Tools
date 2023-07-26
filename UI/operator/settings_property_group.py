@@ -175,10 +175,6 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         context.scene.project_settings.height_adjustment = "{:.1f}".format(float(str(self.height_adjustment))).rstrip("0").rstrip(".")
         context.scene.project_settings.save()
 
-    def height_noise_reduction_updated(self, context):
-        context.scene.project_settings.height_noise_reduction = "{:.1f}".format(float(str(self.height_noise_reduction))).rstrip("0").rstrip(".")
-        context.scene.project_settings.save()
-
     def geocode_updated(self, context):
         context.scene.project_settings.geocode = self.geocode
         context.scene.project_settings.save()
@@ -454,16 +450,6 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         precision=1,
         default=float(bpy.types.Scene.project_settings.height_adjustment) if bpy.types.Scene.project_settings is not None else 0.0,
         update=height_adjustment_updated
-    )
-    height_noise_reduction: FloatProperty(
-        name="Height noise reduction",
-        description="Adjust the height noise reduction factor for ray-tracing the bottom of the tile",
-        soft_min=0.0,
-        soft_max=200.0,
-        step=0.1,
-        precision=1,
-        default=float(bpy.types.Scene.project_settings.height_noise_reduction) if bpy.types.Scene.project_settings is not None else 0.0,
-        update=height_noise_reduction_updated
     )
     geocode: StringProperty(
         name="Geocode",

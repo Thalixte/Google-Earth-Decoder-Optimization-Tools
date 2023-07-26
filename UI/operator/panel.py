@@ -187,8 +187,6 @@ class SettingsOperator(PanelOperator):
         if self.operator_name == "wm.generate_height_data" or self.operator_name == "wm.prepare_3d_data":
             draw_splitted_prop(context.scene.setting_props, col, SPLIT_LABEL_FACTOR, "height_adjustment", "Height data adjustment (in meters)")
             col.separator()
-            draw_splitted_prop(context.scene.setting_props, col, SPLIT_LABEL_FACTOR, "height_noise_reduction", "Height data noise_reduction factor for bottom ray-tracing")
-            col.separator()
             draw_splitted_prop(context.scene.setting_props, col, ALTERNATE_SPLIT_LABEL_FACTOR, "high_precision", "High precision height data generation")
             col.separator()
 

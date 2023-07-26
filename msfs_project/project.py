@@ -708,7 +708,7 @@ class MsfsProject:
 
         return chunks(data, nb_parallel_blender_tasks)
 
-    def __retrieve_tiles_to_calculate_height_map(self, nb_parallel_blender_tasks, new_group_id=-1, parallel=True, height_adjustment=0.0, height_noise_reduction=0.0, high_precision=False):
+    def __retrieve_tiles_to_calculate_height_map(self, nb_parallel_blender_tasks, new_group_id=-1, parallel=True, height_adjustment=0.0, high_precision=False):
         data = []
 
         for guid, tile in self.tiles.items():
@@ -735,7 +735,7 @@ class MsfsProject:
                 continue
 
             params = ["--folder", str(tile_folder), "--name", str(tile.name), "--definition_file", str(tile.definition_file),
-                      "--height_map_xml_folder", str(self.xmlfiles_folder), "--group_id", str(new_group_id), "--altitude", str(tile.pos.alt), "--height_adjustment", str(height_adjustment), "--height_noise_reduction", str(height_noise_reduction)]
+                      "--height_map_xml_folder", str(self.xmlfiles_folder), "--group_id", str(new_group_id), "--altitude", str(tile.pos.alt), "--height_adjustment", str(height_adjustment)]
 
             if has_mask_file:
                 params.extend(["--positioning_file_path", str(os.path.join(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT))])
@@ -1115,7 +1115,7 @@ class MsfsProject:
         self.objects_xml.remove_height_maps(HEIGHT_MAPS_DISPLAY_NAME, True)
         new_group_id = self.objects_xml.get_new_group_id()
 
-        tiles_data = self.__retrieve_tiles_to_calculate_height_map(settings.nb_parallel_blender_tasks, new_group_id=new_group_id, parallel=True, height_adjustment=float(self.settings.height_adjustment), height_noise_reduction=float(self.settings.height_noise_reduction), high_precision=self.settings.high_precision)
+        tiles_data = self.__retrieve_tiles_to_calculate_height_map(settings.nb_parallel_blender_tasks, new_group_id=new_group_id, parallel=True, height_adjustment=float(self.settings.height_adjustment), high_precision=self.settings.high_precision)
         self.__multithread_blender_process_data(tiles_data, "calculate_tile_height_data.py", "CALCULATE HEIGHT MAPS FOR EACH TILE", "height map calculated")
         self.__add_height_maps_to_objects_xml()
 

@@ -194,11 +194,6 @@ def reload_height_adjustment(context):
         context.scene.setting_props.height_adjustment = float(context.scene.project_settings.height_adjustment)
 
 
-def reload_height_noise_reduction(context):
-    if context.scene.project_settings is not None:
-        context.scene.setting_props.height_noise_reduction = float(context.scene.project_settings.height_noise_reduction)
-
-
 def reload_geocode(context):
     if context.scene.project_settings is not None:
         context.scene.setting_props.geocode = context.scene.project_settings.geocode
@@ -333,7 +328,6 @@ def reload_setting_props(context, reload_settings_file=True):
     reload_process_all(context)
     reload_high_precision(context)
     reload_height_adjustment(context)
-    reload_height_noise_reduction(context)
     reload_geocode(context)
     reload_geocode_margin(context)
     reload_preserve_roads(context)
