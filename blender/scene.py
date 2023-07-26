@@ -24,6 +24,18 @@ from collections import defaultdict
 from pathlib import Path
 from utils.install_lib import install_python_lib
 from utils.geo_pandas import create_latlon_gdf_from_meter_data
+import warnings
+
+warnings.simplefilter(action="ignore", category=UserWarning, append=True)
+warnings.simplefilter(action="ignore", category=FutureWarning, append=True)
+warnings.simplefilter(action="ignore", category=DeprecationWarning, append=True)
+warnings.simplefilter(action="ignore", category=RuntimeWarning, append=True)
+
+with warnings.catch_warnings():
+    warnings.simplefilter(action="ignore", category=UserWarning, append=True)
+    warnings.simplefilter(action="ignore", category=FutureWarning, append=True)
+    warnings.simplefilter(action="ignore", category=DeprecationWarning, append=True)
+    warnings.simplefilter(action="ignore", category=RuntimeWarning, append=True)
 
 try:
     import numpy as np

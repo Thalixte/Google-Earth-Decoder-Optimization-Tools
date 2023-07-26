@@ -787,6 +787,7 @@ class MsfsProject:
 
             mask_file_path = os.path.join(self.osmfiles_folder, EXCLUSION_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)
             copy_lods = (not os.path.isfile(mask_file_path))
+            has_mask_file = os.path.isfile(mask_file_path)
 
             collider = self.__get_tile_collider(tile.name)
             has_collider = (collider is not None)
@@ -814,16 +815,19 @@ class MsfsProject:
                     continue
 
                 # if no mask file is present for this tile, this means that the tile will not be cleaned, so if it has been cleaned before,
-                # we ensure to retrieve the previous one (i.e. the entire tile, it it exists in the backup path)
+                # we ensure to retrieve the previous one (i.e. the entire tile, if it exists in the backup path)
                 if copy_lods:
                     shutil.copyfile(os.path.join(lod_folder, lod.model_file), os.path.join(lod.folder, lod.model_file))
 
                     for binary in lod.binaries:
                         shutil.copyfile(os.path.join(lod_folder, binary.file), os.path.join(binary.folder, binary.file))
 
-                data.append({"name": lod.name, "params": ["--folder", str(lod_folder), "--output_folder", str(lod.folder), "--model_file", str(lod.model_file),
-                                                          "--positioning_file_path", str(os.path.join(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT)),
-                                                          "--mask_file_path", str(mask_file_path)]})
+                params = ["--folder", str(lod_folder), "--output_folder", str(lod.folder), "--model_file", str(lod.model_file),
+                                                          "--positioning_file_path", str(os.path.join(self.osmfiles_folder, BOUNDING_BOX_OSM_FILE_PREFIX + "_" + tile.name + OSM_FILE_EXT))]
+
+                if has_mask_file:
+                    params.extend(["--mask_file_path", str(mask_file_path)])
+                    data.append({"name": lod.name, "params": params})
 
         return tiles, chunks(data, nb_parallel_blender_tasks)
 
