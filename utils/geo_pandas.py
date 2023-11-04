@@ -35,7 +35,7 @@ with warnings.catch_warnings():
 
 from constants import GEOMETRY_OSM_COLUMN, BOUNDING_BOX_OSM_KEY, SHAPE_TEMPLATES_FOLDER, OSM_LAND_SHAPEFILE, ROAD_OSM_KEY, BRIDGE_OSM_TAG, SERVICE_OSM_KEY, NOT_SHORE_WATER_OSM_KEY, WATER_OSM_KEY, NATURAL_OSM_KEY, OSM_TAGS, FOOTWAY_OSM_TAG, PATH_OSM_TAG, MAN_MADE_OSM_KEY, PIER_OSM_TAG, GOLF_OSM_KEY, FAIRWAY_OSM_TAG, EOL, CEND, TUNNEL_OSM_TAG, SEAMARK_TYPE_OSM_TAG, BUILDING_OSM_KEY, SHP_FILE_EXT, ELEMENT_TY_OSM_KEY, OSMID_OSM_KEY, RAILWAY_OSM_KEY, LANES_OSM_KEY, ONEWAY_OSM_KEY, ROAD_WITH_BORDERS, \
     ROAD_LANE_WIDTH, GEOCODE_OSM_FILE_PREFIX, PEDESTRIAN_ROAD_TYPE, FOOTWAY_ROAD_TYPE, SERVICE_ROAD_TYPE, LANDUSE_OSM_KEY, CONSTRUCTION_OSM_KEY, GDAL_LIB_PREFIX, FIONA_LIB_PREFIX, LAND_MASS_REPO, LAND_MASS_ARCHIVE, LEISURE_OSM_KEY, NETWORKX_LIB, RTREE_LIB, MATPLOTLIB_LIB, PANDAS_LIB, GEOPANDAS_LIB, OSMNX_LIB, SHAPELY_LIB, PATH_ROAD_TYPE, TRACK_ROAD_TYPE, AREA_OSM_TAG, NOT_EXCLUSION_BUILDING_OSM_KEY, WALL_OSM_KEY, WALL_OSM_TAG, CASTLE_WALL_OSM_TAG, CYCLEWAY_ROAD_TYPE, FULL_PREFIX, \
-    ROAD_REMOVAL_LANDUSE_OSM_KEY, ROAD_REMOVAL_NATURAL_OSM_KEY, PROPOSED_OSM_TAG, LANDMARK_PREFIX, LON_OSM_KEY, LAT_OSM_KEY, FOREST_OSM_TAG, WOOD_OSM_TAG, SHAPELY_TYPE
+    ROAD_REMOVAL_LANDUSE_OSM_KEY, ROAD_REMOVAL_NATURAL_OSM_KEY, PROPOSED_OSM_TAG, LANDMARK_PREFIX, LON_OSM_KEY, LAT_OSM_KEY, FOREST_OSM_TAG, WOOD_OSM_TAG, SHAPELY_TYPE, OSMNX_LIB_VERSION, DEFAULT_OVERPASS_API_URI
 from utils.colored_print import pr_bg_orange
 from utils.install_lib import install_python_lib, install_alternate_python_lib, install_shapefile_resource
 
@@ -87,7 +87,7 @@ except ModuleNotFoundError:
 try:
     import osmnx as ox
 except ModuleNotFoundError:
-    install_python_lib(OSMNX_LIB)
+    install_python_lib(OSMNX_LIB, OSMNX_LIB_VERSION)
     import osmnx as ox
 
 from shapely.errors import ShapelyDeprecationWarning
@@ -197,8 +197,10 @@ def resize_gdf(gdf, resize_distance, single_sided=True, keep_points=False):
     return gdf.to_crs(EPSG.key + str(EPSG.WGS84_degree_unit))
 
 
-def load_gdf_from_geocode(geocode, geocode_margin=5.0, preserve_roads=True, preserve_buildings=True, keep_data=False, coords=None, shpfiles_folder=None, display_warnings=True, by_osmid=False, check_geocode=False):
-    ox.config(use_cache=False)
+def load_gdf_from_geocode(geocode, overpass_api_uri, geocode_margin=5.0, preserve_roads=True, preserve_buildings=True, keep_data=False, coords=None, shpfiles_folder=None, display_warnings=True, by_osmid=False, check_geocode=False):
+    warnings.simplefilter("ignore", UserWarning, append=True)
+    import logging as lg
+    ox.config(overpass_endpoint=overpass_api_uri, log_console=False, use_cache=False, log_level=lg.ERROR)
 
     try:
         warnings.simplefilter("ignore", FutureWarning, append=True)
@@ -849,7 +851,7 @@ def create_ground_exclusion_gdf(landuse, forests, woods, nature_reserves, natura
     return result.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)
 
 
-def create_exclusion_building_gdf(orig_water, orig_natural_water, sea, bbox):
+def create_exclusion_water_gdf(orig_water, orig_natural_water, sea, bbox):
     water = orig_water.copy()
     for tag in OSM_TAGS[NOT_EXCLUSION_BUILDING_OSM_KEY]:
         if WATER_OSM_KEY in water:
@@ -863,6 +865,12 @@ def create_exclusion_building_gdf(orig_water, orig_natural_water, sea, bbox):
     natural_water = clip_gdf(prepare_gdf(natural_water), bbox)
 
     result = create_whole_water_gdf(natural_water, water, sea)
+    result = resize_gdf(result, 20)
+    return result.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)
+
+
+def create_exclusion_vegetation_water_gdf(orig_water, orig_natural_water, sea, bbox):
+    result = create_whole_water_gdf(orig_natural_water, orig_water, sea)
     result = resize_gdf(result, 20)
     return result.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)
 
@@ -890,6 +898,14 @@ def create_terraform_polygons_gdf(gdf, exclusion):
     terraform_gdf = difference_gdf(terraform_gdf, exclusion)
     terraform_gdf = terraform_gdf.dissolve()
     result = preserve_holes(resize_gdf(terraform_gdf, -10), split_method=PRESERVE_HOLES_METHOD.derivation_split)
+    return result.dissolve()
+
+
+def create_vegetation_polygons_gdf(gdf, exclusion):
+    vegetation_gdf = gdf.copy()
+    vegetation_gdf = difference_gdf(vegetation_gdf, exclusion)
+    vegetation_gdf = vegetation_gdf.dissolve()
+    result = preserve_holes(vegetation_gdf, split_method=PRESERVE_HOLES_METHOD.derivation_split)
     return result.dissolve()
 
 

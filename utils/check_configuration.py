@@ -127,6 +127,12 @@ def check_configuration(settings, msfs_project, check_optimization=False, check_
     pr_ok_green(str("Pillow lib installation").ljust(RESULT_MSG_LENGTH))
 
     if check_optimization:
+        if not install_python_lib(NUMPY_LIB, NUMPY_LIB_VERSION):
+            pr_ko_red(str("Numpy lib installation").ljust(RESULT_MSG_LENGTH))
+            raise ScriptError(error_msg + "Numpy python lib is not correctly installed. Please check what can prevent this library to be installed correctly")
+    pr_ok_green(str("Numpy lib installation").ljust(RESULT_MSG_LENGTH))
+
+    if check_optimization:
         if not install_alternate_python_lib(GDAL_LIB_PREFIX):
             pr_ko_red(str("Gdal lib installation").ljust(RESULT_MSG_LENGTH))
             raise ScriptError(error_msg + "Gdal python lib is not correctly installed. Please check what can prevent this library to be installed correctly")
@@ -175,7 +181,7 @@ def check_configuration(settings, msfs_project, check_optimization=False, check_
     pr_ok_green(str("GeoPandas lib installation").ljust(RESULT_MSG_LENGTH))
 
     if check_optimization:
-        if not install_python_lib(OSMNX_LIB):
+        if not install_python_lib(OSMNX_LIB, OSMNX_LIB_VERSION):
             pr_ko_red(str("Osmnx lib installation").ljust(RESULT_MSG_LENGTH))
             raise ScriptError(error_msg + "Osmnx python lib is not correctly installed. Please check what can prevent this library to be installed correctly")
     pr_ok_green(str("Osmnx lib installation").ljust(RESULT_MSG_LENGTH))

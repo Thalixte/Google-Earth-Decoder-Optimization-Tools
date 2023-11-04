@@ -44,16 +44,16 @@ def create_landmark_from_geocode(global_settings):
         # fast instantiate the msfsProject and create the necessary resources if it does not exist
         msfs_project = MsfsProject(global_settings.projects_path, global_settings.project_name, global_settings.definition_file, global_settings.path, global_settings.author_name, fast_init=True)
 
-        geocode_gdf = load_gdf_from_geocode(msfs_project.settings.geocode, check_geocode=True)
+        geocode_gdf = load_gdf_from_geocode(msfs_project.settings.geocode, global_settings.overpass_api_uri, check_geocode=True)
 
         if geocode_gdf.empty:
-            geocode_gdf = load_gdf_from_geocode(WAY_OSM_PREFIX + msfs_project.settings.geocode, by_osmid=True, check_geocode=True)
+            geocode_gdf = load_gdf_from_geocode(WAY_OSM_PREFIX + msfs_project.settings.geocode, global_settings.overpass_api_uri, by_osmid=True, check_geocode=True)
 
         if geocode_gdf.empty:
-            geocode_gdf = load_gdf_from_geocode(RELATION_OSM_PREFIX + msfs_project.settings.geocode, by_osmid=True, check_geocode=True)
+            geocode_gdf = load_gdf_from_geocode(RELATION_OSM_PREFIX + msfs_project.settings.geocode, global_settings.overpass_api_uri, by_osmid=True, check_geocode=True)
 
         if geocode_gdf.empty:
-            geocode_gdf = load_gdf_from_geocode(NODE_OSM_PREFIX + msfs_project.settings.geocode, by_osmid=True, check_geocode=True)
+            geocode_gdf = load_gdf_from_geocode(NODE_OSM_PREFIX + msfs_project.settings.geocode, global_settings.overpass_api_uri, by_osmid=True, check_geocode=True)
 
         if not geocode_gdf.empty:
             lat = [0, 0.0]

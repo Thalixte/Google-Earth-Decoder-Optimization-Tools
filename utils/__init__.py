@@ -16,6 +16,33 @@
 #
 #  <pep8 compliant>
 
+from .python_bin import *
+from .install_lib import *
+
+try:
+    import numpy as np
+except ModuleNotFoundError:
+    install_python_lib("numpy", version=1.24)
+    import numpy as np
+
+try:
+    import pygeodesy
+except ModuleNotFoundError:
+    install_python_lib("pygeodesy")
+    import pygeodesy
+
+try:
+    import scipy
+except ModuleNotFoundError:
+    install_python_lib("scipy")
+    import scipy
+
+try:
+    import shapely
+except ModuleNotFoundError:
+    install_python_lib("shapely")
+    import shapely
+
 from .colored_print import *
 from .check_configuration import *
 from .file_manip import *
@@ -27,8 +54,6 @@ from .global_settings import *
 from .xml import *
 from .folders import *
 from .backup import *
-from .python_bin import *
-from .install_lib import *
 from .console import *
 from .module import *
 from .isolated_print import *

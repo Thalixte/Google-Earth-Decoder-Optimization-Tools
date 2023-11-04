@@ -194,10 +194,19 @@ class SettingsOperator(PanelOperator):
             draw_splitted_prop(context.scene.setting_props, col, ALTERNATE_SPLIT_LABEL_FACTOR, "process_all", "Process all the tiles (if unticked, process only the tiles that have not been cleaned)")
             col.separator()
 
+        if self.operator_name == "wm.create_terraform_and_exclusion_polygons":
+            draw_splitted_prop(context.scene.setting_props, col, SPLIT_LABEL_FACTOR, "create_forests_vegetation", "Create MSFS vegetation on forests OSM area")
+            col.separator()
+            draw_splitted_prop(context.scene.setting_props, col, SPLIT_LABEL_FACTOR, "create_woods_vegetation", "Create MSFS vegetation on woods OSM area")
+            col.separator()
+
         draw_splitted_prop(context.scene.setting_props, col, SPLIT_LABEL_FACTOR, "airport_city", "Airport city")
         col.separator()
 
         draw_splitted_prop(context.scene.setting_props, col, ALTERNATE_SPLIT_LABEL_FACTOR, "force_osm_data_download", "Force openStreetMap data download")
+        col.separator()
+
+        draw_splitted_prop(context.scene.setting_props, col, SPLIT_LABEL_FACTOR, "overpass_api_uri_readonly", "Uri of the Overpass API", enabled=False)
         col.separator()
 
         self.draw_footer(context, self.layout, self.operator_name)
@@ -221,11 +230,15 @@ class SettingsOperator(PanelOperator):
             col.separator()
             draw_splitted_prop(context.scene.setting_props, col, SPLIT_LABEL_FACTOR, "landmark_offset", "Landmark offset")
             col.separator()
-            draw_splitted_prop(context.scene.setting_props, col, ALTERNATE_SPLIT_LABEL_FACTOR, "add_lights", "Add lights all around the landmark")
-            col.separator()
         if self.operator_name == "wm.create_landmark_from_geocode" or self.operator_name == "wm.add_lights_to_geocode":
             draw_splitted_prop(context.scene.setting_props, col, SPLIT_LABEL_FACTOR, "light_guid", "Select the type of light")
             col.separator()
+            draw_splitted_prop(context.scene.setting_props, col, ALTERNATE_SPLIT_LABEL_FACTOR, "add_lights", "Add lights all around the landmark")
+            col.separator()
+
+        draw_splitted_prop(context.scene.setting_props, col, SPLIT_LABEL_FACTOR, "overpass_api_uri_readonly", "Uri of the Overpass API", enabled=False)
+        col.separator()
+
         self.draw_footer(context, self.layout, self.operator_name)
 
     def draw_altitude_adjustment_panel(self, context):
@@ -478,7 +491,7 @@ class OT_Cleanup3dDataPanel(SettingsOperator):
     bl_label = "4. Cleanup 3d data from Google Earth tiles"
     operator_description = """Automatically cleans 3d data from the Google Earth tiles, based on the OpenStreetMap data.
         Optionally, in the OPENSTREETMAP section, set the city of the airport, in case you want to remove an airport.
-        Notice: this method can produce some visual artifacts, and buildings that are not included in OpenStreetMap data can be removed"""
+        Notice: this method can produce some visual artifacts, and buildings that are not included in OpenStreetMap data may be removed"""
     starting_section = OSM_INI_SECTION
     displayed_sections = [
         PROJECT_INI_SECTION,
@@ -543,7 +556,7 @@ class OT_KeepOnlyBuildings3dDataPanel(SettingsOperator):
     bl_label = "Keep only buildings from Google Earth tiles"
     operator_description = """Automatically removes everything, except buildings from the Google Earth tiles, based on the OpenStreetMap data.
         Optionally, in the OPENSTREETMAP section, set the city of the airport, in case you want to remove an airport.
-        Notice: this method can produce some visual artifacts, and buildings that are not included in OpenStreetMap data can be removed"""
+        Notice: this method can produce some visual artifacts, and buildings that are not included in OpenStreetMap data may be removed"""
     starting_section = OSM_INI_SECTION
     displayed_sections = [
         PROJECT_INI_SECTION,
@@ -559,7 +572,7 @@ class OT_KeepOnlyBuildingsAndRoads3dDataPanel(SettingsOperator):
     bl_label = "Keep only buildings and roads from Google Earth tiles"
     operator_description = """Automatically removes everything, except buildings and roads from the Google Earth tiles, based on the OpenStreetMap data.
         Optionally, in the OPENSTREETMAP section, set the city of the airport, in case you want to remove an airport.
-        Notice: this method can produce some visual artifacts, and buildings that are not included in OpenStreetMap data can be removed"""
+        Notice: this method can produce some visual artifacts, and buildings that are not included in OpenStreetMap data may be removed"""
     starting_section = OSM_INI_SECTION
     displayed_sections = [
         PROJECT_INI_SECTION,

@@ -22,8 +22,7 @@ from bpy.props import StringProperty, BoolProperty, EnumProperty, FloatProperty,
 from constants import TARGET_MIN_SIZE_VALUE_PROPERTY_PREFIX, PNG_TEXTURE_FORMAT, JPG_TEXTURE_FORMAT, MAX_PHOTOGRAMMETRY_LOD, POI_LANDMARK_FORMAT_TYPE, CITY_LANDMARK_FORMAT_TYPE, LIGHT_WARM_DISPLAY_NAME, LIGHT_COLD_DISPLAY_NAME, LIGHT_WARM_GUID, LIGHT_COLD_GUID, LIGHT_100_BLUE_GUID, LIGHT_500_BLUE_GUID, LIGHT_1000_BLUE_GUID, LIGHT_100_BLUE_DISPLAY_NAME, LIGHT_500_BLUE_DISPLAY_NAME, LIGHT_1000_BLUE_DISPLAY_NAME, LIGHT_100_GREEN_GUID, LIGHT_100_GREEN_DISPLAY_NAME, LIGHT_500_GREEN_GUID, \
     LIGHT_500_GREEN_DISPLAY_NAME, LIGHT_1000_GREEN_GUID, LIGHT_1000_GREEN_DISPLAY_NAME, LIGHT_100_SOFT_GREEN_GUID, LIGHT_100_SOFT_GREEN_DISPLAY_NAME, LIGHT_500_SOFT_GREEN_GUID, LIGHT_500_SOFT_GREEN_DISPLAY_NAME, LIGHT_1000_SOFT_GREEN_GUID, LIGHT_1000_SOFT_GREEN_DISPLAY_NAME, LIGHT_100_WHITE_GUID, LIGHT_100_WHITE_DISPLAY_NAME, LIGHT_500_WHITE_GUID, LIGHT_500_WHITE_DISPLAY_NAME, LIGHT_1000_WHITE_GUID, LIGHT_1000_WHITE_DISPLAY_NAME, LIGHT_100_MINT_GREEN_GUID, LIGHT_100_MINT_GREEN_DISPLAY_NAME, \
     LIGHT_500_MINT_GREEN_GUID, LIGHT_500_MINT_GREEN_DISPLAY_NAME, LIGHT_1000_MINT_GREEN_GUID, LIGHT_1000_MINT_GREEN_DISPLAY_NAME, LIGHT_100_PINK_GUID, LIGHT_100_PINK_DISPLAY_NAME, LIGHT_500_PINK_GUID, LIGHT_500_PINK_DISPLAY_NAME, LIGHT_1000_PINK_GUID, LIGHT_1000_PINK_DISPLAY_NAME, LIGHT_100_RED_GUID, LIGHT_100_RED_DISPLAY_NAME, LIGHT_500_RED_GUID, LIGHT_500_RED_DISPLAY_NAME, LIGHT_1000_RED_GUID, LIGHT_1000_RED_DISPLAY_NAME, LIGHT_100_SKY_BLUE_GUID, LIGHT_100_SKY_BLUE_DISPLAY_NAME, \
-    LIGHT_500_SKY_BLUE_GUID, LIGHT_500_SKY_BLUE_DISPLAY_NAME, LIGHT_1000_SKY_BLUE_GUID, LIGHT_1000_SKY_BLUE_DISPLAY_NAME, LIGHT_100_PURPLE_GUID, LIGHT_100_PURPLE_DISPLAY_NAME, LIGHT_500_PURPLE_GUID, LIGHT_500_PURPLE_DISPLAY_NAME, LIGHT_1000_PURPLE_GUID, LIGHT_1000_PURPLE_DISPLAY_NAME, LIGHT_100_YELLOW_GUID, LIGHT_100_YELLOW_DISPLAY_NAME, LIGHT_500_YELLOW_GUID, LIGHT_500_YELLOW_DISPLAY_NAME, LIGHT_1000_YELLOW_GUID, LIGHT_1000_YELLOW_DISPLAY_NAME, ADDON_NAME
-from utils import isolated_print
+    LIGHT_500_SKY_BLUE_GUID, LIGHT_500_SKY_BLUE_DISPLAY_NAME, LIGHT_1000_SKY_BLUE_GUID, LIGHT_1000_SKY_BLUE_DISPLAY_NAME, LIGHT_100_PURPLE_GUID, LIGHT_100_PURPLE_DISPLAY_NAME, LIGHT_500_PURPLE_GUID, LIGHT_500_PURPLE_DISPLAY_NAME, LIGHT_1000_PURPLE_GUID, LIGHT_1000_PURPLE_DISPLAY_NAME, LIGHT_100_YELLOW_GUID, LIGHT_100_YELLOW_DISPLAY_NAME, LIGHT_500_YELLOW_GUID, LIGHT_500_YELLOW_DISPLAY_NAME, LIGHT_1000_YELLOW_GUID, LIGHT_1000_YELLOW_DISPLAY_NAME
 
 
 class SettingsPropertyGroup(bpy.types.PropertyGroup):
@@ -211,12 +210,23 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         context.scene.project_settings.altitude_adjustment = "{:.2f}".format(float(str(self.altitude_adjustment))).rstrip("0").rstrip(".")
         context.scene.project_settings.save()
 
+    def create_forests_vegetation_updated(self, context):
+        context.scene.project_settings.create_forests_vegetation = self.create_forests_vegetation
+        context.scene.project_settings.save()
+
+    def create_woods_vegetation_updated(self, context):
+        context.scene.project_settings.create_woods_vegetation = self.create_woods_vegetation
+        context.scene.project_settings.save()
+
     def build_package_enabled_updated(self, context):
         context.scene.project_settings.build_package_enabled = self.build_package_enabled
         context.scene.project_settings.save()
 
     def python_reload_modules_updated(self, context):
         context.scene.global_settings.reload_modules = self.python_reload_modules
+
+    def overpass_api_uri_updated(self, context):
+        context.scene.global_settings.overpass_api_uri = self.overpass_api_uri
 
     def get_msfs_build_path(self):
         from UI.prefs import get_prefs
@@ -233,6 +243,15 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
 
         if prefs is not None:
             return prefs.compressonator_exe_path
+
+        return str()
+
+    def get_overpass_api_uri(self):
+        from UI.prefs import get_prefs
+        prefs = get_prefs()
+
+        if prefs is not None:
+            return prefs.overpass_api_uri
 
         return str()
 
@@ -569,6 +588,18 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         default=bpy.types.Scene.project_settings.light_guid if bpy.types.Scene.project_settings is not None else LIGHT_WARM_GUID,
         update=light_guid_updated
     )
+    create_forests_vegetation: BoolProperty(
+        name="Create MSFS vegetation on forests OSM area",
+        description="Create MSFS vegetation on forests OSM area (useful if MSFS forests vegetation is not accurate)",
+        default=bpy.types.Scene.project_settings.create_forests_vegetation if bpy.types.Scene.project_settings is not None else False,
+        update=create_forests_vegetation_updated
+    )
+    create_woods_vegetation: BoolProperty(
+        name="Create MSFS vegetation on woods OSM area",
+        description="Create MSFS vegetation on woods OSM area (useful if MSFS woods vegetation is not accurate)",
+        default=bpy.types.Scene.project_settings.create_woods_vegetation if bpy.types.Scene.project_settings is not None else False,
+        update=create_woods_vegetation_updated
+    )
     msfs_build_exe_path_readonly: StringProperty(
         name="Path to the MSFS bin exe that builds the MSFS packages",
         description="Select the path to the MSFS bin exe that builds the MSFS packages",
@@ -590,4 +621,15 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         description="Set this to true if you want to reload python modules (mainly for dev purpose)",
         default=bpy.types.Scene.global_settings.reload_modules,
         update=python_reload_modules_updated
+    )
+    overpass_api_uri: StringProperty(
+        name="Uri of the overpass API used by Osmnx to retrieve OSM data",
+        description="Set the uri of the overpass API used by Osmnx to retrieve OSM data",
+        default=bpy.types.Scene.global_settings.overpass_api_uri,
+        update=overpass_api_uri_updated
+    )
+    overpass_api_uri_readonly: StringProperty(
+        name="Uri of the overpass API used by Osmnx to retrieve OSM data",
+        description="Set the uri of the overpass API used by Osmnx to retrieve OSM data",
+        get=get_overpass_api_uri
     )

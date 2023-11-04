@@ -17,7 +17,7 @@
 #  <pep8 compliant>
 from collections import defaultdict
 
-from constants import HEIGHT_MAPS_DISPLAY_NAME, HEIGHT_MAP_DISPLAY_NAME
+from constants import HEIGHT_MAPS_GROUP_DISPLAY_NAME, HEIGHT_MAP_GROUP_DISPLAY_NAME
 from msfs_project.position import MsfsPosition
 from utils import isolated_print
 from utils.octant import get_latlonbox_from_file_name
@@ -30,7 +30,7 @@ class MsfsHeightMapGroup:
     group_id: int
     group_generated: bool
 
-    def __init__(self, xml=None, elem=None, group_display_name=HEIGHT_MAPS_DISPLAY_NAME, group_id=None):
+    def __init__(self, xml=None, elem=None, group_display_name=HEIGHT_MAPS_GROUP_DISPLAY_NAME, group_id=None):
         self.tag = "Group"
         self.display_name = group_display_name
         self.group_index = 1
@@ -70,7 +70,7 @@ class MsfsHeightMap:
     group: MsfsHeightMapGroup
 
     def __init__(self, tile=None, elem=None, height_data=None, inverted_height_data=None, xml=None, width=None, altitude=None, group_id=None):
-        self.display_name = HEIGHT_MAP_DISPLAY_NAME
+        self.display_name = HEIGHT_MAP_GROUP_DISPLAY_NAME
 
         if tile is not None and height_data is not None:
             self.display_name = self.display_name + "_" + tile.name
@@ -128,7 +128,7 @@ class MsfsHeightMap:
             self.size = height_map.get(xml.WIDTH_ATTR)
             self.height_data = height_map.get(xml.DATA_ATTR)
 
-        self.group = MsfsHeightMapGroup(elem.get(xml.PARENT_GROUP_ID_ATTR))
+        self.group = MsfsHeightMapGroup(group_id=elem.get(xml.PARENT_GROUP_ID_ATTR))
 
     def __serialize_height_data(self, height_data):
         result = ""

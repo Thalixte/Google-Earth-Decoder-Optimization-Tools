@@ -16,7 +16,7 @@
 #
 #  <pep8 compliant>
 
-from constants import GEOMETRY_OSM_COLUMN, LIGHT_WARM_GUID, LIGHT_HEADING, LIGHT_WARM_DISPLAY_NAME, LIGHTS_DISPLAY_NAME
+from constants import GEOMETRY_OSM_COLUMN, LIGHT_WARM_GUID, LIGHT_HEADING, LIGHT_WARM_DISPLAY_NAME, LIGHTS_GROUP_DISPLAY_NAME
 from msfs_project.position import MsfsPosition
 
 
@@ -27,7 +27,7 @@ class MsfsLightsGroup:
     group_id: int
     group_generated: bool
 
-    def __init__(self, xml=None, elem=None, group_display_name=LIGHTS_DISPLAY_NAME, group_id=None):
+    def __init__(self, xml=None, elem=None, group_display_name=LIGHTS_GROUP_DISPLAY_NAME, group_id=None):
         self.tag = "Group"
         self.display_name = group_display_name
         self.group_index = 1
@@ -83,7 +83,7 @@ class MsfsLight:
 
         self.pos = MsfsPosition(light_gdf[GEOMETRY_OSM_COLUMN][0], light_gdf[GEOMETRY_OSM_COLUMN][1], light_gdf[GEOMETRY_OSM_COLUMN][2])
         self.heading = light_gdf[self.HEADING_COL]
-        self.group = MsfsLightsGroup(group_id=group_id, group_display_name=LIGHTS_DISPLAY_NAME + "_" + group_suffix)
+        self.group = MsfsLightsGroup(group_id=group_id, group_display_name=LIGHTS_GROUP_DISPLAY_NAME + "_" + group_suffix)
 
     def __init_from_xml(self, xml, elem):
         children = list(elem.iter(xml.LIBRARY_OBJECT_TAG))

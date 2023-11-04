@@ -84,6 +84,8 @@ class ProjectSettings(Settings):
     add_lights: str
     light_guid: str
     collider_as_lower_lod: str
+    create_forests_vegetation: str
+    create_woods_vegetation: str
 
     LODS_SECTION = "LODS"
     TARGET_MIN_SIZE_VALUES_SETTING = "target_min_size_values"
@@ -135,6 +137,8 @@ class ProjectSettings(Settings):
         self.add_lights = "False"
         self.light_guid = LIGHT_COLD_GUID
         self.collider_as_lower_lod = "False"
+        self.create_forests_vegetation: "False"
+        self.create_woods_vegetation: "False"
 
         if not os.path.isfile(os.path.join(path, self.file_name)) and os.path.isdir(path):
             config_template_path = os.path.join(global_path, CONFIG_TEMPLATES_FOLDER)
@@ -195,6 +199,9 @@ class ProjectSettings(Settings):
         self.preserve_buildings = json.loads(self.preserve_buildings.lower())
 
         self.collider_as_lower_lod = json.loads(self.collider_as_lower_lod.lower())
+
+        self.create_forests_vegetation = json.loads(self.create_forests_vegetation.lower())
+        self.create_woods_vegetation = json.loads(self.create_woods_vegetation.lower())
 
         if self.definition_file_to_merge == str() and self.project_path_to_merge != str():
             self.definition_file_to_merge = os.path.basename(self.project_path_to_merge).capitalize() + XML_FILE_EXT

@@ -45,11 +45,14 @@ WILDCARD = "*"
 CHUNK_SIZE = 1048576
 
 
-def install_python_lib(lib, install_pip=False, force=False):
+def install_python_lib(lib, version=None, install_pip=False, force=False):
     # path to other python folders
     python_lib_missing_msg = "python libraries not found on your system"
     error_msg = "pip and " + lib + " installation failed in blender lib folder. Please consider running this script as an administrator"
     python_exe = get_python_bin_path()
+
+    if version:
+        lib = lib + "==" + str(version)
 
     # python lib path fallback
     if not hasattr(bpy.app, "binary_path_python") or bpy.app.binary_path_python is None:

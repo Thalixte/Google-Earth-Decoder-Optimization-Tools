@@ -22,7 +22,7 @@ import shutil
 
 from utils import Settings
 
-from constants import ENCODING, INI_FILE, XML_FILE_EXT, CONFIG_TEMPLATES_FOLDER, GLOBAL_SETTINGS_TEMPLATE_FILE
+from constants import ENCODING, INI_FILE, XML_FILE_EXT, CONFIG_TEMPLATES_FOLDER, GLOBAL_SETTINGS_TEMPLATE_FILE, DEFAULT_OVERPASS_API_URI
 
 
 class GlobalSettings(Settings):
@@ -33,10 +33,11 @@ class GlobalSettings(Settings):
     definition_file: str
     bake_textures_enabled: str
     nb_parallel_blender_tasks: float
-    reload_modules = str
+    reload_modules: str
     sources_path: str
-    sections = list
-    decoder_output_path = str
+    sections: list
+    decoder_output_path: str
+    overpass_api_uri: str
 
     LODS_SECTION = "LODS"
     TARGET_MIN_SIZE_VALUES_SETTING = "target_min_size_values"
@@ -52,6 +53,7 @@ class GlobalSettings(Settings):
         self.reload_modules = "False"
         self.sections = []
         self.decoder_output_path = str()
+        self.overpass_api_uri = DEFAULT_OVERPASS_API_URI
 
         if not os.path.isfile(os.path.join(path, self.file_name)):
             config_template_path = os.path.join(path, CONFIG_TEMPLATES_FOLDER)

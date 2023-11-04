@@ -37,28 +37,30 @@ with warnings.catch_warnings():
     warnings.simplefilter(action="ignore", category=DeprecationWarning, append=True)
     warnings.simplefilter(action="ignore", category=RuntimeWarning, append=True)
 
+from constants import NUMPY_LIB, NUMPY_LIB_VERSION, PYGEODESY_LIB, SCIPY_LIB, SHAPELY_LIB
+
 try:
     import numpy as np
 except ModuleNotFoundError:
-    install_python_lib('numpy')
+    install_python_lib(NUMPY_LIB, version=NUMPY_LIB_VERSION)
     import numpy as np
 
 try:
     import pygeodesy
 except ModuleNotFoundError:
-    install_python_lib('pygeodesy')
+    install_python_lib(PYGEODESY_LIB)
     import pygeodesy
 
 try:
     import scipy
 except ModuleNotFoundError:
-    install_python_lib('scipy')
+    install_python_lib(SCIPY_LIB)
     import scipy
 
 try:
     import shapely
 except ModuleNotFoundError:
-    install_python_lib('shapely')
+    install_python_lib(SHAPELY_LIB)
     import shapely
 
 from scipy.interpolate import griddata
@@ -221,7 +223,7 @@ def convert_obj_file_to_gltf_file(file, output_folder, texture_folder, depth):
     while current_depth > 0:
         clean_scene()
         name_filter = file_name
-        for i in range(0, current_depth-1):
+        for i in range(0, current_depth - 1):
             name_filter = name_filter + SUB_TILES_RANGE
         for lod_file in Path(file_path).glob(name_filter + OBJ_FILE_EXT):
             lod_file_name = os.path.basename(lod_file).replace(OBJ_FILE_EXT, str())
@@ -1040,7 +1042,7 @@ def calculate_height_map_from_coords_from_bottom(tile, grid_dimension, coords, d
     for co in coords:
         p = co
         ray_direction = [0, 0, 1]
-        result = multi_ray_cast(tile, depsgraph, p, p[0], p[1], ray_direction, ray_bias=(GRID_FACTOR-1))
+        result = multi_ray_cast(tile, depsgraph, p, p[0], p[1], ray_direction, ray_bias=(GRID_FACTOR - 1))
         if result[0]:
             new_coords.append(mathutils.Vector((p[0], p[1], result[1][2])))
         else:
@@ -1148,11 +1150,11 @@ def adjust_height_data_on_exclusion_area(tile, depsgraph, lat, lon, altitude, ex
                 if exclusion_type == EXCLUSION_TYPE.WATER or exclusion_type == EXCLUSION_TYPE.BUILDING:
                     # from bottom
                     ray_direction = (0, 0, 1)
-                    result = multi_ray_cast(tile, depsgraph, p1, x, y, ray_direction, ray_bias=(GRID_FACTOR-1))
+                    result = multi_ray_cast(tile, depsgraph, p1, x, y, ray_direction, ray_bias=(GRID_FACTOR - 1))
                 else:
                     # from top
                     ray_direction = (0, 0, -1)
-                    result = multi_ray_cast(tile, depsgraph, p2, x, y, ray_direction, ray_bias=(GRID_FACTOR-1))
+                    result = multi_ray_cast(tile, depsgraph, p2, x, y, ray_direction, ray_bias=(GRID_FACTOR - 1))
 
                 if result[0]:
                     new_coords.append(mathutils.Vector((x, y, result[1].z)))
@@ -1201,11 +1203,11 @@ def spatial_median(pointcloud, radius):
         # select a patch around the point and make it a shapely
         # MultiPoint
         patch = geometry.MultiPoint(list(pointcloud[
-                       (pointcloud[:, 0] > point.x - radius+0.5) &
-                       (pointcloud[:, 0] < point.x + radius+0.5) &
-                       (pointcloud[:, 1] > point.y - radius+0.5) &
-                       (pointcloud[:, 1] < point.y + radius+0.5)
-                       ]))
+                     (pointcloud[:, 0] > point.x - radius + 0.5) &
+                     (pointcloud[:, 0] < point.x + radius + 0.5) &
+                     (pointcloud[:, 1] > point.y - radius + 0.5) &
+                     (pointcloud[:, 1] < point.y + radius + 0.5)
+                     ]))
 
         # buffer the Point by radius
         pbuff = point.buffer(radius)
@@ -1511,7 +1513,7 @@ def create_grid(obj, name, grid_dimension):
     me = new_obj.data
     bm = bmesh.new()
     bm.from_mesh(me)
-    bmesh.ops.subdivide_edges(bm, edges=bm.edges, use_grid_fill=True, cuts=int(grid_dimension)-1)
+    bmesh.ops.subdivide_edges(bm, edges=bm.edges, use_grid_fill=True, cuts=int(grid_dimension) - 1)
     bm.to_mesh(me)
     me.update()
     bm.free()
@@ -1527,7 +1529,7 @@ def create_grid(obj, name, grid_dimension):
 
 
 def create_and_align_grid(obj, grid_name, grid_collection, grid_factor, grid_dimensions, keep_faces=False):
-    reduction_factor = 0.99
+    reduction_factor = 0.95
 
     minx = obj.bound_box[0][0] * reduction_factor
     maxx = obj.bound_box[4][0] * reduction_factor
@@ -1602,7 +1604,7 @@ def create_face(grid_dimension, column, row):
             column * grid_dimension + 1 + row)
 
 
-def round_decimals_down(number: float, decimals: int=2):
+def round_decimals_down(number: float, decimals: int = 2):
     """
     Returns a value rounded down to a specific number of decimal places.
     """
@@ -1783,7 +1785,7 @@ def create_geocode_bounding_box(lat, lon, alt, landmark_location_file_path, new_
 
             v1 = mathutils.Vector((vec.x, vec.y)).normalized()
             axis = mathutils.Vector((1, 0))
-            angle = v1.angle_signed(axis)*(180/np.pi)
+            angle = v1.angle_signed(axis) * (180 / np.pi)
 
             data["x"].append(npo.x)
             data["y"].append(npo.y)
@@ -1795,7 +1797,8 @@ def create_geocode_bounding_box(lat, lon, alt, landmark_location_file_path, new_
 
         return gdf
 
-def multi_ray_cast(tile, depsgraph, source, x, y, ray_direction, ray_bias = 0):
+
+def multi_ray_cast(tile, depsgraph, source, x, y, ray_direction, ray_bias=0):
     result = tile.evaluated_get(depsgraph).ray_cast(source, ray_direction, distance=6000)
 
     if not result[0]:

@@ -18,6 +18,7 @@
 
 import itertools
 import sys
+import warnings
 from os.path import basename
 
 import io
@@ -25,16 +26,17 @@ import shutil
 import os
 import subprocess
 
+from shapely.errors import ShapelyDeprecationWarning
+
 from utils.install_lib import install_python_lib
-from utils.MapBoxDownloader import MapBoxDownloader
 from utils.string import remove_accents
-from utils.geo_pandas import prepare_wall_gdf, create_exclusion_building_gdf, prepare_water_gdf, prepare_amenity_gdf, prepare_hidden_roads_gdf, prepare_water_exclusion_gdf, prepare_residential_gdf, create_point_gdf, prepare_forest_gdf, prepare_wood_gdf, prepare_natural_gdf, prepare_landuse_gdf
+from utils.geo_pandas import prepare_wall_gdf, create_exclusion_water_gdf, prepare_water_gdf, prepare_amenity_gdf, prepare_hidden_roads_gdf, prepare_water_exclusion_gdf, prepare_residential_gdf, create_point_gdf, prepare_forest_gdf, prepare_wood_gdf, prepare_natural_gdf, prepare_landuse_gdf, create_vegetation_polygons_gdf, create_exclusion_vegetation_water_gdf
 from constants import *
 
 try:
     import osmnx as ox
 except ModuleNotFoundError:
-    install_python_lib(OSMNX_LIB)
+    install_python_lib(OSMNX_LIB, OSMNX_LIB_VERSION)
     import osmnx as ox
 
 import logging as lg
@@ -62,6 +64,11 @@ from pathlib import Path
 from utils.compressonator import Compressonator
 from utils.minidom_xml import add_scenery_object, create_new_definition_file, add_new_lod
 from utils.progress_bar import ProgressBar
+
+warnings.simplefilter(action="ignore", category=UserWarning, append=True)
+warnings.simplefilter(action="ignore", category=FutureWarning, append=True)
+warnings.simplefilter(action="ignore", category=DeprecationWarning, append=True)
+warnings.simplefilter(action="ignore", category=ShapelyDeprecationWarning, append=True)
 
 
 class MsfsProject:
@@ -555,12 +562,12 @@ class MsfsProject:
 
     def __retrieve_shapes(self):
         if self.objects_xml:
-            self.shapes = {PITCH_TERRAFORM_POLYGONS_DISPLAY_NAME: MsfsShapes(xml=self.objects_xml, group_display_name=PITCH_TERRAFORM_POLYGONS_DISPLAY_NAME),
-                           CONSTRUCTION_TERRAFORM_POLYGONS_DISPLAY_NAME: MsfsShapes(xml=self.objects_xml, group_display_name=CONSTRUCTION_TERRAFORM_POLYGONS_DISPLAY_NAME),
-                           AMENITY_TERRAFORM_POLYGONS_DISPLAY_NAME: MsfsShapes(xml=self.objects_xml, group_display_name=AMENITY_TERRAFORM_POLYGONS_DISPLAY_NAME),
+            self.shapes = {PITCH_TERRAFORM_POLYGONS_GROUP_DISPLAY_NAME: MsfsShapes(xml=self.objects_xml, group_display_name=PITCH_TERRAFORM_POLYGONS_GROUP_DISPLAY_NAME),
+                           CONSTRUCTION_TERRAFORM_POLYGONS_GROUP_DISPLAY_NAME: MsfsShapes(xml=self.objects_xml, group_display_name=CONSTRUCTION_TERRAFORM_POLYGONS_GROUP_DISPLAY_NAME),
+                           AMENITY_TERRAFORM_POLYGONS_GROUP_DISPLAY_NAME: MsfsShapes(xml=self.objects_xml, group_display_name=AMENITY_TERRAFORM_POLYGONS_GROUP_DISPLAY_NAME),
                            # GOLF_TERRAFORM_POLYGONS_DISPLAY_NAME: MsfsShapes(xml=self.objects_xml, group_display_name=GOLF_TERRAFORM_POLYGONS_DISPLAY_NAME),
-                           EXCLUSION_BUILDING_POLYGONS_DISPLAY_NAME: MsfsShapes(xml=self.objects_xml, group_display_name=EXCLUSION_BUILDING_POLYGONS_DISPLAY_NAME),
-                           EXCLUSION_VEGETATION_POLYGONS_DISPLAY_NAME: MsfsShapes(xml=self.objects_xml, group_display_name=EXCLUSION_VEGETATION_POLYGONS_DISPLAY_NAME)}
+                           EXCLUSION_BUILDING_POLYGONS_GROUP_DISPLAY_NAME: MsfsShapes(xml=self.objects_xml, group_display_name=EXCLUSION_BUILDING_POLYGONS_GROUP_DISPLAY_NAME),
+                           EXCLUSION_VEGETATION_POLYGONS_GROUP_DISPLAY_NAME: MsfsShapes(xml=self.objects_xml, group_display_name=EXCLUSION_VEGETATION_POLYGONS_GROUP_DISPLAY_NAME)}
 
     def __retrieve_landmarks(self):
         if self.objects_xml:
@@ -568,7 +575,7 @@ class MsfsProject:
 
     def __retrieve_height_maps(self):
         if self.objects_xml:
-            self.height_maps = {HEIGHT_MAPS_DISPLAY_NAME: MsfsHeightMaps(xml=self.objects_xml, group_display_name=HEIGHT_MAPS_DISPLAY_NAME)}
+            self.height_maps = {HEIGHT_MAPS_GROUP_DISPLAY_NAME: MsfsHeightMaps(xml=self.objects_xml, group_display_name=HEIGHT_MAPS_GROUP_DISPLAY_NAME)}
 
     def __clean_objects(self, objects: dict):
         pop_objects = []
@@ -996,7 +1003,7 @@ class MsfsProject:
             prefix = str()
             group_suffix = str()
 
-        self.objects_xml.remove_lights(LIGHTS_DISPLAY_NAME + "_" + group_suffix, True)
+        self.objects_xml.remove_lights(LIGHTS_GROUP_DISPLAY_NAME + "_" + group_suffix, True)
         new_group_id = self.objects_xml.get_new_group_id()
 
         params = ["--light_guid", self.settings.light_guid, "--positioning_files_paths", str('"') + "|".join(positioning_files_paths) + str('"'), "--model_files_paths", str('"') + "|".join(model_files_paths) + str('"'),
@@ -1112,7 +1119,7 @@ class MsfsProject:
             pbar.update("%s removed" % tile.name)
 
     def __generate_height_map_data(self, settings):
-        self.objects_xml.remove_height_maps(HEIGHT_MAPS_DISPLAY_NAME, True)
+        self.objects_xml.remove_height_maps(HEIGHT_MAPS_GROUP_DISPLAY_NAME, True)
         new_group_id = self.objects_xml.get_new_group_id()
 
         tiles_data = self.__retrieve_tiles_to_calculate_height_map(settings.nb_parallel_blender_tasks, new_group_id=new_group_id, parallel=True, height_adjustment=float(self.settings.height_adjustment), high_precision=self.settings.high_precision)
@@ -1159,7 +1166,7 @@ class MsfsProject:
             # print("The map has successfully been created")
 
     def __prepare_3d_data(self, settings, generate_height_data=False, process_3d_data=False, create_polygons=True, process_all=False):
-        ox.config(use_cache=False, log_level=lg.DEBUG)
+        ox.config(overpass_endpoint=settings.overpass_api_uri, log_console=False, use_cache=False, log_level=lg.ERROR)
 
         # create bounding box data
         b = bbox_to_poly(self.coords[1], self.coords[0], self.coords[2], self.coords[3])
@@ -1167,10 +1174,10 @@ class MsfsProject:
 
         # retrieve_osm_data
         orig_water, orig_natural_water, bbox, roads, bridges, hidden_roads, sea, pitch, construction, airport, building, \
-        water_without_bridges, water, exclusion, rocks, amenity, residential, industrial = self.__retrieve_osm_data(b, orig_bbox, settings)
+        water_without_bridges, water, exclusion, rocks, amenity, residential, industrial, forests, woods = self.__retrieve_osm_data(b, orig_bbox, settings)
 
         if create_polygons:
-            self.__create_scenery_polygons(b, orig_bbox, orig_water, orig_natural_water, bbox, sea, pitch, amenity, construction, industrial, airport, exclusion, disable_terraform=self.settings.disable_terraform)
+            self.__create_scenery_polygons(b, orig_bbox, orig_water, orig_natural_water, bbox, sea, pitch, amenity, construction, industrial, forests, woods, airport, exclusion, disable_terraform=self.settings.disable_terraform)
 
         if process_3d_data:
             if self.settings.isolate_3d_data:
@@ -1197,10 +1204,10 @@ class MsfsProject:
 
         orig_land_mass, orig_boundary, orig_road, orig_railway, orig_sea, orig_landuse, orig_grass, orig_nature_reserve, \
         orig_natural, orig_natural_water, orig_water, orig_waterway, orig_aeroway, orig_pitch, orig_construction, orig_park, orig_building, \
-        orig_wall, orig_man_made, orig_rocks, orig_amenity, orig_residential, orig_industrial, orig_airport = self.__load_geodataframes(orig_bbox, b)
+        orig_wall, orig_man_made, orig_rocks, orig_amenity, orig_residential, orig_industrial, orig_airport = self.__load_geodataframes(settings, orig_bbox, b)
 
         bbox, roads, bridges, hidden_roads, sea, pitches, construction, airport, buildings, \
-        water_without_bridges, water, exclusion, rocks, amenities, residentials, industrials = self.__prepare_geodataframes(orig_road, orig_railway, orig_sea, orig_bbox, orig_land_mass, orig_boundary,
+        water_without_bridges, water, exclusion, rocks, amenities, residentials, industrials, forests, woods = self.__prepare_geodataframes(orig_road, orig_railway, orig_sea, orig_bbox, orig_land_mass, orig_boundary,
                                                                                                orig_landuse, orig_natural, orig_natural_water, orig_water, orig_waterway, orig_aeroway,
                                                                                                orig_pitch, orig_construction, orig_airport, orig_building, orig_wall, orig_man_made,
                                                                                                orig_park, orig_nature_reserve, orig_rocks, orig_amenity, orig_residential, orig_industrial, settings)
@@ -1224,9 +1231,12 @@ class MsfsProject:
             osm_xml.create_from_geodataframes([preserve_holes(exclusion.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore'))], b, extrude=True, additional_tags=[(HEIGHT_OSM_TAG, 1000)])
 
         return orig_water, orig_natural_water, bbox, roads, bridges, hidden_roads, sea, pitches, construction, airport, buildings, \
-               water_without_bridges, water, exclusion, rocks, amenities, residentials, industrials
+               water_without_bridges, water, exclusion, rocks, amenities, residentials, industrials, forests, woods
 
-    def __create_scenery_polygons(self, b, orig_bbox, orig_water, orig_natural_water, bbox, sea, pitch, amenity, construction, industrial, airport, exclusion, disable_terraform=False):
+    def __create_scenery_polygons(self, b, orig_bbox, orig_water, orig_natural_water, bbox, sea, pitch, amenity, construction, industrial, forests, woods, airport, exclusion, disable_terraform=False):
+        forests_vegetation_polygons = create_empty_gdf()
+        woods_vegetation_polygons = create_empty_gdf()
+
         print_title("CREATE PITCH TERRAFORM POLYGONS GEO DATAFRAMES...")
         pitch_terraform_polygons = create_terraform_polygons_gdf(pitch, exclusion)
         # for debugging purpose
@@ -1252,8 +1262,8 @@ class MsfsProject:
         osm_xml.create_from_geodataframes([industrial_terraform_polygons.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')], b)
 
         print_title("CREATE EXCLUSION BUILDINGS POLYGONS GEO DATAFRAMES...")
-        exclusion_building = create_exclusion_building_gdf(orig_water, orig_natural_water, sea, bbox)
-        exclusion_building_polygons = create_exclusion_building_polygons_gdf(orig_bbox, exclusion_building, airport)
+        exclusion_water = create_exclusion_water_gdf(orig_water, orig_natural_water, sea, bbox)
+        exclusion_building_polygons = create_exclusion_building_polygons_gdf(orig_bbox, exclusion_water, airport)
         # for debugging purpose
         osm_xml = OsmXml(self.osmfiles_folder, "exclusion_building_polygons" + OSM_FILE_EXT)
         osm_xml.create_from_geodataframes([exclusion_building_polygons.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')], b)
@@ -1265,19 +1275,39 @@ class MsfsProject:
         osm_xml = OsmXml(self.osmfiles_folder, "exclusion_vegetation_polygons" + OSM_FILE_EXT)
         osm_xml.create_from_geodataframes([exclusion_vegetation_polygons.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')], b)
 
+        if self.settings.create_forests_vegetation:
+            print_title("CREATE FORESTS VEGETATION POLYGONS GEO DATAFRAMES...")
+            exclusion_water = create_exclusion_vegetation_water_gdf(orig_water, orig_natural_water, sea, bbox)
+            forests_vegetation_polygons = create_vegetation_polygons_gdf(forests, exclusion_water)
+            # for debugging purpose
+            osm_xml = OsmXml(self.osmfiles_folder, "forests_vegetation_polygons" + OSM_FILE_EXT)
+            osm_xml.create_from_geodataframes([forests_vegetation_polygons.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')], b)
+
+        if self.settings.create_woods_vegetation:
+            print_title("CREATE WOODS VEGETATION POLYGONS GEO DATAFRAMES...")
+            exclusion_water = create_exclusion_vegetation_water_gdf(orig_water, orig_natural_water, sea, bbox)
+            woods_vegetation_polygons = create_vegetation_polygons_gdf(woods, exclusion_water)
+            # for debugging purpose
+            osm_xml = OsmXml(self.osmfiles_folder, "woods_vegetation_polygons" + OSM_FILE_EXT)
+            osm_xml.create_from_geodataframes([woods_vegetation_polygons.drop(labels=BOUNDARY_OSM_KEY, axis=1, errors='ignore')], b)
+
         new_group_id = self.objects_xml.get_new_group_id()
         if not exclusion_building_polygons.empty:
-            self.shapes[EXCLUSION_BUILDING_POLYGONS_DISPLAY_NAME] = MsfsShapes(shape_gdf=exclusion_building_polygons, group_display_name=EXCLUSION_BUILDING_POLYGONS_DISPLAY_NAME, group_id=new_group_id, exclude_buildings=True)
+            self.shapes[EXCLUSION_BUILDING_POLYGONS_GROUP_DISPLAY_NAME] = MsfsShapes(shape_gdf=exclusion_building_polygons, group_display_name=EXCLUSION_BUILDING_POLYGONS_GROUP_DISPLAY_NAME, group_id=new_group_id, name_prefix=EXCLUSION_BUILDING_POLYGON_NAME_PREFIX, exclude_buildings=True)
         if not exclusion_vegetation_polygons.empty:
-            self.shapes[EXCLUSION_VEGETATION_POLYGONS_DISPLAY_NAME] = MsfsShapes(shape_gdf=exclusion_vegetation_polygons, group_display_name=EXCLUSION_VEGETATION_POLYGONS_DISPLAY_NAME, group_id=new_group_id + 1, exclude_vegetation=True, exclude_buildings=True)
+            self.shapes[EXCLUSION_VEGETATION_POLYGONS_GROUP_DISPLAY_NAME] = MsfsShapes(shape_gdf=exclusion_vegetation_polygons, group_display_name=EXCLUSION_VEGETATION_POLYGONS_GROUP_DISPLAY_NAME, group_id=new_group_id + 1, name_prefix=EXCLUSION_VEGETATION_POLYGON_NAME_PREFIX, exclude_vegetation=True, exclude_buildings=True)
         if not pitch_terraform_polygons.empty:
-            self.shapes[PITCH_TERRAFORM_POLYGONS_DISPLAY_NAME] = MsfsShapes(shape_gdf=pitch_terraform_polygons, group_display_name=PITCH_TERRAFORM_POLYGONS_DISPLAY_NAME, group_id=new_group_id + 2, tiles=self.tiles, flatten=not disable_terraform)
+            self.shapes[PITCH_TERRAFORM_POLYGONS_GROUP_DISPLAY_NAME] = MsfsShapes(shape_gdf=pitch_terraform_polygons, group_display_name=PITCH_TERRAFORM_POLYGONS_GROUP_DISPLAY_NAME, group_id=new_group_id + 2, name_prefix=PITCH_TERRAFORM_POLYGON_NAME_PREFIX, tiles=self.tiles, flatten=not disable_terraform)
         if not amenity_terraform_polygons.empty:
-            self.shapes[AMENITY_TERRAFORM_POLYGONS_DISPLAY_NAME] = MsfsShapes(shape_gdf=amenity_terraform_polygons, group_display_name=AMENITY_TERRAFORM_POLYGONS_DISPLAY_NAME, group_id=new_group_id + 3, tiles=self.tiles, flatten=not disable_terraform)
+            self.shapes[AMENITY_TERRAFORM_POLYGONS_GROUP_DISPLAY_NAME] = MsfsShapes(shape_gdf=amenity_terraform_polygons, group_display_name=AMENITY_TERRAFORM_POLYGONS_GROUP_DISPLAY_NAME, group_id=new_group_id + 3, name_prefix=AMENITY_TERRAFORM_POLYGON_NAME_PREFIX, tiles=self.tiles, flatten=not disable_terraform)
         if not construction_terraform_polygons.empty:
-            self.shapes[CONSTRUCTION_TERRAFORM_POLYGONS_DISPLAY_NAME] = MsfsShapes(shape_gdf=construction_terraform_polygons, group_display_name=CONSTRUCTION_TERRAFORM_POLYGONS_DISPLAY_NAME, group_id=new_group_id + 4, tiles=self.tiles, flatten=False)
+            self.shapes[CONSTRUCTION_TERRAFORM_POLYGONS_GROUP_DISPLAY_NAME] = MsfsShapes(shape_gdf=construction_terraform_polygons, group_display_name=CONSTRUCTION_TERRAFORM_POLYGONS_GROUP_DISPLAY_NAME, group_id=new_group_id + 4, name_prefix=CONSTRUCTION_TERRAFORM_POLYGON_NAME_PREFIX, tiles=self.tiles, flatten=False)
         if not industrial_terraform_polygons.empty:
-            self.shapes[INDUSTRIAL_TERRAFORM_POLYGONS_DISPLAY_NAME] = MsfsShapes(shape_gdf=industrial_terraform_polygons, group_display_name=INDUSTRIAL_TERRAFORM_POLYGONS_DISPLAY_NAME, group_id=new_group_id + 5, tiles=self.tiles, flatten=False)
+            self.shapes[INDUSTRIAL_TERRAFORM_POLYGONS_GROUP_DISPLAY_NAME] = MsfsShapes(shape_gdf=industrial_terraform_polygons, group_display_name=INDUSTRIAL_TERRAFORM_POLYGONS_GROUP_DISPLAY_NAME, group_id=new_group_id + 5, name_prefix=INDUSTRIAL_TERRAFORM_POLYGON_NAME_PREFIX, tiles=self.tiles, flatten=False)
+        if not forests_vegetation_polygons.empty:
+            self.shapes[FORESTS_VEGETATION_POLYGONS_GROUP_DISPLAY_NAME] = MsfsShapes(shape_gdf=forests_vegetation_polygons, group_display_name=FORESTS_VEGETATION_POLYGONS_GROUP_DISPLAY_NAME, group_id=new_group_id + 6, name_prefix=FORESTS_VEGETATION_POLYGON_NAME_PREFIX, tiles=self.tiles, create_vegetation=True)
+        if not woods_vegetation_polygons.empty:
+            self.shapes[WOODS_VEGETATION_POLYGONS_GROUP_DISPLAY_NAME] = MsfsShapes(shape_gdf=woods_vegetation_polygons, group_display_name=WOODS_VEGETATION_POLYGONS_GROUP_DISPLAY_NAME, group_id=new_group_id + 7, name_prefix=WOODS_VEGETATION_POLYGON_NAME_PREFIX, tiles=self.tiles, create_vegetation=True)
 
         # reload the xml file to retrieve the last updates
         self.objects_xml = ObjectsXml(self.scene_folder, self.SCENE_OBJECTS_FILE)
@@ -1333,7 +1363,7 @@ class MsfsProject:
             tile.create_exclusion_mask_osm_file(self.osmfiles_folder, b, exclusion, building_mask, water_mask, construction_mask, road_mask, bridges_mask, hidden_roads, amenity_mask, residential_mask, industrial_mask, airport_mask, rocks_mask, keep_holes, file_prefix)
             pbar.update("exclusion mask created for %s tile" % tile.name)
 
-    def __load_geodataframes(self, orig_bbox, b):
+    def __load_geodataframes(self, settings, orig_bbox, b):
         # load all necessary GeoPandas Dataframes
         load_gdf_list = [None] * 24
         pbar = ProgressBar(load_gdf_list, title="RETRIEVE GEODATAFRAMES (THE FIRST TIME, MAY TAKE SOME TIME TO COMPLETE, BE PATIENT...)", sleep=0.0)
@@ -1407,17 +1437,17 @@ class MsfsProject:
         orig_industrial = load_gdf(self.coords, LANDUSE_OSM_KEY, OSM_TAGS[INDUSTRIAL_OSM_KEY], shp_file_path=os.path.join(self.shpfiles_folder, INDUSTRIAL_OSM_KEY + SHP_FILE_EXT))
         pbar.update("industrial geodataframe retrieved")
         pbar.update("retrieving airports geodataframe...", stall=True)
-        orig_airport = load_gdf_from_geocode(AIRPORT_GEOCODE + ", " + self.settings.airport_city.lower(), shpfiles_folder=self.shpfiles_folder, coords=self.coords, keep_data=True, display_warnings=False)
+        orig_airport = load_gdf_from_geocode(AIRPORT_GEOCODE + ", " + self.settings.airport_city.lower(), settings.overpass_api_uri, shpfiles_folder=self.shpfiles_folder, coords=self.coords, keep_data=True, display_warnings=False)
         pbar.update("airports geodataframe retrieved")
 
         return orig_land_mass, orig_boundary, orig_road, orig_railway, orig_sea, orig_landuse, orig_grass, orig_nature_reserve, \
                orig_natural, orig_natural_water, orig_water, orig_waterway, orig_aeroway, orig_pitch, orig_construction, orig_park, orig_building, \
                orig_wall, orig_man_made, orig_rocks, orig_amenity, orig_residential, orig_industrial, orig_airport
 
-    def __create_geocode_osm_exclusion_files(self, geocode, b, geocode_margin, preserve_roads, preserve_buildings, coords, shpfiles_folder):
+    def __create_geocode_osm_exclusion_files(self, geocode, settings, b, geocode_margin, preserve_roads, preserve_buildings, coords, shpfiles_folder):
         print_title("RETRIEVE GEOCODE OSM FILES")
 
-        geocode_gdf = load_gdf_from_geocode(geocode, geocode_margin=geocode_margin, preserve_roads=preserve_roads, preserve_buildings=preserve_buildings, coords=coords, shpfiles_folder=shpfiles_folder)
+        geocode_gdf = load_gdf_from_geocode(geocode, settings.overpass_api_uri, geocode_margin=geocode_margin, preserve_roads=preserve_roads, preserve_buildings=preserve_buildings, coords=coords, shpfiles_folder=shpfiles_folder)
 
         if geocode_gdf is None:
             return geocode_gdf
@@ -1443,8 +1473,8 @@ class MsfsProject:
             pbar.update("%s removed" % tile.name)
 
     def __create_geocode_osm_files(self, geocode, settings, preserve_roads, preserve_buildings, coords, shpfiles_folder):
-        ox.config(use_cache=False, log_level=lg.DEBUG)
-        return self.__create_geocode_osm_exclusion_files(geocode, bbox_to_poly(self.coords[1], self.coords[0], self.coords[2], self.coords[3]), float(self.settings.geocode_margin), preserve_roads, preserve_buildings, coords, shpfiles_folder)
+        ox.config(overpass_endpoint=settings.overpass_api_uri, log_console=False, use_cache=False, log_level=lg.ERROR)
+        return self.__create_geocode_osm_exclusion_files(geocode, settings, bbox_to_poly(self.coords[1], self.coords[0], self.coords[2], self.coords[3]), float(self.settings.geocode_margin), preserve_roads, preserve_buildings, coords, shpfiles_folder)
 
     def __reduce_number_of_vertices(self, nb_parallel_blender_tasks):
         lods_data = self.__retrieve_lods_to_decimate(nb_parallel_blender_tasks)
@@ -1506,11 +1536,11 @@ class MsfsProject:
             pbar.update("%s prepared for msfs" % lod.name)
 
     def __create_landmark_from_geocode(self, geocode, settings, coords):
-        ox.config(use_cache=False, log_level=lg.DEBUG)
+        ox.config(overpass_endpoint=settings.overpass_api_uri, log_console=False, use_cache=False, log_level=lg.ERROR)
         alt = 0.0
 
         print_title("RETRIEVE OSM GEOCODE DATA")
-        geocode_gdf = load_gdf_from_geocode(geocode, coords=coords, keep_data=True, shpfiles_folder=self.shpfiles_folder)
+        geocode_gdf = load_gdf_from_geocode(geocode, settings.overpass_api_uri, coords=coords, keep_data=True, shpfiles_folder=self.shpfiles_folder)
 
         if geocode_gdf.empty:
             return
@@ -1706,14 +1736,14 @@ class MsfsProject:
         rocks = prepare_gdf(orig_rocks)
         pbar.update("rock geodataframe prepared")
 
-        if self.settings.exclude_forests:
+        if self.settings.exclude_forests or self.settings.create_forests_vegetation:
             pbar.update("preparing forests geodataframe...", stall=True)
             forests = clip_gdf(prepare_forest_gdf(orig_landuse, orig_natural), bbox)
             pbar.update("forests geodataframe prepared")
         else:
             forests = create_empty_gdf()
 
-        if self.settings.exclude_woods:
+        if self.settings.exclude_woods or self.settings.create_woods_vegetation:
             pbar.update("preparing woods geodataframe...", stall=True)
             woods = clip_gdf(prepare_wood_gdf(orig_natural), bbox)
             pbar.update("woods geodataframe prepared")
@@ -1761,7 +1791,7 @@ class MsfsProject:
         pbar.update("exclusion geodataframe created")
 
         return bbox, roads, bridges, hidden_roads, sea, pitches, constructions, airport, buildings, \
-               whole_water, water_exclusion, exclusion, rocks, amenities, residentials, industrials
+               whole_water, water_exclusion, exclusion, rocks, amenities, residentials, industrials, forests, woods
 
     @staticmethod
     def __backup_objects(objects: dict, backup_path, pbar_title="backup files"):

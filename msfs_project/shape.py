@@ -28,7 +28,7 @@ from uuid import uuid4
 
 from shapely.geometry import Polygon, MultiPolygon
 
-from constants import PITCH_TERRAFORM_POLYGONS_DISPLAY_NAME
+from constants import PITCH_TERRAFORM_POLYGONS_GROUP_DISPLAY_NAME
 from utils import SHAPELY_TYPE
 
 
@@ -65,6 +65,7 @@ class MsfsShapePolygon:
         float32 = "FLOAT32"
         guid = "GUID"
 
+    display_name: str
     tag: str
     altitude: float
     parent_group_id: int
@@ -89,7 +90,10 @@ class MsfsShapePolygon:
     airport_size = MsfsShapeAttribute
     layer = MsfsShapeAttribute
 
-    def __init__(self, polygon=None, tiles=None, xml=None, elem=None, parent_group_id=None, group_index=None, flatten=False, exclude_buildings=False, exclude_roads=False, exclude_vegetation=False):
+    def __init__(self, polygon=None, display_name=None, tiles=None, xml=None, elem=None, parent_group_id=None, group_index=None, flatten=False, exclude_buildings=False, exclude_roads=False, exclude_vegetation=False, create_vegetation=False):
+        if display_name is not None:
+            self.display_name = display_name
+
         self.tag = SHAPELY_TYPE.polygon
         self.altitude = 0.0
         self.parent_group_id = parent_group_id
@@ -108,7 +112,7 @@ class MsfsShapePolygon:
         self.exclusion_flags = MsfsShapeAttribute(name="ExclusionFlags", guid="{4CACC252-E6DC-419A-B20C-16EC601DF70E}", type=self.SHAPE_ATTRIBUTE_TYPE.uint32, value="0")
         self.vegetation_scale = MsfsShapeAttribute(name="VegetationScale", guid="{6A043F59-E6F2-4117-A2E4-D510E7317C29}", type=self.SHAPE_ATTRIBUTE_TYPE.uint32, value="127")
         self.vegetation_density = MsfsShapeAttribute(name="VegetationDensity", guid="{41EFF715-C392-4B31-A457-50A504353A90}", type=self.SHAPE_ATTRIBUTE_TYPE.uint32, value="31")
-        self.vegetation_falloff = MsfsShapeAttribute(name="VegetationFalloff", guid="{E82ABE17-FB4C-4F67-A28C-ED41969AEAD6}", type=self.SHAPE_ATTRIBUTE_TYPE.float32, value="0.0")
+        self.vegetation_falloff = MsfsShapeAttribute(name="VegetationFalloff", guid="{E82ABE17-FB4C-4F67-A28C-ED41969AEAD6}", type=self.SHAPE_ATTRIBUTE_TYPE.float32, value="10.0")
         self.tree_brightness_factor = MsfsShapeAttribute(name="TreeBrightnessFactor", guid="{63040596-0B21-48FD-8B5F-A9E84A5B7BC9}", type=self.SHAPE_ATTRIBUTE_TYPE.uint32, value="127")
         self.water_type = MsfsShapeAttribute(name="WaterType", guid="{3F8514F8-FAA8-4B94-AB7F-DC2078A4B888}", type=self.SHAPE_ATTRIBUTE_TYPE.uint32, value="0")
         self.land_class_remap = MsfsShapeAttribute(name="LandClassRemap", guid="{0A685EB0-0E01-44FE-B9EF-BFFFBC968ADE}", type=self.SHAPE_ATTRIBUTE_TYPE.uint8, value="0")
@@ -116,12 +120,12 @@ class MsfsShapePolygon:
         self.layer = MsfsShapeAttribute(name="Layer", guid="{9E2B4C3E-7D84-453F-9DCC-B6498FF46703}", type=self.SHAPE_ATTRIBUTE_TYPE.uint32, value="1")
 
         if polygon is not None:
-            self.__init_from_polygon(polygon, tiles=tiles, flatten=flatten, exclude_buildings=exclude_buildings, exclude_roads=exclude_roads, exclude_vegetation=exclude_vegetation)
+            self.__init_from_polygon(polygon, tiles=tiles, flatten=flatten, exclude_buildings=exclude_buildings, exclude_roads=exclude_roads, exclude_vegetation=exclude_vegetation, create_vegetation=create_vegetation)
 
         if xml is not None and elem is not None:
             self.__init_from_xml(xml, elem)
 
-    def __init_from_polygon(self, polygon, tiles=None, flatten=False, exclude_buildings=False, exclude_roads=False, exclude_vegetation=False):
+    def __init_from_polygon(self, polygon, tiles=None, flatten=False, exclude_buildings=False, exclude_roads=False, exclude_vegetation=False, create_vegetation=False):
         self.unique_guid.value = uuid4()
         self.exclude_detected_buildings.value = "1" if exclude_buildings else "0"
         self.exclude_osm_buildings.value = "1" if exclude_buildings else "0"
@@ -143,6 +147,13 @@ class MsfsShapePolygon:
             self.flatten_mode,
             self.flatten_falloff
         ]
+
+        if create_vegetation:
+            self.attributes += [
+                self.vegetation_scale,
+                self.vegetation_density,
+                self.vegetation_falloff
+            ]
 
         if tiles is not None:
             self.__find_altitude_from_tiles(polygon, tiles)
@@ -192,7 +203,7 @@ class MsfsShapeGroup:
     group_id: int
     group_generated: bool
 
-    def __init__(self, xml=None, elem=None, group_display_name=PITCH_TERRAFORM_POLYGONS_DISPLAY_NAME, group_id=None):
+    def __init__(self, xml=None, elem=None, group_display_name=PITCH_TERRAFORM_POLYGONS_GROUP_DISPLAY_NAME, group_id=None):
         self.tag = "Group"
         self.display_name = group_display_name
         self.group_index = 1
@@ -223,11 +234,11 @@ class MsfsShapes:
     polygons: list
     group: MsfsShapeGroup
 
-    def __init__(self, shape_gdf=None, xml=None, group_display_name=PITCH_TERRAFORM_POLYGONS_DISPLAY_NAME, group_id=None, tiles=None, flatten=False, exclude_buildings=False, exclude_roads=False, exclude_vegetation=False):
+    def __init__(self, shape_gdf=None, xml=None, group_display_name=PITCH_TERRAFORM_POLYGONS_GROUP_DISPLAY_NAME, group_id=None, name_prefix=None , tiles=None, flatten=False, exclude_buildings=False, exclude_roads=False, exclude_vegetation=False, create_vegetation=False):
         self.polygons = []
 
         if shape_gdf is not None:
-            self.__init_from_gdf(shape_gdf, group_display_name, group_id, tiles=tiles, flatten=flatten, exclude_buildings=exclude_buildings, exclude_roads=exclude_roads, exclude_vegetation=exclude_vegetation)
+            self.__init_from_gdf(shape_gdf, group_display_name, group_id, name_prefix=name_prefix, tiles=tiles, flatten=flatten, exclude_buildings=exclude_buildings, exclude_roads=exclude_roads, exclude_vegetation=exclude_vegetation, create_vegetation=create_vegetation)
 
         if xml is not None:
             self.__init_from_xml(xml, group_display_name)
@@ -239,7 +250,7 @@ class MsfsShapes:
     def remove_from_xml(xml, group_name):
         xml.remove_shapes(group_name)
 
-    def __init_from_gdf(self, shape_gdf, group_display_name, group_id, tiles=None, flatten=False, exclude_buildings=False, exclude_roads=False, exclude_vegetation=False):
+    def __init_from_gdf(self, shape_gdf, group_display_name, group_id, name_prefix=None, tiles=None, flatten=False, exclude_buildings=False, exclude_roads=False, exclude_vegetation=False, create_vegetation=False):
         self.group = MsfsShapeGroup(group_display_name=group_display_name, group_id=group_id)
 
         for index, row in shape_gdf.iterrows():
@@ -257,8 +268,8 @@ class MsfsShapes:
                 polygons = row.geometry
 
             group_index = index[1]+1 if isinstance(index, list) or isinstance(index, tuple) else index+1
-            for polygon in polygons:
-                self.polygons.append(MsfsShapePolygon(polygon=polygon, tiles=tiles, parent_group_id=group_id, group_index=group_index, flatten=flatten, exclude_buildings=exclude_buildings, exclude_roads=exclude_roads, exclude_vegetation=exclude_vegetation))
+            for idx, polygon in enumerate(polygons):
+                self.polygons.append(MsfsShapePolygon(polygon=polygon, display_name=name_prefix + "_" + str(idx), tiles=tiles, parent_group_id=group_id, group_index=group_index, flatten=flatten, exclude_buildings=exclude_buildings, exclude_roads=exclude_roads, exclude_vegetation=exclude_vegetation, create_vegetation=create_vegetation))
 
     def __init_from_xml(self, xml, group_name):
         polygons = xml.find_polygons(group_name=group_name)

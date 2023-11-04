@@ -20,7 +20,7 @@ import copy
 import os
 from decimal import Decimal
 
-from constants import HEIGHT_MAP_DISPLAY_NAME
+from constants import HEIGHT_MAP_GROUP_DISPLAY_NAME
 from utils.progress_bar import ProgressBar
 from utils import Xml
 from utils.string import remove_accents
@@ -149,7 +149,7 @@ class ObjectsXml(Xml):
         self.save()
 
     def remove_height_maps(self, group_name, remove_groups):
-        for rectangle in self.find_rectangles(display_name=HEIGHT_MAP_DISPLAY_NAME):
+        for rectangle in self.find_rectangles(display_name=HEIGHT_MAP_GROUP_DISPLAY_NAME):
             self.root.remove(rectangle)
 
         for rectangle in self.find_rectangles(group_name=group_name):
@@ -430,6 +430,7 @@ class ObjectsXml(Xml):
 
     def __add_shape_polygon(self, polygon):
         attrib = {
+            self.DISPLAY_NAME_ATTR: polygon.display_name,
             self.PARENT_GROUP_ID_ATTR: str(polygon.parent_group_id),
             self.ALTITUDE_ATTR: str(polygon.altitude)
         }

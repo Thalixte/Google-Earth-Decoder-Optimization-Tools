@@ -239,6 +239,16 @@ def reload_altitude_adjustment(context):
         context.scene.setting_props.altitude_adjustment = float(context.scene.project_settings.altitude_adjustment)
 
 
+def reload_create_forests_vegetation(context):
+    if context.scene.project_settings is not None:
+        context.scene.setting_props.create_forests_vegetation = context.scene.project_settings.create_forests_vegetation
+
+
+def reload_create_woods_vegetation(context):
+    if context.scene.project_settings is not None:
+        context.scene.setting_props.create_woods_vegetation = context.scene.project_settings.create_woods_vegetation
+
+
 def reload_build_package_enabled(context):
     if context.scene.project_settings is not None:
         context.scene.setting_props.build_package_enabled = context.scene.project_settings.build_package_enabled
@@ -246,6 +256,11 @@ def reload_build_package_enabled(context):
 
 def reload_python_reload_modules(context):
     context.scene.setting_props.python_reload_modules = context.scene.global_settings.reload_modules
+
+
+def reload_overpass_api_uri(context):
+    if context.scene.global_settings is not None:
+        context.scene.setting_props.overpass_api_uri = context.scene.global_settings.overpass_api_uri
 
 
 def reload_setting_props_property_group(context, reload_settings_file=True):
@@ -337,6 +352,8 @@ def reload_setting_props(context, reload_settings_file=True):
     reload_add_lights(context)
     reload_light_guid(context)
     reload_altitude_adjustment(context)
+    reload_create_forests_vegetation(context)
+    reload_create_woods_vegetation(context)
     reload_build_package_enabled(context)
     reload_python_reload_modules(context)
     reload_project_settings(context)

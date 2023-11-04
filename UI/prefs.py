@@ -21,7 +21,7 @@ import bpy
 from UI.common import draw_splitted_prop, ALTERNATE_SPLIT_LABEL_FACTOR, PREFS_SPLIT_LABEL_FACTOR
 from bpy.props import StringProperty, BoolProperty, EnumProperty, FloatProperty, IntProperty
 from bpy.types import Operator, AddonPreferences
-from constants import ALTERNATE_PYTHON_LIB_REPO, GDAL_LIB_PREFIX, FIONA_LIB_PREFIX, ADDON_NAME, BLENDERGIS_GITHUB_DOWNLOAD_REPO, BLENDERGIS_ADDON_RELEASE, LAND_MASS_REPO, LAND_MASS_ARCHIVE
+from constants import ALTERNATE_PYTHON_LIB_REPO, GDAL_LIB_PREFIX, FIONA_LIB_PREFIX, ADDON_NAME, BLENDERGIS_GITHUB_DOWNLOAD_REPO, BLENDERGIS_ADDON_RELEASE, LAND_MASS_REPO, LAND_MASS_ARCHIVE, DEFAULT_OVERPASS_API_URI
 from utils.global_settings import GlobalSettings
 from utils.folders import get_global_path
 from utils.console import isolated_print
@@ -78,6 +78,17 @@ class GEDOT_PREFS(AddonPreferences):
         subtype="FILE_PATH",
         name="Path to the compressonator bin exe",
         description="Select the path to the compressonator bin exe that compresses the package texture file",
+        maxlen=1024,
+    )
+
+    ########################################################################
+    # Overpass API
+    ########################################################################
+
+    overpass_api_uri: StringProperty(
+        name="Uri of the overpass API used by Osmnx yo retrieve OSM data",
+        default=DEFAULT_OVERPASS_API_URI,
+        description="Set the uri of the overpass API used by Osmnx yo retrieve OSM data",
         maxlen=1024,
     )
 
@@ -140,6 +151,11 @@ class GEDOT_PREFS(AddonPreferences):
         row = box.row()
         col = row.column()
         draw_splitted_prop(self, col, PREFS_SPLIT_LABEL_FACTOR, "msfs_steam_version", "Msfs Steam version")
+        row = box.row()
+
+        box = layout.box()
+        box.label(text="Overpass API")
+        box.prop(self, "overpass_api_uri")
         row = box.row()
 
         box = layout.box()
