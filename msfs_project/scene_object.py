@@ -44,10 +44,12 @@ class MsfsSceneObject(MsfsObject):
         self.optimized = self.__is_optimized()
         self.cleaned = self.__is_cleaned()
 
-    def backup_files(self, backup_path, dry_mode=False, pbar=None):
+    def backup_files(self, backup_path, dry_mode=False, texture_only=False, pbar=None):
         for lod in self.lods:
-            lod.backup_files(backup_path, dry_mode=dry_mode, pbar=pbar)
-        self.backup_file(backup_path, dry_mode=dry_mode, pbar=pbar)
+            lod.backup_files(backup_path, dry_mode=dry_mode, texture_only=texture_only, pbar=pbar)
+
+        if not texture_only:
+            self.backup_file(backup_path, dry_mode=dry_mode, pbar=pbar)
 
     def remove_files(self):
         for lod in self.lods:

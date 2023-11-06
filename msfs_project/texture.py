@@ -18,6 +18,8 @@
 
 import importlib
 import os
+
+from blender import fix_texture_size_for_package_compilation
 from utils import install_python_lib
 
 try:
@@ -74,6 +76,32 @@ class MsfsTexture(MsfsLodResource):
             self.__update_model_file()
         except:
             print("Conversion failed")
+            return False
+
+        return True
+
+    def resize(self, ratio, orig_folder=None):
+        import PIL
+        importlib.reload(PIL)
+        from PIL import Image
+
+        orig_folder = self.folder if None else orig_folder
+
+        try:
+            file_path = os.path.join(self.folder, self.file)
+            orig_file_path = os.path.join(orig_folder, self.file)
+
+            if os.path.isfile(orig_file_path) and os.path.isfile(file_path):
+                image = Image.open(orig_file_path)
+                new_img_width = int(image.width*ratio)
+                new_img_height = int(image.height*ratio)
+                # fix texture final size for package compilation
+                new_img_width = new_img_width + (4 - new_img_width % 4)
+                new_img_height = new_img_height + (4 - new_img_height % 4)
+                new_image = image.resize((new_img_width, new_img_height), resample=PIL.Image.LANCZOS)
+                new_image.save(file_path)
+        except:
+            print("Colors adjustment failed")
             return False
 
         return True

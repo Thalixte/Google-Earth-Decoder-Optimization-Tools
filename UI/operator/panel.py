@@ -17,7 +17,7 @@
 #  <pep8 compliant>
 
 from bpy_types import Operator
-from constants import MAX_PHOTOGRAMMETRY_LOD, PROJECT_INI_SECTION, TILE_INI_SECTION, LODS_INI_SECTION, OSM_INI_SECTION, GEOCODE_INI_SECTION, ALTITUDE_ADJUSTMENT_INI_SECTION, COMPRESSONATOR_INI_SECTION, BUILD_INI_SECTION, MERGE_INI_SECTION, BACKUP_INI_SECTION, NONE_ICON, FILE_FOLDER_ICON, FILE_REFRESH_ICON, FILE_TICK_ICON, INFO_ICON, ADD_ICON, REMOVE_ICON
+from constants import MAX_PHOTOGRAMMETRY_LOD, PROJECT_INI_SECTION, TILE_INI_SECTION, LODS_INI_SECTION, OSM_INI_SECTION, GEOCODE_INI_SECTION, ALTITUDE_ADJUSTMENT_INI_SECTION, COMPRESSONATOR_INI_SECTION, BUILD_INI_SECTION, MERGE_INI_SECTION, BACKUP_INI_SECTION, NONE_ICON, FILE_FOLDER_ICON, FILE_REFRESH_ICON, FILE_TICK_ICON, INFO_ICON, ADD_ICON, REMOVE_ICON, TEXTURES_INI_SECTION
 from .operator import OT_ProjectPathOperator, OT_ReloadSettingsOperator, \
     OT_SaveSettingsOperator, OT_ProjectsPathOperator, OT_ProjectPathToMergeOperator, OT_addLodOperator, OT_removeLowerLodOperator, OT_openSettingsFileOperator
 from .tools import reload_setting_props
@@ -246,6 +246,14 @@ class SettingsOperator(PanelOperator):
         col = self.draw_header(split, display_save=False)
         col.separator()
         draw_splitted_prop(context.scene.setting_props, col, SPLIT_LABEL_FACTOR, "altitude_adjustment", "Adjustment to apply to the altitude of the while scenery (tiles, objects, colliders, landmarks, height maps)")
+        col.separator()
+        self.draw_footer(context, self.layout, self.operator_name)
+
+    def draw_textures_panel(self, context):
+        split = self.draw_setting_sections_panel(context)
+        col = self.draw_header(split, display_save=False)
+        col.separator()
+        draw_splitted_prop(context.scene.setting_props, col, SPLIT_LABEL_FACTOR, "resize_ratio", "Ratio used to resize the textures of the tiles")
         col.separator()
         self.draw_footer(context, self.layout, self.operator_name)
 
@@ -721,6 +729,20 @@ class OT_AdjustSceneryAltitudePanel(SettingsOperator):
         ALTITUDE_ADJUSTMENT_INI_SECTION,
         BUILD_INI_SECTION,
         BACKUP_INI_SECTION,
+    ]
+
+
+class OT_ResizeSceneryTexturesPanel(SettingsOperator):
+    operator_name = "wm.resize_scenery_textures"
+    id_name = "wm.resize_scenery_textures_panel"
+    bl_idname = id_name
+    bl_label = "Resize the textures of the tiles of the scenery"
+    operator_description = """This script resizes all the textures of the scenery tiles. """
+    starting_section = TEXTURES_INI_SECTION
+    displayed_sections = [
+        PROJECT_INI_SECTION,
+        TEXTURES_INI_SECTION,
+        BUILD_INI_SECTION,
     ]
 
 

@@ -249,6 +249,11 @@ def reload_create_woods_vegetation(context):
         context.scene.setting_props.create_woods_vegetation = context.scene.project_settings.create_woods_vegetation
 
 
+def reload_resize_ratio(context):
+    if context.scene.project_settings is not None:
+        context.scene.setting_props.resize_ratio = float(context.scene.project_settings.resize_ratio)
+
+
 def reload_build_package_enabled(context):
     if context.scene.project_settings is not None:
         context.scene.setting_props.build_package_enabled = context.scene.project_settings.build_package_enabled

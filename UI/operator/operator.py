@@ -30,6 +30,7 @@ from scripts.init_msfs_scenery_project_script import init_msfs_scenery_project
 from scripts.merge_sceneries_script import merge_sceneries
 from scripts.optimize_scenery_script import optimize_scenery
 from scripts.remove_tile_colliders_script import remove_tile_colliders
+from scripts.resize_scenery_textures_script import resize_scenery_textures
 from scripts.update_min_size_values_script import update_min_size_values
 from scripts.compress_built_package_script import compress_built_package
 from scripts.update_tiles_position_script import update_tiles_position
@@ -493,6 +494,21 @@ class OT_AdjustSceneryAltitudeOperator(ActionOperator):
     def execute(self, context):
         super().execute(context)
         adjust_scenery_altitude(context.scene.global_settings)
+        return {'FINISHED'}
+
+
+class OT_ResizeSceneryTexturesOperator(ActionOperator):
+    bl_idname = "wm.resize_scenery_textures"
+    bl_label = "Resize the textures of the tiles of the scenery..."
+
+    @classmethod
+    def poll(cls, context):
+        msfs_project = super().poll(context)
+        return os.path.isdir(msfs_project.scene_folder)
+
+    def execute(self, context):
+        super().execute(context)
+        resize_scenery_textures(context.scene.global_settings)
         return {'FINISHED'}
 
 

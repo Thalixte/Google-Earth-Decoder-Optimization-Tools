@@ -38,7 +38,7 @@ from .operator import PanelPropertyGroup, OT_ProjectPathOperator, OT_ProjectsPat
     OT_RemoveForestsAndWoodsFrom3dDataPanel, OT_RemoveForestsAndWoodsFrom3dDataOperator, OT_RemoveForestsWoodsAndParksFrom3dDataPanel, OT_KeepOnlyBuildings3dDataOperator, OT_KeepOnlyBuildings3dDataPanel, \
     OT_KeepOnlyBuildingsAndRoads3dDataOperator, OT_KeepOnlyBuildingsAndRoads3dDataPanel, OT_RemoveForestsWoodsAndParksFrom3dDataOperator, OT_CreateLandmarkFromGeocodeOperator, OT_CreateLandmarkFromGeocodePanel, \
     OT_Exclude3dDataFromGeocodeOperator, OT_Isolate3dDataFromGeocodeOperator, OT_Exclude3dDataFromGeocodePanel, OT_Isolate3dDataFromGeocodePanel, OT_AddTileCollidersPanel, OT_RemoveTileCollidersPanel, \
-    OT_AddTileCollidersOperator, OT_RemoveTileCollidersOperator, OT_AdjustSceneryAltitudePanel, OT_AdjustSceneryAltitudeOperator, OT_AddLightsToGeocodeOperator, OT_AddLightsToGeocodePanel, OT_Cleanup3dDataPanel, OT_Cleanup3dDataOperator
+    OT_AddTileCollidersOperator, OT_RemoveTileCollidersOperator, OT_AdjustSceneryAltitudePanel, OT_AdjustSceneryAltitudeOperator, OT_AddLightsToGeocodeOperator, OT_AddLightsToGeocodePanel, OT_Cleanup3dDataPanel, OT_Cleanup3dDataOperator, OT_ResizeSceneryTexturesPanel, OT_ResizeSceneryTexturesOperator
 
 
 class TOPBAR_MT_google_earth_optimization_menus(Menu):
@@ -140,6 +140,8 @@ class TOPBAR_MT_other_tools_menu(Menu):
         layout.operator(OT_UpdateTilesPositionPanel.bl_idname)
         layout.separator()
         layout.operator(OT_FixTilesLightningIssuesPanel.bl_idname)
+        layout.separator()
+        layout.operator(OT_ResizeSceneryTexturesPanel.bl_idname)
 
 
 classes = (
@@ -182,6 +184,7 @@ classes = (
     OT_ReloadSettingsOperator,
     OT_AdjustSceneryAltitudeOperator,
     OT_AddLightsToGeocodeOperator,
+    OT_ResizeSceneryTexturesOperator,
     OT_InitMsfsSceneryPanel,
     OT_OptimizeSceneryPanel,
     OT_CleanPackageFilesPanel,
@@ -204,7 +207,8 @@ classes = (
     OT_RemoveTileCollidersPanel,
     OT_CompressBuiltPackagePanel,
     OT_AdjustSceneryAltitudePanel,
-    OT_AddLightsToGeocodePanel
+    OT_AddLightsToGeocodePanel,
+    OT_ResizeSceneryTexturesPanel
 )
 
 

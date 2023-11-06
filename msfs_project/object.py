@@ -36,8 +36,9 @@ class MsfsObject:
         if not os.path.isfile(os.path.join(self.folder, definition_file)): raise ScriptError("Xml definition file " + os.path.join(self.folder, definition_file) + " does not exist. Check the project folder structure")
         self.xml = MsfsObjectXml(folder, definition_file)
 
-    def backup_files(self, backup_path, dry_mode=False, pbar=None):
-        self.backup_file(backup_path, dry_mode=dry_mode, pbar=pbar)
+    def backup_files(self, backup_path, dry_mode=False, texture_only=False, pbar=None):
+        if not texture_only:
+            self.backup_file(backup_path, dry_mode=dry_mode, pbar=pbar)
 
     def remove_files(self):
         self.remove_file()

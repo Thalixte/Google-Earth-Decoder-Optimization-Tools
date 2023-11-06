@@ -218,6 +218,10 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         context.scene.project_settings.create_woods_vegetation = self.create_woods_vegetation
         context.scene.project_settings.save()
 
+    def resize_ratio_updated(self, context):
+        context.scene.project_settings.resize_ratio = "{:.2f}".format(float(str(self.resize_ratio))).rstrip("0").rstrip(".")
+        context.scene.project_settings.save()
+
     def build_package_enabled_updated(self, context):
         context.scene.project_settings.build_package_enabled = self.build_package_enabled
         context.scene.project_settings.save()
@@ -599,6 +603,16 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         description="Create MSFS vegetation on woods OSM area (useful if MSFS woods vegetation is not accurate)",
         default=bpy.types.Scene.project_settings.create_woods_vegetation if bpy.types.Scene.project_settings is not None else False,
         update=create_woods_vegetation_updated
+    )
+    resize_ratio: FloatProperty(
+        name="Texture resize ratio",
+        description="Ratio used to resize the textures of the tiles",
+        soft_min=0.1,
+        soft_max=1.0,
+        step=0.1,
+        precision=2,
+        default=float(bpy.types.Scene.project_settings.resize_ratio) if bpy.types.Scene.project_settings is not None else 0.5,
+        update=resize_ratio_updated
     )
     msfs_build_exe_path_readonly: StringProperty(
         name="Path to the MSFS bin exe that builds the MSFS packages",

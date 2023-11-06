@@ -38,20 +38,19 @@ from utils import check_configuration, ScriptError, build_package, pr_bg_green, 
 from msfs_project import MsfsProject
 
 
-def adjust_scenery_altitude(global_settings):
+def resize_scenery_textures(global_settings):
     try:
         # instantiate the msfsProject and create the necessary resources if it does not exist
-        msfs_project = MsfsProject(global_settings.projects_path, global_settings.project_name, global_settings.definition_file, global_settings.path, global_settings.author_name, fast_init=True)
+        msfs_project = MsfsProject(global_settings.projects_path, global_settings.project_name, global_settings.definition_file, global_settings.path, global_settings.author_name)
 
         check_configuration(global_settings, msfs_project)
 
-        if msfs_project.settings.backup_enabled:
-            msfs_project.backup(Path(os.path.abspath(__file__)).stem.replace(SCRIPT_PREFIX, str()), all_files=False)
+        msfs_project.backup(Path(os.path.abspath(__file__)).stem.replace(SCRIPT_PREFIX, str()), texture_only=True)
 
         isolated_print(EOL)
-        print_title("ADJUST SCENERY ALTITUDE")
+        print_title("RESIZE_SCENERY_TEXTURES")
 
-        msfs_project.adjust_altitude(float(msfs_project.settings.altitude_adjustment))
+        msfs_project.resize_textures(float(msfs_project.settings.resize_ratio))
 
         if msfs_project.settings.build_package_enabled:
             build_package(msfs_project)
@@ -73,4 +72,4 @@ def adjust_scenery_altitude(global_settings):
 
 
 if __name__ == "__main__":
-    adjust_scenery_altitude(settings)
+    resize_scenery_textures(settings)

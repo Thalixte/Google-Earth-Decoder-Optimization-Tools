@@ -175,9 +175,12 @@ class MsfsProject:
         isolated_print(EOL)
         self.objects_xml.update_objects_position(self, settings)
 
-    def backup(self, backup_subfolder, all_files=True):
+    def backup(self, backup_subfolder, all_files=True, texture_only=False):
         isolated_print(EOL)
         self.backup_files(backup_subfolder)
+        if texture_only:
+            all_files = False
+            self.backup_textures(backup_subfolder)
         if all_files:
             self.backup_tiles(backup_subfolder)
             self.backup_colliders(backup_subfolder)
@@ -196,6 +199,11 @@ class MsfsProject:
                 lod.optimization_in_progress = False
                 lod.prepare_for_msfs()
                 pbar.update("%s prepared for msfs" % lod.name)
+
+        # from UI.prefs import get_prefs
+        # prefs = get_prefs()
+        # compressonator = Compressonator(prefs.compressonator_exe_path, package_sources_folder=os.path.join(self.package_sources_folder, os.path.basename(self.model_lib_folder)))
+        # compressonator.compress_gltf_files()
 
     def optimize(self, settings):
         isolated_print(EOL)
@@ -223,6 +231,10 @@ class MsfsProject:
         backup_path = os.path.join(self.backup_folder, backup_subfolder)
         self.__backup_objects(self.tiles, backup_path, "backup tiles")
 
+    def backup_textures(self, backup_subfolder):
+        backup_path = os.path.join(self.backup_folder, backup_subfolder)
+        self.__backup_textures(self.tiles, backup_path, "backup textures")
+
     def backup_colliders(self, backup_subfolder):
         backup_path = os.path.join(self.backup_folder, backup_subfolder)
         self.__backup_objects(self.colliders, backup_path, "backup colliders")
@@ -249,7 +261,7 @@ class MsfsProject:
     def compress_built_package(self):
         from UI.prefs import get_prefs
         prefs = get_prefs()
-        compressonator = Compressonator(prefs.compressonator_exe_path, self.model_lib_output_folder)
+        compressonator = Compressonator(prefs.compressonator_exe_path, model_lib_folder=self.model_lib_output_folder)
         compressonator.compress_texture_files()
 
     def merge(self, project_to_merge):
@@ -367,6 +379,9 @@ class MsfsProject:
 
     def adjust_altitude(self, altitude_adjustment):
         self.__adjust_altitude(altitude_adjustment)
+
+    def resize_textures(self, ratio):
+        self.__resize_tiles_textures(ratio)
 
     def create_landmark_from_geocode(self, settings, lat, lon):
         geocode = self.settings.geocode
@@ -605,27 +620,54 @@ class MsfsProject:
         if guid in self.colliders:
             self.colliders.pop(guid, None)
 
+    def __convert_tiles_textures(self, src_format, dest_format):
+        textures = self.__retrieve_tiles_textures(src_format)
+
+        if textures is None:
+            return
+
+        isolated_print(src_format.capitalize() + " texture files detected in the tiles of the project! Try to install Pillow lib, then convert them")
+        install_python_lib("Pillow")
+
+        pbar = ProgressBar(textures, title="CONVERT " + src_format.upper() + " TEXTURE FILES TO " + dest_format.upper())
+        for texture in textures:
+            file = texture.file
+            if not texture.convert_format(src_format, dest_format):
+                raise ScriptError("An error was detected while converting texture files in " + self.texture_folder + " ! Please convert them to " + dest_format + " format prior to launch the script, or remove them")
+            else:
+                pbar.update("%s converted to %s" % (file, dest_format))
+
+    def __resize_tiles_textures(self, ratio):
+        textures = []
+        # when the original tiles are available in the backup, use them, otherwise use the current modified tiles (which give less accurate results than the original ones)
+        backup_path = os.path.join(self.__find_backup_path(RESIZE_SCENERY_TEXTURES_BACKUP_FOLDER), TEXTURE_FOLDER)
+
+        for tile in self.tiles.values():
+            if not os.path.isdir(tile.folder):
+                continue
+
+            for lod in tile.lods:
+                if not os.path.isdir(lod.folder):
+                    continue
+
+                for texture in lod.textures:
+                    textures.append(texture)
+
+        install_python_lib("Pillow")
+
+        pbar = ProgressBar(textures, title="RESIZE TEXTURE FILES BY " + str(int(ratio*100)) + "%")
+        for texture in textures:
+            file = texture.file
+            if not texture.resize(ratio, orig_folder=backup_path):
+                raise ScriptError("An error was detected while resizing texture files in " + self.texture_folder)
+            else:
+                pbar.update("{} resized by {}%".format(file, int(ratio*100)))
+
     def __retrieve_tiles_textures(self, extension):
         textures = []
         for guid, tile in self.tiles.items():
             for lod in tile.lods: textures.extend([texture for texture in lod.textures if extension in texture.file])
         return textures
-
-    def __convert_tiles_textures(self, src_format, dest_format):
-        textures = self.__retrieve_tiles_textures(src_format)
-
-        if textures:
-            isolated_print(src_format.capitalize() + " texture files detected in the tiles of the project! Try to install Pillow lib, then convert them")
-            print_title("INSTALL PILLOW")
-            install_python_lib("Pillow")
-
-            pbar = ProgressBar(textures, title="CONVERT " + src_format.upper() + " TEXTURE FILES TO " + dest_format.upper())
-            for texture in textures:
-                file = texture.file
-                if not texture.convert_format(src_format, dest_format):
-                    raise ScriptError("An error was detected while converting texture files in " + self.texture_folder + " ! Please convert them to " + dest_format + " format prior to launch the script, or remove them")
-                else:
-                    pbar.update("%s converted to %s" % (file, dest_format))
 
     def __guess_min_lod_level(self):
         lod_stats = dict()
@@ -735,7 +777,7 @@ class MsfsProject:
             has_mask_file = os.path.isfile(ground_mask_file_path) or os.path.isfile(rocks_mask_file_path) or os.path.isfile(water_mask_file_path)
 
             # when the original tiles are available in the backup, use them, otherwise use the current modified tiles (which give less accurate results than the original ones)
-            backup_path = self.__find_backup_path()
+            backup_path = self.__find_backup_path(CLEANUP_3D_DATA_BACKUP_FOLDER)
             tile_folder = backup_path if os.path.isdir(backup_path) else tile.folder
 
             if not os.path.isdir(tile_folder):
@@ -783,7 +825,7 @@ class MsfsProject:
         tiles = []
 
         # when the original tiles are available in the backup, use them, otherwise use the current modified tiles (which give less accurate results than the original ones)
-        backup_path = self.__find_backup_path()
+        backup_path = self.__find_backup_path(CLEANUP_3D_DATA_BACKUP_FOLDER)
 
         for tile in self.tiles.values():
             if not os.path.isdir(tile.folder):
@@ -923,7 +965,7 @@ class MsfsProject:
                     continue
 
                 # when the original tiles are available in the backup, use them, otherwise use the current modified tiles (which give less accurate results than the original ones)
-                backup_path = self.__find_backup_path()
+                backup_path = self.__find_backup_path(CLEANUP_3D_DATA_BACKUP_FOLDER)
                 lod_folder = backup_path if os.path.isdir(backup_path) else lod.folder
 
                 if not os.path.isdir(lod_folder):
@@ -983,7 +1025,7 @@ class MsfsProject:
                 continue
 
             # when the original tiles are available in the backup, use them, otherwise use the current modified tiles (which give less accurate results than the original ones)
-            backup_path = self.__find_backup_path()
+            backup_path = self.__find_backup_path(CLEANUP_3D_DATA_BACKUP_FOLDER)
             lod_folder = backup_path if os.path.isdir(backup_path) else lod.folder
 
             if not os.path.isdir(lod_folder):
@@ -1033,7 +1075,7 @@ class MsfsProject:
         backup_objects_to_cleanup = False
         project_to_merge_backup_path = None
         project_to_merge_backup_texture_path = None
-        backup_path = self.__find_backup_path()
+        backup_path = self.__find_backup_path(CLEANUP_3D_DATA_BACKUP_FOLDER)
         backup_texture_path = os.path.join(backup_path, TEXTURE_FOLDER)
 
         if os.path.isdir(backup_path) and project_to_merge is not None:
@@ -1648,9 +1690,9 @@ class MsfsProject:
 
         return None
 
-    def __find_backup_path(self):
+    def __find_backup_path(self, backup_root_folder):
         backup_subfolder = os.path.join(self.PACKAGE_SOURCES_FOLDER, os.path.basename(self.model_lib_folder))
-        return os.path.join(os.path.join(self.backup_folder, CLEANUP_3D_DATA_BACKUP_FOLDER), backup_subfolder)
+        return os.path.join(os.path.join(self.backup_folder, backup_root_folder), backup_subfolder)
 
     def __multithread_blender_process_data(self, processed_data, script_name, title, update_msg):
         params = [str(bpy.app.binary_path), "--background", "--python", os.path.join(os.path.dirname(os.path.dirname(__file__)), script_name), "--"]
@@ -1804,6 +1846,16 @@ class MsfsProject:
                 object.backup_files(backup_path, pbar=pbar)
 
     @staticmethod
+    def __backup_textures(objects: dict, backup_path, pbar_title="backup textures"):
+        pbar = ProgressBar(list())
+        for guid, object in objects.items():
+            object.backup_files(backup_path, dry_mode=True, texture_only=True, pbar=pbar)
+        if pbar.range > 0:
+            pbar.display_title(pbar_title)
+            for guid, object in objects.items():
+                object.backup_files(backup_path, texture_only=True, pbar=pbar)
+
+    @staticmethod
     def __find_guid_with_definition_file(objects, definition_file):
         for key, object in objects.items():
             if object.definition_file == definition_file:
@@ -1834,8 +1886,8 @@ class MsfsProject:
                 input_fd, output_fd = os.pipe()
 
                 for obj in chunck:
-                    print("-------------------------------------------------------------------------------")
-                    print("\"" + str(bpy.app.binary_path) + "\" --background --python \"" + os.path.join(os.path.dirname(os.path.dirname(__file__)), script_name) + "\" -- " + str(" ").join(obj["params"]))
+                    isolated_print("-------------------------------------------------------------------------------")
+                    isolated_print("\"" + str(bpy.app.binary_path) + "\" --background --python \"" + os.path.join(os.path.dirname(os.path.dirname(__file__)), script_name) + "\" -- " + str(" ").join(obj["params"]))
 
                 si = subprocess.STARTUPINFO()
                 si.dwFlags = subprocess.STARTF_USESTDHANDLES | subprocess.HIGH_PRIORITY_CLASS

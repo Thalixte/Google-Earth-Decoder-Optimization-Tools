@@ -86,6 +86,7 @@ class ProjectSettings(Settings):
     collider_as_lower_lod: str
     create_forests_vegetation: str
     create_woods_vegetation: str
+    resize_ratio: float
 
     LODS_SECTION = "LODS"
     TARGET_MIN_SIZE_VALUES_SETTING = "target_min_size_values"
@@ -139,6 +140,7 @@ class ProjectSettings(Settings):
         self.collider_as_lower_lod = "False"
         self.create_forests_vegetation: "False"
         self.create_woods_vegetation: "False"
+        self.resize_ratio = 0.5
 
         if not os.path.isfile(os.path.join(path, self.file_name)) and os.path.isdir(path):
             config_template_path = os.path.join(global_path, CONFIG_TEMPLATES_FOLDER)
@@ -170,6 +172,7 @@ class ProjectSettings(Settings):
 
         self.ground_exclusion_margin = "{:.2f}".format(float(str(self.ground_exclusion_margin))).rstrip("0").rstrip(".")
 
+        self.resize_ratio = "{:.2f}".format(float(str(self.resize_ratio))).rstrip("0").rstrip(".")
         self.red_level = "{:.2f}".format(float(str(self.red_level))).rstrip("0").rstrip(".")
         self.green_level = "{:.2f}".format(float(str(self.green_level))).rstrip("0").rstrip(".")
         self.blue_level = "{:.2f}".format(float(str(self.blue_level))).rstrip("0").rstrip(".")

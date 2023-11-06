@@ -25,32 +25,43 @@ import subprocess
 from pathlib import Path
 
 from constants import TEXTURE_FOLDER
-from utils import ScriptError, chunks
+from utils import ScriptError, chunks, isolated_print
 from utils.progress_bar import ProgressBar
 
 
 class Compressonator:
     path: str
     textures_folder: str
+    package_sources_folder: str
     converted_data: list
     compressed_data: list
 
     BMP_FORMAT = "BMP"
     DDS_FORMAT = "DDS"
+    GLTF_FORMAT = "gltf"
     BMP_EXTENSION = "." + BMP_FORMAT
     DDS_EXTENSION = "." + DDS_FORMAT
+    GLTF_EXTENSION = "." + GLTF_FORMAT
     BMP_PATTERN = "*." + BMP_FORMAT
     DDS_PATTERN = "*." + DDS_FORMAT
+    GLTF_PATTERN = "*." + GLTF_FORMAT
     DDS_CONVERSION_FORMAT = "DXT1"
     BASE_COLOR_INDEX = 0
     NB_PARALLEL_TASKS = 10
 
-    def __init__(self, path, model_lib_folder):
+    def __init__(self, path, model_lib_folder=None, package_sources_folder=None):
         self.path = path
-        self.textures_folder = os.path.join(model_lib_folder, TEXTURE_FOLDER)
-        self.converted_data = self.__retrieve_texture_files_to_treat(self.DDS_PATTERN, self.DDS_EXTENSION, self.BMP_EXTENSION)
+        if model_lib_folder is not None:
+            self.textures_folder = os.path.join(model_lib_folder, TEXTURE_FOLDER)
+            self.converted_data = self.__retrieve_texture_files_to_treat(self.DDS_PATTERN, self.DDS_EXTENSION, self.BMP_EXTENSION)
+        if package_sources_folder is not None:
+            self.package_sources_folder = package_sources_folder
+            self.converted_data = self.__retrieve_gltf_files_to_treat(self.GLTF_PATTERN)
 
     def compress_texture_files(self):
+        if self.textures_folder is None:
+            return
+
         self.__convert_dds_texture_files()
         self.compressed_data = self.__retrieve_texture_files_to_treat(self.BMP_PATTERN, self.BMP_EXTENSION, self.DDS_EXTENSION)
         self.__compress_dds_texture_files()
@@ -66,12 +77,28 @@ class Compressonator:
 
             print("bmp temp texture file:", file_path, "removed")
 
+    def compress_gltf_files(self):
+        if self.package_sources_folder is None:
+            return
+
+        self.compressed_data = self.__retrieve_gltf_files_to_treat(self.GLTF_PATTERN)
+        self.__compress_gltf_files()
+
     def __retrieve_texture_files_to_treat(self, texture_files_pattern, texture_files_extension, dest_texture_files_extension):
         data = []
         for texture_file in Path(self.textures_folder).glob(texture_files_pattern):
             print("texture file: ", os.path.basename(texture_file))
 
             data.append({'file_name': str(texture_file), 'dest_file_name': str(texture_file).replace(texture_files_extension, dest_texture_files_extension)})
+
+        return chunks(data, self.NB_PARALLEL_TASKS)
+
+    def __retrieve_gltf_files_to_treat(self, gltf_files_pattern):
+        data = []
+        for gltf_file in Path(self.package_sources_folder).glob(gltf_files_pattern):
+            print("gltf file: ", os.path.basename(gltf_file))
+
+            data.append({'file_name': str(gltf_file), 'dest_file_name': str(gltf_file)})
 
         return chunks(data, self.NB_PARALLEL_TASKS)
 
@@ -101,6 +128,33 @@ class Compressonator:
                 p.wait()
 
             pbar.update("%s converted to %s" % (os.path.basename(obj['file_name']), os.path.basename(obj['dest_file_name'])))
+
+    def __compress_gltf_files(self):
+        ON_POSIX = 'posix' in sys.builtin_module_names
+
+        self.compressed_data, data = itertools.tee(self.compressed_data)
+        pbar = ProgressBar(list(data), title="compress " + self.GLTF_FORMAT + " models")
+        for chunck in self.compressed_data:
+            # create a pipe to get data
+            input_fd, output_fd = os.pipe()
+
+            for obj in chunck:
+                print("-------------------------------------------------------------------------------")
+                print("prepare command line: ", self.path, " -meshopt ", obj['file_name'], obj['dest_file_name'])
+
+            processes = [subprocess.Popen([self.path, "-meshopt", obj['file_name'], obj['dest_file_name']], stdout=output_fd, close_fds=ON_POSIX) for obj in chunck]
+
+            os.close(output_fd)  # close unused end of the pipe
+
+            # read output line by line as soon as it is available
+            with io.open(input_fd, "r", buffering=1) as file:
+                for line in file:
+                    print(line, end=str())
+
+            for p in processes:
+                p.wait()
+
+            pbar.update("%s compressed to %s" % (os.path.basename(obj['file_name']), os.path.basename(obj['dest_file_name'])))
 
     def __compress_dds_texture_files(self):
         ON_POSIX = 'posix' in sys.builtin_module_names

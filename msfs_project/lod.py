@@ -70,15 +70,17 @@ class MsfsLod:
         self.splitted_nodes = {}
         self.__retrieve_gltf_resources()
 
-    def backup_files(self, backup_path, dry_mode=False, pbar=None):
+    def backup_files(self, backup_path, dry_mode=False, texture_only=False, pbar=None):
         if self.optimization_in_progress:
             return
 
-        for binary in self.binaries:
-            binary.backup_file(backup_path, dry_mode=dry_mode, pbar=pbar)
+        if not texture_only:
+            for binary in self.binaries:
+                binary.backup_file(backup_path, dry_mode=dry_mode, pbar=pbar)
+            self.backup_file(backup_path, dry_mode=dry_mode, pbar=pbar)
+
         for texture in self.textures:
             texture.backup_file(backup_path, dry_mode=dry_mode, pbar=pbar)
-        self.backup_file(backup_path, dry_mode=dry_mode, pbar=pbar)
 
     def remove_files(self, remove_textures=True):
         for binary in self.binaries:
