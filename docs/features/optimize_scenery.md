@@ -6,6 +6,7 @@ Once the photogrammetry tiles have been retrieved, you can optimize them for MSF
 * if you installed and enabled the Lily Texture Packer Blender addon, and you ticked the "Bake textures enabled" checkbox in the tool menu (section PROJECT), the textures of the project are merged per tile lods, which significantly reduce the number of the project files.
 * it fixes the bounding box of each tile in order for them to fit the MSFS lod management system.
 * it adds Asobo extension tags in order to manage collisions, road traffic, and correct lightning.
+
 All you have to do is to select `Google Earth Decoder Optimization Tools` > `2. Optimize an existing MFSF scenery project` in the top menu.
 
 ![type:video](video.mp4){: src='../assets/videos/arcachon/optimize_scenery.mp4' .md-video}
@@ -34,11 +35,11 @@ Just click on this button, and a [Blender][1] window console will appear on the 
 Once finished, you should see this on the console:   
 ![Image title](../assets/images/optimize_scenery.png){ align=center }   
 
-By default, the building process is executed by the MSFS fspackagetool exe. At the end of the process, you shoud see this window:
+By default, the building process is executed by the MSFS fspackagetool exe. At the end of the process, you should see this window:
 
 ![fspackagetools_build_competed.png](..%2Fassets%2Fimages%2Ffspackagetools_build_completed.png)
 
-In MSFS, the resulting tiles after the optimization process are presented here (to ease the comprehension, the tiles have been moved over the sea):
+In MSFS, the resulting tiles after the optimization process are presented here (to ease the understanding, the tiles have been moved over the sea):
 
 ![arcachon_devmode_overall_insight.png](..%2Fassets%2Fimages%2Farcachon_devmode_overall_insight.png)
 
@@ -49,7 +50,7 @@ Note that the tiles that are entirely in the water have bee removed.
     As some tiles are removed by the optimization process (for instance, tiles that are entirely in the water), 
     this can result in "unknown" tiles in the Scenery Editor window (in dev mode). Those "unknown" tiles can be safely removed from the scenery.
 
-In your MSFS scenery folder, if you open a gltf file corresponding to a tile (which is in a json format), you should see this as the first line of the gltf:
+In your MSFS scenery folder, if you open a gltf file corresponding to a tile (which is in a json format), you should see this as the first lines of the gltf:
 ```json
 {
     "asset": {

@@ -25,18 +25,18 @@ Those methods rely on the accuracy of the [OpenStreetMap][1] data. Two levels of
 
 !!! question "How can i check for [OpenStreetMap][1] data accuracy ?"
 
-    Open your Internet browser, and just ask this on the research bar: "_Your town_ OSM relation" (for instance, "==**Arcachon OSM relation**=="). Click on the first link proposed (this should be "Relation: _Your town_ (########)", for instance "==**Relation: Arcachon (1665459)**==")
+    Open your Internet browser, and just ask this on the research bar: "<_Your town_> OSM relation" (for instance, "==**Arcachon OSM relation**=="). Click on the first link proposed (this should be "Relation: _Your town_ (########)", for instance "==**Relation: Arcachon (1665459)**==")
 
     An example is provided here:
     ![type:video](video.mp4){: src='../assets/videos/arcachon/arcachon_check_for_osm_data.mp4' .md-video}
 
     Now, you can check for the accuracy of the OpenStreetMap data, and especially if the building shapes are mostly all available (in the case of Arcachon city, the 3d data are accurate, because they rely on cadastral data).
 
-Here is an example of a city with accurate [OpenStreetMap][1] data ([Rotterdam][2]):
+Below is an illustration of a city with accurate [OpenStreetMap][1] data ([Rotterdam][2]):
 
 ![rotterdam_osm_data.png](..%2Fassets%2Fimages%2Frotterdam_osm_data.png)
 
-Here is an example of a city with not accurate [OpenStreetMap][1] data ([Rio de Janeiro][3]):
+Below is an illustration of a city with not accurate [OpenStreetMap][1] data ([Rio de Janeiro][3]):
 
 ![rio_de_janeiro_osm_data.png.png](..%2Fassets%2Fimages%2Frio_de_janeiro_osm_data.png.png)
 
@@ -87,7 +87,7 @@ Just click on this button, and a [Blender][5] window console will appear on the 
 Once finished, you should see this on the console:   
 ![cleanup_3d_data_from_photogrammetry_tiles.png](..%2Fassets%2Fimages%2Fcleanup_3d_data_from_photogrammetry_tiles.png){ align=center }   
 
-By default, the building process is executed by the MSFS fspackagetool exe. At the end of the process, you shoud see this window:
+By default, the building process is executed by the MSFS fspackagetool exe. At the end of the process, you should see this window:
 
 ![fspackagetools_build_completed_after_polygons_generation.png](..%2Fassets%2Fimages%2Ffspackagetools_build_completed_after_3d_data_cleanup.png)
 
@@ -143,7 +143,7 @@ Some cleanup results are presented below.
     Because there can be some slight differences between the position of the OpenStreetMap buildings and roads and the corresponding photogrammetry 3d data, a margin is defined around each object to clean (moslty 8 meters).    That's why it can remain some little vegetation 3d data around a road or a building.  
 
 ### Overall cleanup result for a photogrammetry scenery
-In MSFS, the resulting tiles after the cleanup process are presented here (to ease the comprehension, the tiles have been moved over the sea):  
+In MSFS, the resulting tiles after the cleanup process are presented here (to ease the understanding, the tiles have been moved over the sea):  
 
 ![arcachon_cleaned_devmode_overall_insight.png](..%2Fassets%2Fimages%2Farcachon_cleaned_devmode_overall_insight.png)
 

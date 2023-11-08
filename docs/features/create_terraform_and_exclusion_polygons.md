@@ -6,12 +6,12 @@ Once the photogrammetry tiles have been optimized, GEDOT can automatically gener
 
     GEDOT produces two types of exclusion polygons:  
 
-    * exclusion building polygons: exclude the [Blackshark.ai][1] generated buildings to avoid conflicts between those ai buildings and the photogrammetry ones.  
+    * exclusion building polygons: exclude the [Blackshark.ai][1] generated buildings to avoid conflicts between those AI buildings and the photogrammetry ones.  
     * exclusion vegetation polygons: preserve coastal aspects (beaches, shores), thanks to vegetation exclusions polygons that cover the water and the shores.
 
 !!! info "Terraform polygons"
 
-    The terraform polygons are created, but not enabled. They can be used to fix some specific z-fighting issues between the MSFS original ground, and the photogrammetry tile surface.
+    The terraform polygons are created, but not enabled. When enabled, they can be used to fix some specific z-fighting issues between the MSFS original ground, and the photogrammetry tile surface.
 
 All you have to do is to select `Google Earth Decoder Optimization Tools` > `3. Create the terraform and exclusion polygons for the scenery` in the top menu.
 
@@ -33,7 +33,7 @@ Just click on this button, and a [Blender][1] window console will appear on the 
 Once finished, you should see this on the console:   
 ![create_terraform_and_excludion_polygons.png](..%2Fassets%2Fimages%2Fcreate_terraform_and_excludion_polygons.png){ align=center }   
 
-By default, the building process is executed by the MSFS fspackagetool exe. At the end of the process, you shoud see this window:
+By default, the building process is executed by the MSFS fspackagetool exe. At the end of the process, you should see this window:
 
 ![fspackagetools_build_completed_after_polygons_generation.png](..%2Fassets%2Fimages%2Ffspackagetools_build_completed_after_polygons_generation.png)
 
@@ -180,14 +180,14 @@ Arcachon
 
 The .osm files used to generate exclusion and terraform polygons are those ones:  
 
-* **amenity_terraform_polygons.osm**: used to create [amenity][4] terraform polygons, for [amenity area][4]. It is the top-level [OSM][3] tag describing useful and important facilities for visitors and residents, such as toilets, telephones, banks, pharmacies, prisons and schools:
+* **amenity_terraform_polygons.osm**: used to create [amenity][4] terraform polygons, for [amenity area][4]. It is the top-level [OSM][3] tag describing useful and important facilities for visitors and residents, such as toilets, telephones, banks, pharmacies, prisons and schools.
 * **construction_terraform_polygon.osm**: used to create [construction][5] terraform polygons, for [construction area][5]. It is the top-level [OSM][3] tag describing a geographical entity which is currently under construction.
-* **industrial_terraform_polygons.osm**: used to create [industrial][6] terraform polygons, for [industrial area][6]. It delineates areas of land used for industrial purposes.
+* **industrial_terraform_polygons.osm**: used to create [industrial][6] terraform polygons, for [industrial area][6]. It delimits areas of land used for industrial purposes.
 * **pitch_terraform_polygon.osm**: used to create [pitch][7] terraform polygons, for [pitches][7]. It describes an area designed for practising a particular sport, normally designated with appropriate markings. Examples include tennis courts, basketball courts, ball parks, and riding arenas.
 * **exclusion_building_polygons.osm**: used to create building exclusion polygons in order to avoid conflicts between AI generated buildings and photogrammetry buildings.
 * **exclusion_vegetation_polygons.osm**: used to create vegetation exclusion polygons in order to avoid vegetation on the water and in the shores.
 
-Those polygons can be opened in [Blender][8], by using the [BlenderGIS addon][9] (which is automatically installed by GEDOT, if not present in the [Blender][8] addons:
+Those polygons can be opened in [Blender][8], by using the [BlenderGIS addon][9] (which is automatically installed by GEDOT, if not present in the [Blender][8] addons):
 <figure class="md-blender" markdown="1">
   ![terraform_polygons.png](..%2Fassets%2Fimages%2Fterraform_polygons.png)
   <figcaption>Terraform polygons for Arcachon city (in yellow)</figcaption>
@@ -207,22 +207,26 @@ Open MSFS, go to the scenery location, start a new flight, then enter the dev mo
 
 In the scenery Editor window, you can see that new groups have been created:  
 
-* **GEDOT_generated_amenity_terraform_polygon:** contain all the [amenity][4] terraform polygons:  
+* **GEDOT_generated_amenity_terraform_polygon:** contains all the [amenity][4] terraform polygons:  
 
 ![MSFS_arcachon_amenity_terraform_polygons.png](..%2Fassets%2Fimages%2FMSFS_arcachon_amenity_terraform_polygons.png)
-* **GEDOT_generated_construction_terraform_polygon:** contain all the [construction][5] terraform polygons: 
+* **GEDOT_generated_construction_terraform_polygon:** contains all the [construction][5] terraform polygons: 
 
 ![MSFS_arcachon_construction_terraform_polygons.png](..%2Fassets%2Fimages%2FMSFS_arcachon_construction_terraform_polygons.png)
-* **GEDOT_generated_industrial_terraform_polygon:** contain all the [industrial][6] terraform polygons: 
+
+* **GEDOT_generated_industrial_terraform_polygon:** contains all the [industrial][6] terraform polygons: 
 
 ![MSFS_arcachon_industrial_terraform_polygons.png](..%2Fassets%2Fimages%2FMSFS_arcachon_industrial_terraform_polygons.png)
-* **GEDOT_generated_pitch_terraform_polygon:** contain all the [pitch][7] terraform polygons:  
+
+* **GEDOT_generated_pitch_terraform_polygon:** contains all the [pitch][7] terraform polygons:  
 
 ![MSFS_arcachon_pitch_terraform_polygons.png](..%2Fassets%2Fimages%2FMSFS_arcachon_pitch_terraform_polygons.png)
-* **GEDOT_exclusion_building_terraform_polygon:** contain all the exclusion building terraform polygons:    
+
+* **GEDOT_exclusion_building_terraform_polygon:** contains all the exclusion building terraform polygons:    
 
 ![MSFS_arcachon_exclusion_buildings_polygons.png](..%2Fassets%2Fimages%2FMSFS_arcachon_exclusion_buildings_polygons.png)
-* **GEDOT_exclusion_vegetation_terraform_polygon:** contain all the exclusion vegetation terraform polygons: 
+
+* **GEDOT_exclusion_vegetation_terraform_polygon:** contains all the exclusion vegetation terraform polygons: 
 
 ![MSFS_arcachon_exclusion_vegetation_polygons.png.png](..%2Fassets%2Fimages%2FMSFS_arcachon_exclusion_vegetation_polygons.png.png)
 

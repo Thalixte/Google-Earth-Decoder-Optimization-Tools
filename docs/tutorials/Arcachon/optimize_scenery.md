@@ -25,11 +25,11 @@ Just click on this button, and a [Blender][1] window console will appear on the 
 The [Blender][1] window console will appear on the screen. Once finished, you should see this on the console:   
 ![Image title](../../../assets/images/optimize_scenery.png){ align=center }   
 
-The building process is automatically executed by the MFS fspackagetool exe. At the end of the process, you shoud see this window:
+The building process is automatically executed by the MFS fspackagetool exe. At the end of the process, you should see this window:
 
 ![fspackagetools_build_completed.png](..%2F..%2Fassets%2Fimages%2Ffspackagetools_build_completed.png)
 
-In MSFS, the resulting tiles after the optimization process are presented here (to ease the comprehension, the tiles have been moved over the sea):
+In MSFS, the resulting tiles after the optimization process are presented here (to ease the understanding, the tiles have been moved over the sea):
 
 ![arcachon_devmode_overall_insight.png](..%2F..%2Fassets%2Fimages%2Farcachon_devmode_overall_insight.png)
 
@@ -41,7 +41,7 @@ Note that the tiles that are entirely in the water have bee removed.
     this can result in "unknown" tiles in the Scenery Editor window (in dev mode). Those "unknown" tiles can be safely removed from the scenery.
 
 
-In the Arcachon MSFS scenery folder, if you open a gltf file corresponding to a tile (which is in a json format), you should see this as the first line of the gltf:
+In the Arcachon MSFS scenery folder, if you open a gltf file corresponding to a tile (which is in a json format), you should see this as the first lines of the gltf:
 ```json
 {
     "asset": {
@@ -62,7 +62,7 @@ In the Arcachon MSFS scenery folder, if you open a gltf file corresponding to a 
     ],
 ```
 
-In the material definitions, ASOBO extensions (road traffic, collision detection, day night switch and lightning adaptation for ground tiles) has been added:
+In the material definitions, ASOBO extensions (road traffic, collision detection, day night switch and lightning adaptation for ground tiles) have been added:
 ```json
     "materials": [
         {
@@ -94,7 +94,7 @@ In the material definitions, ASOBO extensions (road traffic, collision detection
 ```
 
 
-As [Lily texture packer Blender addon][3] is installed, and the texture backing is enabled, the number of textures has decreased:
+As [Lily texture packer Blender addon][3] is installed and the texture backing is enabled, the number of textures has decreased:
 
 
 ```title="before"

@@ -1,9 +1,8 @@
 # Generate height data from the photogrammetry tiles
 
-Once the [MSFS][1] scenery has been optimized and cleaned, there are chances that the ground height data does not match perfectly with the photogrammetry tiles, like in those screenshots:
+Once the [MSFS][1] scenery has been optimized and cleaned, there are chances that the ground height data does not match perfectly with the photogrammetry tiles, like in this screenshotss:
 
-![Farcachon_wrong_height_data_2.png](..%2Fassets%2Fimages%2Farcachon_wrong_height_data_2.png)
-![arcachon_wrong_height_data_1.png](..%2Fassets%2Fimages%2Farcachon_wrong_height_data_1.png)
+![Farcachon_wrong_height_data_2.png](..%2Fassets%2Fimages%2Farcachon_original_height_data.png)
 
 In order to fix this issue, GEDOT is able to automatically generate DEM data based on the photogrammetry tiles 3d data.
 

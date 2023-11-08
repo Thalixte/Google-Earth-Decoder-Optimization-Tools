@@ -68,7 +68,15 @@ from utils.progress_bar import ProgressBar
 warnings.simplefilter(action="ignore", category=UserWarning, append=True)
 warnings.simplefilter(action="ignore", category=FutureWarning, append=True)
 warnings.simplefilter(action="ignore", category=DeprecationWarning, append=True)
+warnings.simplefilter(action="ignore", category=RuntimeWarning, append=True)
 warnings.simplefilter(action="ignore", category=ShapelyDeprecationWarning, append=True)
+
+with warnings.catch_warnings():
+    warnings.simplefilter(action="ignore", category=UserWarning, append=True)
+    warnings.simplefilter(action="ignore", category=FutureWarning, append=True)
+    warnings.simplefilter(action="ignore", category=DeprecationWarning, append=True)
+    warnings.simplefilter(action="ignore", category=RuntimeWarning, append=True)
+    warnings.simplefilter(action="ignore", category=ShapelyDeprecationWarning, append=True)
 
 
 class MsfsProject:
@@ -643,11 +651,17 @@ class MsfsProject:
         backup_path = os.path.join(self.__find_backup_path(RESIZE_SCENERY_TEXTURES_BACKUP_FOLDER), TEXTURE_FOLDER)
 
         for tile in self.tiles.values():
+            if len(tile.lods) <= 3:
+                continue
+
             if not os.path.isdir(tile.folder):
                 continue
 
             for lod in tile.lods:
                 if not os.path.isdir(lod.folder):
+                    continue
+
+                if lod.lod_level > 0:
                     continue
 
                 for texture in lod.textures:
@@ -838,13 +852,6 @@ class MsfsProject:
             copy_lods = (not os.path.isfile(mask_file_path))
             has_mask_file = os.path.isfile(mask_file_path)
 
-            collider = self.__get_tile_collider(tile.name)
-            has_collider = (collider is not None)
-
-            if has_collider:
-                self.__remove_tile_collider(tile.name)
-                tiles.append(tile)
-
             for lod in tile.lods:
                 if not os.path.isdir(lod.folder):
                     continue
@@ -862,6 +869,13 @@ class MsfsProject:
 
                 if lod.cleaned and not force_cleanup:
                     continue
+
+                collider = self.__get_tile_collider(tile.name)
+                has_collider = (collider is not None)
+
+                if has_collider:
+                    self.__remove_tile_collider(tile.name)
+                    tiles.append(tile)
 
                 # if no mask file is present for this tile, this means that the tile will not be cleaned, so if it has been cleaned before,
                 # we ensure to retrieve the previous one (i.e. the entire tile, if it exists in the backup path)

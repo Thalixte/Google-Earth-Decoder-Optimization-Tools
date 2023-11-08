@@ -1166,7 +1166,7 @@ def adjust_height_data_on_exclusion_area(tile, depsgraph, lat, lon, altitude, ex
             new_coords = spatial_median_kdtree(tree, np.array(new_coords), 100)
         if exclusion_type == EXCLUSION_TYPE.BUILDING:
             tree = cKDTree(new_coords, leafsize=60)
-            new_coords = spatial_median_kdtree(tree, np.array(new_coords), 100)
+            new_coords = spatial_median_kdtree(tree, np.array(new_coords), 60)
         elif exclusion_type == EXCLUSION_TYPE.GROUND:
             new_coords = spatial_median(np.array(new_coords), 20)
 
@@ -1249,7 +1249,10 @@ def spatial_median_kdtree(tree, pointcloud, radius):
     results = tree.query_ball_point(pointcloud, r=radius)
     for idx, result in enumerate(results):
         if len(result) > 0:
-            new_p.append((pointcloud[idx, 0], pointcloud[idx, 1], np.median(pointcloud[result, 2])))
+            if np.median(pointcloud[result, 2]) <= pointcloud[idx, 2]:
+                new_p.append((pointcloud[idx, 0], pointcloud[idx, 1], np.median(pointcloud[result, 2])))
+            else:
+                new_p.append((pointcloud[idx, 0], pointcloud[idx, 1], pointcloud[idx, 2]))
 
     return new_p
 
