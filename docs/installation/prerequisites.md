@@ -6,7 +6,7 @@
 
 * __[Google Earth Decoder update][7]__
 
-* __[Blender 3.5][1]__ or superior
+* __[Blender 3.5][1]__
 
 * __*[Lily texture Packer (optional)][2]*__: to reduce the number of texture files, you can get the [Lily texture Packer][2]. Download the last version (1.2.3). Reducing the number of texture files reduce the loading time of the scenery, and can reduce stuttering related to texture streaming inside the sim
 
