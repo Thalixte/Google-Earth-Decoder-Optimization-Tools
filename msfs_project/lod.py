@@ -21,7 +21,7 @@ import re
 import shutil
 from pathlib import Path
 
-from blender import import_model_files, bake_texture_files, fix_object_bounding_box, export_to_optimized_gltf_files, clean_scene, extract_splitted_tile, align_model_with_mask, process_3d_data, generate_model_height_data, reduce_number_of_vertices
+from blender import import_model_files, bake_texture_files, fix_object_bounding_box, export_to_optimized_gltf_files, clean_scene, extract_splitted_tile, align_model_with_mask, process_3d_data, generate_model_height_data, reduce_number_of_vertices, reduce_number_of_vertices_with_ray_tracing
 from constants import PNG_TEXTURE_FORMAT, JPG_TEXTURE_FORMAT, GLTF_FILE_PATTERN, GLTF_FILE_EXT, XML_FILE_EXT, TEXTURE_FOLDER
 from msfs_project.binary import MsfsBinary
 from msfs_project.texture import MsfsTexture
@@ -224,7 +224,7 @@ class MsfsLod:
         model_file.remove_texture_path(self.name)
         model_file.add_texture_path()
         model_file.dump()
-        reduce_number_of_vertices(os.path.join(self.folder, self.model_file))
+        reduce_number_of_vertices_with_ray_tracing(os.path.join(self.folder, self.model_file))
         export_to_optimized_gltf_files(os.path.join(self.folder, self.model_file), TEXTURE_FOLDER, use_selection=True, export_extras=False)
         clean_scene()
         model_file = MsfsGltf(os.path.join(self.folder, self.model_file))

@@ -16,8 +16,6 @@
 #
 #  <pep8 compliant>
 
-# 21615171614242537
-
 import argparse
 import os
 import site

@@ -605,6 +605,38 @@ def reduce_number_of_vertices(model_file_path):
     bpy.ops.object.select_all(action=SELECT_ACTION)
 
 
+def reduce_number_of_vertices_with_ray_tracing(model_file_path):
+    import_model_files([model_file_path], clean=False)
+    objects = bpy.context.scene.objects
+
+    tile_collection = bpy.data.collections.new(name="tile")
+    bpy.context.scene.collection.children.link(tile_collection)
+
+    projected_points_collection = bpy.data.collections.new(name="projected points")
+    bpy.context.scene.collection.children.link(projected_points_collection)
+
+    for obj in objects:
+        tile_collection.objects.link(obj)
+
+    copy_objects(tile_collection, projected_points_collection, False)
+
+    for new_obj in projected_points_collection.objects:
+        remove_obj_faces_and_egdes(new_obj)
+
+        bm = bmesh.new()
+        bm.from_mesh(new_obj.data)
+
+        for v in bm.verts:
+            v.co.z = 0.0
+
+        bm.to_mesh(new_obj.data)
+        bm.free()
+
+    bpy.ops.object.select_all(action=SELECT_ACTION)
+
+    stop
+
+
 def process_3d_data(model_file_path=None, intersect=False, no_bounding_box=False, keep_mask=False):
     if model_file_path is not None:
         import_model_files([model_file_path], clean=False)
