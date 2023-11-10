@@ -621,16 +621,20 @@ def reduce_number_of_vertices_with_ray_tracing(model_file_path):
     copy_objects(tile_collection, projected_points_collection, False)
 
     for new_obj in projected_points_collection.objects:
-        remove_obj_faces_and_egdes(new_obj)
 
         bm = bmesh.new()
         bm.from_mesh(new_obj.data)
 
         for v in bm.verts:
-            v.co.z = 0.0
+            v.co.z = -100.0
 
         bm.to_mesh(new_obj.data)
         bm.free()
+
+        remove_obj_faces_and_egdes(new_obj)
+
+    for obj in tile_collection.objects:
+        bpy.data.objects.remove(obj, do_unlink=True)
 
     bpy.ops.object.select_all(action=SELECT_ACTION)
 
