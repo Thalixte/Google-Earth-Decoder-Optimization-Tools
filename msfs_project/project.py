@@ -1094,7 +1094,7 @@ class MsfsProject:
 
         if os.path.isdir(backup_path) and project_to_merge is not None:
             backup_objects_to_cleanup = True
-            project_to_merge_backup_path = project_to_merge.__find_backup_path()
+            project_to_merge_backup_path = project_to_merge.__find_backup_path(CLEANUP_3D_DATA_BACKUP_FOLDER)
             project_to_merge_backup_texture_path = os.path.join(project_to_merge_backup_path, TEXTURE_FOLDER)
 
         for guid, object in pbar.iterable:
