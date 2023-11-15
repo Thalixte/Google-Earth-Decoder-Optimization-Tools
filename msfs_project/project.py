@@ -196,17 +196,26 @@ class MsfsProject:
 
     def clean(self):
         isolated_print(EOL)
-        self.__clean_objects(self.tiles)
-        self.__clean_objects(self.colliders)
-        self.__clean_objects(self.objects)
+        tiles_to_remove = []
 
         if not self.colliders:
             lods = [lod for tile in self.tiles.values() for lod in tile.lods]
             pbar = ProgressBar(list(lods), title="PREPARE THE TILES FOR MSFS")
-            for lod in lods:
-                lod.optimization_in_progress = False
-                lod.prepare_for_msfs()
-                pbar.update("%s prepared for msfs" % lod.name)
+            for tile in self.tiles.values():
+                for lod in tile.lods:
+                    if len(lod.binaries) <= 0:
+                        tiles_to_remove.append(tile)
+                    lod.optimization_in_progress = False
+                    lod.prepare_for_msfs()
+                    pbar.update("%s prepared for msfs" % lod.name)
+
+        for tile in tiles_to_remove:
+            tile.remove_files()
+            isolated_print("Tile", tile.name, " has been removed")
+
+        self.__clean_objects(self.tiles)
+        self.__clean_objects(self.colliders)
+        self.__clean_objects(self.objects)
 
         # from UI.prefs import get_prefs
         # prefs = get_prefs()
