@@ -1622,12 +1622,8 @@ class MsfsProject:
         landmarks = MsfsLandmarks(geocode_gdf=geocode_gdf, tiles=self.tiles, owner=settings.author_name, type=self.settings.landmark_type, alt=alt, offset=self.settings.landmark_offset)
 
         for landmark_location in landmarks.landmark_locations:
-            # if a landmark has a correct altitude, it is valid
-            if landmark_location.is_in_tiles:
-                self.objects_xml.remove_landmarks(name=landmark_location.name)
-                landmark_location.to_xml(self.objects_xml)
-            else:
-                pr_bg_orange("Geocode (" + geocode + ") found in OSM data, but not in the scenery" + EOL + CEND)
+            self.objects_xml.remove_landmarks(name=landmark_location.name)
+            landmark_location.to_xml(self.objects_xml)
 
     def __add_lights_to_geocode(self, geocode, geocode_gdf, lat, lon, settings):
         try:
