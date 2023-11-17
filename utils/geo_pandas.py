@@ -166,7 +166,7 @@ def create_bounding_box_from_tiles(tiles):
             result = copy_geometry(tile.bbox_gdf, result, i)
 
     result = result.dissolve().assign(boundary=BOUNDING_BOX_OSM_KEY)
-    result = result.explode()
+    result = result.explode().reset_index()
 
     result[GEOMETRY_OSM_COLUMN] = result[GEOMETRY_OSM_COLUMN].apply(lambda p: close_holes(p))
     result = resize_gdf(result, 10)
