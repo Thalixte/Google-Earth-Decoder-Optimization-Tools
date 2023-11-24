@@ -56,7 +56,7 @@ def create_terraform_and_exclusion_polygons(global_settings):
         msfs_project.settings.exclude_parks = True
         msfs_project.settings.isolate_3d_data = False
         msfs_project.settings.keep_roads = False
-        msfs_project.settings.keep_residential_and_industrial = False
+        msfs_project.settings.keep_residential = False
         msfs_project.settings.disable_terraform = True
         msfs_project.settings.ground_exclusion_margin = STANDARD_EXCLUSION_MARGIN
         msfs_project.settings.save()

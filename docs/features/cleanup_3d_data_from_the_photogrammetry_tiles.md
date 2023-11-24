@@ -60,8 +60,8 @@ Once you have decided the accuracy of the [OpenStreetMap][1] data, you can setup
 
 * (optional) if you want to keep the construction area (which can be useful if the data between the photogrammetry and OpenStreetMap are not up-to-date), tick the `Keep construction area 3d data` checkbox
 
-* (optional) if you want to keep residential and industrial area, without worrying about the real shapes of the buildings, tick the  `Keep residential and industrial area 3d data`.   
-  This is useful in the case when not all the buildings are drawn in [OSM][1], but the residential and industrial area are clearly shaped (with the OSM tag landuse=residential and the OSM tag landuse=industrial).   
+* (optional) if you want to keep residential area, without worrying about the real shapes of the buildings, tick the  `Keep residential area 3d data`.   
+  This is useful in the case when not all the buildings are drawn in [OSM][1], but the residential area are clearly shaped (with the OSM tag landuse=residential and the OSM tag landuse=industrial).   
   It is a way of using the constructive method, even if the [OSM][1] data are not accurate. You can see an example of this type of OSM data accuracy in the [Cardiff city suburbs][4] (light grey area have the tag landuse=residential, whereas dark grey shapes represent the buildings):
 
 ![cardiff_suburbs_osm_data.png](..%2Fassets%2Fimages%2Fcardiff_suburbs_osm_data.png)

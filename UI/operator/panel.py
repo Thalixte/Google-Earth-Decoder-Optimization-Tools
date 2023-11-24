@@ -167,7 +167,7 @@ class SettingsOperator(PanelOperator):
                 col.separator()
                 draw_splitted_prop(context.scene.setting_props, col, ALTERNATE_SPLIT_LABEL_FACTOR, "keep_constructions", "Keep construction area 3d data")
                 col.separator()
-                draw_splitted_prop(context.scene.setting_props, col, ALTERNATE_SPLIT_LABEL_FACTOR, "keep_residential_and_industrial", "Keep residential and industrial area 3d data")
+                draw_splitted_prop(context.scene.setting_props, col, ALTERNATE_SPLIT_LABEL_FACTOR, "keep_residential", "Keep residential area 3d data")
                 col.separator()
             else:
                 draw_splitted_prop(context.scene.setting_props, col, ALTERNATE_SPLIT_LABEL_FACTOR, "exclude_water", "Exclude water 3d data", enabled=False)

@@ -78,7 +78,7 @@ class ProjectSettings(Settings):
     keep_buildings: str
     keep_roads: str
     keep_constructions: str
-    keep_residential_and_industrial: str
+    keep_residential: str
     force_osm_data_download: str
     process_all: str
     add_lights: str
@@ -130,7 +130,7 @@ class ProjectSettings(Settings):
         self.keep_buildings = "True"
         self.keep_roads = "True"
         self.keep_constructions = "True"
-        self.keep_residential_and_industrial = "False"
+        self.keep_residential = "False"
         self.force_osm_data_download = "False"
         self.process_all = "False"
         self.isolate_3d_data = "False"
@@ -191,7 +191,7 @@ class ProjectSettings(Settings):
         self.keep_buildings = json.loads(self.keep_buildings.lower())
         self.keep_roads = json.loads(self.keep_roads.lower())
         self.keep_constructions = json.loads(self.keep_constructions.lower())
-        self.keep_residential_and_industrial = json.loads(self.keep_residential_and_industrial.lower())
+        self.keep_residential = json.loads(self.keep_residential.lower())
         self.force_osm_data_download = json.loads(self.force_osm_data_download.lower())
         self.process_all = json.loads(self.process_all.lower())
         self.isolate_3d_data = json.loads(self.isolate_3d_data.lower())

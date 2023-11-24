@@ -1246,13 +1246,13 @@ class MsfsProject:
 
         if process_3d_data:
             if self.settings.isolate_3d_data:
-                self.__create_exclusion_masks_from_tiles(b, orig_bbox.assign(building=BOUNDING_BOX_OSM_KEY), building_mask=resize_gdf(building, self.settings.building_margin), water_mask=water, construction_mask=construction if self.settings.keep_constructions else None, road_mask=roads if self.settings.keep_roads else None, bridges_mask=bridges if self.settings.keep_roads else None, hidden_roads=hidden_roads if self.settings.keep_roads else None, amenity_mask=amenity if self.settings.keep_roads else None, residential_mask=residential if self.settings.keep_residential_and_industrial else None, industrial_mask=industrial if self.settings.keep_residential_and_industrial else None, airport_mask=airport, rocks_mask=resize_gdf(rocks, self.settings.building_margin), file_prefix=EXCLUSION_OSM_FILE_PREFIX, title="CREATE EXCLUSION MASKS OSM FILES", process_all=process_all)
+                self.__create_exclusion_masks_from_tiles(b, orig_bbox.assign(building=BOUNDING_BOX_OSM_KEY), building_mask=resize_gdf(building, self.settings.building_margin), water_mask=water, construction_mask=construction if self.settings.keep_constructions else None, road_mask=roads if self.settings.keep_roads else None, bridges_mask=bridges if self.settings.keep_roads else None, hidden_roads=hidden_roads if self.settings.keep_roads else None, amenity_mask=amenity if self.settings.keep_roads else None, residential_mask=residential if self.settings.keep_residential else None, industrial_mask=industrial, airport_mask=airport, rocks_mask=resize_gdf(rocks, self.settings.building_margin), file_prefix=EXCLUSION_OSM_FILE_PREFIX, title="CREATE EXCLUSION MASKS OSM FILES", process_all=process_all)
             else:
                 self.__create_exclusion_masks_from_tiles(b, exclusion, building_mask=building, road_mask=roads if self.settings.keep_roads else None, bridges_mask=bridges if self.settings.keep_roads else None, hidden_roads=hidden_roads if self.settings.keep_roads else None, airport_mask=airport, rocks_mask=rocks, file_prefix=EXCLUSION_OSM_FILE_PREFIX, title="CREATE EXCLUSION MASKS OSM FILES", process_all=process_all)
 
         if generate_height_data:
             if self.settings.isolate_3d_data:
-                self.__generate_isolated_height_data(b, construction, roads, bridges, hidden_roads, airport, building, water_without_bridges, orig_bbox.assign(building=BOUNDING_BOX_OSM_KEY), None, residential if self.settings.keep_residential_and_industrial else None, industrial if self.settings.keep_residential_and_industrial else None, rocks, keep_roads=self.settings.keep_roads, keep_residential_and_industrial=self.settings.keep_residential_and_industrial, keep_constructions=self.settings.keep_constructions, process_all=process_all)
+                self.__generate_isolated_height_data(b, construction, roads, bridges, hidden_roads, airport, building, water_without_bridges, orig_bbox.assign(building=BOUNDING_BOX_OSM_KEY), None, residential if self.settings.keep_residential else None, industrial if self.settings.keep_residential else None, rocks, keep_roads=self.settings.keep_roads, keep_residential=self.settings.keep_residential, keep_constructions=self.settings.keep_constructions, process_all=process_all)
             else:
                 self.__generate_excluded_height_data(b, construction, roads, bridges, hidden_roads, airport, building, water_without_bridges, orig_bbox.assign(building=BOUNDING_BOX_OSM_KEY), resize_gdf(exclusion, self.settings.building_margin), rocks, keep_roads=self.settings.keep_roads, keep_constructions=self.settings.keep_constructions, process_all=process_all)
 
@@ -1380,9 +1380,9 @@ class MsfsProject:
             shape.remove_from_xml(self.objects_xml, group_name)
             shape.to_xml(self.objects_xml)
 
-    def __generate_isolated_height_data(self, b, construction, roads, bridges, hidden_roads, airport, building, water, exclusion, amenity, residential, industrial, rocks, keep_roads=False, keep_residential_and_industrial=False, keep_constructions=False, process_all=False):
-        self.__create_exclusion_masks_from_tiles(b, exclusion, building_mask=building, construction_mask=construction if keep_constructions else None, road_mask=roads if keep_roads else None, bridges_mask=bridges if keep_roads else None, hidden_roads=hidden_roads if keep_roads else None, amenity_mask=resize_gdf(amenity, -4) if keep_roads else None, residential_mask=residential if keep_residential_and_industrial else None, industrial_mask=industrial if keep_residential_and_industrial else None, airport_mask=airport, file_prefix=GROUND_OSM_KEY + "_" + EXCLUSION_OSM_FILE_PREFIX, title="CREATE GROUND EXCLUSION MASKS OSM FILES", process_all=process_all)
-        self.__create_exclusion_masks_from_tiles(b, resize_gdf(building, -10), construction_mask=construction if keep_constructions else None, residential_mask=residential if keep_residential_and_industrial else None, industrial_mask=industrial if keep_residential_and_industrial else None, airport_mask=airport, file_prefix=BUILDING_OSM_KEY + "_" + EXCLUSION_OSM_FILE_PREFIX, title="CREATE BUILDING EXCLUSION MASKS OSM FILES", process_all=process_all)
+    def __generate_isolated_height_data(self, b, construction, roads, bridges, hidden_roads, airport, building, water, exclusion, amenity, residential, industrial, rocks, keep_roads=False, keep_residential=False, keep_constructions=False, process_all=False):
+        self.__create_exclusion_masks_from_tiles(b, exclusion, building_mask=building, construction_mask=construction if keep_constructions else None, road_mask=roads if keep_roads else None, bridges_mask=bridges if keep_roads else None, hidden_roads=hidden_roads if keep_roads else None, amenity_mask=resize_gdf(amenity, -4) if keep_roads else None, residential_mask=residential if keep_residential else None, industrial_mask=industrial, airport_mask=airport, file_prefix=GROUND_OSM_KEY + "_" + EXCLUSION_OSM_FILE_PREFIX, title="CREATE GROUND EXCLUSION MASKS OSM FILES", process_all=process_all)
+        self.__create_exclusion_masks_from_tiles(b, resize_gdf(building, -10), construction_mask=construction if keep_constructions else None, residential_mask=residential if keep_residential else None, industrial_mask=industrial if keep_residential else None, airport_mask=airport, file_prefix=BUILDING_OSM_KEY + "_" + EXCLUSION_OSM_FILE_PREFIX, title="CREATE BUILDING EXCLUSION MASKS OSM FILES", process_all=process_all)
         self.__create_exclusion_masks_from_tiles(b, exclusion, rocks_mask=resize_gdf(rocks, -5), file_prefix=ROCKS_OSM_KEY + "_" + EXCLUSION_OSM_FILE_PREFIX, title="CREATE ROCKS EXCLUSION MASKS OSM FILES", process_all=process_all)
         self.__create_exclusion_masks_from_tiles(b, resize_gdf(water, 10), keep_holes=False, file_prefix=WATER_OSM_KEY + "_" + EXCLUSION_OSM_FILE_PREFIX, title="CREATE WATER EXCLUSION MASKS OSM FILES", process_all=process_all)
 
@@ -1724,7 +1724,7 @@ class MsfsProject:
         # prepare all the necessary GeoPandas Dataframes
         itasks = 23
 
-        if self.settings.keep_residential_and_industrial:
+        if self.settings.keep_residential:
             itasks = itasks+1
 
         if self.settings.exclude_forests:
@@ -1825,7 +1825,7 @@ class MsfsProject:
         else:
             nature_reserves = create_empty_gdf()
 
-        if self.settings.keep_residential_and_industrial:
+        if self.settings.keep_residential:
             pbar.update("preparing residentials geodataframe...", stall=True)
             residentials = prepare_residential_gdf(orig_residential, water, natural, natural_water, forests, woods, parks, orig_airport)
             pbar.update("residentials geodataframe prepared")

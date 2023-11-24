@@ -154,8 +154,8 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         context.scene.project_settings.keep_constructions = self.keep_constructions
         context.scene.project_settings.save()
 
-    def keep_residential_and_industrial_updated(self, context):
-        context.scene.project_settings.keep_residential_and_industrial = self.keep_residential_and_industrial
+    def keep_residential_updated(self, context):
+        context.scene.project_settings.keep_residential = self.keep_residential
         context.scene.project_settings.save()
 
     def force_osm_data_download_updated(self, context):
@@ -440,11 +440,11 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         default=bpy.types.Scene.project_settings.keep_constructions if bpy.types.Scene.project_settings is not None else True,
         update=keep_constructions_updated
     )
-    keep_residential_and_industrial: BoolProperty(
-        name="Keep residential and industrial area 3d data",
-        description="Keep residential and industrial area 3d data",
-        default=bpy.types.Scene.project_settings.keep_residential_and_industrial if bpy.types.Scene.project_settings is not None else False,
-        update=keep_residential_and_industrial_updated
+    keep_residential: BoolProperty(
+        name="Keep residential area 3d data",
+        description="Keep residential area 3d data",
+        default=bpy.types.Scene.project_settings.keep_residential if bpy.types.Scene.project_settings is not None else False,
+        update=keep_residential_updated
     )
     force_osm_data_download: BoolProperty(
         name="Force openStreetMap data download",
