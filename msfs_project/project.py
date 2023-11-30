@@ -471,8 +471,7 @@ class MsfsProject:
                 os.makedirs(self.package_sources_folder, exist_ok=True)
                 # rename modelLib folder if it exists
                 if os.path.isdir(os.path.join(self.package_sources_folder, self.MODEL_LIB_FOLDER)) and not os.path.isdir(self.model_lib_folder):
-                    # change modelib folder to fix CTD issues (see
-                    # https://flightsim.to/blog/creators-guide-fix-ctd-issues-on-your-scenery/)
+                    # change modelib folder to fix CTD issues https://flightsim.to/blog/creators-guide-fix-ctd-issues-on-your-scenery/)
                     os.rename(os.path.join(self.package_sources_folder, self.MODEL_LIB_FOLDER), self.model_lib_folder)
                 # create the PackageDefinitions folder if it does not exist
                 os.makedirs(self.package_definitions_folder, exist_ok=True)
