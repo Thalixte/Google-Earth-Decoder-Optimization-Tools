@@ -43,7 +43,7 @@ def clean_package_files(global_settings):
         isolated_print(EOL)
         print_title("CLEAN PACKAGE FILES")
 
-        msfs_project.clean()
+        msfs_project.clean(remove_tiles=True)
 
         if msfs_project.settings.build_package_enabled:
             build_package(msfs_project)

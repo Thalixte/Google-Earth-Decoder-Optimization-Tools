@@ -194,7 +194,7 @@ class MsfsProject:
             self.backup_colliders(backup_subfolder)
             self.backup_scene_objects(backup_subfolder)
 
-    def clean(self):
+    def clean(self, remove_tiles=False):
         isolated_print(EOL)
         tiles_to_remove = []
 
@@ -203,7 +203,9 @@ class MsfsProject:
             pbar = ProgressBar(list(lods), title="PREPARE THE TILES FOR MSFS")
             for tile in self.tiles.values():
                 for lod in tile.lods:
-                    if len(lod.binaries) <= 0:
+                    if len(lod.binaries) <= 0 and remove_tiles:
+                        tiles_to_remove.append(tile)
+                    if len(lod.textures) <= 0 and remove_tiles:
                         tiles_to_remove.append(tile)
                     lod.optimization_in_progress = False
                     lod.prepare_for_msfs()
@@ -1726,10 +1728,10 @@ class MsfsProject:
         if self.settings.keep_residential:
             itasks = itasks+1
 
-        if self.settings.exclude_forests:
+        if self.settings.exclude_forests or self.settings.create_forests_vegetation:
             itasks = itasks+1
 
-        if self.settings.exclude_woods:
+        if  self.settings.exclude_woods or self.settings.create_woods_vegetation:
             itasks = itasks+1
 
         if self.settings.exclude_parks:
