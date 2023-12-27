@@ -182,6 +182,10 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         context.scene.project_settings.geocode_margin = self.geocode_margin
         context.scene.project_settings.save()
 
+    def building_margin_updated(self, context):
+        context.scene.project_settings.building_margin = self.building_margin
+        context.scene.project_settings.save()
+
     def preserve_roads_updated(self, context):
         context.scene.project_settings.preserve_roads = self.preserve_roads
         context.scene.project_settings.save()
@@ -427,6 +431,16 @@ class SettingsPropertyGroup(bpy.types.PropertyGroup):
         name="Keep buildings 3d data",
         description="Keep buildings 3d data",
         default=True,
+    )
+    building_margin: FloatProperty(
+        name="Building margin",
+        description="Margin of the around the buildings in order to fix the bias between Google Earth data and OSM data",
+        soft_min=-10.0,
+        soft_max=20.0,
+        step=0.1,
+        precision=1,
+        default=float(bpy.types.Scene.project_settings.building_margin) if bpy.types.Scene.project_settings is not None else 8.0,
+        update=building_margin_updated
     )
     keep_roads: BoolProperty(
         name="Keep roads 3d data",

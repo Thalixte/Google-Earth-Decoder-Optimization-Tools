@@ -320,7 +320,7 @@ def load_gdf_from_geocode(geocode, overpass_api_uri, geocode_margin=5.0, preserv
         warnings.simplefilter("ignore", UserWarning, append=True)
         building_mask.to_file(os.path.join(shpfiles_folder, GEOCODE_OSM_FILE_PREFIX + "_" + BUILDING_OSM_KEY + SHP_FILE_EXT))
 
-    result = resize_gdf(result, geocode_margin)
+    result = resize_gdf(result, float(geocode_margin))
 
     if keep_data:
         return result
@@ -710,7 +710,7 @@ def prepare_residential_gdf(gdf, water, natural, natural_water, forests, woods, 
 
 def prepare_bbox_gdf(bbox, land_mass, boundary):
     result = clip_gdf(bbox, land_mass)
-    result = clip_gdf(result, boundary)
+    # result = clip_gdf(result, boundary)
     return resize_gdf(result, 20)
 
 

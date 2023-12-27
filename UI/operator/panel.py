@@ -163,6 +163,8 @@ class SettingsOperator(PanelOperator):
             if context.scene.project_settings.isolate_3d_data:
                 draw_splitted_prop(context.scene.setting_props, col, ALTERNATE_SPLIT_LABEL_FACTOR, "keep_buildings", "Keep buildings 3d data", enabled=False)
                 col.separator()
+                draw_splitted_prop(context.scene.setting_props, col, SPLIT_LABEL_FACTOR, "building_margin", "Building margin")
+                col.separator()
                 draw_splitted_prop(context.scene.setting_props, col, ALTERNATE_SPLIT_LABEL_FACTOR, "keep_roads", "Keep roads 3d data")
                 col.separator()
                 draw_splitted_prop(context.scene.setting_props, col, ALTERNATE_SPLIT_LABEL_FACTOR, "keep_constructions", "Keep construction area 3d data")

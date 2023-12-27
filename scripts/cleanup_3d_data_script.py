@@ -49,7 +49,6 @@ def cleanup_3d_data(global_settings):
         isolated_print(EOL)
         print_title("CLEANUP 3D DATA")
 
-        msfs_project.settings.building_margin = 8.0
         msfs_project.settings.save()
         msfs_project.prepare_3d_data(global_settings, generate_height_data=False, process_3d_data=True, create_polygons=False, process_all=msfs_project.settings.process_all)
 

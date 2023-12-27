@@ -104,7 +104,7 @@ class ProjectSettings(Settings):
         self.airport_city = str()
         self.geocode = str()
         self.geocode_margin = 5.0
-        self.building_margin = 0.0
+        self.building_margin = 8.0
         self.ground_exclusion_margin = 10.0
         self.preserve_roads = "True"
         self.preserve_buildings = "True"
@@ -168,7 +168,7 @@ class ProjectSettings(Settings):
 
         self.geocode_margin = "{:.2f}".format(float(str(self.geocode_margin))).rstrip("0").rstrip(".")
 
-        self.building_margin = "{:.2f}".format(float(str(self.geocode_margin))).rstrip("0").rstrip(".")
+        self.building_margin = "{:.2f}".format(float(str(self.building_margin))).rstrip("0").rstrip(".")
 
         self.ground_exclusion_margin = "{:.2f}".format(float(str(self.ground_exclusion_margin))).rstrip("0").rstrip(".")
 

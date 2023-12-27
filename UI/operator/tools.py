@@ -204,6 +204,11 @@ def reload_geocode_margin(context):
         context.scene.setting_props.geocode_margin = float(context.scene.project_settings.geocode_margin)
 
 
+def reload_building_margin(context):
+    if context.scene.project_settings is not None:
+        context.scene.setting_props.building_margin = float(context.scene.project_settings.building_margin)
+
+
 def reload_preserve_roads(context):
     if context.scene.project_settings is not None:
         context.scene.setting_props.preserve_roads = context.scene.project_settings.preserve_roads
@@ -350,6 +355,7 @@ def reload_setting_props(context, reload_settings_file=True):
     reload_height_adjustment(context)
     reload_geocode(context)
     reload_geocode_margin(context)
+    reload_building_margin(context)
     reload_preserve_roads(context)
     reload_preserve_buildings(context)
     reload_landmark_type(context)
