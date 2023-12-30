@@ -43,8 +43,9 @@ from samgeo.text_sam import LangSAM
 
 import samgeo
 
+
 def samgeo_sandbox(output_path, bbox=None, source_image=None):
-    lbbox= [bbox[2], bbox[1], bbox[3], bbox[0]]
+    lbbox = [bbox[2], bbox[1], bbox[3], bbox[0]]
     zoom = 17
     isolated_print(get_basemaps().keys())
 
@@ -76,14 +77,8 @@ def samgeo_sandbox(output_path, bbox=None, source_image=None):
     im = Image.open(os.path.join(output_path, image))
     for i, page in enumerate(ImageSequence.Iterator(im)):
         output_png_path = os.path.join(output_path, image.replace(".tif", ".png"))
-        isolated_print(output_png_path)
-        if not os.path.isfile(output_png_path):
-            try:
-                from blender.image import fix_texture_size_for_package_compilation
-                fix_texture_size_for_package_compilation(page)
-                page.save(output_png_path)
-            except:
-                pass
+        fixTextureSizeForPackageCompilation(page)
+        page.save(output_png_path)
     # else:
     #     image = source_image
     #
@@ -140,7 +135,17 @@ def createZoneTable(zone_factor, westlimit, southlimit, eastlimit, northlimit):
     longs = np.linspace(westlimit, eastlimit, zone_factor + 1)
     lats = np.linspace(southlimit, northlimit, zone_factor + 1)
 
-    for i in range(0, len(longs)-1):
-        for j in range(0, len(lats)-1):
-            zone_table.append([longs[i], lats[j+1], longs[i+1], lats[j]])
+    for i in range(0, len(longs) - 1):
+        for j in range(0, len(lats) - 1):
+            zone_table.append([longs[i], lats[j + 1], longs[i + 1], lats[j]])
     return zone_table
+
+
+##################################################################
+# fix texture final size for package compilation
+##################################################################
+def fixTextureSizeForPackageCompilation(image):
+    new_img_width = image.size[0] + (4 - image.size[0] % 4)
+    new_img_height = image.size[1] + (4 - image.size[1] % 4)
+    isolated_print((new_img_width, new_img_height))
+    image.resize((new_img_width, new_img_height))
