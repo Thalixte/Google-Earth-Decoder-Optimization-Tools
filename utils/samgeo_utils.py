@@ -79,6 +79,8 @@ def samgeo_sandbox(output_path, bbox=None, source_image=None):
         isolated_print(output_png_path)
         if not os.path.isfile(output_png_path):
             try:
+                from blender.image import fix_texture_size_for_package_compilation
+                fix_texture_size_for_package_compilation(page)
                 page.save(output_png_path)
             except:
                 pass
