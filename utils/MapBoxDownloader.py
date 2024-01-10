@@ -19,7 +19,7 @@ class MapBoxDownloader:
         a longitude, latitude and zoom level
     """
 
-    def __init__(self, lat, lng, zoom=12):
+    def __init__(self, lat, lng, zoom=12, quad_key=None):
         """
             GoogleMapDownloader Constructor
 
@@ -32,6 +32,7 @@ class MapBoxDownloader:
         self._lat = lat
         self._lng = lng
         self._zoom = zoom
+        self._quad_key = quad_key
 
     def get_xy(self):
         """
@@ -72,26 +73,32 @@ class MapBoxDownloader:
                 target_folder:  The folder where temporary downloadable image is stored -
                                 defaults to None
             Returns:
-                A high-resolution Goole Map image.
+                A high-resolution Google Map image.
         """
 
         start_x = kwargs.get('start_x', None)
         start_y = kwargs.get('start_y', None)
-        tile_width = kwargs.get('tile_width', 2)
-        tile_height = kwargs.get('tile_height', 3)
+        quad_key = kwargs.get('quad_key', self._quad_key)
+        tile_width = kwargs.get('tile_width', 1)
+        tile_height = kwargs.get('tile_height', 1)
         target_folder = kwargs.get('target_folder', None)
 
         # Check that we have x and y tile coordinates
         if start_x is None or start_y is None:
             start_x, start_y = self.get_xy()
 
+        if quad_key is None:
+            quad_key = self._quad_key
+
         # Determine the size of the image
         width, height = 256 * tile_width, 256 * tile_height
 
         # Create a new image of the required size
-        map_img = Image.new('RGB', (width, height))
+        map_img = Image.new('RGBA', (width, height))
 
-        url = 'https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/' + str(self._lat) + ',' + str(self._lng) + ',' + str(self._zoom) + '/' + str(256 * tile_width) + 'x' + str(256 * tile_height) + '?access_token=pk.eyJ1IjoiZ2Vkb3QiLCJhIjoiY2xneGN4dnp2MDBwcDNlcWZhcDI4cmZhYyJ9.0V0zSjQazVmBEnHLua8_WA&attribution=false&logo=false'
+        # url = 'https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/' + str(self._lat) + ',' + str(self._lng) + ',' + str(self._zoom) + '/' + str(256 * tile_width) + 'x' + str(256 * tile_height) + '?access_token=pk.eyJ1IjoiZ2Vkb3QiLCJhIjoiY2xneGN4dnp2MDBwcDNlcWZhcDI4cmZhYyJ9.0V0zSjQazVmBEnHLua8_WA&attribution=false&logo=false'
+        # url = f'https://mt.google.com/vt?lyrs=s&x=' + str(start_x) + '&y=' + str(start_y) + '&z=' + str(self._zoom)
+        url = f'https://t.ssl.ak.dynamic.tiles.virtualearth.net/comp/ch/' + quad_key + '?mkt=en-US&it=A&shading=t&n=z&og=1722'
 
         current_tile = '0-0'
 

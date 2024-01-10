@@ -39,6 +39,12 @@ except ModuleNotFoundError:
     install_python_lib(OSMNX_LIB, OSMNX_LIB_VERSION)
     import osmnx as ox
 
+try:
+    import pygeotile as pgt
+except ModuleNotFoundError:
+    install_python_lib(PYGEOTILE_LIB)
+    import pygeotile as pgt
+
 import logging as lg
 from osmnx.utils_geo import bbox_to_poly
 
@@ -58,7 +64,7 @@ from msfs_project.tile import MsfsTile
 from msfs_project.shape import MsfsShapes
 from utils import replace_in_file, is_octant, backup_file, ScriptError, print_title, \
     get_backup_file_path, isolated_print, chunks, create_bounding_box_from_tiles, clip_gdf, create_terraform_polygons_gdf, create_land_mass_gdf, preserve_holes, create_exclusion_building_polygons_gdf, create_whole_water_gdf, create_ground_exclusion_gdf, load_gdf, \
-    prepare_sea_gdf, prepare_bbox_gdf, prepare_gdf, create_exclusion_vegetation_polygons_gdf, load_gdf_from_geocode, difference_gdf, create_shore_water_gdf, resize_gdf, pr_bg_orange, load_json_file, prepare_park_gdf, prepare_building_gdf, create_empty_gdf, union_gdf, prepare_roads_gdf
+    prepare_sea_gdf, prepare_bbox_gdf, prepare_gdf, create_exclusion_vegetation_polygons_gdf, load_gdf_from_geocode, difference_gdf, create_shore_water_gdf, resize_gdf, pr_bg_orange, load_json_file, prepare_park_gdf, prepare_building_gdf, create_empty_gdf, union_gdf, prepare_roads_gdf, MapBoxDownloader
 from pathlib import Path
 
 from utils.compressonator import Compressonator
@@ -1221,14 +1227,18 @@ class MsfsProject:
         for i, tile in enumerate(valid_tiles):
             tile.create_bbox_osm_file(self.osmfiles_folder, self.min_lod_level)
             pbar.update("osm files created for %s tile" % tile.name)
-            # gmd = MapBoxDownloader(tile.bbox_gdf.centroid.iloc[0].x, tile.bbox_gdf.centroid.iloc[0].y, self.min_lod_level)
+
+            # from pygeotile.tile import Tile
+            # ti = Tile.for_latitude_longitude(tile.bbox_gdf.centroid.iloc[0].y, tile.bbox_gdf.centroid.iloc[0].x, self.min_lod_level)
+            #
+            # gmd = MapBoxDownloader(tile.bbox_gdf.centroid.iloc[0].y, tile.bbox_gdf.centroid.iloc[0].x, self.min_lod_level, ti.quad_tree)
             #
             # print("The tile coordinates are {}".format(gmd.get_xy()))
             # # Get the high resolution image
             # img = gmd.generate_image(target_folder=self.tilefiles_folder)
             #
             # # Save the image to disk
-            # img.save(os.path.join(self.tilefiles_folder, tile.name + PNG_FILE_EXT))
+            # img.save(os.path.join(self.tilefiles_folder, ti.quad_tree + PNG_FILE_EXT))
             # print("The map has successfully been created")
 
     def __prepare_3d_data(self, settings, generate_height_data=False, process_3d_data=False, create_polygons=True, process_all=False):
