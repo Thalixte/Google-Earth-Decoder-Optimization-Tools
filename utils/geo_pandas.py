@@ -961,7 +961,7 @@ def copy_geometry(source, dest, start_index=-1):
     for index, row in source.iterrows():
         if isinstance(row.geometry, Polygon):
             dest.loc[index if start_index < 0 else start_index + i, GEOMETRY_OSM_COLUMN] = row.geometry
-            i = i+1
+            i = i + 1
 
     return dest
 
@@ -1167,3 +1167,15 @@ def calculate_road_width(row):
         road_width += (lanes * 2)
 
     return road_width
+
+
+def is_geometry_collection(gdf):
+    if gdf.empty:
+        return False
+
+    return not gdf[(gdf.geom_type == SHAPELY_TYPE.geometryCollection)].empty
+
+
+def fix_geometry_collection(gdf):
+    gdf = gdf.explode()
+    return gdf[(gdf.geom_type == SHAPELY_TYPE.polygon) | (gdf.geom_type == SHAPELY_TYPE.multiPolygon)].dissolve()

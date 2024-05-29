@@ -18,8 +18,10 @@
 
 import os
 
+from shapely import GeometryCollection
+
 from msfs_project.lod import MsfsLod
-from utils import install_python_lib, isolated_print
+from utils import install_python_lib, isolated_print, is_geometry_collection, fix_geometry_collection
 
 try:
     import geopandas as gpd
@@ -27,7 +29,7 @@ except ModuleNotFoundError:
     install_python_lib('geopandas')
     import geopandas as gpd
 
-from constants import GLTF_FILE_EXT, COLLIDER_SUFFIX, XML_FILE_EXT, BOUNDARY_OSM_KEY, OSM_FILE_EXT, BOUNDING_BOX_OSM_FILE_PREFIX, HEIGHT_OSM_TAG, BOUNDING_BOX_OSM_KEY, GEOCODE_SUFFIX
+from constants import GLTF_FILE_EXT, COLLIDER_SUFFIX, XML_FILE_EXT, BOUNDARY_OSM_KEY, OSM_FILE_EXT, BOUNDING_BOX_OSM_FILE_PREFIX, HEIGHT_OSM_TAG, BOUNDING_BOX_OSM_KEY, GEOCODE_SUFFIX, SHAPELY_TYPE
 from msfs_project.height_map import MsfsHeightMap
 from msfs_project.collider import MsfsCollider
 from msfs_project.scene_object import MsfsSceneObject
@@ -144,6 +146,9 @@ class MsfsTile(MsfsSceneObject):
         exclusion_mask_gdf = exclusion_mask.clip(bbox_gdf)
 
         if not exclusion_mask_gdf.empty:
+            if is_geometry_collection(exclusion_mask_gdf):
+                exclusion_mask_gdf = fix_geometry_collection(exclusion_mask_gdf)
+
             if building_mask is not None:
                 if not building_mask.empty:
                     building_mask = clip_gdf(building_mask, bbox_gdf)

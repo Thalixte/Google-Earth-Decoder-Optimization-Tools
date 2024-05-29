@@ -1433,9 +1433,6 @@ class MsfsProject:
         exclusion = exclusion_mask.copy()
 
         for i, tile in enumerate(valid_tiles):
-            # if tile.name != "30604050607051455" and tile.name != "30604160614140752" and tile.name != "30604160614140773" and tile.name != "30604160614140770" and tile.name != "30604160614140650" and tile.name != "30604160614140453" and tile.name != "30604143504360660" and tile.name != "30604050607051672" and tile.name != "21615350715260724":
-            #     continue
-
             tile.create_exclusion_mask_osm_file(self.osmfiles_folder, b, exclusion, building_mask, water_mask, construction_mask, road_mask, bridges_mask, hidden_roads, amenity_mask, residential_mask, industrial_mask, airport_mask, rocks_mask, keep_holes, file_prefix)
             pbar.update("exclusion mask created for %s tile" % tile.name)
 
@@ -1802,7 +1799,7 @@ class MsfsProject:
         man_made = clip_gdf(prepare_wall_gdf(orig_man_made), bbox)
         pbar.update("man mades geodataframe prepared")
         pbar.update("preparing buildings geodataframe...", stall=True)
-        buildings = clip_gdf(prepare_building_gdf(orig_building, walls, man_made), bbox)
+        buildings = clip_gdf(prepare_building_gdf(orig_building, walls, man_made).explode(), bbox)
         pbar.update("buildings geodataframe prepared")
         pbar.update("preparing rocks geodataframe...", stall=True)
         rocks = prepare_gdf(orig_rocks)

@@ -23,6 +23,7 @@ class SHAPELY_TYPE:
     multiLineString = "MultiLineString"
     polygon = "Polygon"
     multiPolygon = "MultiPolygon"
+    geometryCollection = "GeometryCollection"
     none = "None"
 
 # constants
