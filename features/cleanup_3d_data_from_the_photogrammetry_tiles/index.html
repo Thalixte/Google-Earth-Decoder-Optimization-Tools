@@ -1,0 +1,1239 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../create_terraform_and_exclusion_polygons/">
+      
+      
+        <link rel="next" href="../generate_height_data_from_the_photogrammetry_tiles/">
+      
+      
+      <link rel="icon" href="../../assets/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.0, mkdocs-material-9.5.25">
+    
+    
+      
+        <title>Cleanup the 3d data from the photogrammetry tiles - GEDOT</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.6543a935.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/bootstrap.min.css">
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+   <link href="../../assets/stylesheets/glightbox.min.css" rel="stylesheet"/><style>
+    html.glightbox-open { overflow: initial; height: 100%; }
+    .gslide-title { margin-top: 0px; user-select: text; }
+    .gslide-desc { color: #666; user-select: text; }
+    .gslide-image img { background: white; }
+    .gscrollbar-fixer { padding-right: 15px; }
+    .gdesc-inner { font-size: 0.75rem; }
+    body[data-md-color-scheme="slate"] .gdesc-inner { background: var(--md-default-bg-color);}
+    body[data-md-color-scheme="slate"] .gslide-title { color: var(--md-default-fg-color);}
+    body[data-md-color-scheme="slate"] .gslide-desc { color: var(--md-default-fg-color);}</style> <script src="../../assets/javascripts/glightbox.min.js"></script></head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#cleanup-the-3d-data-from-the-photogrammetry-tiles" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="GEDOT" class="md-header__button md-logo" aria-label="GEDOT" data-md-component="logo">
+      
+  <img src="../../assets/images/logo.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            GEDOT
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Cleanup the 3d data from the photogrammetry tiles
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12 20 8.69Z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="blue-grey" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12c0-2.42-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12 20 8.69Z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var media,input,key,value,palette=__md_get("__palette");if(palette&&palette.color){"(prefers-color-scheme)"===palette.color.media&&(media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']"),palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent"));for([key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Share" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7 0-.24-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91 1.61 0 2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08Z"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/Thalixte/Google-Earth-Decoder-Optimization-Tools" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.5.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Google-Earth-Decoder-Optimization-Tools
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="GEDOT" class="md-nav__button md-logo" aria-label="GEDOT" data-md-component="logo">
+      
+  <img src="../../assets/images/logo.png" alt="logo">
+
+    </a>
+    GEDOT
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/Thalixte/Google-Earth-Decoder-Optimization-Tools" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.5.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Google-Earth-Decoder-Optimization-Tools
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Presentation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  <span class="md-ellipsis">
+    Getting started
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Getting started
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../installation/prerequisites/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Prerequisites
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../installation/installation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Installation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  <span class="md-ellipsis">
+    Features
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            Features
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../initialize_scenery/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Initialize a new MSFS scenery project
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../optimize_scenery/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Optimize an existing MSFS scenery project
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../merge_sceneries/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Merge an existing MSFS scenery project into another one
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../create_terraform_and_exclusion_polygons/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Create terraform and exclusion polygons
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Cleanup the 3d data from the photogrammetry tiles
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Cleanup the 3d data from the photogrammetry tiles
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#set-up-the-cleanup-of-the-3d-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      Set up the cleanup of the 3d data
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Set up the cleanup of the 3d data">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#check-for-openstreetmap-data-accuracy" class="md-nav__link">
+    <span class="md-ellipsis">
+      Check for OpenStreetMap data accuracy
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#select-the-cleanup-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      select the cleanup settings
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="select the cleanup settings">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#if-you-select-accurate-in-the-list" class="md-nav__link">
+    <span class="md-ellipsis">
+      If you select "Accurate" in the list:
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#if-you-select-not-accurate-in-the-list" class="md-nav__link">
+    <span class="md-ellipsis">
+      If you select "Not accurate" in the list:
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#run-the-cleanup-process" class="md-nav__link">
+    <span class="md-ellipsis">
+      Run the cleanup process
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cleanup-results" class="md-nav__link">
+    <span class="md-ellipsis">
+      Cleanup results
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Cleanup results">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cleanup-result-for-a-photogrammetry-tile-with-vegetation-3d-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      Cleanup result for a photogrammetry tile with vegetation 3d data
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cleanup-result-for-a-photogrammetry-tile-with-water-3d-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      Cleanup result for a photogrammetry tile with water 3d data
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#overall-cleanup-result-for-a-photogrammetry-scenery" class="md-nav__link">
+    <span class="md-ellipsis">
+      Overall cleanup result for a photogrammetry scenery
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fitz-roy-elevation-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fitz-Roy elevation data
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../generate_height_data_from_the_photogrammetry_tiles/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Generate height data from the photogrammetry tiles
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  <span class="md-ellipsis">
+    Step by step tutorials
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            Step by step tutorials
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_1" id="__nav_4_1_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Arcachon
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_1">
+            <span class="md-nav__icon md-icon"></span>
+            Arcachon
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/Arcachon/initialize_scenery/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    1. Initialize the Arcachon MSFS scenery project
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/Arcachon/retrieve_tiles/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    2. Retrieve the MSFS scenery photogrammetry tiles
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/Arcachon/optimize_scenery/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    3. Optimize the MSFS scenery photogrammetry tiles
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/Arcachon/add_more_details_to_the_scenery/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    4. Add more details to the Arcachon MSFS scenery
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/Arcachon/create_terraform_and_exclusion_polygons/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    5. Create terraform and exclusion polygons
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+  
+    
+      
+    
+    <a href="https://github.com/Thalixte/Google-Earth-Decoder-Optimization-Tools/raw/main/docs/features/cleanup_3d_data_from_the_photogrammetry_tiles.md" title="View source of this page" class="md-content__button md-icon">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 18c.56 0 1 .44 1 1s-.44 1-1 1-1-.44-1-1 .44-1 1-1m0-3c-2.73 0-5.06 1.66-6 4 .94 2.34 3.27 4 6 4s5.06-1.66 6-4c-.94-2.34-3.27-4-6-4m0 6.5a2.5 2.5 0 0 1-2.5-2.5 2.5 2.5 0 0 1 2.5-2.5 2.5 2.5 0 0 1 2.5 2.5 2.5 2.5 0 0 1-2.5 2.5M9.27 20H6V4h7v5h5v4.07c.7.08 1.36.25 2 .49V8l-6-6H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h4.5a8.15 8.15 0 0 1-1.23-2Z"/></svg>
+    </a>
+  
+
+
+<div><h1 id="cleanup-the-3d-data-from-the-photogrammetry-tiles">Cleanup the 3d data from the photogrammetry tiles<a class="headerlink" href="#cleanup-the-3d-data-from-the-photogrammetry-tiles" title="Permanent link">¶</a></h1>
+<p>When the photogrammetry tiles have been optimized, it is now possible to cleanup their 3d data, i.e. remove 3d data that can interfere with the MSFS generated 3d assets, mainly the water area and the vegetation area.</p>
+<p>All you have to do is to select <code>Google Earth Decoder Optimization Tools</code> &gt; <code>4. Cleanup 3d data fro Google Earth tiles</code> in the top menu.</p>
+<p><div class="video-container"><video style="width:100%" muted controls autoplay alt="type:video" class="md-video"><source src="../../assets/videos/arcachon/cleanup_3d_data_accurate.mp4" type="video/mp4"></source></video></div></p>
+<h2 id="set-up-the-cleanup-of-the-3d-data">Set up the cleanup of the 3d data<a class="headerlink" href="#set-up-the-cleanup-of-the-3d-data" title="Permanent link">¶</a></h2>
+<p>First of all, you have to decide the method you will use to cleanup the 3d data.
+Those methods rely on the accuracy of the <a href="https://www.openstreetmap.org/">OpenStreetMap</a> data. Two levels of accuracy are available: <strong>Accurate</strong> and <strong>Not accurate</strong>.</p>
+<h3 id="check-for-openstreetmap-data-accuracy">Check for <a href="https://www.openstreetmap.org/">OpenStreetMap</a> data accuracy<a class="headerlink" href="#check-for-openstreetmap-data-accuracy" title="Permanent link">¶</a></h3>
+<ul>
+<li>If you indicate to GEDOT that the <a href="https://www.openstreetmap.org/">OpenStreetMap (OSM)</a> 3d data are accurate, GEDOT will use a constructive method to cleanup the data: this means that GEDOT will keep only the relevant data from the tiles (for instance, buildings and roads).  </li>
+<li>If you indicate to GEDOT that the <a href="https://www.openstreetmap.org/">OpenStreetMap (OSM)</a> 3d data are not accurate, GEDOT will use a destructive method to cleanup the data: starting from the complete tile, it will remove the non relevant 3d data (for instance, forests, woods, sea, lake, ...)</li>
+</ul>
+<div class="admonition question">
+<p class="admonition-title">Why does the accuracy of <a href="https://www.openstreetmap.org/">OSM</a> data determine the method that GEDOT uses to cleanup the 3d data ?</p>
+<p>To be able to keep only the relevant 3d data (constructive method), GEDOT needs to know the shape of the buidlings in <a href="https://www.openstreetmap.org/">OpenStreetMap</a>. <br>
+When the <a href="https://www.openstreetmap.org/">OSM</a> data are accurate, this means that almost all the buidlings (more than 95%) are represented in the OpenStreetMap area.</p>
+<p>If it is not the case (remember that <a href="https://www.openstreetmap.org/">OpenStreetMap</a> is an open source project, based on the users' contributions), GEDOT cannot know the 3d data to keep. So the logic behind needs to be different. In this case, GEDOT uses a destructive method to remove the area that it can retrieve from the <a href="https://www.openstreetmap.org/">OSM</a> data (water, forests, woods, etc...).</p>
+</div>
+<div class="admonition question">
+<p class="admonition-title">How can i check for <a href="https://www.openstreetmap.org/">OpenStreetMap</a> data accuracy ?</p>
+<p>Open your Internet browser, and just ask this on the research bar: "&lt;<em>Your town</em>&gt; OSM relation" (for instance, "<mark><strong>Arcachon OSM relation</strong></mark>"). Click on the first link proposed (this should be "Relation: <em>Your town</em> (########)", for instance "<mark><strong>Relation: Arcachon (1665459)</strong></mark>")</p>
+<p>An example is provided here:
+<div class="video-container"><video style="width:100%" muted controls autoplay alt="type:video" class="md-video"><source src="../../assets/videos/arcachon/arcachon_check_for_osm_data.mp4" type="video/mp4"></source></video></div></p>
+<p>Now, you can check for the accuracy of the OpenStreetMap data, and especially if the building shapes are mostly all available (in the case of Arcachon city, the 3d data are accurate, because they rely on cadastral data).</p>
+</div>
+<p>Below is an illustration of a city with accurate <a href="https://www.openstreetmap.org/">OpenStreetMap</a> data (<a href="https://www.openstreetmap.org/relation/324431#map=15/51.9025/4.4649">Rotterdam</a>):</p>
+<p><a class="glightbox" href="../../assets/images/rotterdam_osm_data.png" data-type="image" data-width="auto" data-height="auto" data-desc-position="bottom"><img alt="rotterdam_osm_data.png" src="../../assets/images/rotterdam_osm_data.png"></a></p>
+<p>Below is an illustration of a city with not accurate <a href="https://www.openstreetmap.org/">OpenStreetMap</a> data (<a href="https://www.openstreetmap.org/relation/57963#map=15/-22.8798/-43.2774">Rio de Janeiro</a>):</p>
+<p><a class="glightbox" href="../../assets/images/rio_de_janeiro_osm_data.png.png" data-type="image" data-width="auto" data-height="auto" data-desc-position="bottom"><img alt="rio_de_janeiro_osm_data.png.png" src="../../assets/images/rio_de_janeiro_osm_data.png.png"></a></p>
+<p>You see the difference ? In the <a href="https://www.openstreetmap.org/relation/324431#map=15/51.9025/4.4649">Rotterdam</a> 3d data, all the buildings are drawn (dark grey shapes), which is not the case in the <a href="https://www.openstreetmap.org/relation/57963#map=15/-22.8798/-43.2774">Rio de Janeiro</a> area.</p>
+<h3 id="select-the-cleanup-settings">select the cleanup settings<a class="headerlink" href="#select-the-cleanup-settings" title="Permanent link">¶</a></h3>
+<p>Once you have decided the accuracy of the <a href="https://www.openstreetmap.org/">OpenStreetMap</a> data, you can setup the cleanup process:  </p>
+<ul>
+<li>
+<p>select the accuracy of the <a href="https://www.openstreetmap.org/">OpenStreetMap</a> data in the list <code>OpenStreetMap accuracy</code>. Values are <strong>Accurate</strong> / <strong>Not accurate</strong></p>
+</li>
+<li>
+<p>by default, GEDOT processes all the tiles that have not been cleaned yet. You can choose to process all the tiles (even those that have already be cleaned) by ticking the <code>Process all the tiles</code> checkbox</p>
+</li>
+<li>
+<p>(optional) indicate the name of the city where the airport is located in the field <code>Airport city</code> (ex.: <mark><strong>Arcachon</strong></mark>). You can also use an <a href="https://www.openstreetmap.org/relation/57963#map=15/-22.8798/-43.2774">OSM</a> Geocode definition for the airport: (ex.: <mark><strong>Santos Dumont Airport, Rio de Janeiro</strong></mark>). This information is necessary to exclude the airport photogrammetry data, if they exist</p>
+</li>
+</ul>
+<h5 id="if-you-select-accurate-in-the-list">If you select "Accurate" in the list:<a class="headerlink" href="#if-you-select-accurate-in-the-list" title="Permanent link">¶</a></h5>
+<ul>
+<li>
+<p>the checkbox <code>Keep buildings 3d data</code> is readonly and is automatically checked   </p>
+</li>
+<li>
+<p>(optional) if you want to keep photogrammetry roads, tick the <code>Keep roads 3d data</code> checkbox (enabled by default)</p>
+</li>
+<li>
+<p>(optional) if you want to keep the construction area (which can be useful if the data between the photogrammetry and OpenStreetMap are not up-to-date), tick the <code>Keep construction area 3d data</code> checkbox</p>
+</li>
+<li>
+<p>(optional) if you want to keep residential area, without worrying about the real shapes of the buildings, tick the  <code>Keep residential area 3d data</code>. <br>
+  This is useful in the case when not all the buildings are drawn in <a href="https://www.openstreetmap.org/">OSM</a>, but the residential area are clearly shaped (with the OSM tag landuse=residential and the OSM tag landuse=industrial). <br>
+  It is a way of using the constructive method, even if the <a href="https://www.openstreetmap.org/">OSM</a> data are not accurate. You can see an example of this type of OSM data accuracy in the <a href="https://www.openstreetmap.org/relation/1625787#map=16/51.5063/-3.2129">Cardiff city suburbs</a> (light grey area have the tag landuse=residential, whereas dark grey shapes represent the buildings):</p>
+</li>
+</ul>
+<p><a class="glightbox" href="../../assets/images/cardiff_suburbs_osm_data.png" data-type="image" data-width="auto" data-height="auto" data-desc-position="bottom"><img alt="cardiff_suburbs_osm_data.png" src="../../assets/images/cardiff_suburbs_osm_data.png"></a></p>
+<h5 id="if-you-select-not-accurate-in-the-list">If you select "Not accurate" in the list:<a class="headerlink" href="#if-you-select-not-accurate-in-the-list" title="Permanent link">¶</a></h5>
+<ul>
+<li>
+<p>the checkbox <code>Exclude water 3d data</code> is readonly and is automatically checked</p>
+</li>
+<li>
+<p>(optional) if you want to exclude forests 3d data, tick the <code>Exclude forests 3d data</code> checkbox (it roughly corresponds to the <a href="https://www.openstreetmap.org/">OSM</a> tag landuse=forest)</p>
+</li>
+<li>
+<p>(optional) if you want to exclude woods 3d data, tick the <code>Exclude woods 3d data</code> checkbox (it roughly corresponds to the <a href="https://www.openstreetmap.org/">OSM</a> tag natural=wood)</p>
+</li>
+<li>
+<p>(optional) if you want to exclude other ground 3d data, tick the <code>Exclude other ground 3d data (farmlands, allotments, meadows, orchards)</code> checkbox</p>
+</li>
+<li>
+<p>(optional) if you want to exclude nature reserves 3d data, tick the <code>Exclude nature reserves 3d data</code> checkbox (it roughly corresponds to the <a href="https://www.openstreetmap.org/">OSM</a> tag leisure=nature_reserve)</p>
+</li>
+<li>
+<p>(optional) if you want to exclude parks 3d data, tick the <code>Exclude parks 3d data</code> checkbox (it roughly corresponds to the <a href="https://www.openstreetmap.org/">OSM</a> tag leisure=park)</p>
+</li>
+</ul>
+<h2 id="run-the-cleanup-process">Run the cleanup process<a class="headerlink" href="#run-the-cleanup-process" title="Permanent link">¶</a></h2>
+<p>If all the settings are correctly set, the <a class="md-button gedot" href="javascript:void(0)">Cleanup 3d data from Google Earth tiles</a> button should be  enabled (except if the <a href="https://www.flightsimulator.com/">MSFS</a> project folder does not exist, has been renamed or removed).<br>
+Just click on this button, and a <a href="https://www.blender.org/">Blender</a> window console will appear on the screen.</p>
+<p>Once finished, you should see this on the console: <br>
+<a class="glightbox" href="../../assets/images/cleanup_3d_data_from_photogrammetry_tiles.png" data-type="image" data-width="auto" data-height="auto" data-desc-position="bottom"><img align="center" alt="cleanup_3d_data_from_photogrammetry_tiles.png" src="../../assets/images/cleanup_3d_data_from_photogrammetry_tiles.png"></a>   </p>
+<p>By default, the building process is executed by the MSFS fspackagetool exe. At the end of the process, you should see this window:</p>
+<p><a class="glightbox" href="../../assets/images/fspackagetools_build_completed_after_3d_data_cleanup.png" data-type="image" data-width="auto" data-height="auto" data-desc-position="bottom"><img alt="fspackagetools_build_completed_after_polygons_generation.png" src="../../assets/images/fspackagetools_build_completed_after_3d_data_cleanup.png"></a></p>
+<div class="admonition warning">
+<p class="admonition-title">cleanup 3d data backup folder</p>
+<p>The first time the cleanup process is launched on a MSFS project, a new backup folder, named "cleanup_3d_data" is created:<br>
+</p><div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>Arcachon
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>└───backup
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    └───cleanup_3d_data
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>        └───PackageSources
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>            ├───arcachon-modelLib
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>            │   └───texture
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>            └───scene
+</span></code></pre></div>
+This folder must be kept in order to run the process again, as it contains all the entire photogrammetry tiles (before the cleanup).<br>
+The cleanup process will always rely on those entire tiles. If the folder is deleted, and the process is executed again, it will take the already cleaned tiles, which can produce undesired results.
+</div>
+<h2 id="cleanup-results">Cleanup results<a class="headerlink" href="#cleanup-results" title="Permanent link">¶</a></h2>
+<p>Some cleanup results are presented below.  </p>
+<h3 id="cleanup-result-for-a-photogrammetry-tile-with-vegetation-3d-data">Cleanup result for a photogrammetry tile with vegetation 3d data<a class="headerlink" href="#cleanup-result-for-a-photogrammetry-tile-with-vegetation-3d-data" title="Permanent link">¶</a></h3>
+<p class="md-slider-title">(Move the slider to display before/after comparison)</p>
+<div class="slider-container">
+    <div class="img background-img" data="arcachon_original_21537373625051507_LOD00.png"></div>
+    <div class="img foreground-img" data="arcachon_cleaned_21537373625051507_LOD00.png"></div>
+    <input type="range" min="1" max="100" value="1" class="img-slider">
+    <div class="slider-button"></div>
+    <div class="slider-bar"></div>
+</div>
+
+<h3 id="cleanup-result-for-a-photogrammetry-tile-with-water-3d-data">Cleanup result for a photogrammetry tile with water 3d data<a class="headerlink" href="#cleanup-result-for-a-photogrammetry-tile-with-water-3d-data" title="Permanent link">¶</a></h3>
+<p class="md-slider-title">(Move the slider to display before/after comparison)</p>
+<div class="slider-container">
+    <div class="img background-img" data="arcachon_original_21537373625050707_LOD00.png"></div>
+    <div class="img foreground-img" data="arcachon_cleaned_21537373625050707_LOD00.png"></div>
+    <input type="range" min="1" max="100" value="1" class="img-slider">
+    <div class="slider-button"></div>
+    <div class="slider-bar"></div>
+</div>
+
+<div class="admonition warning">
+<p class="admonition-title">bounding box creation</p>
+<p>The cleaning process creates automatically a bounding box around the cleaned tile in order to preserve the dimensions of the original tile.<br>
+This ensures that the MSFS engine keeps the correct lod levels, even if the size of the tile has been reduced.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Cleanup margins</p>
+<p>Because there can be some slight differences between the position of the OpenStreetMap buildings and roads and the corresponding photogrammetry 3d data, a margin is defined around each object to clean (moslty 8 meters).    That's why it can remain some little vegetation 3d data around a road or a building.  </p>
+</div>
+<h3 id="overall-cleanup-result-for-a-photogrammetry-scenery">Overall cleanup result for a photogrammetry scenery<a class="headerlink" href="#overall-cleanup-result-for-a-photogrammetry-scenery" title="Permanent link">¶</a></h3>
+<p>In MSFS, the resulting tiles after the cleanup process are presented here (to ease the understanding, the tiles have been moved over the sea):  </p>
+<p><a class="glightbox" href="../../assets/images/arcachon_cleaned_devmode_overall_insight.png" data-type="image" data-width="auto" data-height="auto" data-desc-position="bottom"><img alt="arcachon_cleaned_devmode_overall_insight.png" src="../../assets/images/arcachon_cleaned_devmode_overall_insight.png"></a></p>
+<h3 id="fitz-roy-elevation-data">Fitz-Roy elevation data<a class="headerlink" href="#fitz-roy-elevation-data" title="Permanent link">¶</a></h3>
+<p class="md-slider-title">(Move the slider to display before/after comparison)</p>
+<div class="slider-container">
+    <div class="img background-img" data="fitz-roy_near_original_elevation_data.png"></div>
+    <div class="img foreground-img" data="fitz-roy_near_gedot_generated_elevation_data.png"></div>
+    <input type="range" min="1" max="100" value="1" class="img-slider">
+    <div class="slider-button"></div>
+    <div class="slider-bar"></div>
+</div>
+
+<p class="md-slider-title">(Move the slider to display before/after comparison)</p>
+<div class="slider-container">
+    <div class="img background-img" data="fitz-roy_original_elevation_data.png"></div>
+    <div class="img foreground-img" data="fitz-roy_gedot_generated_elevation_data.png"></div>
+    <input type="range" min="1" max="100" value="1" class="img-slider">
+    <div class="slider-button"></div>
+    <div class="slider-bar"></div>
+</div></div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12Z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../create_terraform_and_exclusion_polygons/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Create terraform and exclusion polygons">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Create terraform and exclusion polygons
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../generate_height_data_from_the_photogrammetry_tiles/" class="md-footer__link md-footer__link--next" aria-label="Next: Generate height data from the photogrammetry tiles">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Generate height data from the photogrammetry tiles
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4Z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2022 - 2023 Thalixte
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "../..", "features": ["announce.dismiss", "content.action.view", "content.code.copy", "content.tooltips", "navigation.expand", "navigation.footer", "navigation.indexes", "navigation.instant", "navigation.sections", "navigation.top", "search.highlight", "search.share", "search.suggest", "toc.follow", "toc.integrate"], "search": "../../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.081f42fc.min.js"></script>
+      
+        <script src="../../javascripts/open_in_new_tab.js"></script>
+      
+        <script src="../../javascripts/jquery.min.js"></script>
+      
+        <script src="../../javascripts/img-slider.js"></script>
+      
+    
+  <script id="init-glightbox">const lightbox = GLightbox({"touchNavigation": true, "loop": false, "zoomable": true, "draggable": true, "openEffect": "zoom", "closeEffect": "zoom", "slideEffect": "slide"});
+document$.subscribe(() => { lightbox.reload() });
+</script></body>
+</html>
